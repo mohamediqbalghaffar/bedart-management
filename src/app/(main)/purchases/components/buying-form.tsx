@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Download, Loader2, PlusCircle, Trash2, Check, ChevronsUpDown } from "lucide-react";
+import { CalendarIcon, Download, Loader2, PlusCircle, Trash2, Check, ChevronsUpDown, List } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -21,17 +21,14 @@ import { WithId } from "@/firebase/firestore/use-collection";
 import { analyzePurchaseExcel } from "@/ai/flows/analyze-purchase-excel";
 import * as XLSX from 'xlsx';
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ProductSelectorDialog } from "../../components/product-selector-dialog";
+
 
 // Define types based on your Firestore structure
 type Supplier = {
   id: string;
   supplierName: string;
-};
-
-type Product = {
-    id: string;
-    productName: string;
-    unitPrice?: number;
 };
 
 const buyingFormSchema = z.object({
@@ -371,7 +368,9 @@ export function BuyingForm() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {fields.map((field, index) => (
+                    {fields.map((field, index) => {
+                      const [dialogOpen, setDialogOpen] = useState(false);
+                      return(
                         <TableRow key={field.id}>
                             <TableCell className="align-top">
                                 <FormField
@@ -379,9 +378,26 @@ export function BuyingForm() {
                                   name={`items.${index}.product`}
                                   render={({ field }) => (
                                     <FormItem>
-                                      <FormControl>
-                                        <Input placeholder="ناوی کاڵا..." {...field} />
-                                      </FormControl>
+                                       <div className="flex gap-2">
+                                        <FormControl>
+                                            <Input placeholder="ناوی کاڵا..." {...field} />
+                                        </FormControl>
+                                        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                                          <DialogTrigger asChild>
+                                            <Button variant="outline" size="icon"><List className="h-4 w-4" /></Button>
+                                          </DialogTrigger>
+                                          <DialogContent>
+                                              <DialogHeader>
+                                                  <DialogTitle>لیستی کاڵاکان</DialogTitle>
+                                              </DialogHeader>
+                                              <ProductSelectorDialog onProductSelect={({name, price}) => {
+                                                  form.setValue(`items.${index}.product`, name);
+                                                  form.setValue(`items.${index}.unitPrice`, price);
+                                                  setDialogOpen(false);
+                                              }} />
+                                          </DialogContent>
+                                        </Dialog>
+                                      </div>
                                       <FormMessage />
                                     </FormItem>
                                   )}
@@ -426,7 +442,8 @@ export function BuyingForm() {
                                 </Button>
                             </TableCell>
                         </TableRow>
-                    ))}
+                      )
+                    })}
                 </TableBody>
             </Table>
             <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ product: "", quantity: 1, unitPrice: 0, category: 'Mattress', sizeModel: '' })}>

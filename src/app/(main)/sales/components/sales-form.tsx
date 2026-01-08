@@ -9,24 +9,18 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
+import { CalendarIcon, PlusCircle, Trash2, List } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase, collection, doc, runTransaction, getDoc } from "@/firebase";
+import { useFirestore, setDocumentNonBlocking, doc, runTransaction, getDoc, collection } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { WithId } from "@/firebase/firestore/use-collection";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ProductSelectorDialog } from "../../components/product-selector-dialog";
 
-
-type Product = {
-    id: string;
-    productName: string;
-    currentQuantity: number;
-    unitPrice?: number;
-};
 
 const salesFormSchema = z.object({
   formNumber: z.string().min(1, "ژمارەی فۆڕم پێویستە."),
@@ -136,18 +130,28 @@ export function SalesForm() {
         for (const item of data.items) {
           const productDocId = item.product.toLowerCase().replace(/[^a-z0-9]/g, '-');
           const productRef = doc(firestore, 'products', productDocId);
-          await runTransaction(firestore, async (transaction) => {
-              const productDoc = await transaction.get(productRef);
-              if (!productDoc.exists()) {
-                  throw new Error(`Product "${item.product}" not found in inventory.`);
-              }
-              const currentQuantity = productDoc.data().currentQuantity || 0;
-              if (currentQuantity < item.quantity) {
-                   throw new Error(`Insufficient stock for ${item.product}. Only ${currentQuantity} available.`);
-              }
-              const newQuantity = currentQuantity - item.quantity;
-              transaction.update(productRef, { currentQuantity: newQuantity });
-          });
+          try {
+            await runTransaction(firestore, async (transaction) => {
+                const productDoc = await transaction.get(productRef);
+                if (!productDoc.exists()) {
+                    throw new Error(`Product "${item.product}" not found in inventory.`);
+                }
+                const currentQuantity = productDoc.data().currentQuantity || 0;
+                if (currentQuantity < item.quantity) {
+                     throw new Error(`Insufficient stock for ${item.product}. Only ${currentQuantity} available.`);
+                }
+                const newQuantity = currentQuantity - item.quantity;
+                transaction.update(productRef, { currentQuantity: newQuantity });
+            });
+          } catch (e: any) {
+              toast({
+                  variant: "destructive",
+                  title: "هەڵە لە بڕی کاڵا",
+                  description: e.message,
+              });
+              // Stop the form submission if any transaction fails
+              return;
+          }
         }
 
         const sellingFormRef = doc(collection(firestore, "selling_forms"));
@@ -284,7 +288,9 @@ export function SalesForm() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {fields.map((field, index) => (
+                    {fields.map((field, index) => {
+                      const [dialogOpen, setDialogOpen] = useState(false);
+                      return (
                         <TableRow key={field.id}>
                             <TableCell className="align-top">
                                 <FormField
@@ -292,9 +298,26 @@ export function SalesForm() {
                                   name={`items.${index}.product`}
                                   render={({ field }) => (
                                     <FormItem>
-                                      <FormControl>
-                                        <Input placeholder="ناوی کاڵا..." {...field} />
-                                      </FormControl>
+                                      <div className="flex gap-2">
+                                        <FormControl>
+                                            <Input placeholder="ناوی کاڵا..." {...field} />
+                                        </FormControl>
+                                        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                                          <DialogTrigger asChild>
+                                            <Button variant="outline" size="icon"><List className="h-4 w-4" /></Button>
+                                          </DialogTrigger>
+                                          <DialogContent>
+                                              <DialogHeader>
+                                                  <DialogTitle>لیستی کاڵاکان</DialogTitle>
+                                              </DialogHeader>
+                                              <ProductSelectorDialog onProductSelect={({name, price}) => {
+                                                  form.setValue(`items.${index}.product`, name);
+                                                  form.setValue(`items.${index}.unitPrice`, price);
+                                                  setDialogOpen(false);
+                                              }} />
+                                          </DialogContent>
+                                        </Dialog>
+                                      </div>
                                       <FormMessage />
                                     </FormItem>
                                   )}
@@ -315,7 +338,8 @@ export function SalesForm() {
                                 </Button>
                             </TableCell>
                         </TableRow>
-                    ))}
+                      );
+                    })}
                 </TableBody>
             </Table>
             <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ product: "", quantity: 1, unitPrice: 0 })}>
