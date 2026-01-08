@@ -211,7 +211,7 @@ export function BuyingForm() {
                 productName: item.product,
                 quantity: item.quantity,
                 unitPrice: item.unitPrice,
-                landedCost: item.unitPrice, // Placeholder, can be adjusted
+                landedCost: item.unitPrice + ((customsFee || 0) / items.length) / item.quantity,
             };
             
             await setDoc(productSubCollectionRef, productData);
