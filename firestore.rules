@@ -209,8 +209,9 @@ service cloud.firestore {
      * @principle Protects business relationship data (suppliers) from unauthorized modification.
      */
     match /suppliers/{supplierId} {
-      allow get, list, create, update, delete: if isAdminOrManager();
+      allow get, list, create, update, delete: if isAdminOrManager() || isSalesman();
     }
   }
 }
+
     
