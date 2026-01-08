@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useForm, UseFormReturn } from 'react-hook-form';
+import { UseFormReturn } from 'react-hook-form';
 import {
   Command,
   CommandEmpty,
@@ -19,7 +19,6 @@ import { Button } from '@/components/ui/button';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFirestore, useCollection, useMemoFirebase, collection } from '@/firebase';
-import { WithId } from '@/firebase/firestore/use-collection';
 import { FormField, FormItem, FormControl, FormMessage } from '@/components/ui/form';
 
 type Product = {
@@ -27,15 +26,24 @@ type Product = {
   unitPrice?: number;
 };
 
-type ProductSelectorProps<T extends { items: any[] }> = {
+// This defines the shape of the form data that the ProductSelector can work with.
+// It expects the form to have an 'items' array.
+type FormWithItems = {
+  items: {
+    product: string;
+    unitPrice?: number;
+    [key: string]: any;
+  }[];
+};
+
+type ProductSelectorProps<T extends FormWithItems> = {
   form: UseFormReturn<T>;
   index: number;
 };
 
-export function ProductSelector<T extends { items: any[] }>({ form, index }: ProductSelectorProps<T>) {
+export function ProductSelector<T extends FormWithItems>({ form, index }: ProductSelectorProps<T>) {
   const firestore = useFirestore();
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState('');
 
   const productsQuery = useMemoFirebase(
     () => (firestore ? collection(firestore, 'products') : null),
@@ -44,20 +52,14 @@ export function ProductSelector<T extends { items: any[] }>({ form, index }: Pro
   const { data: products } = useCollection<Product>(productsQuery);
 
   const productOptions = React.useMemo(() => {
-    const options = products?.map((p) => ({
-      value: p.productName,
+    return products?.map((p) => ({
+      value: p.productName.toLowerCase(),
       label: p.productName,
       unitPrice: p.unitPrice,
     })) || [];
-    
-    const currentValue = form.getValues(`items.${index}.product`);
-    if (currentValue && !options.some(o => o.value.toLowerCase() === currentValue.toLowerCase())) {
-        options.unshift({ value: currentValue, label: `زیادکردنی "${currentValue}"`, unitPrice: 0});
-    }
-
-    return options;
-  }, [products, form, index]);
-
+  }, [products]);
+  
+  const currentValue = form.watch(`items.${index}.product`);
 
   return (
     <FormField
@@ -74,11 +76,7 @@ export function ProductSelector<T extends { items: any[] }>({ form, index }: Pro
                   aria-expanded={open}
                   className="w-full justify-between font-normal"
                 >
-                  {field.value
-                    ? productOptions.find(
-                        (p) => p.value.toLowerCase() === field.value.toLowerCase()
-                      )?.label
-                    : 'کاڵایەک هەڵبژێرە...'}
+                  {field.value || "کاڵایەک هەڵبژێرە..."}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </FormControl>
@@ -86,34 +84,53 @@ export function ProductSelector<T extends { items: any[] }>({ form, index }: Pro
             <PopoverContent className="w-[300px] p-0">
               <Command
                 filter={(value, search) => {
-                  if (value.toLowerCase().includes(search.toLowerCase())) return 1;
-                  return 0;
+                    const option = productOptions.find(o => o.value === value);
+                    if (option?.label.toLowerCase().includes(search.toLowerCase())) return 1;
+                    return 0;
                 }}
               >
                 <CommandInput placeholder="گەڕان بۆ کاڵا..." />
                 <CommandList>
-                  <CommandEmpty>هیچ کاڵایەک نەدۆزرایەوە.</CommandEmpty>
+                  <CommandEmpty>
+                    <div className='p-4 text-sm'>
+                        هیچ کاڵایەک نەدۆزرایەوە.
+                        <Button
+                            variant="link"
+                            className="p-1 h-auto"
+                            onClick={() => {
+                                const inputValue = form.getValues(`items.${index}.product`);
+                                const searchInput = document.querySelector('input[cmdk-input]') as HTMLInputElement;
+                                if(searchInput && searchInput.value) {
+                                    form.setValue(`items.${index}.product`, searchInput.value, { shouldValidate: true });
+                                    form.setValue(`items.${index}.unitPrice`, 0);
+                                }
+                                setOpen(false);
+                            }}
+                        >
+                           زیادکردنی وەک کاڵای نوێ
+                        </Button>
+                    </div>
+                  </CommandEmpty>
                   <CommandGroup>
                     {productOptions.map((product) => (
                       <CommandItem
                         value={product.value}
                         key={product.value}
                         onSelect={(currentValue) => {
-                          const selectedValue = currentValue.toLowerCase() === field.value?.toLowerCase() ? '' : product.value;
-                          form.setValue(`items.${index}.product`, selectedValue);
-                          
-                          const selectedProduct = products?.find(p => p.productName.toLowerCase() === selectedValue.toLowerCase());
-                          if (selectedProduct && selectedProduct.unitPrice) {
-                              form.setValue(`items.${index}.unitPrice`, selectedProduct.unitPrice, { shouldValidate: true });
+                          const selectedOption = productOptions.find(p => p.value === currentValue);
+                          if (selectedOption) {
+                            form.setValue(`items.${index}.product`, selectedOption.label);
+                            if (selectedOption.unitPrice) {
+                                form.setValue(`items.${index}.unitPrice`, selectedOption.unitPrice, { shouldValidate: true });
+                            }
                           }
-
                           setOpen(false);
                         }}
                       >
                         <Check
                           className={cn(
                             'mr-2 h-4 w-4',
-                            field.value?.toLowerCase() === product.value.toLowerCase()
+                            currentValue?.toLowerCase() === product.value
                               ? 'opacity-100'
                               : 'opacity-0'
                           )}
