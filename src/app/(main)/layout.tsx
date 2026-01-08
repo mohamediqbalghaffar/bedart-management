@@ -1,7 +1,8 @@
+
 'use client';
 
 import React from 'react';
-import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
+import { SidebarProvider, Sidebar } from '@/components/ui/sidebar';
 import { SidebarNav } from '@/components/layout/sidebar-nav';
 
 export default function MainLayout({
@@ -22,3 +23,5 @@ export default function MainLayout({
     </SidebarProvider>
   );
 }
+
+    

@@ -35,6 +35,7 @@ type SidebarContext = {
   setOpenMobile: (open: boolean) => void
   isMobile: boolean
   toggleSidebar: () => void
+  hasMounted: boolean;
 }
 
 const SidebarContext = React.createContext<SidebarContext | null>(null)
@@ -68,7 +69,7 @@ const SidebarProvider = React.forwardRef<
     },
     ref
   ) => {
-    const { isMobile } = useIsMobile()
+    const { isMobile, hasMounted } = useIsMobile()
     const [openMobile, setOpenMobile] = React.useState(false)
 
     // This is the internal state of the sidebar.
@@ -126,8 +127,9 @@ const SidebarProvider = React.forwardRef<
         openMobile,
         setOpenMobile,
         toggleSidebar,
+        hasMounted,
       }),
-      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar, hasMounted]
     )
 
     return (
@@ -180,7 +182,16 @@ const Sidebar = React.forwardRef<
 
     if (!hasMounted) {
       // Don't render anything on the server or during the first client render.
-      return null
+      return <div
+      ref={ref}
+      className={cn(
+        "hidden md:block text-sidebar-foreground",
+        side === "left"
+          ? "left-0"
+          : "right-0",
+          "w-[--sidebar-width]"
+      )}
+    ></div>
     }
 
     if (collapsible === "none") {
@@ -767,3 +778,5 @@ export {
   SidebarTrigger,
   useSidebar,
 }
+
+    
