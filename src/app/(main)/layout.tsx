@@ -12,12 +12,12 @@ export default function MainLayout({
 }) {
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen">
         <Sidebar side="left" collapsible="icon" variant="sidebar">
           <SidebarNav />
         </Sidebar>
-        <main className="flex-1">{children}</main>
-      </div>
+        <main className="flex-1 md:ml-[16rem] group-data-[sidebar-state=collapsed]:md:ml-[3.5rem] transition-[margin-left] duration-200 ease-linear">
+            {children}
+        </main>
     </SidebarProvider>
   );
 }
