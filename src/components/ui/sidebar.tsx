@@ -181,8 +181,7 @@ const Sidebar = React.forwardRef<
     const { isMobile, hasMounted, state, openMobile, setOpenMobile } = useSidebar()
 
     if (!hasMounted) {
-      // Return null on the server and during the initial client render
-      // to prevent any hydration mismatch.
+      // On the server or during the first client render, return null to avoid hydration mismatch.
       return null;
     }
 
@@ -770,5 +769,3 @@ export {
   SidebarTrigger,
   useSidebar,
 }
-
-    
