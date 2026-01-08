@@ -7,7 +7,7 @@ export default function DashboardRedirectPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/sales');
+    router.replace('/dashboard');
   }, [router]);
 
   return (

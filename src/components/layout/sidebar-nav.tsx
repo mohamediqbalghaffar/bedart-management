@@ -25,6 +25,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 const menuItems = [
+  { href: '/dashboard', label: 'داشبۆرد', icon: LayoutDashboard },
   { href: '/sales', label: 'فرۆشەکان', icon: ShoppingCart },
   { href: '/purchases', label: 'کڕینەکان', icon: Package },
   { href: '/stock', label: 'کۆگا', icon: Warehouse },
