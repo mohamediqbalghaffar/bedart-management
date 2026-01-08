@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, PlusCircle, Trash2, Check, ChevronsUpDown } from "lucide-react";
+import { CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -19,6 +19,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase, collection, doc, runTransaction } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { WithId } from "@/firebase/firestore/use-collection";
+import { ProductSelector } from "./product-selector";
 
 
 type Product = {
@@ -53,50 +54,6 @@ const salesFormSchema = z.object({
 });
 
 type SalesFormValues = z.infer<typeof salesFormSchema>;
-
-function ProductSelector({ form, index }: { form: UseFormReturn<SalesFormValues>, index: number }) {
-  const firestore = useFirestore();
-  const productsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'products') : null, [firestore]);
-  const { data: products } = useCollection<Product>(productsQuery);
-
-  const handleProductChange = (productName: string) => {
-    form.setValue(`items.${index}.product`, productName, { shouldValidate: true });
-    const selectedProduct = products?.find(p => p.productName === productName);
-    if (selectedProduct && selectedProduct.unitPrice) {
-      form.setValue(`items.${index}.unitPrice`, selectedProduct.unitPrice, { shouldValidate: true });
-    }
-  };
-
-  return (
-    <FormField
-      control={form.control}
-      name={`items.${index}.product`}
-      render={({ field }) => (
-        <FormItem>
-          <Select onValueChange={handleProductChange} value={field.value} dir="rtl">
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder="کاڵایەک هەڵبژێرە..." />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              {products?.map((product) => (
-                <SelectItem key={product.id} value={product.productName}>
-                    <div className="flex justify-between w-full">
-                       <span>{product.productName}</span>
-                       <span className="text-xs text-muted-foreground ml-2">({product.currentQuantity} دانە)</span>
-                    </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  );
-}
-
 
 export function SalesForm() {
   const firestore = useFirestore();
@@ -543,3 +500,5 @@ export function SalesForm() {
     </Form>
   );
 }
+
+    
