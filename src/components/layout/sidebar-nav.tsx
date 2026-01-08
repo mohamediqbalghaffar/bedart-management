@@ -21,7 +21,6 @@ import {
   Settings,
   BedDouble,
 } from 'lucide-react';
-import { UserNav } from './user-nav';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
@@ -80,8 +79,6 @@ export function SidebarNav() {
               </Link>
           </SidebarMenuItem>
         </SidebarMenu>
-        <SidebarSeparator />
-        <UserNav />
       </SidebarFooter>
     </>
   );

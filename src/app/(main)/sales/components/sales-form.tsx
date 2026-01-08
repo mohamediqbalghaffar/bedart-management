@@ -17,7 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { SmartSuggestions } from "./smart-suggestions";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useAuth, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking } from "@/firebase";
+import { useFirestore, setDocumentNonBlocking } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
@@ -50,8 +50,6 @@ type SalesFormValues = z.infer<typeof salesFormSchema>;
 export function SalesForm() {
   const [activeProductIndex, setActiveProductIndex] = useState<number | null>(null);
   const firestore = useFirestore();
-  const auth = useAuth();
-  const { user } = useAuth();
   const { toast } = useToast();
   
   const form = useForm<SalesFormValues>({
@@ -118,11 +116,11 @@ export function SalesForm() {
 
 
   async function onSubmit(data: SalesFormValues) {
-    if (!user || !firestore) {
+    if (!firestore) {
         toast({
             variant: "destructive",
             title: "هەڵەیەک ڕوویدا",
-            description: "تکایە سەرەتا بچۆ ژوورەوە.",
+            description: "پەیوەندی لەگەڵ بنکەی داتاکەدا نییە.",
         });
         return;
     }
@@ -138,7 +136,7 @@ export function SalesForm() {
         const sellingFormData = {
             ...mainData,
             id: sellingFormId,
-            creatorId: user.uid,
+            creatorId: "system", // No user logged in,
             issueDate: format(data.issueDate, "yyyy-MM-dd"),
             totalPrice: totalAmount,
             remainingBalance: remainingBalance,
@@ -499,5 +497,3 @@ export function SalesForm() {
     </Form>
   );
 }
-
-    

@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useAuth, useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase } from "@/firebase";
+import { useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { WithId } from "@/firebase/firestore/use-collection";
@@ -138,7 +138,6 @@ function ExcelImportButton({ form }: { form: UseFormReturn<BuyingFormValues> }) 
 
 export function BuyingForm() {
   const firestore = useFirestore();
-  const { user } = useAuth();
   const { toast } = useToast();
 
   const suppliersQuery = useMemoFirebase(() => {
@@ -169,11 +168,11 @@ export function BuyingForm() {
   const totalAmount = subTotal + (customsFee || 0);
 
   async function onSubmit(data: BuyingFormValues) {
-    if (!user || !firestore) {
+    if (!firestore) {
         toast({
             variant: "destructive",
             title: "هەڵەیەک ڕوویدا",
-            description: "تکایە سەرەتا بچۆ ژوورەوە.",
+            description: "پەیوەندی لەگەڵ بنکەی داتاکەدا نییە.",
         });
         return;
     }
@@ -187,7 +186,7 @@ export function BuyingForm() {
         const buyingFormData = {
             ...mainData,
             id: buyingFormId,
-            creatorId: user.uid,
+            creatorId: "system", // No user logged in
             issueDate: format(data.issueDate, "yyyy-MM-dd"),
         };
 
@@ -378,5 +377,3 @@ export function BuyingForm() {
     </Form>
   );
 }
-
-    
