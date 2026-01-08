@@ -3,22 +3,25 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useAuth } from '@/firebase';
+import { useAuth, useFirestore } from '@/firebase';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, AuthError } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 import { BedDouble } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 const loginSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6),
+  password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const auth = useAuth();
+  const firestore = useFirestore();
+
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -29,12 +32,35 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
+      // First, try to sign in the user
       await signInWithEmailAndPassword(auth, data.email, data.password);
-      // Redirect to dashboard on successful login
       window.location.href = '/';
     } catch (error) {
-      console.error('Login failed:', error);
-      form.setError('root', { message: 'Invalid email or password.' });
+      const authError = error as AuthError;
+      // If the user does not exist, create a new account
+      if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential') {
+        try {
+          const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+          const user = userCredential.user;
+
+          if (user && firestore) {
+            // Create user profile in Firestore
+            const userDocRef = doc(firestore, 'users', user.uid);
+            await setDoc(userDocRef, {
+              id: user.uid,
+              username: user.email,
+              role: 'Salesman', // Default role for new sign-ups
+            });
+          }
+          window.location.href = '/';
+        } catch (creationError) {
+          console.error('Account creation failed:', creationError);
+          form.setError('root', { message: 'Could not create account. Please try again.' });
+        }
+      } else {
+        console.error('Login failed:', error);
+        form.setError('root', { message: 'Invalid email or password.' });
+      }
     }
   };
 
@@ -48,7 +74,7 @@ export default function LoginPage() {
                 </div>
             </div>
           <CardTitle>MattressPro CRM</CardTitle>
-          <CardDescription>Enter your credentials to access your account</CardDescription>
+          <CardDescription>Enter your credentials to log in or sign up</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -83,7 +109,7 @@ export default function LoginPage() {
                 <p className="text-sm font-medium text-destructive">{form.formState.errors.root.message}</p>
               )}
               <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Logging in...' : 'Login'}
+                {form.formState.isSubmitting ? 'Processing...' : 'Login / Sign Up'}
               </Button>
             </form>
           </Form>
@@ -95,5 +121,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
