@@ -11,10 +11,10 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ExcelDataInputSchema = z.object({
-  excelDataUri: z
+  excelDataAsCsv: z
     .string()
     .describe(
-      "A Base64-encoded Excel file as a data URI. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+      "A CSV string extracted from an Excel file."
     ),
 });
 export type ExcelDataInput = z.infer<typeof ExcelDataInputSchema>;
@@ -38,14 +38,14 @@ const prompt = ai.definePrompt({
   input: {schema: ExcelDataInputSchema},
   output: {schema: ExcelDataOutputSchema},
   prompt: `You are an expert data entry assistant for a purchasing department.
-Your task is to analyze the provided Excel file data and extract a list of products.
+Your task is to analyze the provided CSV data and extract a list of products.
 
-The user will provide an Excel file encoded as a data URI. You need to identify columns that represent the product name, quantity, and unit price. These columns might have different names like 'Item', 'Product', 'QTY', 'دانە', 'نرخ', 'نرخی تاک', etc.
+The user will provide a CSV string. You need to identify columns that represent the product name, quantity, and unit price. These columns might have different names like 'Item', 'Product', 'QTY', 'دانە', 'نرخ', 'نرخی تاک', etc.
 
-Extract this information and return it as a structured JSON array, where each object contains 'product', 'quantity', and 'unitPrice'. Ignore any header rows or totals.
+Extract this information and return it as a structured JSON array, where each object contains 'product', 'quantity', and 'unitPrice'. Ignore any header rows, empty rows, or totals.
 
-Excel File Data:
-{{media url=excelDataUri}}`,
+CSV Data:
+{{{excelDataAsCsv}}}`,
 });
 
 const analyzePurchaseExcelFlow = ai.defineFlow(

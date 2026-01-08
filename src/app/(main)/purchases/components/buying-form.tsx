@@ -56,21 +56,28 @@ function ExcelImportButton({ form }: { form: UseFormReturn<BuyingFormValues> }) 
             const reader = new FileReader();
             reader.onload = async (e) => {
                 const data = e.target?.result;
-                if (typeof data !== 'string') {
+                if (!(data instanceof ArrayBuffer)) {
                     toast({ variant: 'destructive', title: "هەڵە لە خوێندنەوەی فایل" });
                     setIsLoading(false);
                     return;
                 }
                 
                 try {
-                    const result = await analyzePurchaseExcel({ excelDataUri: data });
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const csvData = XLSX.utils.sheet_to_csv(worksheet);
+
+                    const result = await analyzePurchaseExcel({ excelDataAsCsv: csvData });
                     
+                    // Clear existing items before adding new ones
+                    const currentItems = form.getValues('items');
+                    if (currentItems.length === 1 && !currentItems[0].product && currentItems[0].unitPrice === 0) {
+                        form.setValue('items', []); // Clear the default empty item
+                    }
+
                     if (result && result.length > 0) {
-                        // Clear existing items before adding new ones
-                        form.setValue('items', []);
-                        result.forEach(item => {
-                            form.setValue('items', [...form.getValues('items'), item]);
-                        });
+                        form.setValue('items', [...form.getValues('items'), ...result]);
                         toast({ title: "سەرکەوتوو بوو", description: `${result.length} کاڵا بە سەرکەوتوویی زیادکرا.` });
                     } else {
                         toast({ variant: 'destructive', title: "هیچ کاڵایەک نەدۆزرایەوە", description: "دڵنیابە فایلەکە ستوونی ناوی کاڵا، دانە، و نرخی تێدایە." });
@@ -80,9 +87,12 @@ function ExcelImportButton({ form }: { form: UseFormReturn<BuyingFormValues> }) 
                      toast({ variant: 'destructive', title: "هەڵە لە شیکردنەوەی فایل", description: "AI نەیتوانی داتاکان دەربهێنێت." });
                 } finally {
                     setIsLoading(false);
+                     if (fileInputRef.current) {
+                        fileInputRef.current.value = "";
+                    }
                 }
             };
-            reader.readAsDataURL(file);
+            reader.readAsArrayBuffer(file);
 
         } catch (error) {
             console.error("File processing error:", error);
