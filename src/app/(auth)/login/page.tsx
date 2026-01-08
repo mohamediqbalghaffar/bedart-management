@@ -7,7 +7,8 @@ import { useAuth, useFirestore } from '@/firebase';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, AuthError } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { BedDouble } from 'lucide-react';
+import { BedDouble, Eye, EyeOff } from 'lucide-react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
@@ -21,6 +22,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const auth = useAuth();
   const firestore = useFirestore();
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -99,7 +101,18 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>وشەی نهێنی</FormLabel>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <div className="relative">
+                        <Input type={showPassword ? "text" : "password"} {...field} className="pl-10" />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute left-1 top-1/2 h-full -translate-y-1/2 px-3"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
+                        </Button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
