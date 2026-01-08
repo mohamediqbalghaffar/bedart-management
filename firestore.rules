@@ -94,12 +94,9 @@ service cloud.firestore {
      * @principle Implements role-based access combined with document ownership for the Salesman role.
      */
     match /selling_forms/{sellingFormId} {
-      // CRITICAL: The 'SellingForm' entity is missing a 'creatorId' field.
-      // The rules below assume this field will be added to the document.
-      // This field MUST be populated with the `request.auth.uid` on creation.
       allow get: if (isAdminOrManager()) || (isSalesman() && docExists() && resource.data.creatorId == request.auth.uid);
       allow list: if isAdminOrManager();
-      allow create: if (isAdminOrManager() || isSalesman()) && request.resource.data.creatorId == request.auth.uid; // TODO: Add a 'creatorId' field to your SellingForm documents.
+      allow create: if (isAdminOrManager() || isSalesman()) && request.resource.data.creatorId == request.auth.uid;
       allow update: if (docExists() && request.resource.data.creatorId == resource.data.creatorId) && (isAdminOrManager() || (isSalesman() && resource.data.creatorId == request.auth.uid));
       allow delete: if isAdminOrManager() && docExists();
 
@@ -112,7 +109,6 @@ service cloud.firestore {
        * @principle Secures a subcollection by checking permissions on the parent document.
        */
       match /payments/{paymentId} {
-        // This rule depends on the parent selling_form document having a 'creatorId' field.
         function isParentFormOwner() {
           let parentForm = get(/databases/$(database)/documents/selling_forms/$(sellingFormId));
           return parentForm.data.creatorId == request.auth.uid;
@@ -132,7 +128,6 @@ service cloud.firestore {
        * @principle Secures a subcollection by checking permissions on the parent document.
        */
       match /products/{productSellingFormId} {
-        // This rule depends on the parent selling_form document having a 'creatorId' field.
         function isParentFormOwner() {
           let parentForm = get(/databases/$(database)/documents/selling_forms/$(sellingFormId));
           return parentForm.data.creatorId == request.auth.uid;
@@ -153,10 +148,7 @@ service cloud.firestore {
      * @principle Restricts access to sensitive business data based on user role.
      */
     match /buying_forms/{buyingFormId} {
-      allow get, list: if isAdminOrManager();
-      allow create: if isAdminOrManager();
-      allow update: if isAdminOrManager() && docExists();
-      allow delete: if isAdminOrManager() && docExists();
+      allow get, list, create, update, delete: if isAdminOrManager();
 
       /**
        * @description Stores products linked to a specific buying form. Access is
@@ -167,10 +159,8 @@ service cloud.firestore {
        * @principle Secures a subcollection by enforcing the parent collection's strict role-based permissions.
        */
       match /products/{productBuyingFormId} {
-        allow get, list: if isAdminOrManager();
+        allow get, list, update, delete: if isAdminOrManager();
         allow create: if isAdminOrManager() && request.resource.data.buyingFormId == buyingFormId;
-        allow update: if isAdminOrManager() && docExists();
-        allow delete: if isAdminOrManager() && docExists();
       }
     }
 
@@ -183,10 +173,7 @@ service cloud.firestore {
      * @principle Restricts access to sensitive financial data based on user role.
      */
     match /expenses/{expenseId} {
-      allow get, list: if isAdminOrManager();
-      allow create: if isAdminOrManager();
-      allow update: if isAdminOrManager() && docExists();
-      allow delete: if isAdminOrManager() && docExists();
+      allow get, list, create, update, delete: if isAdminOrManager();
     }
 
     /**
@@ -198,10 +185,7 @@ service cloud.firestore {
      * @principle Protects core business data (product catalog) from unauthorized modification.
      */
     match /products/{productId} {
-      allow get, list: if isAdminOrManager();
-      allow create: if isAdminOrManager();
-      allow update: if isAdminOrManager() && docExists();
-      allow delete: if isAdminOrManager() && docExists();
+      allow get, list, create, update, delete: if isAdminOrManager();
     }
 
     /**
@@ -213,10 +197,7 @@ service cloud.firestore {
      * @principle Protects inventory and operational data from unauthorized access.
      */
     match /stock_movements/{stockMovementId} {
-      allow get, list: if isAdminOrManager();
-      allow create: if isAdminOrManager();
-      allow update: if isAdminOrManager() && docExists();
-      allow delete: if isAdminOrManager() && docExists();
+      allow get, list, create, update, delete: if isAdminOrManager();
     }
 
     /**
@@ -228,10 +209,8 @@ service cloud.firestore {
      * @principle Protects business relationship data (suppliers) from unauthorized modification.
      */
     match /suppliers/{supplierId} {
-      allow get, list: if isAdminOrManager();
-      allow create: if isAdminOrManager();
-      allow update: if isAdminOrManager() && docExists();
-      allow delete: if isAdminOrManager() && docExists();
+      allow get, list, create, update, delete: if isAdminOrManager();
     }
   }
 }
+    
