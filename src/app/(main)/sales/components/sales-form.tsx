@@ -19,7 +19,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase, collection, doc, runTransaction } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { WithId } from "@/firebase/firestore/use-collection";
-import { ProductSelector } from "./product-selector";
+import { ProductSelector } from "../../components/product-selector";
 
 
 type Product = {
@@ -147,9 +147,10 @@ export function SalesForm() {
             remainingBalance: remainingBalance,
         };
 
-        await setDocumentNonBlocking(sellingFormRef, sellingFormData, { merge: true });
+        // Defer inventory updates until after we attempt to write the form
+        const stockUpdates: (() => Promise<void>)[] = [];
 
-        const productPromises = items.map(async (item) => {
+        for (const item of items) {
             const productDocId = item.product.toLowerCase().replace(/[^a-z0-9]/g, '-');
             const productRef = doc(firestore, 'products', productDocId);
             
@@ -165,24 +166,31 @@ export function SalesForm() {
             };
             await setDocumentNonBlocking(productSubCollectionRef, productData, { merge: true });
 
-            // Use a transaction to reliably update stock
-            await runTransaction(firestore, async (transaction) => {
-                const productDoc = await transaction.get(productRef);
-                if (!productDoc.exists()) {
-                    // This case should ideally not happen if products are selected from a list
-                    // but as a fallback, we can log it.
-                    console.warn(`Attempted to sell product "${item.product}" which does not exist in inventory.`);
-                    throw `Product "${item.product}" not found.`;
-                }
-                const currentQuantity = productDoc.data().currentQuantity || 0;
-                if (currentQuantity < item.quantity) {
-                    throw new Error(`Insufficient stock for ${item.product}. Only ${currentQuantity} available.`);
-                }
-                const newQuantity = currentQuantity - item.quantity;
-                transaction.update(productRef, { currentQuantity: newQuantity });
-            });
-        });
+            // Prepare transaction function for stock update
+            const updateStock = async () => {
+                 await runTransaction(firestore, async (transaction) => {
+                    const productDoc = await transaction.get(productRef);
+                    if (!productDoc.exists()) {
+                        throw new Error(`Product "${item.product}" not found in inventory.`);
+                    }
+                    const currentQuantity = productDoc.data().currentQuantity || 0;
+                    if (currentQuantity < item.quantity) {
+                         throw new Error(`Insufficient stock for ${item.product}. Only ${currentQuantity} available.`);
+                    }
+                    const newQuantity = currentQuantity - item.quantity;
+                    transaction.update(productRef, { currentQuantity: newQuantity });
+                });
+            };
+            stockUpdates.push(updateStock);
+        }
 
+        // Run all stock updates
+        for (const updateFunc of stockUpdates) {
+            await updateFunc();
+        }
+
+        // If all stock updates are successful, save the main form
+        await setDocumentNonBlocking(sellingFormRef, sellingFormData, { merge: true });
 
         const paymentPromises = (payments || []).map(payment => {
             const paymentRef = doc(collection(firestore, `selling_forms/${sellingFormId}/payments`));
@@ -195,7 +203,7 @@ export function SalesForm() {
             return setDocumentNonBlocking(paymentRef, paymentData, { merge: true });
         });
 
-        await Promise.all([...productPromises, ...paymentPromises]);
+        await Promise.all(paymentPromises);
 
         toast({
             title: "سەرکەوتوو بوو!",

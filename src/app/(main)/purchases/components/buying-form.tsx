@@ -21,6 +21,7 @@ import { WithId } from "@/firebase/firestore/use-collection";
 import { analyzePurchaseExcel } from "@/ai/flows/analyze-purchase-excel";
 import * as XLSX from 'xlsx';
 import { Textarea } from "@/components/ui/textarea";
+import { ProductSelector } from "../../components/product-selector";
 
 // Define types based on your Firestore structure
 type Supplier = {
@@ -49,69 +50,6 @@ const buyingFormSchema = z.object({
 });
 
 type BuyingFormValues = z.infer<typeof buyingFormSchema>;
-
-function ProductSelector({ form, index }: { form: UseFormReturn<BuyingFormValues>, index: number }) {
-  const firestore = useFirestore();
-  const productsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'products') : null, [firestore]);
-  const { data: products } = useCollection<Product>(productsQuery);
-  const [newProductName, setNewProductName] = useState('');
-
-  const handleProductChange = (value: string) => {
-    if (value === 'add_new') {
-        if(newProductName) {
-            form.setValue(`items.${index}.product`, newProductName, { shouldValidate: true });
-        }
-    } else {
-        form.setValue(`items.${index}.product`, value, { shouldValidate: true });
-        const selectedProduct = products?.find(p => p.productName === value);
-        if (selectedProduct && selectedProduct.unitPrice) {
-            form.setValue(`items.${index}.unitPrice`, selectedProduct.unitPrice, { shouldValidate: true });
-        }
-    }
-  };
-  
-  const currentProduct = form.watch(`items.${index}.product`);
-  const isNewProduct = products && !products.find(p => p.productName === currentProduct);
-
-  return (
-    <div className="space-y-2">
-        <FormField
-        control={form.control}
-        name={`items.${index}.product`}
-        render={({ field }) => (
-            <FormItem>
-            <Select onValueChange={handleProductChange} value={isNewProduct ? 'add_new' : field.value} dir="rtl">
-                <FormControl>
-                <SelectTrigger>
-                    <SelectValue placeholder="کاڵایەک هەڵبژێرە..." />
-                </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                    {products?.map((product) => (
-                        <SelectItem key={product.id} value={product.productName}>
-                            {product.productName}
-                        </SelectItem>
-                    ))}
-                    <SelectItem value="add_new">
-                        <span className="text-primary">کاڵای نوێ زیاد بکە...</span>
-                    </SelectItem>
-                </SelectContent>
-            </Select>
-            <FormMessage />
-            </FormItem>
-        )}
-        />
-        {(isNewProduct || form.getValues(`items.${index}.product`) === '' && products?.length > 0 )&& (
-             <Input 
-                placeholder="ناوی کاڵا نوێیەکە بنووسە"
-                onChange={(e) => setNewProductName(e.target.value)}
-                onBlur={() => handleProductChange('add_new')}
-                defaultValue={isNewProduct ? currentProduct : ''}
-            />
-        )}
-    </div>
-  );
-}
 
 
 function ExcelImportButton({ form }: { form: UseFormReturn<BuyingFormValues> }) {
