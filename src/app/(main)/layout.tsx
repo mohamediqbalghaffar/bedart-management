@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -33,12 +32,14 @@ export default function MainLayout({
 }) {
   return (
     <SidebarProvider>
-      <Sidebar side="left" collapsible="icon" variant="sidebar">
-        <SidebarNav />
-      </Sidebar>
-      <MainContent>
-        {children}
-      </MainContent>
+      <div className="flex min-h-screen">
+        <Sidebar side="left" collapsible="icon" variant="sidebar">
+          <SidebarNav />
+        </Sidebar>
+        <MainContent>
+          {children}
+        </MainContent>
+      </div>
     </SidebarProvider>
   );
 }
