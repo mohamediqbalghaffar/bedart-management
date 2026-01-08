@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useFieldArray, UseFormReturn } from "react-hook-form";
 import * as z from "zod";
@@ -57,41 +57,54 @@ function ProductCombobox({ form, index }: { form: UseFormReturn<BuyingFormValues
   const { data: products } = useCollection<Product>(productsQuery);
 
   const [open, setOpen] = useState(false);
-  const [inputValue, setInputValue] = useState(form.watch(`items.${index}.product`));
   
+  // This state holds the search term inside the combobox
+  const [searchValue, setSearchValue] = useState("");
+
   const handleSelect = (productName: string) => {
-    form.setValue(`items.${index}.product`, productName);
-    setInputValue(productName);
+    form.setValue(`items.${index}.product`, productName, { shouldValidate: true });
+    setSearchValue(""); // Clear search value after selection
     setOpen(false);
   };
-  
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
-      setInputValue(value);
-      form.setValue(`items.${index}.product`, value);
-      if(!open) setOpen(true);
-  }
+
+  const currentFieldValue = form.watch(`items.${index}.product`);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <div className="relative">
-          <Input
-            placeholder="ناوی کاڵا..."
-            value={inputValue}
-            onChange={handleInputChange}
-            className="w-full"
-          />
-          <ChevronsUpDown className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 shrink-0 opacity-50" />
-        </div>
+        <FormControl>
+            <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={open}
+                className="w-full justify-between font-normal"
+            >
+                {currentFieldValue ? (
+                    products?.find((p) => p.productName.toLowerCase() === currentFieldValue.toLowerCase())?.productName || currentFieldValue
+                ) : (
+                    "کاڵایەک هەڵبژێرە..."
+                )}
+                <ChevronsUpDown className="mr-auto h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+        </FormControl>
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
         <Command>
-          <CommandInput placeholder="گەڕان بۆ کاڵا..." />
+          <CommandInput 
+            placeholder="گەڕان بۆ کاڵا..." 
+            value={searchValue}
+            onValueChange={setSearchValue}
+          />
           <CommandList>
-            <CommandEmpty>هیچ کاڵایەک نەدۆزرایەوە.</CommandEmpty>
+            <CommandEmpty>
+                <Button variant="ghost" className="w-full" onClick={() => handleSelect(searchValue)}>
+                    زیادکردنی کاڵای نوێ: "{searchValue}"
+                </Button>
+            </CommandEmpty>
             <CommandGroup>
-              {products?.map((product) => (
+              {products
+                ?.filter(p => p.productName.toLowerCase().includes(searchValue.toLowerCase()))
+                .map((product) => (
                 <CommandItem
                   key={product.id}
                   value={product.productName}
@@ -100,7 +113,7 @@ function ProductCombobox({ form, index }: { form: UseFormReturn<BuyingFormValues
                   <Check
                     className={cn(
                       "ml-2 h-4 w-4",
-                      form.getValues(`items.${index}.product`) === product.productName ? "opacity-100" : "opacity-0"
+                      currentFieldValue?.toLowerCase() === product.productName.toLowerCase() ? "opacity-100" : "opacity-0"
                     )}
                   />
                   {product.productName}
@@ -438,9 +451,7 @@ export function BuyingForm() {
                             <TableCell className="align-top">
                                 <FormField control={form.control} name={`items.${index}.product`} render={({ field }) => (
                                   <FormItem>
-                                    <FormControl>
-                                        <ProductCombobox form={form} index={index} />
-                                    </FormControl>
+                                    <ProductCombobox form={form} index={index} />
                                     <FormMessage />
                                   </FormItem>
                                 )} />
