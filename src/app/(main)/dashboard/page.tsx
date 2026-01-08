@@ -15,6 +15,7 @@ type SellingForm = {
 
 type Expense = {
     amount: number;
+    paidBy: 'Cash - Dinar' | 'Cash - Dollar';
 };
 
 type Product = {
@@ -33,7 +34,16 @@ function DashboardStats() {
     const { data: products, isLoading: loadingProducts } = useCollection<Product>(productsQuery);
 
     const totalRevenue = React.useMemo(() => sales?.reduce((acc, sale) => acc + sale.totalPrice, 0) || 0, [sales]);
-    const totalExpenses = React.useMemo(() => expenses?.reduce((acc, expense) => acc + expense.amount, 0) || 0, [expenses]);
+    
+    const totalExpenses = React.useMemo(() => {
+        if (!expenses) return 0;
+        return expenses.reduce((acc, expense) => {
+            if (expense.paidBy === 'Cash - Dinar') {
+                return acc + (expense.amount / 1500);
+            }
+            return acc + expense.amount;
+        }, 0);
+    }, [expenses]);
     
     const uniqueCustomers = React.useMemo(() => {
         if (!sales) return 0;
