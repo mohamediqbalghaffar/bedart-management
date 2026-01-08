@@ -3,22 +3,31 @@
 
 import React, { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, UseFormReturn } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
+import { CalendarIcon, PlusCircle, Trash2, Check, ChevronsUpDown } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useFirestore, setDocumentNonBlocking } from "@/firebase";
-import { collection, doc, runTransaction } from "firebase/firestore";
+import { useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase, collection, doc, runTransaction } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { WithId } from "@/firebase/firestore/use-collection";
+
+
+type Product = {
+    id: string;
+    productName: string;
+    currentQuantity: number;
+    unitPrice?: number;
+};
 
 const salesFormSchema = z.object({
   formNumber: z.string().min(1, "ژمارەی فۆڕم پێویستە."),
@@ -45,6 +54,76 @@ const salesFormSchema = z.object({
 });
 
 type SalesFormValues = z.infer<typeof salesFormSchema>;
+
+function ProductCombobox({ form, index }: { form: UseFormReturn<SalesFormValues>, index: number }) {
+  const firestore = useFirestore();
+  const productsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'products') : null, [firestore]);
+  const { data: products } = useCollection<Product>(productsQuery);
+
+  const [open, setOpen] = useState(false);
+  const [inputValue, setInputValue] = useState(form.watch(`items.${index}.product`));
+
+  const handleSelect = (product: WithId<Product>) => {
+    form.setValue(`items.${index}.product`, product.productName);
+    if(product.unitPrice) {
+        form.setValue(`items.${index}.unitPrice`, product.unitPrice);
+    }
+    setInputValue(product.productName);
+    setOpen(false);
+  };
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setInputValue(value);
+      form.setValue(`items.${index}.product`, value);
+      if(!open) setOpen(true);
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <div className="relative">
+          <Input
+            placeholder="ناوی کاڵا..."
+            value={inputValue}
+            onChange={handleInputChange}
+            className="w-full"
+          />
+          <ChevronsUpDown className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 shrink-0 opacity-50" />
+        </div>
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+        <Command>
+          <CommandInput placeholder="گەڕان بۆ کاڵا..." />
+          <CommandList>
+            <CommandEmpty>هیچ کاڵایەک نەدۆزرایەوە. دەتوانیت کاڵای نوێ زیاد بکەیت.</CommandEmpty>
+            <CommandGroup>
+              {products?.map((product) => (
+                <CommandItem
+                  key={product.id}
+                  value={product.productName}
+                  onSelect={() => handleSelect(product)}
+                >
+                  <Check
+                    className={cn(
+                      "ml-2 h-4 w-4",
+                      form.getValues(`items.${index}.product`) === product.productName ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  <div className="flex justify-between w-full">
+                     <span>{product.productName}</span>
+                     <span className="text-xs text-muted-foreground">({product.currentQuantity} دانە)</span>
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 
 export function SalesForm() {
   const firestore = useFirestore();
@@ -141,7 +220,7 @@ export function SalesForm() {
         await setDocumentNonBlocking(sellingFormRef, sellingFormData, { merge: true });
 
         const productPromises = items.map(async (item) => {
-            const productDocId = item.product.toLowerCase().replace(/\s+/g, '-');
+            const productDocId = item.product.toLowerCase().replace(/[^a-z0-9]/g, '-');
             const productRef = doc(firestore, 'products', productDocId);
             
             const productSubCollectionRef = doc(collection(firestore, `selling_forms/${sellingFormId}/products`));
@@ -163,7 +242,7 @@ export function SalesForm() {
                     transaction.update(productRef, { currentQuantity: newQuantity });
                 } else {
                     // Product doesn't exist, which is an issue if we are selling it.
-                    // We can log this or handle it, but for now we will ignore.
+                    // For now, we will log a warning.
                     console.warn(`Product with ID ${productDocId} not found in stock, but was sold.`);
                 }
             });
@@ -279,7 +358,7 @@ export function SalesForm() {
                                 <FormField control={form.control} name={`items.${index}.product`} render={({ field }) => (
                                   <FormItem>
                                     <FormControl>
-                                        <Input placeholder="ناوی کاڵا" {...field} />
+                                        <ProductCombobox form={form} index={index} />
                                     </FormControl>
                                     <FormMessage />
                                   </FormItem>
