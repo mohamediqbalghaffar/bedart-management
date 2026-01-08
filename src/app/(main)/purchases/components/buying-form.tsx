@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from "react";
@@ -15,8 +16,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, doc } from "firebase/firestore";
+import { useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase, collection, doc } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { WithId } from "@/firebase/firestore/use-collection";
 import { analyzePurchaseExcel } from "@/ai/flows/analyze-purchase-excel";
@@ -186,7 +186,7 @@ export function BuyingForm() {
         const buyingFormData = {
             ...mainData,
             id: buyingFormId,
-            creatorId: "system", // No user logged in
+            creatorId: "system",
             issueDate: format(data.issueDate, "yyyy-MM-dd"),
         };
 
@@ -232,6 +232,7 @@ export function BuyingForm() {
                         <FormLabel className="mt-2">بەروار:</FormLabel>
                         <Popover>
                             <PopoverTrigger asChild>
+                                <FormControl>
                                 <Button
                                     variant={"outline"}
                                     className={cn(
@@ -246,6 +247,7 @@ export function BuyingForm() {
                                     <span>بەروارێک</span>
                                     )}
                                 </Button>
+                                </FormControl>
                             </PopoverTrigger>
                              <PopoverContent className="w-auto p-0" align="start">
                                 <Calendar
@@ -269,7 +271,7 @@ export function BuyingForm() {
             render={({ field }) => (
                 <FormItem>
                     <FormLabel>دابینکەر</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
+                     <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
                         <FormControl>
                             <SelectTrigger>
                                 <SelectValue placeholder={isLoadingSuppliers ? "..." : "دابینکەرێک هەڵبژێرە"} />
@@ -377,3 +379,5 @@ export function BuyingForm() {
     </Form>
   );
 }
+
+    
