@@ -1,0 +1,122 @@
+
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { useFirestore, useDoc, useCollection, useMemoFirebase, doc, collection } from '@/firebase';
+import { Loader2 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { WithId } from '@/firebase/firestore/use-collection';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+
+type BuyingFormType = {
+    id: string;
+    supplierId: string;
+    issueDate: string;
+    customsFee?: number;
+    stockLocation: string;
+};
+
+type ProductBuyingForm = {
+    productName: string;
+    quantity: number;
+    unitPrice: number;
+};
+
+type Supplier = {
+    supplierName: string;
+};
+
+export function PurchaseDetails({ formId }: { formId: string }) {
+    const firestore = useFirestore();
+
+    const formRef = useMemoFirebase(() => firestore ? doc(firestore, 'buying_forms', formId) : null, [firestore, formId]);
+    const productsRef = useMemoFirebase(() => firestore ? collection(firestore, `buying_forms/${formId}/products`) : null, [firestore, formId]);
+
+    const { data: formData, isLoading: isLoadingForm } = useDoc<BuyingFormType>(formRef);
+    const { data: products, isLoading: isLoadingProducts } = useCollection<ProductBuyingForm>(productsRef);
+
+    const supplierRef = useMemoFirebase(() => (firestore && formData) ? doc(firestore, 'suppliers', formData.supplierId) : null, [firestore, formData]);
+    const { data: supplier, isLoading: isLoadingSupplier } = useDoc<Supplier>(supplierRef);
+    
+    const isLoading = isLoadingForm || isLoadingProducts || isLoadingSupplier;
+    
+    const subTotal = React.useMemo(() => {
+        return products?.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0) || 0;
+    }, [products]);
+
+    const totalAmount = subTotal + (formData?.customsFee || 0);
+
+    if (isLoading) {
+        return <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    }
+
+    if (!formData) {
+        return <div className="text-center text-muted-foreground p-8">پسوولەکە نەدۆزرایەوە.</div>;
+    }
+
+    return (
+        <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>زانیاری سەرەکی</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <span className="font-semibold">دابینکەر:</span>
+                            <p className="text-muted-foreground">{supplier?.supplierName || 'نەزانراو'}</p>
+                        </div>
+                        <div>
+                            <span className="font-semibold">بەرواری پسوولە:</span>
+                            <p className="text-muted-foreground">{formData.issueDate}</p>
+                        </div>
+                         <div>
+                            <span className="font-semibold">شوێنی دانان:</span>
+                            <p className="text-muted-foreground">{formData.stockLocation === 'Warehouse' ? 'کۆگا' : 'فرۆشگا'}</p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card>
+                 <CardHeader>
+                    <CardTitle>کاڵا کڕاوەکان</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="text-right">بابەت</TableHead>
+                                <TableHead className="text-right">دانە</TableHead>
+                                <TableHead className="text-right">نرخی تاک</TableHead>
+                                <TableHead className="text-left">نرخی کۆ</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {products && products.length > 0 ? (
+                                products.map((item) => (
+                                    <TableRow key={item.id}>
+                                        <TableCell className="text-right">{item.productName}</TableCell>
+                                        <TableCell className="text-right">{item.quantity}</TableCell>
+                                        <TableCell className="text-right">{new Intl.NumberFormat('en-US').format(item.unitPrice)}</TableCell>
+                                        <TableCell className="text-left font-semibold">{new Intl.NumberFormat('en-US').format(item.quantity * item.unitPrice)}</TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="text-center">هیچ کاڵایەک بۆ ئەم پسوولەیە تۆمار نەکراوە.</TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                    <div className="mt-4 space-y-2 text-left p-4 border-t">
+                         <div className="flex justify-between"><span>کۆی کاڵاکان:</span><span className="font-medium">{new Intl.NumberFormat('en-US').format(subTotal)}</span></div>
+                        <div className="flex justify-between"><span>تێچووی گومرگ:</span><span className="font-medium">{new Intl.NumberFormat('en-US').format(formData.customsFee || 0)}</span></div>
+                        <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2"><span>کۆی گشتی:</span><span>{new Intl.NumberFormat('en-US').format(totalAmount)}</span></div>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}

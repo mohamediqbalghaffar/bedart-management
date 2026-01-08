@@ -25,6 +25,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
+import { PurchaseDetails } from './components/purchase-details';
 
 
 // Matches the structure in backend.json
@@ -51,6 +52,7 @@ type EnrichedBuyingForm = WithId<BuyingFormType> & {
 function PurchasesList() {
     const firestore = useFirestore();
     const { toast } = useToast();
+    const [selectedFormId, setSelectedFormId] = useState<string | null>(null);
 
     const buyingFormsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -136,7 +138,7 @@ function PurchasesList() {
                             <TableHead className="text-right">دابینکەر</TableHead>
                             <TableHead className="text-right">بەروار</TableHead>
                             <TableHead className="text-right">کۆی گشتی</TableHead>
-                            <TableHead className="text-right">کارەکان</TableHead>
+                            <TableHead className="text-left">کردارەکان</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -160,8 +162,8 @@ function PurchasesList() {
                                       {new Intl.NumberFormat('en-US').format(form.totalAmount || 0)}
                                     </Badge>
                                 </TableCell>
-                                <TableCell className="text-right">
-                                    <div className="flex items-center justify-end gap-2">
+                                <TableCell className="text-left">
+                                    <div className="flex items-center justify-start gap-2">
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
                                                 <Button variant="ghost" size="icon">
@@ -177,15 +179,25 @@ function PurchasesList() {
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
                                                 <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => handleDelete(form.id)}>
+                                                <AlertDialogAction onClick={() => handleDelete(form.id)} className="bg-destructive hover:bg-destructive/90">
                                                     بەڵێ، بسڕەوە
                                                 </AlertDialogAction>
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
-                                        <Button variant="ghost" size="icon">
-                                            <FileSpreadsheet className="h-4 w-4" />
-                                        </Button>
+                                        <Dialog>
+                                            <DialogTrigger asChild>
+                                                <Button variant="ghost" size="icon">
+                                                    <FileSpreadsheet className="h-4 w-4" />
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent className="sm:max-w-2xl" dir="rtl">
+                                                <DialogHeader>
+                                                    <DialogTitle>وردەکارییەکانی پسوولەی کڕین</DialogTitle>
+                                                </DialogHeader>
+                                                <PurchaseDetails formId={form.id} />
+                                            </DialogContent>
+                                        </Dialog>
                                     </div>
                                 </TableCell>
                             </TableRow>
