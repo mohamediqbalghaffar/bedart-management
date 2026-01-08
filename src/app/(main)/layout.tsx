@@ -9,8 +9,6 @@ export default function MainLayout({
   children,
 }: {
   children: React.ReactNode;
-  params?: any;
-  searchParams?: any;
 }) {
   const [hasMounted, setHasMounted] = useState(false);
 
