@@ -16,10 +16,6 @@ export default function MainLayout({
     setHasMounted(true);
   }, []);
 
-  if (!hasMounted) {
-    return null;
-  }
-
   return (
     <SidebarProvider>
       <div className="flex min-h-screen">
@@ -29,7 +25,7 @@ export default function MainLayout({
         <main
           className={cn(
             "flex-1 transition-[margin-left] duration-200 ease-linear",
-            "md:ml-[16rem] group-data-[sidebar-state=collapsed]:md:ml-[3.5rem]"
+            hasMounted && "md:ml-[16rem] group-data-[sidebar-state=collapsed]:md:ml-[3.5rem]"
           )}
         >
           {children}
