@@ -12,14 +12,15 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, PlusCircle, Trash2, List } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useFirestore, setDocumentNonBlocking, doc, runTransaction, getDoc, collection } from "@/firebase";
+import { useFirestore, setDocumentNonBlocking, doc, runTransaction, getDoc, collection, getDocs } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ProductSelectorDialog } from "../../components/product-selector-dialog";
+import { Loader2 } from "lucide-react";
 
 
 const salesFormSchema = z.object({
@@ -48,10 +49,18 @@ const salesFormSchema = z.object({
 
 type SalesFormValues = z.infer<typeof salesFormSchema>;
 
-export function SalesForm() {
+type SalesFormProps = {
+    formId?: string | null;
+    onSave?: () => void;
+};
+
+
+export function SalesForm({ formId, onSave }: SalesFormProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
-  
+  const [isLoading, setIsLoading] = useState(false);
+  const [originalItems, setOriginalItems] = useState<any[]>([]);
+
   const form = useForm<SalesFormValues>({
     resolver: zodResolver(salesFormSchema),
     defaultValues: {
@@ -68,6 +77,55 @@ export function SalesForm() {
       payments: [],
     },
   });
+
+  useEffect(() => {
+    async function fetchFormData() {
+      if (formId && firestore) {
+        setIsLoading(true);
+        try {
+          const formRef = doc(firestore, 'selling_forms', formId);
+          const formSnap = await getDoc(formRef);
+
+          if (formSnap.exists()) {
+            const data = formSnap.data();
+            
+            const itemsRef = collection(firestore, `selling_forms/${formId}/products`);
+            const itemsSnap = await getDocs(itemsRef);
+            const items = itemsSnap.docs.map(d => ({...d.data()}));
+            
+            const paymentsRef = collection(firestore, `selling_forms/${formId}/payments`);
+            const paymentsSnap = await getDocs(paymentsRef);
+            const payments = paymentsSnap.docs.map(d => ({
+                ...d.data(),
+                date: parseISO(d.data().paymentDate), // parse string back to Date
+            }));
+
+            setOriginalItems(items); // Store original items for stock calculation
+
+            form.reset({
+              ...data,
+              issueDate: data.issueDate ? parseISO(data.issueDate) : new Date(),
+              items: items.map(item => ({
+                  product: item.productName,
+                  quantity: item.quantity,
+                  unitPrice: item.unitPrice,
+              })),
+              payments: payments as any,
+            });
+
+          }
+        } catch (error) {
+          console.error("Error fetching form data:", error);
+          toast({ variant: 'destructive', title: "Error fetching data" });
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    fetchFormData();
+  }, [formId, firestore, form, toast]);
+
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -126,35 +184,48 @@ export function SalesForm() {
     }
     
     try {
-        // Run all stock updates
-        for (const item of data.items) {
-          const productDocId = item.product.toLowerCase().replace(/[^a-z0-9]/g, '-');
-          const productRef = doc(firestore, 'products', productDocId);
-          try {
-            await runTransaction(firestore, async (transaction) => {
-                const productDoc = await transaction.get(productRef);
-                if (!productDoc.exists()) {
-                    throw new Error(`Product "${item.product}" not found in inventory.`);
-                }
-                const currentQuantity = productDoc.data().currentQuantity || 0;
-                if (currentQuantity < item.quantity) {
-                     throw new Error(`Insufficient stock for ${item.product}. Only ${currentQuantity} available.`);
-                }
-                const newQuantity = currentQuantity - item.quantity;
-                transaction.update(productRef, { currentQuantity: newQuantity });
+        const itemChanges = new Map<string, number>();
+
+        // Calculate changes from original items for edits
+        if(formId){
+            originalItems.forEach(origItem => {
+                const docId = origItem.productName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                itemChanges.set(docId, (itemChanges.get(docId) || 0) + origItem.quantity); // Add back to stock
             });
-          } catch (e: any) {
-              toast({
-                  variant: "destructive",
-                  title: "هەڵە لە بڕی کاڵا",
-                  description: e.message,
-              });
-              // Stop the form submission if any transaction fails
-              return;
-          }
         }
 
-        const sellingFormRef = doc(collection(firestore, "selling_forms"));
+        // Calculate new item quantities
+        data.items.forEach(newItem => {
+             const docId = newItem.product.toLowerCase().replace(/[^a-z0-9]/g, '-');
+             itemChanges.set(docId, (itemChanges.get(docId) || 0) - newItem.quantity); // Remove from stock
+        });
+        
+        // Apply stock changes via transaction
+        for (const [docId, qtyChange] of itemChanges.entries()) {
+            if(qtyChange === 0) continue;
+            
+            const productRef = doc(firestore, 'products', docId);
+            try {
+                await runTransaction(firestore, async (transaction) => {
+                    const productDoc = await transaction.get(productRef);
+                    if (!productDoc.exists()) {
+                        throw new Error(`Product "${docId}" not found.`);
+                    }
+                    const currentQuantity = productDoc.data().currentQuantity || 0;
+                    const newQuantity = currentQuantity + qtyChange;
+                    if(newQuantity < 0){
+                        throw new Error(`Insufficient stock for ${productDoc.data().productName}. Only ${currentQuantity - qtyChange} were originally sold and ${currentQuantity} are available.`);
+                    }
+                    transaction.update(productRef, { currentQuantity: newQuantity });
+                });
+            } catch (e: any) {
+                toast({ variant: "destructive", title: "هەڵە لە بڕی کاڵا", description: e.message });
+                return;
+            }
+        }
+
+
+        const sellingFormRef = formId ? doc(firestore, "selling_forms", formId) : doc(collection(firestore, "selling_forms"));
         const sellingFormId = sellingFormRef.id;
 
         const { items, payments, ...mainData } = data;
@@ -169,6 +240,18 @@ export function SalesForm() {
         };
         
         await setDocumentNonBlocking(sellingFormRef, sellingFormData, { merge: true });
+        
+        // For edits, we might need to delete old items/payments first. A simpler approach for now is just to overwrite.
+        // A more robust solution would handle deletions of removed items.
+        
+        // Delete existing items and payments before adding new ones
+        if (formId) {
+            const existingItems = await getDocs(collection(firestore, `selling_forms/${formId}/products`));
+            await Promise.all(existingItems.docs.map(d => deleteDoc(d.ref)));
+            const existingPayments = await getDocs(collection(firestore, `selling_forms/${formId}/payments`));
+            await Promise.all(existingPayments.docs.map(p => deleteDoc(p.ref)));
+        }
+
 
         const itemPromises = items.map(item => {
             const productSubCollectionRef = doc(collection(firestore, `selling_forms/${sellingFormId}/products`));
@@ -200,10 +283,13 @@ export function SalesForm() {
 
         toast({
             title: "سەرکەوتوو بوو!",
-            description: "فۆڕمی فرۆشتن بە سەرکەوتوویی پاشەکەوت کرا و کۆگا نوێکرایەوە.",
+            description: `فۆڕمی فرۆشتن بە سەرکەوتوویی ${formId ? 'نوێکرایەوە' : 'پاشەکەوت کرا'}.`,
             className: "bg-accent text-accent-foreground",
         });
-        form.reset();
+        
+        if (onSave) onSave();
+        if(!formId) form.reset();
+
 
     } catch (error: any) {
         console.error("Error saving sales form:", error);
@@ -213,6 +299,10 @@ export function SalesForm() {
             description: error.message || "پاشەکەوتکردنی فۆڕمی فرۆشتن سەرکەوتوو نەبوو.",
         });
     }
+  }
+
+  if (isLoading) {
+    return <div className="flex h-96 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   return (
@@ -306,7 +396,7 @@ export function SalesForm() {
                                           <DialogTrigger asChild>
                                             <Button variant="outline" size="icon"><List className="h-4 w-4" /></Button>
                                           </DialogTrigger>
-                                          <DialogContent>
+                                          <DialogContent dir="rtl">
                                               <DialogHeader>
                                                   <DialogTitle>لیستی کاڵاکان</DialogTitle>
                                               </DialogHeader>
@@ -459,7 +549,7 @@ export function SalesForm() {
              <div className="space-y-4 border-t pt-6">
                 <h3 className="text-lg font-medium">پارە وەرگیراوەکان (قیست)</h3>
                 <Table>
-                    <TableHeader><TableRow><TableHead className="w-1/4">بەروار</TableHead><TableHead>بڕ</TableHead><TableHead>شێواز</TableHead><TableHead>تێبینی</TableHead><TableHead></TableHead></TableRow></TableHeader>
+                    <TableHeader><TableRow><TableHead className="w-1/4 text-center">بەروار</TableHead><TableHead className="text-center">بڕ</TableHead><TableHead className="text-center">شێواز</TableHead><TableHead className="text-center">تێبینی</TableHead><TableHead></TableHead></TableRow></TableHeader>
                     <TableBody>
                         {paymentFields.map((field, index) => (
                            <TableRow key={field.id}>
@@ -525,7 +615,7 @@ export function SalesForm() {
 
         <div className="flex justify-end pt-6 border-t">
             <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "...پاشەکەوت دەکرێت" : "پاشەکەوتکردنی فۆڕم"}
+                {form.formState.isSubmitting ? "...پاشەکەوت دەکرێت" : (formId ? "نوێکردنەوەی فۆڕم" : "پاشەکەوتکردنی فۆڕم")}
             </Button>
         </div>
       </form>
