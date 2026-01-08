@@ -1,3 +1,34 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "user-avatar-1",
+      "description": "User avatar 1",
+      "imageUrl": "https://images.unsplash.com/photo-1698510047345-ff32de8a3b74?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxtYW4lMjBmYWNlfGVufDB8fHx8MTc2Nzc4MzEzM3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "man face"
+    },
+    {
+      "id": "product-bed",
+      "description": "Modern bed with linens",
+      "imageUrl": "https://images.unsplash.com/photo-1678889284808-6913951fc6db?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxtb2Rlcm4lMjBiZWR8ZW58MHx8fHwxNzY3ODYwMjM3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "modern bed"
+    },
+    {
+      "id": "product-sofa",
+      "description": "Comfortable sofa",
+      "imageUrl": "https://images.unsplash.com/photo-1598588435975-25effe4954ef?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxncmF5JTIwc29mYXxlbnwwfHx8fDE3Njc4NjAyMzZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "gray sofa"
+    },
+    {
+      "id": "product-chair",
+      "description": "Stylish armchair",
+      "imageUrl": "https://images.unsplash.com/photo-1579656592043-a20e25a4aa4b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8YXJtY2hhaXJ8ZW58MHx8fHwxNzY3NzcyMTIwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "armchair"
+    },
+    {
+      "id": "product-table",
+      "description": "Wooden dining table",
+      "imageUrl": "https://images.unsplash.com/photo-1614597445336-8a67e9314d91?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxkaW5pbmclMjB0YWJsZXxlbnwwfHx8fDE3Njc4NTIyODR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "dining table"
+    }
+  ]
 }
