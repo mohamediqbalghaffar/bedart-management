@@ -5,13 +5,14 @@ import React from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Loader2 } from "lucide-react";
+import { PlusCircle, Loader2, FileSpreadsheet } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { SalesForm } from "./components/sales-form";
 import { useFirestore, useCollection, useMemoFirebase, collection } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
+import { SalesDetails } from './components/sales-details';
 
 // Matches the structure in backend.json for SellingForm
 type SellingFormType = {
@@ -46,18 +47,19 @@ function SalesList() {
                             <TableHead>بەروار</TableHead>
                             <TableHead>بڕ</TableHead>
                             <TableHead>بارودۆخ</TableHead>
+                            <TableHead className="text-left">کردارەکان</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoadingSales ? (
                              <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center">
+                                <TableCell colSpan={6} className="h-24 text-center">
                                     <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                                 </TableCell>
                             </TableRow>
                         ) : !sales || sales.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">هیچ فرۆشێک تۆمار نەکراوە.</TableCell>
+                                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">هیچ فرۆشێک تۆمار نەکراوە.</TableCell>
                             </TableRow>
                         ) : (
                             sales.map((sale) => (
@@ -73,6 +75,21 @@ function SalesList() {
                                     >
                                         {sale.paymentStatus === 'Fully Paid' ? 'هەمووی دراوە' : sale.paymentStatus === 'Partially Paid' ? 'بەشێکی دراوە' : 'نەدراوە'}
                                     </Badge>
+                                </TableCell>
+                                <TableCell className="text-left">
+                                    <Dialog>
+                                        <DialogTrigger asChild>
+                                            <Button variant="ghost" size="icon">
+                                                <FileSpreadsheet className="h-4 w-4" />
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent className="sm:max-w-2xl" dir="rtl">
+                                            <DialogHeader>
+                                                <DialogTitle>وردەکارییەکانی فۆڕمی فرۆشتن</DialogTitle>
+                                            </DialogHeader>
+                                            <SalesDetails formId={sale.id} />
+                                        </DialogContent>
+                                    </Dialog>
                                 </TableCell>
                             </TableRow>
                         )))}

@@ -184,7 +184,7 @@ export function SalesForm() {
         const sellingFormData = {
             ...mainData,
             id: sellingFormId,
-            creatorId: "system",
+            creatorId: "system", // This should be the logged-in user's ID
             issueDate: format(data.issueDate, "yyyy-MM-dd"),
             totalPrice: totalAmount,
             remainingBalance: remainingBalance,
@@ -198,26 +198,31 @@ export function SalesForm() {
             
             const productSubCollectionRef = doc(collection(firestore, `selling_forms/${sellingFormId}/products`));
             const productData = {
-                ...item,
                 id: productSubCollectionRef.id,
                 sellingFormId: sellingFormId,
                 productId: productDocId,
+                productName: item.product,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
                 lineTotal: item.quantity * item.unitPrice,
             };
             await setDocumentNonBlocking(productSubCollectionRef, productData, { merge: true });
 
-            // Update stock in products collection
-             await runTransaction(firestore, async (transaction) => {
+            // Use a transaction to reliably update stock
+            await runTransaction(firestore, async (transaction) => {
                 const productDoc = await transaction.get(productRef);
-                if (productDoc.exists()) {
-                    const currentQuantity = productDoc.data().currentQuantity || 0;
-                    const newQuantity = Math.max(0, currentQuantity - item.quantity);
-                    transaction.update(productRef, { currentQuantity: newQuantity });
-                } else {
-                    // Product doesn't exist, which is an issue if we are selling it.
-                    // For now, we will log a warning.
-                    console.warn(`Product with ID ${productDocId} not found in stock, but was sold.`);
+                if (!productDoc.exists()) {
+                    // This case should ideally not happen if products are selected from a list
+                    // but as a fallback, we can log it.
+                    console.warn(`Attempted to sell product "${item.product}" which does not exist in inventory.`);
+                    throw `Product "${item.product}" not found.`;
                 }
+                const currentQuantity = productDoc.data().currentQuantity || 0;
+                if (currentQuantity < item.quantity) {
+                    throw new Error(`Insufficient stock for ${item.product}. Only ${currentQuantity} available.`);
+                }
+                const newQuantity = currentQuantity - item.quantity;
+                transaction.update(productRef, { currentQuantity: newQuantity });
             });
         });
 
