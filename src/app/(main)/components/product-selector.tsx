@@ -94,21 +94,6 @@ export function ProductSelector<T extends FormWithItems>({ form, index }: Produc
                   <CommandEmpty>
                     <div className='p-4 text-sm'>
                         هیچ کاڵایەک نەدۆزرایەوە.
-                        <Button
-                            variant="link"
-                            className="p-1 h-auto"
-                            onClick={() => {
-                                const inputValue = form.getValues(`items.${index}.product`);
-                                const searchInput = document.querySelector('input[cmdk-input]') as HTMLInputElement;
-                                if(searchInput && searchInput.value) {
-                                    form.setValue(`items.${index}.product`, searchInput.value, { shouldValidate: true });
-                                    form.setValue(`items.${index}.unitPrice`, 0);
-                                }
-                                setOpen(false);
-                            }}
-                        >
-                           زیادکردنی وەک کاڵای نوێ
-                        </Button>
                     </div>
                   </CommandEmpty>
                   <CommandGroup>
@@ -116,13 +101,18 @@ export function ProductSelector<T extends FormWithItems>({ form, index }: Produc
                       <CommandItem
                         value={product.value}
                         key={product.value}
-                        onSelect={(currentValue) => {
-                          const selectedOption = productOptions.find(p => p.value === currentValue);
+                        onSelect={(selectedValue) => {
+                          const selectedOption = productOptions.find(p => p.value === selectedValue);
                           if (selectedOption) {
-                            form.setValue(`items.${index}.product`, selectedOption.label);
+                            form.setValue(`items.${index}.product`, selectedOption.label, { shouldValidate: true });
                             if (selectedOption.unitPrice) {
                                 form.setValue(`items.${index}.unitPrice`, selectedOption.unitPrice, { shouldValidate: true });
+                            } else {
+                                form.setValue(`items.${index}.unitPrice`, 0, { shouldValidate: true });
                             }
+                          } else {
+                             form.setValue(`items.${index}.product`, selectedValue, { shouldValidate: true });
+                             form.setValue(`items.${index}.unitPrice`, 0, { shouldValidate: true });
                           }
                           setOpen(false);
                         }}
