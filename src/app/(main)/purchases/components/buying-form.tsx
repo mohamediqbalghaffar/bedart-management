@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useFieldArray, UseFormReturn } from "react-hook-form";
 import * as z from "zod";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Download, Loader2, PlusCircle, Trash2 } from "lucide-react";
+import { CalendarIcon, Download, Loader2, PlusCircle, Trash2, Check, ChevronsUpDown } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -20,14 +20,18 @@ import { useToast } from "@/hooks/use-toast";
 import { WithId } from "@/firebase/firestore/use-collection";
 import { analyzePurchaseExcel } from "@/ai/flows/analyze-purchase-excel";
 import * as XLSX from 'xlsx';
-import { errorEmitter } from "@/firebase/error-emitter";
-import { FirestorePermissionError } from "@/firebase/errors";
 import { Textarea } from "@/components/ui/textarea";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 
-// Define Supplier type based on your Firestore structure
+// Define types based on your Firestore structure
 type Supplier = {
   id: string;
   supplierName: string;
+};
+
+type Product = {
+    id: string;
+    productName: string;
 };
 
 const buyingFormSchema = z.object({
@@ -45,6 +49,71 @@ const buyingFormSchema = z.object({
 });
 
 type BuyingFormValues = z.infer<typeof buyingFormSchema>;
+
+
+function ProductCombobox({ form, index }: { form: UseFormReturn<BuyingFormValues>, index: number }) {
+  const firestore = useFirestore();
+  const productsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'products') : null, [firestore]);
+  const { data: products } = useCollection<Product>(productsQuery);
+
+  const [open, setOpen] = useState(false);
+  const [inputValue, setInputValue] = useState(form.watch(`items.${index}.product`));
+  
+  const handleSelect = (productName: string) => {
+    form.setValue(`items.${index}.product`, productName);
+    setInputValue(productName);
+    setOpen(false);
+  };
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setInputValue(value);
+      form.setValue(`items.${index}.product`, value);
+      if(!open) setOpen(true);
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <div className="relative">
+          <Input
+            placeholder="ناوی کاڵا..."
+            value={inputValue}
+            onChange={handleInputChange}
+            className="w-full"
+          />
+          <ChevronsUpDown className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 shrink-0 opacity-50" />
+        </div>
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+        <Command>
+          <CommandInput placeholder="گەڕان بۆ کاڵا..." />
+          <CommandList>
+            <CommandEmpty>هیچ کاڵایەک نەدۆزرایەوە.</CommandEmpty>
+            <CommandGroup>
+              {products?.map((product) => (
+                <CommandItem
+                  key={product.id}
+                  value={product.productName}
+                  onSelect={() => handleSelect(product.productName)}
+                >
+                  <Check
+                    className={cn(
+                      "ml-2 h-4 w-4",
+                      form.getValues(`items.${index}.product`) === product.productName ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {product.productName}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 
 function ExcelImportButton({ form }: { form: UseFormReturn<BuyingFormValues> }) {
     const [isLoading, setIsLoading] = React.useState(false);
@@ -200,7 +269,7 @@ export function BuyingForm() {
         await setDoc(buyingFormRef, buyingFormData);
 
         const productPromises = items.map(async (item) => {
-            const productDocId = item.product.toLowerCase().replace(/\s+/g, '-');
+            const productDocId = item.product.toLowerCase().replace(/[^a-z0-9]/g, '-');
             const productRef = doc(firestore, 'products', productDocId);
             const productSubCollectionRef = doc(collection(firestore, `buying_forms/${buyingFormId}/products`));
             
@@ -211,7 +280,7 @@ export function BuyingForm() {
                 productName: item.product,
                 quantity: item.quantity,
                 unitPrice: item.unitPrice,
-                landedCost: item.unitPrice + ((customsFee || 0) / items.length) / item.quantity,
+                landedCost: item.unitPrice + ((customsFee || 0) / items.reduce((sum, i) => sum + i.quantity, 0)),
             };
             
             await setDoc(productSubCollectionRef, productData);
@@ -370,7 +439,7 @@ export function BuyingForm() {
                                 <FormField control={form.control} name={`items.${index}.product`} render={({ field }) => (
                                   <FormItem>
                                     <FormControl>
-                                      <Textarea placeholder="ناوی کاڵا و سایز" {...field} className="h-10"/>
+                                        <ProductCombobox form={form} index={index} />
                                     </FormControl>
                                     <FormMessage />
                                   </FormItem>
