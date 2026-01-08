@@ -15,7 +15,6 @@ import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SmartSuggestions } from "./smart-suggestions";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 
 const salesFormSchema = z.object({
   customerName: z.string().min(1, { message: "ناوی کڕیار پێویستە." }),
@@ -44,7 +43,6 @@ export function SalesForm() {
   const [formNumber, setFormNumber] = useState("");
   
   useEffect(() => {
-    // Simulate auto-incrementing form number from a real source in the future
     setFormNumber(String(Math.floor(Math.random() * 1000) + 100));
   }, []);
   
@@ -101,8 +99,6 @@ export function SalesForm() {
 
   function onSubmit(data: SalesFormValues) {
     console.log({ formNumber, ...data });
-    // Here you would typically send the data to your backend API
-    // to save the sale, update stock, and create an expense for delivery.
   }
 
   const handleSelectSuggestion = (suggestion: string) => {
@@ -115,7 +111,6 @@ export function SalesForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" dir="rtl">
-        {/* Header */}
         <div className="flex justify-between items-start p-1">
             <div className="space-y-1">
                 <p className="font-bold text-lg">No. {formNumber}</p>
@@ -160,7 +155,6 @@ export function SalesForm() {
             />
         </div>
 
-        {/* Customer Info */}
         <div className="space-y-2 p-1 border-t pt-4">
           <div className="flex items-center gap-4">
             <FormField control={form.control} name="customerName" render={({ field }) => ( <FormItem className="flex-1 flex items-center gap-2"> <FormLabel>بەڕێز:</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
@@ -169,7 +163,6 @@ export function SalesForm() {
           <FormField control={form.control} name="customerAddress" render={({ field }) => ( <FormItem className="flex items-center gap-2"> <FormLabel>ناونیشان:</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
         </div>
         
-        {/* Items Table */}
         <div className="relative border-t pt-6">
             <Table>
                 <TableHeader>
@@ -227,17 +220,35 @@ export function SalesForm() {
             </Button>
         </div>
 
-        {/* Footer */}
         <div className="flex justify-between items-start gap-8 pt-6 border-t">
             <div className="space-y-4">
-                {/* Placeholder for Signature */}
                 <div className="space-y-2">
                     <FormLabel>واژۆ</FormLabel>
                     <div className="w-48 h-16 border-b-2 border-dashed"></div>
                 </div>
-                {/* Payment Fields */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                  <FormField control={form.control} name="paymentType" render={({ field }) => ( <FormItem> <FormLabel>جۆری پارەدان</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}> <FormControl> <SelectTrigger> <SelectValue placeholder="جۆرێک هەڵبژێرە" /> </SelectTrigger> </FormControl> <SelectContent> <SelectItem value="After Delivery">دوای گەیاندن</SelectItem> <SelectItem value="Installments">قیست</SelectItem> <SelectItem value="Pre-order">داواکاری پێشوەختە</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )} />
+                  <FormField
+                    control={form.control}
+                    name="paymentType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>جۆری پارەدان</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="جۆرێک هەڵبژێرە" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="After Delivery">دوای گەیاندن</SelectItem>
+                            <SelectItem value="Installments">قیست</SelectItem>
+                            <SelectItem value="Pre-order">داواکاری پێشوەختە</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <FormField control={form.control} name="paymentStatus" render={({ field }) => ( <FormItem> <FormLabel>دۆخی پارەدان</FormLabel> <FormControl><Input {...field} readOnly className="font-semibold bg-secondary/70 border-none" /></FormControl> <FormMessage /> </FormItem> )} />
                 </div>
             </div>
