@@ -183,16 +183,14 @@ const Sidebar = React.forwardRef<
     if (!hasMounted) {
       // On the server or during the first client render, return a static placeholder.
       // This ensures the initial render is identical on both server and client.
-      return (
-        <div
-          ref={ref}
-          className={cn(
-            "hidden md:block text-sidebar-foreground w-[--sidebar-width]"
-          )}
-        >
-          {/* You can put a skeleton loader here if you want */}
-        </div>
-      );
+      return <div
+        ref={ref}
+        className={cn(
+          "hidden md:block text-sidebar-foreground w-[--sidebar-width]"
+        )}
+      >
+        {/* You can put a skeleton loader here if you want */}
+      </div>;
     }
 
     if (collapsible === "none") {
