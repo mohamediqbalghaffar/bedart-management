@@ -18,7 +18,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase, collection, doc, runTransaction } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { WithId } from "@/firebase/firestore/use-collection";
 
 
@@ -55,77 +54,46 @@ const salesFormSchema = z.object({
 
 type SalesFormValues = z.infer<typeof salesFormSchema>;
 
-function ProductCombobox({ form, index }: { form: UseFormReturn<SalesFormValues>, index: number }) {
+function ProductSelector({ form, index }: { form: UseFormReturn<SalesFormValues>, index: number }) {
   const firestore = useFirestore();
   const productsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'products') : null, [firestore]);
   const { data: products } = useCollection<Product>(productsQuery);
-  const [open, setOpen] = React.useState(false);
-  
-  const currentFieldValue = form.watch(`items.${index}.product`);
+
+  const handleProductChange = (productName: string) => {
+    form.setValue(`items.${index}.product`, productName, { shouldValidate: true });
+    const selectedProduct = products?.find(p => p.productName === productName);
+    if (selectedProduct && selectedProduct.unitPrice) {
+      form.setValue(`items.${index}.unitPrice`, selectedProduct.unitPrice, { shouldValidate: true });
+    }
+  };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <FormControl>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="w-full justify-between font-normal"
-          >
-            {currentFieldValue
-              ? products?.find((p) => p.productName.toLowerCase() === currentFieldValue.toLowerCase())?.productName || currentFieldValue
-              : "کاڵایەک هەڵبژێرە..."}
-            <ChevronsUpDown className="mr-auto h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </FormControl>
-      </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-        <Command
-            filter={(value, search) => {
-                const product = products?.find(p => p.productName.toLowerCase() === value.toLowerCase());
-                if(product?.productName.toLowerCase().includes(search.toLowerCase())) return 1;
-                return 0;
-            }}
-        >
-          <CommandInput placeholder="گەڕان بۆ کاڵا..." />
-          <CommandList>
-            <CommandEmpty>هیچ کاڵایەک نەدۆزرایەوە.</CommandEmpty>
-            <CommandGroup>
+    <FormField
+      control={form.control}
+      name={`items.${index}.product`}
+      render={({ field }) => (
+        <FormItem>
+          <Select onValueChange={handleProductChange} value={field.value} dir="rtl">
+            <FormControl>
+              <SelectTrigger>
+                <SelectValue placeholder="کاڵایەک هەڵبژێرە..." />
+              </SelectTrigger>
+            </FormControl>
+            <SelectContent>
               {products?.map((product) => (
-                <CommandItem
-                  key={product.id}
-                  value={product.productName}
-                  onSelect={(selectedValue) => {
-                    const selectedProduct = products.find(p => p.productName.toLowerCase() === selectedValue.toLowerCase());
-                    if (selectedProduct) {
-                         form.setValue(`items.${index}.product`, selectedProduct.productName, { shouldValidate: true });
-                         if(selectedProduct.unitPrice) {
-                            form.setValue(`items.${index}.unitPrice`, selectedProduct.unitPrice, { shouldValidate: true });
-                         }
-                    }
-                    setOpen(false);
-                  }}
-                >
-                  <Check
-                    className={cn(
-                      "ml-2 h-4 w-4",
-                      currentFieldValue?.toLowerCase() === product.productName.toLowerCase()
-                        ? "opacity-100"
-                        : "opacity-0"
-                    )}
-                  />
-                  <div className="flex justify-between w-full">
-                     <span>{product.productName}</span>
-                     <span className="text-xs text-muted-foreground">({product.currentQuantity} دانە)</span>
-                  </div>
-                </CommandItem>
+                <SelectItem key={product.id} value={product.productName}>
+                    <div className="flex justify-between w-full">
+                       <span>{product.productName}</span>
+                       <span className="text-xs text-muted-foreground ml-2">({product.currentQuantity} دانە)</span>
+                    </div>
+                </SelectItem>
               ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+            </SelectContent>
+          </Select>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
   );
 }
 
@@ -360,16 +328,7 @@ export function SalesForm() {
                     {fields.map((field, index) => (
                         <TableRow key={field.id}>
                             <TableCell className="align-top">
-                                <FormField
-                                    control={form.control}
-                                    name={`items.${index}.product`}
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <ProductCombobox form={form} index={index} />
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                                <ProductSelector form={form} index={index} />
                             </TableCell>
                             <TableCell className="align-top">
                                 <FormField control={form.control} name={`items.${index}.quantity`} render={({ field }) => (<FormItem><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />

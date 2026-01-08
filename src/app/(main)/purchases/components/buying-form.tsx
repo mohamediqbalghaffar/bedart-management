@@ -21,7 +21,6 @@ import { WithId } from "@/firebase/firestore/use-collection";
 import { analyzePurchaseExcel } from "@/ai/flows/analyze-purchase-excel";
 import * as XLSX from 'xlsx';
 import { Textarea } from "@/components/ui/textarea";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 
 // Define types based on your Firestore structure
 type Supplier = {
@@ -32,6 +31,7 @@ type Supplier = {
 type Product = {
     id: string;
     productName: string;
+    unitPrice?: number;
 };
 
 const buyingFormSchema = z.object({
@@ -50,82 +50,66 @@ const buyingFormSchema = z.object({
 
 type BuyingFormValues = z.infer<typeof buyingFormSchema>;
 
-
-function ProductCombobox({ form, index }: { form: UseFormReturn<BuyingFormValues>, index: number }) {
+function ProductSelector({ form, index }: { form: UseFormReturn<BuyingFormValues>, index: number }) {
   const firestore = useFirestore();
   const productsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'products') : null, [firestore]);
   const { data: products } = useCollection<Product>(productsQuery);
-  const [open, setOpen] = useState(false);
-  const [searchValue, setSearchValue] = useState('');
+  const [newProductName, setNewProductName] = useState('');
 
-  const currentFieldValue = form.watch(`items.${index}.product`);
+  const handleProductChange = (value: string) => {
+    if (value === 'add_new') {
+        if(newProductName) {
+            form.setValue(`items.${index}.product`, newProductName, { shouldValidate: true });
+        }
+    } else {
+        form.setValue(`items.${index}.product`, value, { shouldValidate: true });
+        const selectedProduct = products?.find(p => p.productName === value);
+        if (selectedProduct && selectedProduct.unitPrice) {
+            form.setValue(`items.${index}.unitPrice`, selectedProduct.unitPrice, { shouldValidate: true });
+        }
+    }
+  };
+  
+  const currentProduct = form.watch(`items.${index}.product`);
+  const isNewProduct = products && !products.find(p => p.productName === currentProduct);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <FormControl>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="w-full justify-between font-normal"
-          >
-            {currentFieldValue || "کاڵایەک هەڵبژێرە..."}
-            <ChevronsUpDown className="mr-auto h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </FormControl>
-      </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-        <Command
-            filter={(value, search) => {
-                if (value.toLowerCase().includes(search.toLowerCase())) return 1;
-                return 0;
-            }}
-        >
-          <CommandInput
-            placeholder="گەڕان بۆ کاڵا..."
-            value={searchValue}
-            onValueChange={setSearchValue}
-          />
-          <CommandList>
-            <CommandEmpty>
-              <Button
-                variant="ghost"
-                className="w-full"
-                onClick={() => {
-                  form.setValue(`items.${index}.product`, searchValue, { shouldValidate: true });
-                  setOpen(false);
-                }}
-              >
-                زیادکردنی کاڵای نوێ: "{searchValue}"
-              </Button>
-            </CommandEmpty>
-            <CommandGroup>
-              {products?.map((product) => (
-                <CommandItem
-                  key={product.id}
-                  value={product.productName}
-                  onSelect={(currentValue) => {
-                    form.setValue(`items.${index}.product`, currentValue, { shouldValidate: true });
-                    setOpen(false);
-                  }}
-                >
-                  <Check
-                    className={cn(
-                      "ml-2 h-4 w-4",
-                      currentFieldValue?.toLowerCase() === product.productName.toLowerCase()
-                        ? "opacity-100"
-                        : "opacity-0"
-                    )}
-                  />
-                  {product.productName}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+    <div className="space-y-2">
+        <FormField
+        control={form.control}
+        name={`items.${index}.product`}
+        render={({ field }) => (
+            <FormItem>
+            <Select onValueChange={handleProductChange} value={isNewProduct ? 'add_new' : field.value} dir="rtl">
+                <FormControl>
+                <SelectTrigger>
+                    <SelectValue placeholder="کاڵایەک هەڵبژێرە..." />
+                </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                    {products?.map((product) => (
+                        <SelectItem key={product.id} value={product.productName}>
+                            {product.productName}
+                        </SelectItem>
+                    ))}
+                    <SelectItem value="add_new">
+                        <span className="text-primary">کاڵای نوێ زیاد بکە...</span>
+                    </SelectItem>
+                </SelectContent>
+            </Select>
+            <FormMessage />
+            </FormItem>
+        )}
+        />
+        {(isNewProduct || form.getValues(`items.${index}.product`) === '' && products?.length > 0 )&& (
+             <Input 
+                placeholder="ناوی کاڵا نوێیەکە بنووسە"
+                onChange={(e) => setNewProductName(e.target.value)}
+                onBlur={() => handleProductChange('add_new')}
+                defaultValue={isNewProduct ? currentProduct : ''}
+            />
+        )}
+    </div>
   );
 }
 
@@ -312,13 +296,15 @@ export function BuyingForm() {
                         stockLocation: data.stockLocation,
                         currentQuantity: item.quantity,
                         supplierId: data.supplierId,
+                        unitPrice: item.unitPrice,
                     });
                 } else {
                     const newQuantity = (productDoc.data().currentQuantity || 0) + item.quantity;
                     transaction.update(productRef, { 
                         currentQuantity: newQuantity,
                         supplierId: data.supplierId, // Update supplier to the latest one
-                        stockLocation: data.stockLocation // Update stock location
+                        stockLocation: data.stockLocation, // Update stock location
+                        unitPrice: item.unitPrice, // Update to latest price
                     });
                 }
             });
@@ -451,12 +437,7 @@ export function BuyingForm() {
                     {fields.map((field, index) => (
                         <TableRow key={field.id}>
                             <TableCell className="align-top">
-                                <FormField control={form.control} name={`items.${index}.product`} render={({ field }) => (
-                                  <FormItem>
-                                    <ProductCombobox form={form} index={index} />
-                                    <FormMessage />
-                                  </FormItem>
-                                )} />
+                                <ProductSelector form={form} index={index} />
                             </TableCell>
                             <TableCell className="align-top">
                                 <FormField
