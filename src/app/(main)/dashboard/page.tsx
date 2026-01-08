@@ -4,8 +4,8 @@ import React from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { useFirestore, useCollection, useMemoFirebase, collection } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, DollarSign, Users, Archive, AlertCircle } from 'lucide-react';
-import { GlassStatCard } from '@/components/shared/glass-stat-card';
+import { Loader2, DollarSign, Users, Archive, AlertCircle, ShoppingCart } from 'lucide-react';
+import { StatCard } from '@/components/shared/stat-card';
 
 type SellingForm = {
     totalPrice: number;
@@ -70,10 +70,10 @@ function DashboardStats() {
 
     return (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <GlassStatCard title="کۆی گشتی فرۆش" value={currencyFormatter.format(totalRevenue)} description="هەموو فرۆشە تۆمارکراوەکان" />
-            <GlassStatCard title="کۆی گشتی خەرجی" value={currencyFormatter.format(totalExpenses)} description="هەموو خەرجییە تۆمارکراوەکان" />
-            <GlassStatCard title="کڕیارەکان" value={uniqueCustomers.toString()} description="کۆی ژمارەی کڕیارەکان" />
-            <GlassStatCard title="کاڵای کەم لە کۆگا" value={lowStockProducts.toString()} description="کاڵاکان کە لە 5 دانە کەمتریان ماوە" isNegative={lowStockProducts > 0} />
+            <StatCard title="کۆی گشتی فرۆش" value={currencyFormatter.format(totalRevenue)} icon={ShoppingCart} description="هەموو فرۆشە تۆمارکراوەکان" />
+            <StatCard title="کۆی گشتی خەرجی" value={currencyFormatter.format(totalExpenses)} icon={DollarSign} description="هەموو خەرجییە تۆمارکراوەکان" />
+            <StatCard title="کڕیارەکان" value={uniqueCustomers.toString()} icon={Users} description="کۆی ژمارەی کڕیارەکان" />
+            <StatCard title="کاڵای کەم لە کۆگا" value={lowStockProducts.toString()} icon={Archive} description="کاڵاکان کە لە 5 دانە کەمتریان ماوە" isNegative={lowStockProducts > 0} />
         </div>
     );
 }
