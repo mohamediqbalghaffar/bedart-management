@@ -6,12 +6,12 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle, Loader2 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { AddExpenseForm } from "./components/add-expense-form";
 import { useFirestore, useCollection, useMemoFirebase, collection } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 type Expense = {
     date: string;
@@ -91,24 +91,30 @@ export default function ExpensesPage() {
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <PageHeader title="خەرجییەکان" description="بەدواداچوون بۆ هەموو خەرجییەکانی کارەکەت بکە، جێگیر و گۆڕاو.">
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button>
+                {/* Button is now part of the Collapsible trigger, handled inside the Collapsible component */}
+            </PageHeader>
+            
+            <Collapsible>
+                 <div className="flex justify-start mb-4">
+                    <CollapsibleTrigger asChild>
+                         <Button>
                             <PlusCircle />
                             زیادکردنی خەرجی
                         </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
-                        <DialogHeader>
-                            <DialogTitle>خەرجی نوێ زیاد بکە</DialogTitle>
-                             <DialogDescription>
-                                زانیارییەکانی خەرجییە نوێیەکە بنووسە.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <AddExpenseForm />
-                    </DialogContent>
-                </Dialog>
-            </PageHeader>
+                    </CollapsibleTrigger>
+                </div>
+                <CollapsibleContent>
+                    <Card className="mb-8">
+                        <CardHeader>
+                            <CardTitle>خەرجی نوێ زیاد بکە</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                             <AddExpenseForm />
+                        </CardContent>
+                    </Card>
+                </CollapsibleContent>
+            </Collapsible>
+            
             <ExpensesList />
         </div>
     );
