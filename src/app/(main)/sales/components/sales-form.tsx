@@ -60,53 +60,78 @@ function ProductCombobox({ form, index }: { form: UseFormReturn<SalesFormValues>
   const productsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'products') : null, [firestore]);
   const { data: products } = useCollection<Product>(productsQuery);
 
-  const [open, setOpen] = React.useState(false)
+  const [open, setOpen] = React.useState(false);
+  const [inputValue, setInputValue] = useState(form.watch(`items.${index}.product`));
+
+  useEffect(() => {
+    // Sync local state with react-hook-form state
+    const subscription = form.watch((value) => {
+        setInputValue(value.items?.[index]?.product || "");
+    });
+    return () => subscription.unsubscribe();
+  }, [form, index]);
+
+
+  const handleSelect = (product: Product) => {
+    form.setValue(`items.${index}.product`, product.productName, { shouldValidate: true });
+    if (product.unitPrice) {
+      form.setValue(`items.${index}.unitPrice`, product.unitPrice);
+    }
+    setInputValue(product.productName);
+    setOpen(false);
+  };
   
-  const currentProductValue = form.watch(`items.${index}.product`);
+  const handleCommandItemSelect = (productName: string) => {
+    const product = products?.find(p => p.productName.toLowerCase() === productName.toLowerCase());
+    if (product) {
+      handleSelect(product);
+    }
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setInputValue(value);
+      form.setValue(`items.${index}.product`, value, { shouldValidate: true });
+      if(!open) setOpen(true);
+  }
+  
+  const currentFieldValue = form.watch(`items.${index}.product`)
+  const filteredProducts = products?.filter(p => p.productName.toLowerCase().includes(inputValue.toLowerCase()));
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <FormControl>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="w-full justify-between"
-          >
-            {currentProductValue
-              ? products?.find((product) => product.productName.toLowerCase() === currentProductValue.toLowerCase())?.productName
-              : "کاڵایەک هەڵبژێرە..."}
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </FormControl>
+        <div className="relative">
+             <FormControl>
+                <Input
+                    placeholder="کاڵایەک هەڵبژێرە..."
+                    value={inputValue}
+                    onChange={handleInputChange}
+                    onClick={() => setOpen(true)}
+                    className="w-full"
+                />
+             </FormControl>
+          <ChevronsUpDown className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 shrink-0 opacity-50" />
+        </div>
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
         <Command>
-          <CommandInput placeholder="گەڕان بۆ کاڵا..." />
+          <CommandInput placeholder="گەڕان بۆ کاڵا..." value={inputValue} onValueChange={setInputValue} />
           <CommandList>
             <CommandEmpty>
-                <Button variant="ghost" className="w-full" onClick={() => setOpen(false)}>
-                    زیادکردنی کاڵای نوێ: "{form.getValues(`items.${index}.product`)}"
-                </Button>
+                {inputValue ? `زیادکردنی کاڵای نوێ: "${inputValue}"` : "هیچ کاڵایەک نەدۆزرایەوە."}
             </CommandEmpty>
             <CommandGroup>
               {products?.map((product) => (
                 <CommandItem
                   key={product.id}
                   value={product.productName}
-                  onSelect={(currentValue) => {
-                    form.setValue(`items.${index}.product`, currentValue === form.getValues(`items.${index}.product`) ? "" : currentValue)
-                    if(product.unitPrice) {
-                        form.setValue(`items.${index}.unitPrice`, product.unitPrice);
-                    }
-                    setOpen(false)
-                  }}
+                  onSelect={handleCommandItemSelect}
                 >
                   <Check
                     className={cn(
-                      "mr-2 h-4 w-4",
-                      currentProductValue === product.productName ? "opacity-100" : "opacity-0"
+                      "ml-2 h-4 w-4",
+                      currentFieldValue?.toLowerCase() === product.productName.toLowerCase() ? "opacity-100" : "opacity-0"
                     )}
                   />
                    <div className="flex justify-between w-full">
@@ -573,3 +598,5 @@ export function SalesForm() {
     </Form>
   );
 }
+
+    
