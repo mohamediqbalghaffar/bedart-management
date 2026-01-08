@@ -11,14 +11,14 @@ export default function MainLayout({
 }) {
   return (
     <SidebarProvider>
-      <Sidebar side="right" collapsible="icon" variant="sidebar">
-        <SidebarNav />
-      </Sidebar>
-      <SidebarInset>
-        <div className="min-h-screen">
-          {children}
+        <div className="flex min-h-screen">
+            <Sidebar side="right" collapsible="icon" variant="sidebar">
+                <SidebarNav />
+            </Sidebar>
+            <main className="flex-1">
+                {children}
+            </main>
         </div>
-      </SidebarInset>
     </SidebarProvider>
   );
 }
