@@ -96,7 +96,7 @@ export default function CustomersPage() {
                     <DialogTrigger asChild>
                         <Button>
                             <PlusCircle />
-                            زیادکردنی کڕیار
+                            زیادکردنی کڕیar
                         </Button>
                     </DialogTrigger>
                      <DialogContent className="sm:max-w-md">
