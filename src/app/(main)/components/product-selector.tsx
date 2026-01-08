@@ -120,7 +120,7 @@ export function ProductSelector<T extends FormWithItems>({ form, index }: Produc
                         <Check
                           className={cn(
                             'mr-2 h-4 w-4',
-                            currentValue?.toLowerCase() === product.value
+                            currentValue?.toLowerCase() === product.label.toLowerCase()
                               ? 'opacity-100'
                               : 'opacity-0'
                           )}
