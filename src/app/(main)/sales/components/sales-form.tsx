@@ -23,7 +23,7 @@ const salesFormSchema = z.object({
   customerAddress: z.string().optional(),
   issueDate: z.date({ required_error: "بەرواری دەرکردن پێویستە." }),
   items: z.array(z.object({
-    product: z.string().min(1, "ناوی کاڵا پێویستە."),
+    product: z.string().min(1, "بابەت پێویستە."),
     quantity: z.coerce.number().min(1, "دانە دەبێت لانیکەم 1 بێت."),
     unitPrice: z.coerce.number().min(0, "نرخ پێویستە."),
   })).min(1, { message: "لانیکەم یەک کاڵا پێویستە." }),
@@ -44,8 +44,8 @@ export function SalesForm() {
   const [formNumber, setFormNumber] = useState("");
   
   useEffect(() => {
-    // Simulate auto-incrementing form number
-    setFormNumber(`فرۆش-${String(Date.now()).slice(-6)}`);
+    // Simulate auto-incrementing form number from a real source in the future
+    setFormNumber(String(Math.floor(Math.random() * 1000) + 100));
   }, []);
   
   const form = useForm<SalesFormValues>({
@@ -115,32 +115,32 @@ export function SalesForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" dir="rtl">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-1">
+        {/* Header */}
+        <div className="flex justify-between items-start p-1">
             <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">ژمارەی فۆڕم</p>
-                <p className="font-semibold">{formNumber}</p>
+                <p className="font-bold text-lg">No. {formNumber}</p>
             </div>
              <FormField
                 control={form.control}
                 name="issueDate"
                 render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                        <FormLabel>بەرواری دەرکردن</FormLabel>
+                    <FormItem className="flex items-center gap-2">
+                        <FormLabel className="mt-2">بەروار:</FormLabel>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <FormControl>
                                 <Button
                                     variant={"outline"}
                                     className={cn(
-                                    "w-full justify-start text-left font-normal",
+                                    "w-[180px] justify-start text-left font-normal",
                                     !field.value && "text-muted-foreground"
                                     )}
                                 >
                                     <CalendarIcon className="ml-2 h-4 w-4" />
                                     {field.value ? (
-                                    format(field.value, "PPP")
+                                    format(field.value, "yyyy/MM/dd")
                                     ) : (
-                                    <span>بەروارێک هەڵبژێرە</span>
+                                    <span>بەروارێک</span>
                                     )}
                                 </Button>
                                 </FormControl>
@@ -160,24 +160,24 @@ export function SalesForm() {
             />
         </div>
 
-        <div className="space-y-4 p-1 border-t pt-6">
-          <h3 className="text-lg font-medium">زانیاری کڕیار</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField control={form.control} name="customerName" render={({ field }) => ( <FormItem> <FormLabel>ناوی کڕیار</FormLabel> <FormControl><Input placeholder="بۆ نموونە: ئەحمەد عەلی" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-            <FormField control={form.control} name="customerPhone" render={({ field }) => ( <FormItem> <FormLabel>ژمارەی تەلەفۆنی کڕیار</FormLabel> <FormControl><Input placeholder="0750 123 4567" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+        {/* Customer Info */}
+        <div className="space-y-2 p-1 border-t pt-4">
+          <div className="flex items-center gap-4">
+            <FormField control={form.control} name="customerName" render={({ field }) => ( <FormItem className="flex-1 flex items-center gap-2"> <FormLabel>بەڕێز:</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+            <FormField control={form.control} name="customerPhone" render={({ field }) => ( <FormItem className="flex-1 flex items-center gap-2"> <FormLabel>ژ. مۆبایل:</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
           </div>
-          <FormField control={form.control} name="customerAddress" render={({ field }) => ( <FormItem> <FormLabel>ناونیشانی کڕیار</FormLabel> <FormControl><Textarea placeholder="شەقامی 123، گەڕەکی هەرێم، شار" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+          <FormField control={form.control} name="customerAddress" render={({ field }) => ( <FormItem className="flex items-center gap-2"> <FormLabel>ناونیشان:</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
         </div>
         
+        {/* Items Table */}
         <div className="relative border-t pt-6">
-            <h3 className="text-lg font-medium mb-2">کاڵاکان</h3>
             <Table>
                 <TableHeader>
-                    <TableRow>
-                        <TableHead className="w-2/5">کاڵا</TableHead>
-                        <TableHead>دانە</TableHead>
-                        <TableHead>نرخی تاک</TableHead>
-                        <TableHead>کۆی نرخ</TableHead>
+                    <TableRow className="bg-primary/90 hover:bg-primary">
+                        <TableHead className="w-2/5 text-primary-foreground">بابەت</TableHead>
+                        <TableHead className="text-primary-foreground">دانە</TableHead>
+                        <TableHead className="text-primary-foreground">نرخی تاک</TableHead>
+                        <TableHead className="text-primary-foreground">نرخی کۆ</TableHead>
                         <TableHead></TableHead>
                     </TableRow>
                 </TableHeader>
@@ -209,8 +209,8 @@ export function SalesForm() {
                             <TableCell className="align-top">
                                 <FormField control={form.control} name={`items.${index}.unitPrice`} render={({ field }) => (<FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
                             </TableCell>
-                             <TableCell className="align-top pt-5">
-                                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(watchedItems[index]?.quantity * watchedItems[index]?.unitPrice || 0)}
+                             <TableCell className="align-top pt-5 font-semibold">
+                                {new Intl.NumberFormat('en-US').format(watchedItems[index]?.quantity * watchedItems[index]?.unitPrice || 0)}
                             </TableCell>
                             <TableCell className="align-top">
                                 <Button variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1}>
@@ -227,18 +227,43 @@ export function SalesForm() {
             </Button>
         </div>
 
-        <div className="space-y-4 p-1 border-t pt-6">
-          <h3 className="text-lg font-medium">زانیاری پارەدان</h3>
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-              <FormField control={form.control} name="deliveryCost" render={({ field }) => ( <FormItem> <FormLabel>تێچووی گەیاندن</FormLabel> <FormControl><Input type="number" step="0.01" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="paymentType" render={({ field }) => ( <FormItem> <FormLabel>شێوازی پارەدان</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}> <FormControl> <SelectTrigger> <SelectValue placeholder="جۆرێک هەڵبژێرە" /> </SelectTrigger> </FormControl> <SelectContent> <SelectItem value="After Delivery">دوای گەیاندن</SelectItem> <SelectItem value="Installments">قیست</SelectItem> <SelectItem value="Pre-order">داواکاری پێشوەختە</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="paymentStatus" render={({ field }) => ( <FormItem> <FormLabel>دۆخی پارەدان</FormLabel> <FormControl><Input {...field} readOnly className="font-semibold bg-secondary border-none" /></FormControl> <FormMessage /> </FormItem> )} />
-           </div>
+        {/* Footer */}
+        <div className="flex justify-between items-start gap-8 pt-6 border-t">
+            <div className="space-y-4">
+                {/* Placeholder for Signature */}
+                <div className="space-y-2">
+                    <FormLabel>واژۆ</FormLabel>
+                    <div className="w-48 h-16 border-b-2 border-dashed"></div>
+                </div>
+                {/* Payment Fields */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                  <FormField control={form.control} name="paymentType" render={({ field }) => ( <FormItem> <FormLabel>جۆری پارەدان</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}> <FormControl> <SelectTrigger> <SelectValue placeholder="جۆرێک هەڵبژێرە" /> </SelectTrigger> </FormControl> <SelectContent> <SelectItem value="After Delivery">دوای گەیاندن</SelectItem> <SelectItem value="Installments">قیست</SelectItem> <SelectItem value="Pre-order">داواکاری پێشوەختە</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )} />
+                  <FormField control={form.control} name="paymentStatus" render={({ field }) => ( <FormItem> <FormLabel>دۆخی پارەدان</FormLabel> <FormControl><Input {...field} readOnly className="font-semibold bg-secondary/70 border-none" /></FormControl> <FormMessage /> </FormItem> )} />
+                </div>
+            </div>
+            <div className="space-y-2 text-left">
+                <div className="flex items-center justify-between gap-4 p-2 rounded-md">
+                    <span className="text-muted-foreground">:کۆی گشتی</span>
+                    <span className="font-bold text-lg">{new Intl.NumberFormat('en-US').format(totalAmount)}</span>
+                </div>
+                 {form.watch('paymentType') === 'Installments' && (
+                    <>
+                        <div className="flex items-center justify-between gap-4 p-2 rounded-md">
+                            <span className="text-muted-foreground">:دراوە</span>
+                            <span className="font-semibold">{new Intl.NumberFormat('en-US').format(totalPaid)}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-4 p-2 rounded-md bg-destructive/10 text-destructive">
+                            <span className="">:ماوە</span>
+                            <span className="font-bold">{new Intl.NumberFormat('en-US').format(remainingBalance)}</span>
+                        </div>
+                    </>
+                 )}
+            </div>
         </div>
         
         {form.watch('paymentType') === 'Installments' && (
              <div className="space-y-4 border-t pt-6">
-                <h3 className="text-lg font-medium">پارە وەرگیراوەکان</h3>
+                <h3 className="text-lg font-medium">پارە وەرگیراوەکان (قیست)</h3>
                 <Table>
                     <TableHeader><TableRow><TableHead className="w-1/4">بەروار</TableHead><TableHead>بڕ</TableHead><TableHead>شێواز</TableHead><TableHead>تێبینی</TableHead><TableHead></TableHead></TableRow></TableHeader>
                     <TableBody>
@@ -249,33 +274,21 @@ export function SalesForm() {
                                     control={form.control}
                                     name={`payments.${index}.date`}
                                     render={({ field }) => (
-                                        <FormItem className="flex flex-col">
+                                        <FormItem>
                                             <Popover>
                                                 <PopoverTrigger asChild>
                                                     <FormControl>
                                                     <Button
                                                         variant={"outline"}
-                                                        className={cn(
-                                                        "w-full justify-start text-left font-normal",
-                                                        !field.value && "text-muted-foreground"
-                                                        )}
+                                                        className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")}
                                                     >
                                                         <CalendarIcon className="ml-2 h-4 w-4" />
-                                                        {field.value ? (
-                                                        format(field.value, "PPP")
-                                                        ) : (
-                                                        <span>بەروارێک هەڵبژێرە</span>
-                                                        )}
+                                                        {field.value ? format(field.value, "PPP") : (<span>بەروار</span>)}
                                                     </Button>
                                                     </FormControl>
                                                 </PopoverTrigger>
                                                 <PopoverContent className="w-auto p-0" align="start">
-                                                    <Calendar
-                                                        mode="single"
-                                                        selected={field.value}
-                                                        onSelect={field.onChange}
-                                                        initialFocus
-                                                    />
+                                                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus/>
                                                 </PopoverContent>
                                             </Popover>
                                             <FormMessage />
@@ -316,21 +329,10 @@ export function SalesForm() {
             </div>
         )}
 
-        <div className="flex justify-end items-start gap-8 pt-6 border-t text-left">
-            <div className="space-y-1 text-sm">
-                <p>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(subTotal)} <span className="text-muted-foreground">:کۆی گشتی</span></p>
-                <p>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(deliveryCost || 0)} <span className="text-muted-foreground">:گەیاندن</span></p>
-                <p className="font-semibold text-base">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalAmount)} <span className="text-muted-foreground">:کۆی گشتی</span></p>
-            </div>
-             <div className="space-y-1 text-sm">
-                <p>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalPaid)} <span className="text-muted-foreground">:دراوە</span></p>
-                <p className="font-semibold text-base">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(remainingBalance)} <span className="text-destructive">:ماوە</span></p>
-            </div>
+        <div className="flex justify-end pt-6 border-t">
             <Button type="submit" size="lg">پاشەکەوتکردنی فۆڕم</Button>
         </div>
       </form>
     </Form>
   );
 }
-
-    

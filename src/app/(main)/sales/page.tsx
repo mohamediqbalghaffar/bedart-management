@@ -21,11 +21,15 @@ export default function SalesPage() {
                             دروستکردنی فۆڕمی فرۆشتن
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-5xl">
+                    <DialogContent className="sm:max-w-4xl">
                         <DialogHeader>
-                            <DialogTitle>فۆڕمی فرۆشتنی نوێ</DialogTitle>
+                             <div className="text-center p-4">
+                                <h1 className="text-2xl font-bold">BedArt Group</h1>
+                                <p className="text-sm">ته ختی نوستن . دوشک . پشتی</p>
+                                <p className="text-xs text-muted-foreground">0770 817 1818 - 0770 077 1818</p>
+                            </div>
                         </DialogHeader>
-                        <div className="max-h-[80vh] overflow-y-auto p-1">
+                        <div className="max-h-[80vh] overflow-y-auto p-2">
                           <SalesForm />
                         </div>
                     </DialogContent>
