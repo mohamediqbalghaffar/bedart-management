@@ -26,13 +26,12 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 const menuItems = [
-  { href: '/', label: 'داشبۆرد', icon: LayoutDashboard },
   { href: '/sales', label: 'فرۆشەکان', icon: ShoppingCart },
   { href: '/purchases', label: 'کڕینەکان', icon: Package },
   { href: '/stock', label: 'کۆگا', icon: Warehouse },
-  { href: '/expenses', label: 'خەرجییەکان', icon: CreditCard },
   { href: '/customers', label: 'کڕیارەکان', icon: Users },
   { href: '/suppliers', label: 'دابینکەران', icon: Truck },
+  { href: '/expenses', label: 'خەرجییەکان', icon: CreditCard },
 ];
 
 export function SidebarNav() {
