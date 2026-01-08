@@ -181,8 +181,17 @@ const Sidebar = React.forwardRef<
     const { isMobile, hasMounted, state, openMobile, setOpenMobile } = useSidebar()
 
     if (!hasMounted) {
-      // On the server or during the first client render, return null to avoid hydration mismatch.
-      return null;
+      // On the server or during the first client render, return a static placeholder.
+      // This ensures the initial render is identical on both server and client.
+      return <div
+        ref={ref}
+        className={cn(
+          "hidden md:block text-sidebar-foreground w-[--sidebar-width]",
+          side === "left" ? "border-r" : "border-l",
+          className
+        )}
+       {...props}
+      />
     }
 
     if (collapsible === "none") {
