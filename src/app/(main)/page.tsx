@@ -5,19 +5,11 @@ import { StatCard } from "@/components/shared/stat-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { BarChart, FileDown, Badge, TrendingUp } from "lucide-react";
+import { BarChart as BarChartIcon, FileDown, Badge, TrendingUp } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Bar, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Bar } from "recharts";
 import type { Customer, Product, Sale } from "@/lib/types";
-
-const chartData = [
-  { month: "January", total: Math.floor(Math.random() * 50000) + 10000 },
-  { month: "February", total: Math.floor(Math.random() * 50000) + 10000 },
-  { month: "March", total: Math.floor(Math.random() * 50000) + 10000 },
-  { month: "April", total: Math.floor(Math.random() * 50000) + 10000 },
-  { month: "May", total: Math.floor(Math.random() * 50000) + 10000 },
-  { month: "June", total: Math.floor(Math.random() * 50000) + 10000 },
-];
+import { useEffect, useState } from "react";
 
 const chartConfig = {
   total: {
@@ -50,6 +42,19 @@ const topSellingProducts = [
 ];
 
 export default function DashboardPage() {
+  const [chartData, setChartData] = useState<any[]>([]);
+
+  useEffect(() => {
+    setChartData([
+      { month: "January", total: Math.floor(Math.random() * 50000) + 10000 },
+      { month: "February", total: Math.floor(Math.random() * 50000) + 10000 },
+      { month: "March", total: Math.floor(Math.random() * 50000) + 10000 },
+      { month: "April", total: Math.floor(Math.random() * 50000) + 10000 },
+      { month: "May", total: Math.floor(Math.random() * 50000) + 10000 },
+      { month: "June", total: Math.floor(Math.random() * 50000) + 10000 },
+    ]);
+  }, []);
+
   return (
     <div className="p-4 md:p-8 space-y-8">
       <PageHeader title="Dashboard" description="An overview of your business performance.">
@@ -72,7 +77,7 @@ export default function DashboardPage() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <BarChart />
+              <BarChartIcon />
               Sales Performance
             </CardTitle>
           </CardHeader>
@@ -88,7 +93,7 @@ export default function DashboardPage() {
                     axisLine={false}
                   />
                   <YAxis
-                    tickFormatter={(value) => `$${value / 1000}k`}
+                    tickFormatter={(value) => `$${Number(value) / 1000}k`}
                    />
                   <Tooltip
                     cursor={false}
