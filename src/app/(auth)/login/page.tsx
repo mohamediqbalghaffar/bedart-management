@@ -75,7 +75,7 @@ export default function LoginPage() {
                     <BedDouble className="h-8 w-8 text-primary-foreground" />
                 </div>
             </div>
-          <CardTitle>MattressPro CRM</CardTitle>
+          <CardTitle>BedArt Group</CardTitle>
           <CardDescription>زانیارییەکانت بنووسە بۆ چوونەژوورەوە یان خۆتۆمارکردن</CardDescription>
         </CardHeader>
         <CardContent>

@@ -12,7 +12,7 @@ const notoKufiArabic = Noto_Kufi_Arabic({
 
 
 export const metadata: Metadata = {
-  title: 'MattressPro CRM',
+  title: 'BedArt Group',
   description: 'سیستەمی بەڕێوەبردنی کار بۆ فرۆشگای دۆشەک و پێداویستیەکانی',
 };
 

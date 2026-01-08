@@ -46,7 +46,7 @@ export function SidebarNav() {
             <BedDouble className="h-6 w-6 text-primary-foreground" />
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <h2 className="text-lg font-semibold text-sidebar-foreground font-headline">MattressPro CRM</h2>
+            <h2 className="text-lg font-semibold text-sidebar-foreground font-headline">BedArt Group</h2>
           </div>
         </div>
       </SidebarHeader>
