@@ -5,7 +5,7 @@ import { StatCard } from "@/components/shared/stat-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { BarChart as BarChartIcon, FileDown, Badge, TrendingUp } from "lucide-react";
+import { FileDown, Badge, TrendingUp } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Bar } from "recharts";
 import type { Customer, Product, Sale } from "@/lib/types";
@@ -18,42 +18,31 @@ const chartConfig = {
   },
 };
 
-const unpaidSales: Omit<Sale, 'items'>[] = [
-    { id: 'SALE001', customerName: 'Modern Furniture Co.', date: '2023-05-01', amount: 15000, status: 'Unpaid' },
-    { id: 'SALE003', customerName: 'Dream Furnishings', date: '2023-05-10', amount: 22000, status: 'Unpaid' },
-];
+const unpaidSales: Omit<Sale, 'items'>[] = [];
 
-const lowStockProducts: Product[] = [
-    { id: 'PROD002', name: 'Cotton Quilt Set', stock: 8, price: 450, lowStockThreshold: 10, category: 'Cover', location: 'Warehouse' },
-    { id: 'PROD005', name: 'Medical Pillow', stock: 5, price: 250, lowStockThreshold: 5, category: 'Pillow', location: 'Shop Showroom' },
-];
+const lowStockProducts: Product[] = [];
 
-const topDebtCustomers: Customer[] = [
-    { id: 'CUST002', name: 'Dream Furnishings', outstandingDebt: 22000 },
-    { id: 'CUST001', name: 'Modern Furniture Co.', outstandingDebt: 15000 },
-];
+const topDebtCustomers: Customer[] = [];
 
-const topSellingProducts = [
-    { id: 'PROD001', name: 'King Size Mattress', sales: 152 },
-    { id: 'PROD003', name: 'Velvet Bed Frame', sales: 121 },
-    { id: 'PROD002', name: 'Cotton Quilt Set', sales: 98 },
-    { id: 'PROD004', name: 'Memory Foam Pillow', sales: 85 },
-    { id: 'PROD005', name: 'Medical Pillow', sales: 72 },
+const topSellingProducts: { id: string; name: string; sales: number }[] = [];
+
+const initialChartData = [
+  { month: "January", total: 0 },
+  { month: "February", total: 0 },
+  { month: "March", total: 0 },
+  { month: "April", total: 0 },
+  { month: "May", total: 0 },
+  { month: "June", total: 0 },
 ];
 
 export default function DashboardPage() {
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [chartData, setChartData] = useState(initialChartData);
 
-  useEffect(() => {
-    setChartData([
-      { month: "January", total: Math.floor(Math.random() * 50000) + 10000 },
-      { month: "February", total: Math.floor(Math.random() * 50000) + 10000 },
-      { month: "March", total: Math.floor(Math.random() * 50000) + 10000 },
-      { month: "April", total: Math.floor(Math.random() * 50000) + 10000 },
-      { month: "May", total: Math.floor(Math.random() * 50000) + 10000 },
-      { month: "June", total: Math.floor(Math.random() * 50000) + 10000 },
-    ]);
-  }, []);
+  // You can fetch and update real data here in the future.
+  // useEffect(() => {
+  //   // Example of fetching data
+  //   // fetch('/api/sales-data').then(res => res.json()).then(data => setChartData(data));
+  // }, []);
 
   return (
     <div className="p-4 md:p-8 space-y-8">
@@ -65,21 +54,18 @@ export default function DashboardPage() {
       </PageHeader>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
-        <StatCard title="Total Sales" value="$347,210" change="+12.5%" description="vs. last month" />
-        <StatCard title="Total Collected" value="$272,150" change="+8.2%" description="vs. last month" />
-        <StatCard title="Outstanding Debts" value="$75,060" change="-3.1%" description="vs. last month" isNegative />
-        <StatCard title="Total Expenses" value="$42,500" change="+5.7%" description="vs. last month" isNegative/>
-        <StatCard title="Net Profit" value="$229,650" change="+15.0%" description="vs. last month" />
-        <StatCard title="Stock Value" value="$597,300" />
+        <StatCard title="Total Sales" value="$0" change="+0.0%" description="vs. last month" />
+        <StatCard title="Total Collected" value="$0" change="+0.0%" description="vs. last month" />
+        <StatCard title="Outstanding Debts" value="$0" change="-0.0%" description="vs. last month" isNegative />
+        <StatCard title="Total Expenses" value="$0" change="+0.0%" description="vs. last month" isNegative/>
+        <StatCard title="Net Profit" value="$0" change="+0.0%" description="vs. last month" />
+        <StatCard title="Stock Value" value="$0" />
       </div>
 
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChartIcon />
-              Sales Performance
-            </CardTitle>
+            <CardTitle>Sales Performance</CardTitle>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig} className="h-64 w-full">
@@ -118,7 +104,11 @@ export default function DashboardPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {topDebtCustomers.map((customer) => (
+                        {topDebtCustomers.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={2} className="text-center text-muted-foreground">No customers with outstanding debt.</TableCell>
+                            </TableRow>
+                        ) : topDebtCustomers.map((customer) => (
                             <TableRow key={customer.id}>
                                 <TableCell className="font-medium">{customer.name}</TableCell>
                                 <TableCell className="text-right text-destructive">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(customer.outstandingDebt)}</TableCell>
@@ -145,7 +135,11 @@ export default function DashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {unpaidSales.map((sale) => (
+                 {unpaidSales.length === 0 ? (
+                    <TableRow>
+                        <TableCell colSpan={3} className="text-center text-muted-foreground">No unpaid sales.</TableCell>
+                    </TableRow>
+                ) : unpaidSales.map((sale) => (
                     <TableRow key={sale.id}>
                         <TableCell>{sale.customerName}</TableCell>
                         <TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(sale.amount)}</TableCell>
@@ -171,7 +165,11 @@ export default function DashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {lowStockProducts.map((product) => (
+                {lowStockProducts.length === 0 ? (
+                    <TableRow>
+                        <TableCell colSpan={2} className="text-center text-muted-foreground">All products are in stock.</TableCell>
+                    </TableRow>
+                ) : lowStockProducts.map((product) => (
                     <TableRow key={product.id}>
                         <TableCell>{product.name}</TableCell>
                         <TableCell>
@@ -196,7 +194,11 @@ export default function DashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {topSellingProducts.map((product) => (
+                 {topSellingProducts.length === 0 ? (
+                    <TableRow>
+                        <TableCell colSpan={2} className="text-center text-muted-foreground">No sales data available.</TableCell>
+                    </TableRow>
+                ) : topSellingProducts.map((product) => (
                     <TableRow key={product.id}>
                         <TableCell className="font-medium">{product.name}</TableCell>
                         <TableCell className="text-right">{product.sales}</TableCell>

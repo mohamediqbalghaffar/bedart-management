@@ -8,13 +8,7 @@ import type { Sale } from "@/lib/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SalesForm } from "./components/sales-form";
 
-const sales: Omit<Sale, 'items'>[] = [
-    { id: 'SALE001', customerName: 'Modern Furniture Co.', date: '2023-05-01', amount: 15000, status: 'Unpaid' },
-    { id: 'SALE002', customerName: 'The Comfort Hotel', date: '2023-05-05', amount: 35000, status: 'Fully Paid' },
-    { id: 'SALE003', customerName: 'Dream Furnishings', date: '2023-05-10', amount: 22000, status: 'Unpaid' },
-    { id: 'SALE004', customerName: 'Decor House', date: '2023-05-12', amount: 8000, status: 'Partially Paid' },
-    { id: 'SALE005', customerName: 'Modern Building Est.', date: '2023-05-15', amount: 50000, status: 'Fully Paid' },
-];
+const sales: Omit<Sale, 'items'>[] = [];
 
 export default function SalesPage() {
     return (
@@ -53,7 +47,11 @@ export default function SalesPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {sales.map((sale) => (
+                            {sales.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="text-center text-muted-foreground">No sales recorded yet.</TableCell>
+                                </TableRow>
+                            ) : sales.map((sale) => (
                                 <TableRow key={sale.id}>
                                     <TableCell className="font-medium">{sale.id}</TableCell>
                                     <TableCell>{sale.customerName}</TableCell>
