@@ -5,14 +5,16 @@ import React from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Loader2, FileSpreadsheet } from "lucide-react";
+import { PlusCircle, Loader2, FileSpreadsheet, Trash2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { SalesForm } from "./components/sales-form";
-import { useFirestore, useCollection, useMemoFirebase, collection } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, collection, deleteDocumentNonBlocking, doc } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { SalesDetails } from './components/sales-details';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 // Matches the structure in backend.json for SellingForm
 type SellingFormType = {
@@ -25,6 +27,7 @@ type SellingFormType = {
 
 function SalesList() {
     const firestore = useFirestore();
+    const { toast } = useToast();
 
     const sellingFormsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -32,6 +35,29 @@ function SalesList() {
     }, [firestore]);
 
     const { data: sales, isLoading: isLoadingSales } = useCollection<SellingFormType>(sellingFormsQuery);
+
+    const handleDelete = async (formId: string) => {
+        if (!firestore) return;
+        try {
+            // Note: This only deletes the main sales form. For a production app, 
+            // you'd ideally use a Cloud Function to also delete products in the subcollection
+            // and adjust inventory levels. For simplicity here, we only delete the form document.
+            await deleteDocumentNonBlocking(doc(firestore, 'selling_forms', formId));
+            toast({
+                title: "سەرکەوتوو بوو",
+                description: "فۆڕمی فرۆشتن بە سەرکەوتوویی سڕایەوە.",
+                className: "bg-accent text-accent-foreground",
+            });
+        } catch (error) {
+            console.error("Error deleting sales form:", error);
+            toast({
+                variant: 'destructive',
+                title: "هەڵەیەک ڕوویدا",
+                description: "سڕینەوەی فۆڕمی فرۆشتن سەرکەوتوو نەبوو.",
+            });
+        }
+    };
+
 
     return (
         <Card>
@@ -77,19 +103,42 @@ function SalesList() {
                                     </Badge>
                                 </TableCell>
                                 <TableCell className="text-left">
-                                    <Dialog>
-                                        <DialogTrigger asChild>
-                                            <Button variant="ghost" size="icon">
-                                                <FileSpreadsheet className="h-4 w-4" />
-                                            </Button>
-                                        </DialogTrigger>
-                                        <DialogContent className="sm:max-w-2xl" dir="rtl">
-                                            <DialogHeader>
-                                                <DialogTitle>وردەکارییەکانی فۆڕمی فرۆشتن</DialogTitle>
-                                            </DialogHeader>
-                                            <SalesDetails formId={sale.id} />
-                                        </DialogContent>
-                                    </Dialog>
+                                     <div className="flex items-center justify-start gap-2">
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon">
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent dir="rtl">
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>دڵنیایت لە سڕینەوە؟</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        ئەم کردارە پاشگەزبوونەوەی نییە. ئەمە بە هەمیشەیی فۆڕمەکە دەسڕێتەوە.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDelete(sale.id)} className="bg-destructive hover:bg-destructive/90">
+                                                        بەڵێ، بسڕەوە
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                        <Dialog>
+                                            <DialogTrigger asChild>
+                                                <Button variant="ghost" size="icon">
+                                                    <FileSpreadsheet className="h-4 w-4" />
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent className="sm:max-w-2xl" dir="rtl">
+                                                <DialogHeader>
+                                                    <DialogTitle>وردەکارییەکانی فۆڕمی فرۆشتن</DialogTitle>
+                                                </DialogHeader>
+                                                <SalesDetails formId={sale.id} />
+                                            </DialogContent>
+                                        </Dialog>
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         )))}
