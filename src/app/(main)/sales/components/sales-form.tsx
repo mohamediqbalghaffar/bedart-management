@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -15,8 +16,10 @@ import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SmartSuggestions } from "./smart-suggestions";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const salesFormSchema = z.object({
+  formNumber: z.string().min(1, "ژمارەی فۆڕم پێویستە."),
   customerName: z.string().min(1, { message: "ناوی کڕیار پێویستە." }),
   customerPhone: z.string().optional(),
   customerAddress: z.string().optional(),
@@ -27,6 +30,8 @@ const salesFormSchema = z.object({
     unitPrice: z.coerce.number().min(0, "نرخ پێویستە."),
   })).min(1, { message: "لانیکەم یەک کاڵا پێویستە." }),
   deliveryCost: z.coerce.number().optional().default(0),
+  discountType: z.enum(["percentage", "cash"]).optional(),
+  discountValue: z.coerce.number().optional().default(0),
   paymentStatus: z.enum(["Unpaid", "Partially Paid", "Fully Paid"]),
   paymentType: z.enum(["After Delivery", "Installments", "Pre-order"]),
   payments: z.array(z.object({
@@ -40,21 +45,19 @@ const salesFormSchema = z.object({
 type SalesFormValues = z.infer<typeof salesFormSchema>;
 
 export function SalesForm() {
-  const [formNumber, setFormNumber] = useState("");
-  
-  useEffect(() => {
-    setFormNumber(String(Math.floor(Math.random() * 1000) + 100));
-  }, []);
+  const [activeProductIndex, setActiveProductIndex] = useState<number | null>(null);
   
   const form = useForm<SalesFormValues>({
     resolver: zodResolver(salesFormSchema),
     defaultValues: {
+      formNumber: "0",
       customerName: "",
       customerPhone: "",
       customerAddress: "",
       issueDate: new Date(),
       items: [{ product: "", quantity: 1, unitPrice: 0 }],
       deliveryCost: 0,
+      discountValue: 0,
       paymentStatus: "Unpaid",
       paymentType: "After Delivery",
       payments: [],
@@ -71,14 +74,24 @@ export function SalesForm() {
     name: "payments",
   });
 
-  const [activeProductIndex, setActiveProductIndex] = useState<number | null>(null);
-
   const watchedItems = form.watch('items');
   const deliveryCost = form.watch('deliveryCost');
   const watchedPayments = form.watch('payments');
+  const discountType = form.watch('discountType');
+  const discountValue = form.watch('discountValue');
   
   const subTotal = watchedItems.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
-  const totalAmount = subTotal + (deliveryCost || 0);
+
+  const discountAmount = React.useMemo(() => {
+    if (!discountType || !discountValue || discountValue <= 0) return 0;
+    if (discountType === 'percentage') {
+      return (subTotal * discountValue) / 100;
+    }
+    return discountValue;
+  }, [subTotal, discountType, discountValue]);
+
+  const totalAfterDiscount = subTotal - discountAmount;
+  const totalAmount = totalAfterDiscount + (deliveryCost || 0);
   const totalPaid = watchedPayments?.reduce((acc, p) => acc + p.amount, 0) || 0;
   const remainingBalance = totalAmount - totalPaid;
 
@@ -98,7 +111,7 @@ export function SalesForm() {
 
 
   function onSubmit(data: SalesFormValues) {
-    console.log({ formNumber, ...data });
+    console.log(data);
   }
 
   const handleSelectSuggestion = (suggestion: string) => {
@@ -112,9 +125,17 @@ export function SalesForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" dir="rtl">
         <div className="flex justify-between items-start p-1">
-            <div className="space-y-1">
-                <p className="font-bold text-lg">No. {formNumber}</p>
-            </div>
+            <FormField
+              control={form.control}
+              name="formNumber"
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-2">
+                  <FormLabel className="font-bold text-lg mt-2">No.</FormLabel>
+                  <FormControl><Input className="w-24 font-bold text-lg" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
              <FormField
                 control={form.control}
                 name="issueDate"
@@ -221,19 +242,62 @@ export function SalesForm() {
         </div>
 
         <div className="flex justify-between items-start gap-8 pt-6 border-t">
-            <div className="space-y-4">
-                <div className="space-y-2">
-                    <FormLabel>واژۆ</FormLabel>
-                    <div className="w-48 h-16 border-b-2 border-dashed"></div>
+            <div className="space-y-4 flex-1">
+                 <div className="space-y-2">
+                    <FormLabel>داشکاندن</FormLabel>
+                     <div className="flex gap-4 items-center">
+                        <FormField
+                            control={form.control}
+                            name="discountType"
+                            render={({ field }) => (
+                                <FormItem className="space-y-3">
+                                <FormControl>
+                                    <RadioGroup
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                    className="flex items-center space-x-2 space-x-reverse"
+                                    dir="rtl"
+                                    >
+                                    <FormItem className="flex items-center space-x-1 space-x-reverse">
+                                        <FormControl>
+                                            <RadioGroupItem value="percentage" />
+                                        </FormControl>
+                                        <FormLabel className="font-normal">%</FormLabel>
+                                    </FormItem>
+                                    <FormItem className="flex items-center space-x-1 space-x-reverse">
+                                        <FormControl>
+                                            <RadioGroupItem value="cash" />
+                                        </FormControl>
+                                        <FormLabel className="font-normal">بڕی دیاریکراو</FormLabel>
+                                    </FormItem>
+                                    </RadioGroup>
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="discountValue"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormControl>
+                                        <Input type="number" step="0.01" {...field} disabled={!discountType} className="w-32" />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                   <FormField
                     control={form.control}
                     name="paymentType"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>جۆری پارەدان</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="جۆرێک هەڵبژێرە" />
@@ -251,9 +315,21 @@ export function SalesForm() {
                   />
                   <FormField control={form.control} name="paymentStatus" render={({ field }) => ( <FormItem> <FormLabel>دۆخی پارەدان</FormLabel> <FormControl><Input {...field} readOnly className="font-semibold bg-secondary/70 border-none" /></FormControl> <FormMessage /> </FormItem> )} />
                 </div>
+                <div className="space-y-2">
+                    <FormLabel>واژۆ</FormLabel>
+                    <div className="w-48 h-16 border-b-2 border-dashed"></div>
+                </div>
             </div>
-            <div className="space-y-2 text-left">
+            <div className="space-y-2 text-left min-w-[280px]">
                 <div className="flex items-center justify-between gap-4 p-2 rounded-md">
+                    <span className="text-muted-foreground">:کۆی کاڵاکان</span>
+                    <span className="font-semibold">{new Intl.NumberFormat('en-US').format(subTotal)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-4 p-2 rounded-md">
+                    <span className="text-muted-foreground">:داشکاندن</span>
+                    <span className="font-semibold text-destructive">-{new Intl.NumberFormat('en-US').format(discountAmount)}</span>
+                </div>
+                 <div className="flex items-center justify-between gap-4 p-2 rounded-md">
                     <span className="text-muted-foreground">:کۆی گشتی</span>
                     <span className="font-bold text-lg">{new Intl.NumberFormat('en-US').format(totalAmount)}</span>
                 </div>
@@ -261,7 +337,7 @@ export function SalesForm() {
                     <>
                         <div className="flex items-center justify-between gap-4 p-2 rounded-md">
                             <span className="text-muted-foreground">:دراوە</span>
-                            <span className="font-semibold">{new Intl.NumberFormat('en-US').format(totalPaid)}</span>
+                            <span className="font-semibold text-accent">{new Intl.NumberFormat('en-US').format(totalPaid)}</span>
                         </div>
                         <div className="flex items-center justify-between gap-4 p-2 rounded-md bg-destructive/10 text-destructive">
                             <span className="">:ماوە</span>
@@ -314,7 +390,7 @@ export function SalesForm() {
                                   name={`payments.${index}.method`}
                                   render={({ field }) => (
                                     <FormItem>
-                                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                      <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
                                         <FormControl>
                                           <SelectTrigger><SelectValue/></SelectTrigger>
                                         </FormControl>
@@ -347,3 +423,5 @@ export function SalesForm() {
     </Form>
   );
 }
+
+    
