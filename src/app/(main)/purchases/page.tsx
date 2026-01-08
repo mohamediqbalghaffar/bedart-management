@@ -6,21 +6,21 @@ import { Download, PlusCircle } from "lucide-react";
 export default function PurchasesPage() {
     return (
         <div className="p-4 md:p-8 space-y-8">
-            <PageHeader title="Purchases" description="Manage your purchase invoices and suppliers.">
+            <PageHeader title="کڕینەکان" description="پسوولەکانی کڕین و دابینکەرەکانت بەڕێوەببە.">
                 <div className="flex gap-2">
                      <Button variant="outline">
                         <Download />
-                        Import from Excel
+                        هاوردەکردن لە ئێکسڵ
                     </Button>
                     <Button>
                         <PlusCircle />
-                        New Purchase Invoice
+                        پسوولەی کڕینی نوێ
                     </Button>
                 </div>
             </PageHeader>
             <Card>
                 <CardContent className="p-8 text-center text-muted-foreground">
-                    <p>A list of purchases will be displayed here.</p>
+                    <p>لێرەدا لیستی کڕینەکان پیشان دەدرێت.</p>
                 </CardContent>
             </Card>
         </div>

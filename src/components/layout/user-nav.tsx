@@ -24,18 +24,18 @@ export function UserNav() {
                     <AvatarImage src={userAvatar?.imageUrl} alt="User Avatar" data-ai-hint={userAvatar?.imageHint} />
                     <AvatarFallback>AD</AvatarFallback>
                 </Avatar>
-                <div className="text-left group-data-[collapsible=icon]:hidden">
-                    <p className="text-sm font-medium leading-none text-sidebar-foreground">Alex Doe</p>
-                    <p className="text-xs leading-none text-muted-foreground">Admin</p>
+                <div className="text-right group-data-[collapsible=icon]:hidden">
+                    <p className="text-sm font-medium leading-none text-sidebar-foreground">ئەلێکس دۆ</p>
+                    <p className="text-xs leading-none text-muted-foreground">بەڕێوەبەر</p>
                 </div>
-                <ChevronUp className="h-4 w-4 ml-auto text-muted-foreground group-data-[collapsible=icon]:hidden" />
+                <ChevronUp className="h-4 w-4 mr-auto text-muted-foreground group-data-[collapsible=icon]:hidden" />
             </div>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
+      <DropdownMenuContent className="w-56" align="end" forceMount dir="rtl">
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">Alex Doe</p>
+            <p className="text-sm font-medium leading-none">ئەلێکس دۆ</p>
             <p className="text-xs leading-none text-muted-foreground">
               alex.doe@example.com
             </p>
@@ -43,13 +43,13 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>Profile</DropdownMenuItem>
-          <DropdownMenuItem>Billing</DropdownMenuItem>
-          <DropdownMenuItem>Settings</DropdownMenuItem>
+          <DropdownMenuItem>پڕۆفایل</DropdownMenuItem>
+          <DropdownMenuItem>پسوولە</DropdownMenuItem>
+          <DropdownMenuItem>ڕێکخستنەکان</DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem>
-          Log out
+          چوونەدەرەوە
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

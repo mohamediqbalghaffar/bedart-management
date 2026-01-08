@@ -18,21 +18,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 
 const salesFormSchema = z.object({
-  customerName: z.string().min(1, { message: "Customer name is required." }),
+  customerName: z.string().min(1, { message: "ناوی کڕیار پێویستە." }),
   customerPhone: z.string().optional(),
   customerAddress: z.string().optional(),
-  issueDate: z.date({ required_error: "Issue date is required." }),
+  issueDate: z.date({ required_error: "بەرواری دەرکردن پێویستە." }),
   items: z.array(z.object({
-    product: z.string().min(1, "Product name is required."),
-    quantity: z.coerce.number().min(1, "Quantity must be at least 1."),
-    unitPrice: z.coerce.number().min(0, "Price is required."),
-  })).min(1, { message: "At least one product is required." }),
+    product: z.string().min(1, "ناوی کاڵا پێویستە."),
+    quantity: z.coerce.number().min(1, "دانە دەبێت لانیکەم 1 بێت."),
+    unitPrice: z.coerce.number().min(0, "نرخ پێویستە."),
+  })).min(1, { message: "لانیکەم یەک کاڵا پێویستە." }),
   deliveryCost: z.coerce.number().optional().default(0),
   paymentStatus: z.enum(["Unpaid", "Partially Paid", "Fully Paid"]),
   paymentType: z.enum(["After Delivery", "Installments", "Pre-order"]),
   payments: z.array(z.object({
       date: z.date(),
-      amount: z.coerce.number().min(0.01, "Amount must be positive."),
+      amount: z.coerce.number().min(0.01, "بڕ دەبێت موجەب بێت."),
       method: z.enum(["Cash", "Transfer"]),
       note: z.string().optional(),
   })).optional(),
@@ -45,7 +45,7 @@ export function SalesForm() {
   
   useEffect(() => {
     // Simulate auto-incrementing form number
-    setFormNumber(`SALE-${String(Date.now()).slice(-6)}`);
+    setFormNumber(`فرۆش-${String(Date.now()).slice(-6)}`);
   }, []);
   
   const form = useForm<SalesFormValues>({
@@ -114,10 +114,10 @@ export function SalesForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" dir="rtl">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-1">
             <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Form Number</p>
+                <p className="text-sm text-muted-foreground">ژمارەی فۆڕم</p>
                 <p className="font-semibold">{formNumber}</p>
             </div>
              <FormField
@@ -125,7 +125,7 @@ export function SalesForm() {
                 name="issueDate"
                 render={({ field }) => (
                     <FormItem className="flex flex-col">
-                        <FormLabel>Issue Date</FormLabel>
+                        <FormLabel>بەرواری دەرکردن</FormLabel>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <FormControl>
@@ -136,11 +136,11 @@ export function SalesForm() {
                                     !field.value && "text-muted-foreground"
                                     )}
                                 >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    <CalendarIcon className="ml-2 h-4 w-4" />
                                     {field.value ? (
                                     format(field.value, "PPP")
                                     ) : (
-                                    <span>Pick a date</span>
+                                    <span>بەروارێک هەڵبژێرە</span>
                                     )}
                                 </Button>
                                 </FormControl>
@@ -161,23 +161,23 @@ export function SalesForm() {
         </div>
 
         <div className="space-y-4 p-1 border-t pt-6">
-          <h3 className="text-lg font-medium">Customer Details</h3>
+          <h3 className="text-lg font-medium">زانیاری کڕیار</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField control={form.control} name="customerName" render={({ field }) => ( <FormItem> <FormLabel>Customer Name</FormLabel> <FormControl><Input placeholder="e.g. John Doe" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-            <FormField control={form.control} name="customerPhone" render={({ field }) => ( <FormItem> <FormLabel>Customer Phone</FormLabel> <FormControl><Input placeholder="+1 234 567 890" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+            <FormField control={form.control} name="customerName" render={({ field }) => ( <FormItem> <FormLabel>ناوی کڕیار</FormLabel> <FormControl><Input placeholder="بۆ نموونە: ئەحمەد عەلی" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+            <FormField control={form.control} name="customerPhone" render={({ field }) => ( <FormItem> <FormLabel>ژمارەی تەلەفۆنی کڕیار</FormLabel> <FormControl><Input placeholder="0750 123 4567" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
           </div>
-          <FormField control={form.control} name="customerAddress" render={({ field }) => ( <FormItem> <FormLabel>Customer Address</FormLabel> <FormControl><Textarea placeholder="123 Main St, Anytown, USA" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+          <FormField control={form.control} name="customerAddress" render={({ field }) => ( <FormItem> <FormLabel>ناونیشانی کڕیار</FormLabel> <FormControl><Textarea placeholder="شەقامی 123، گەڕەکی هەرێم، شار" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
         </div>
         
         <div className="relative border-t pt-6">
-            <h3 className="text-lg font-medium mb-2">Products</h3>
+            <h3 className="text-lg font-medium mb-2">کاڵاکان</h3>
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead className="w-2/5">Product</TableHead>
-                        <TableHead>Quantity</TableHead>
-                        <TableHead>Unit Price</TableHead>
-                        <TableHead>Line Total</TableHead>
+                        <TableHead className="w-2/5">کاڵا</TableHead>
+                        <TableHead>دانە</TableHead>
+                        <TableHead>نرخی تاک</TableHead>
+                        <TableHead>کۆی نرخ</TableHead>
                         <TableHead></TableHead>
                     </TableRow>
                 </TableHeader>
@@ -189,7 +189,7 @@ export function SalesForm() {
                                   <FormItem>
                                     <FormControl>
                                       <div className="relative">
-                                        <Input placeholder="Product name" {...field} onFocus={() => setActiveProductIndex(index)} />
+                                        <Input placeholder="ناوی کاڵا" {...field} onFocus={() => setActiveProductIndex(index)} />
                                         {activeProductIndex === index && (
                                           <SmartSuggestions
                                               searchTerm={form.watch(`items.${index}.product`)}
@@ -222,31 +222,31 @@ export function SalesForm() {
                 </TableBody>
             </Table>
             <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ product: "", quantity: 1, unitPrice: 0 })}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add Product
+                <PlusCircle className="ml-2 h-4 w-4" />
+                زیادکردنی کاڵا
             </Button>
         </div>
 
         <div className="space-y-4 p-1 border-t pt-6">
-          <h3 className="text-lg font-medium">Payment Details</h3>
+          <h3 className="text-lg font-medium">زانیاری پارەدان</h3>
            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-              <FormField control={form.control} name="deliveryCost" render={({ field }) => ( <FormItem> <FormLabel>Delivery Cost</FormLabel> <FormControl><Input type="number" step="0.01" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="paymentType" render={({ field }) => ( <FormItem> <FormLabel>Payment Type</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}> <FormControl> <SelectTrigger> <SelectValue placeholder="Select type" /> </SelectTrigger> </FormControl> <SelectContent> <SelectItem value="After Delivery">After Delivery</SelectItem> <SelectItem value="Installments">Installments</SelectItem> <SelectItem value="Pre-order">Pre-order</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )} />
-              <FormField control={form.control} name="paymentStatus" render={({ field }) => ( <FormItem> <FormLabel>Payment Status</FormLabel> <FormControl><Input {...field} readOnly className="font-semibold bg-secondary border-none" /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="deliveryCost" render={({ field }) => ( <FormItem> <FormLabel>تێچووی گەیاندن</FormLabel> <FormControl><Input type="number" step="0.01" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="paymentType" render={({ field }) => ( <FormItem> <FormLabel>شێوازی پارەدان</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}> <FormControl> <SelectTrigger> <SelectValue placeholder="جۆرێک هەڵبژێرە" /> </SelectTrigger> </FormControl> <SelectContent> <SelectItem value="After Delivery">دوای گەیاندن</SelectItem> <SelectItem value="Installments">قیست</SelectItem> <SelectItem value="Pre-order">داواکاری پێشوەختە</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )} />
+              <FormField control={form.control} name="paymentStatus" render={({ field }) => ( <FormItem> <FormLabel>دۆخی پارەدان</FormLabel> <FormControl><Input {...field} readOnly className="font-semibold bg-secondary border-none" /></FormControl> <FormMessage /> </FormItem> )} />
            </div>
         </div>
         
         {form.watch('paymentType') === 'Installments' && (
              <div className="space-y-4 border-t pt-6">
-                <h3 className="text-lg font-medium">Payments Received</h3>
+                <h3 className="text-lg font-medium">پارە وەرگیراوەکان</h3>
                 <Table>
-                    <TableHeader><TableRow><TableHead className="w-1/4">Date</TableHead><TableHead>Amount</TableHead><TableHead>Method</TableHead><TableHead>Note</TableHead><TableHead></TableHead></TableRow></TableHeader>
+                    <TableHeader><TableRow><TableHead className="w-1/4">بەروار</TableHead><TableHead>بڕ</TableHead><TableHead>شێواز</TableHead><TableHead>تێبینی</TableHead><TableHead></TableHead></TableRow></TableHeader>
                     <TableBody>
                         {paymentFields.map((field, index) => (
                            <TableRow key={field.id}>
                                <TableCell><FormField control={form.control} name={`payments.${index}.date`} render={({ field }) => ( <FormItem><FormControl><Input type="date" {...field} onChange={e => field.onChange(e.target.valueAsDate)} value={field.value ? format(field.value, 'yyyy-MM-dd') : ''} /></FormControl></FormItem>)}/></TableCell>
                                <TableCell><FormField control={form.control} name={`payments.${index}.amount`} render={({ field }) => ( <FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl></FormItem>)}/></TableCell>
-                               <TableCell><FormField control={form.control} name={`payments.${index}.method`} render={({ field }) => ( <FormItem><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="Cash">Cash</SelectItem><SelectItem value="Transfer">Transfer</SelectItem></SelectContent></Select></FormItem>)}/></TableCell>
+                               <TableCell><FormField control={form.control} name={`payments.${index}.method`} render={({ field }) => ( <FormItem><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="Cash">کاش</SelectItem><SelectItem value="Transfer">حەواڵە</SelectItem></SelectContent></Select></FormItem>)}/></TableCell>
                                <TableCell><FormField control={form.control} name={`payments.${index}.note`} render={({ field }) => ( <FormItem><FormControl><Input {...field} /></FormControl></FormItem>)}/></TableCell>
                                <TableCell><Button variant="ghost" size="icon" onClick={() => removePayment(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
                            </TableRow>
@@ -254,22 +254,22 @@ export function SalesForm() {
                     </TableBody>
                 </Table>
                 <Button type="button" variant="outline" size="sm" onClick={() => appendPayment({ date: new Date(), amount: 0, method: 'Cash', note:'' })}>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Add Payment
+                    <PlusCircle className="ml-2 h-4 w-4" /> زیادکردنی پارەدان
                 </Button>
             </div>
         )}
 
-        <div className="flex justify-end items-start gap-8 pt-6 border-t text-right">
+        <div className="flex justify-end items-start gap-8 pt-6 border-t text-left">
             <div className="space-y-1 text-sm">
-                <p><span className="text-muted-foreground">Subtotal:</span> {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(subTotal)}</p>
-                <p><span className="text-muted-foreground">Delivery:</span> {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(deliveryCost || 0)}</p>
-                <p className="font-semibold text-base"><span className="text-muted-foreground">Total:</span> {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalAmount)}</p>
+                <p>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(subTotal)} <span className="text-muted-foreground">:کۆی گشتی</span></p>
+                <p>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(deliveryCost || 0)} <span className="text-muted-foreground">:گەیاندن</span></p>
+                <p className="font-semibold text-base">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalAmount)} <span className="text-muted-foreground">:کۆی گشتی</span></p>
             </div>
              <div className="space-y-1 text-sm">
-                <p><span className="text-muted-foreground">Paid:</span> {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalPaid)}</p>
-                <p className="font-semibold text-base"><span className="text-destructive">Balance:</span> {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(remainingBalance)}</p>
+                <p>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalPaid)} <span className="text-muted-foreground">:دراوە</span></p>
+                <p className="font-semibold text-base">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(remainingBalance)} <span className="text-destructive">:ماوە</span></p>
             </div>
-            <Button type="submit" size="lg">Save Form</Button>
+            <Button type="submit" size="lg">پاشەکەوتکردنی فۆڕم</Button>
         </div>
       </form>
     </Form>

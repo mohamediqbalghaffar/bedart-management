@@ -26,13 +26,13 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 const menuItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/sales', label: 'Sales', icon: ShoppingCart },
-  { href: '/purchases', label: 'Purchases', icon: Package },
-  { href: '/stock', label: 'Warehouse', icon: Warehouse },
-  { href: '/expenses', label: 'Expenses', icon: CreditCard },
-  { href: '/customers', label: 'Customers', icon: Users },
-  { href: '/suppliers', label: 'Suppliers', icon: Truck },
+  { href: '/', label: 'داشبۆرد', icon: LayoutDashboard },
+  { href: '/sales', label: 'فرۆشەکان', icon: ShoppingCart },
+  { href: '/purchases', label: 'کڕینەکان', icon: Package },
+  { href: '/stock', label: 'کۆگا', icon: Warehouse },
+  { href: '/expenses', label: 'خەرجییەکان', icon: CreditCard },
+  { href: '/customers', label: 'کڕیارەکان', icon: Users },
+  { href: '/suppliers', label: 'دابینکەران', icon: Truck },
 ];
 
 export function SidebarNav() {
@@ -57,7 +57,7 @@ export function SidebarNav() {
               <Link href={item.href}>
                 <SidebarMenuButton
                   isActive={pathname === item.href}
-                  tooltip={{ children: item.label, side: 'right' }}
+                  tooltip={{ children: item.label, side: 'left' }}
                 >
                   <item.icon />
                   <span>{item.label}</span>
@@ -73,10 +73,10 @@ export function SidebarNav() {
              <Link href="/settings">
                 <SidebarMenuButton
                   isActive={pathname === '/settings'}
-                  tooltip={{ children: 'Settings', side: 'right' }}
+                  tooltip={{ children: 'ڕێکخستنەکان', side: 'left' }}
                 >
                   <Settings />
-                  <span>Settings</span>
+                  <span>ڕێکخستنەکان</span>
                 </SidebarMenuButton>
               </Link>
           </SidebarMenuItem>

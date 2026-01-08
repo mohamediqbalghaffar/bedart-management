@@ -5,25 +5,25 @@ import { PlusCircle } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import type { Sale } from "@/lib/types";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SalesForm } from "./components/sales-form";
 
 const sales: Omit<Sale, 'items'>[] = [];
 
 export default function SalesPage() {
     return (
-        <div className="p-4 md:p-8 space-y-8">
-            <PageHeader title="Sales" description="Manage and track all your sales operations.">
+        <div className="p-4 md:p-8 space-y-8" dir="rtl">
+            <PageHeader title="فرۆشەکان" description="بەڕێوەبردن و بەدواداچوونی هەموو کارەکانی فرۆشتنت.">
                 <Dialog>
                     <DialogTrigger asChild>
                         <Button>
                             <PlusCircle />
-                            Create Sales Form
+                            دروستکردنی فۆڕمی فرۆشتن
                         </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-5xl">
                         <DialogHeader>
-                            <DialogTitle>New Sales Form</DialogTitle>
+                            <DialogTitle>فۆڕمی فرۆشتنی نوێ</DialogTitle>
                         </DialogHeader>
                         <div className="max-h-[80vh] overflow-y-auto p-1">
                           <SalesForm />
@@ -33,23 +33,23 @@ export default function SalesPage() {
             </PageHeader>
             <Card>
                 <CardHeader>
-                    <CardTitle>Recent Sales</CardTitle>
+                    <CardTitle>فرۆشەکانی ئەم دواییە</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Invoice ID</TableHead>
-                                <TableHead>Customer</TableHead>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Amount</TableHead>
-                                <TableHead>Status</TableHead>
+                                <TableHead>IDی پسوولە</TableHead>
+                                <TableHead>کڕیار</TableHead>
+                                <TableHead>بەروار</TableHead>
+                                <TableHead>بڕ</TableHead>
+                                <TableHead>بارودۆخ</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {sales.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center text-muted-foreground">No sales recorded yet.</TableCell>
+                                    <TableCell colSpan={5} className="text-center text-muted-foreground">هیچ فرۆشێک تۆمار نەکراوە.</TableCell>
                                 </TableRow>
                             ) : sales.map((sale) => (
                                 <TableRow key={sale.id}>

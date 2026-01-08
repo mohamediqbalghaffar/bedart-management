@@ -4,71 +4,71 @@
 
 @layer base {
   :root {
-    --background: 210 29% 96%;
+    --background: 210 20% 98%;
     --foreground: 215 28% 17%;
-    --card: 0 0% 100%;
+    --card: 210 30% 96% / 0.6;
     --card-foreground: 215 28% 17%;
-    --popover: 0 0% 100%;
+    --popover: 210 30% 96% / 0.8;
     --popover-foreground: 215 28% 17%;
-    --primary: 207 88% 68%;
-    --primary-foreground: 215 28% 17%;
-    --secondary: 210 20% 90%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 215 20% 90% / 0.7;
     --secondary-foreground: 215 28% 17%;
-    --muted: 210 20% 90%;
+    --muted: 215 20% 90% / 0.7;
     --muted-foreground: 215 20% 45%;
-    --accent: 124 39% 64%;
+    --accent: 250 80% 60% / 0.7;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 210 20% 85%;
-    --input: 0 0% 100%;
-    --ring: 207 88% 68%;
-    --chart-1: 207 88% 68%;
-    --chart-2: 124 39% 64%;
-    --chart-3: 27 87% 67%;
-    --chart-4: 173 58% 39%;
-    --chart-5: 43 74% 66%;
-    --radius: 0.8rem;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 210 20% 85% / 0.5;
+    --input: 210 20% 92% / 0.7;
+    --ring: 221 83% 53%;
+    --chart-1: 221 83% 53%;
+    --chart-2: 160 76% 45%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 280 85% 65%;
+    --chart-5: 0 84% 60%;
+    --radius: 1rem;
 
-    --sidebar-background: 215 28% 17%;
-    --sidebar-foreground: 210 20% 80%;
-    --sidebar-primary: 207 88% 68%;
-    --sidebar-primary-foreground: 215 28% 17%;
-    --sidebar-accent: 215 28% 25%;
+    --sidebar-background: 215 28% 17% / 0.9;
+    --sidebar-foreground: 210 20% 90%;
+    --sidebar-primary: 221 83% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 28% 25% / 0.8;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 215 28% 25%;
-    --sidebar-ring: 207 88% 68%;
+    --sidebar-border: 215 28% 25% / 0.7;
+    --sidebar-ring: 221 83% 53%;
   }
 
   .dark {
-    --background: 215 28% 17%;
-    --foreground: 210 29% 96%;
-    --card: 215 28% 20%;
-    --card-foreground: 210 29% 96%;
-    --popover: 215 28% 17%;
-    --popover-foreground: 210 29% 96%;
-    --primary: 207 88% 68%;
-    --primary-foreground: 215 28% 17%;
-    --secondary: 215 28% 25%;
-    --secondary-foreground: 210 29% 96%;
-    --muted: 215 28% 25%;
-    --muted-foreground: 210 20% 80%;
-    --accent: 124 39% 64%;
-    --accent-foreground: 215 28% 17%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 215 28% 25%;
-    --input: 215 28% 25%;
-    --ring: 207 88% 68%;
+    --background: 215 28% 9%;
+    --foreground: 210 29% 94%;
+    --card: 215 28% 12% / 0.6;
+    --card-foreground: 210 29% 94%;
+    --popover: 215 28% 12% / 0.8;
+    --popover-foreground: 210 29% 94%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 215 28% 18% / 0.7;
+    --secondary-foreground: 210 29% 94%;
+    --muted: 215 28% 18% / 0.7;
+    --muted-foreground: 210 20% 75%;
+    --accent: 250 80% 60% / 0.7;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 215 28% 20% / 0.5;
+    --input: 215 28% 22% / 0.7;
+    --ring: 217 91% 60%;
 
-    --sidebar-background: 215 28% 14%;
-    --sidebar-foreground: 210 20% 80%;
-    --sidebar-primary: 207 88% 68%;
-    --sidebar-primary-foreground: 215 28% 17%;
-    --sidebar-accent: 215 28% 20%;
+    --sidebar-background: 215 28% 11% / 0.9;
+    --sidebar-foreground: 210 20% 90%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 28% 15% / 0.8;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 215 28% 20%;
-    --sidebar-ring: 207 88% 68%;
+    --sidebar-border: 215 28% 15% / 0.7;
+    --sidebar-ring: 217 91% 60%;
   }
 }
 
@@ -79,5 +79,9 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    background-image: linear-gradient(to bottom right, hsl(210 40% 98%), hsl(210 40% 92%));
+  }
+  .dark body {
+    background-image: linear-gradient(to bottom right, hsl(215 28% 12%), hsl(215 28% 8%));
   }
 }

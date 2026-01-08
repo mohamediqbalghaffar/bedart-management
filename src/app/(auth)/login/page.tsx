@@ -13,7 +13,7 @@ import * as z from 'zod';
 
 const loginSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
+  password: z.string().min(6, { message: 'وشەی نهێنی دەبێت لە 6 پیت کەمتر نەبێت.' }),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -55,17 +55,17 @@ export default function LoginPage() {
           window.location.href = '/';
         } catch (creationError) {
           console.error('Account creation failed:', creationError);
-          form.setError('root', { message: 'Could not create account. Please try again.' });
+          form.setError('root', { message: 'هەژمار دروستنەکرا. تکایە دووبارە هەوڵبدەرەوە.' });
         }
       } else {
         console.error('Login failed:', error);
-        form.setError('root', { message: 'Invalid email or password.' });
+        form.setError('root', { message: 'ئیمەیڵ یان وشەی نهێنی هەڵەیە.' });
       }
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-secondary">
+    <div className="flex min-h-screen items-center justify-center bg-background/80" style={{ backgroundImage: 'url(https://picsum.photos/seed/login-bg/1920/1080)', backgroundSize: 'cover' }}>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
             <div className="flex justify-center items-center mb-4">
@@ -74,7 +74,7 @@ export default function LoginPage() {
                 </div>
             </div>
           <CardTitle>MattressPro CRM</CardTitle>
-          <CardDescription>Enter your credentials to log in or sign up</CardDescription>
+          <CardDescription>زانیارییەکانت بنووسە بۆ چوونەژوورەوە یان خۆتۆمارکردن</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -84,7 +84,7 @@ export default function LoginPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>ئیمەیڵ</FormLabel>
                     <FormControl>
                       <Input placeholder="name@example.com" {...field} />
                     </FormControl>
@@ -97,7 +97,7 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>وشەی نهێنی</FormLabel>
                     <FormControl>
                       <Input type="password" {...field} />
                     </FormControl>
@@ -109,13 +109,13 @@ export default function LoginPage() {
                 <p className="text-sm font-medium text-destructive">{form.formState.errors.root.message}</p>
               )}
               <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Processing...' : 'Login / Sign Up'}
+                {form.formState.isSubmitting ? '...چاوەڕوانبە' : 'چوونەژوورەوە / خۆتۆمارکردن'}
               </Button>
             </form>
           </Form>
         </CardContent>
         <CardFooter className="text-center text-xs text-muted-foreground">
-            <p>This is a restricted-access system.</p>
+            <p>ئەم سیستەمە سنووردارە.</p>
         </CardFooter>
       </Card>
     </div>

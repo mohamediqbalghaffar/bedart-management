@@ -36,11 +36,11 @@ export function SmartSuggestions({ searchTerm, context, onSelect, onClose }: Sma
   if (!searchTerm && !isLoading) return null;
 
   return (
-    <Card className="absolute z-10 w-full mt-2 shadow-lg">
+    <Card className="absolute z-10 w-full mt-2 shadow-lg" dir="rtl">
         <div className="flex justify-between items-center p-2 border-b">
             <div className="flex items-center gap-2 font-semibold text-sm">
                 <Lightbulb className="h-4 w-4 text-yellow-400" />
-                Smart Suggestions
+                پێشنیارە زیرەکەکان
             </div>
             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
                 <X className="h-4 w-4" />
@@ -50,12 +50,12 @@ export function SmartSuggestions({ searchTerm, context, onSelect, onClose }: Sma
         {isLoading && (
           <div className="flex items-center justify-center p-4">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            <p className="ml-2">Finding suggestions...</p>
+            <p className="mr-2">دۆزینەوەی پێشنیار...</p>
           </div>
         )}
         {!isLoading && suggestions.length === 0 && debouncedSearchTerm.length > 2 && (
           <p className="text-center text-sm text-muted-foreground p-4">
-            No suggestions found for this search.
+            هیچ پێشنیارێک بۆ ئەم گەڕانە نەدۆزرایەوە.
           </p>
         )}
         <ul className="space-y-1">
@@ -67,7 +67,7 @@ export function SmartSuggestions({ searchTerm, context, onSelect, onClose }: Sma
             >
               <p className="font-semibold">{suggestion.suggestion}</p>
               <p className="text-xs text-muted-foreground">
-                {suggestion.reason} (Confidence: {Math.round(suggestion.confidence * 100)}%)
+                {suggestion.reason} (دڵنیایی: {Math.round(suggestion.confidence * 100)}%)
               </p>
             </li>
           ))}

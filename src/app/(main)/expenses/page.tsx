@@ -6,15 +6,15 @@ import { PlusCircle } from "lucide-react";
 export default function ExpensesPage() {
     return (
         <div className="p-4 md:p-8 space-y-8">
-            <PageHeader title="Expenses" description="Track all business expenses, fixed and variable.">
+            <PageHeader title="خەرجییەکان" description="بەدواداچوون بۆ هەموو خەرجییەکانی کارەکەت بکە، جێگیر و گۆڕاو.">
                 <Button>
                     <PlusCircle />
-                    Add Expense
+                    زیادکردنی خەرجی
                 </Button>
             </PageHeader>
             <Card>
                 <CardContent className="p-8 text-center text-muted-foreground">
-                    <p>A list of expenses will be displayed here.</p>
+                    <p>لێرەدا لیستی خەرجییەکان پیشان دەدرێت.</p>
                 </CardContent>
             </Card>
         </div>

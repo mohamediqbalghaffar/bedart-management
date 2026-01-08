@@ -30,7 +30,7 @@ export default function MainLayout({
 
   return (
     <SidebarProvider>
-      <Sidebar side="left" collapsible="icon" variant="sidebar">
+      <Sidebar side="right" collapsible="icon" variant="sidebar">
         <SidebarNav />
       </Sidebar>
       <SidebarInset>
@@ -41,5 +41,3 @@ export default function MainLayout({
     </SidebarProvider>
   );
 }
-
-    
