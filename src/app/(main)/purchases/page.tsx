@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Loader2 } from "lucide-react";
+import { PlusCircle, Loader2, Trash2, FileSpreadsheet } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { BuyingForm } from "./components/buying-form";
 import { useFirestore, useCollection, useMemoFirebase, collection } from '@/firebase';
@@ -95,10 +95,10 @@ function PurchasesList() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>دابینکەر</TableHead>
-                            <TableHead>بەروار</TableHead>
-                            <TableHead>کۆی گشتی</TableHead>
-                            <TableHead>IDی پسوولە</TableHead>
+                            <TableHead className="text-right">دابینکەر</TableHead>
+                            <TableHead className="text-right">بەروار</TableHead>
+                            <TableHead className="text-right">کۆی گشتی</TableHead>
+                            <TableHead className="text-right">کارەکان</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -115,14 +115,23 @@ function PurchasesList() {
                         ) : (
                             enrichedForms.map((form) => (
                             <TableRow key={form.id}>
-                                <TableCell className="font-medium">{form.supplierName}</TableCell>
-                                <TableCell>{form.issueDate}</TableCell>
-                                <TableCell>
+                                <TableCell className="font-medium text-right">{form.supplierName}</TableCell>
+                                <TableCell className="text-right">{form.issueDate}</TableCell>
+                                <TableCell className="text-right">
                                     <Badge variant="secondary">
                                       {new Intl.NumberFormat('en-US').format(form.totalAmount || 0)}
                                     </Badge>
                                 </TableCell>
-                                <TableCell className="text-muted-foreground text-xs">{form.id}</TableCell>
+                                <TableCell className="text-right">
+                                    <div className="flex items-center justify-end gap-2">
+                                        <Button variant="ghost" size="icon">
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                        <Button variant="ghost" size="icon">
+                                            <FileSpreadsheet className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </TableCell>
                             </TableRow>
                         )))}
                     </TableBody>
