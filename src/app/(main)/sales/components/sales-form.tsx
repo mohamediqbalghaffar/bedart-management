@@ -17,6 +17,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { SmartSuggestions } from "./smart-suggestions";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useAuth, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking } from "@/firebase";
+import { collection, doc } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
 
 const salesFormSchema = z.object({
   formNumber: z.string().min(1, "ژمارەی فۆڕم پێویستە."),
@@ -46,6 +49,10 @@ type SalesFormValues = z.infer<typeof salesFormSchema>;
 
 export function SalesForm() {
   const [activeProductIndex, setActiveProductIndex] = useState<number | null>(null);
+  const firestore = useFirestore();
+  const auth = useAuth();
+  const { user } = useAuth();
+  const { toast } = useToast();
   
   const form = useForm<SalesFormValues>({
     resolver: zodResolver(salesFormSchema),
@@ -110,8 +117,77 @@ export function SalesForm() {
   }, [totalPaid, totalAmount, remainingBalance, form]);
 
 
-  function onSubmit(data: SalesFormValues) {
-    console.log(data);
+  async function onSubmit(data: SalesFormValues) {
+    if (!user || !firestore) {
+        toast({
+            variant: "destructive",
+            title: "هەڵەیەک ڕوویدا",
+            description: "تکایە سەرەتا بچۆ ژوورەوە.",
+        });
+        return;
+    }
+    
+    try {
+        // Create a new document reference for the selling form
+        const sellingFormRef = doc(collection(firestore, "selling_forms"));
+        const sellingFormId = sellingFormRef.id;
+
+        const { items, payments, ...mainData } = data;
+
+        // Prepare the main selling form data
+        const sellingFormData = {
+            ...mainData,
+            id: sellingFormId,
+            creatorId: user.uid,
+            issueDate: format(data.issueDate, "yyyy-MM-dd"),
+            totalPrice: totalAmount,
+            remainingBalance: remainingBalance,
+        };
+
+        // Save the main form data
+        await setDocumentNonBlocking(sellingFormRef, sellingFormData, { merge: true });
+
+        // Save the products as a subcollection
+        for (const item of items) {
+            const productRef = doc(collection(firestore, `selling_forms/${sellingFormId}/products`));
+            const productData = {
+                ...item,
+                id: productRef.id,
+                sellingFormId: sellingFormId,
+                lineTotal: item.quantity * item.unitPrice,
+            };
+            await setDocumentNonBlocking(productRef, productData, { merge: true });
+        }
+
+        // Save payments if they exist
+        if (payments && payments.length > 0) {
+            for (const payment of payments) {
+                const paymentRef = doc(collection(firestore, `selling_forms/${sellingFormId}/payments`));
+                const paymentData = {
+                    ...payment,
+                    id: paymentRef.id,
+                    paymentDate: format(payment.date, "yyyy-MM-dd"),
+                    sellingFormId: sellingFormId,
+                };
+                await setDocumentNonBlocking(paymentRef, paymentData, { merge: true });
+            }
+        }
+        
+        toast({
+            title: "سەرکەوتوو بوو!",
+            description: "فۆڕمی فرۆشتن بە سەرکەوتوویی پاشەکەوت کرا.",
+            className: "bg-accent text-accent-foreground",
+        });
+        form.reset();
+
+    } catch (error: any) {
+        console.error("Error saving sales form:", error);
+        toast({
+            variant: "destructive",
+            title: "هەڵەیەک ڕوویدا",
+            description: error.message || "پاشەکەوتکردنی فۆڕمی فرۆشتن سەرکەوتوو نەبوو.",
+        });
+    }
   }
 
   const handleSelectSuggestion = (suggestion: string) => {
@@ -144,7 +220,6 @@ export function SalesForm() {
                         <FormLabel className="mt-2">بەروار:</FormLabel>
                         <Popover>
                             <PopoverTrigger asChild>
-                                <FormControl>
                                 <Button
                                     variant={"outline"}
                                     className={cn(
@@ -159,9 +234,8 @@ export function SalesForm() {
                                     <span>بەروارێک</span>
                                     )}
                                 </Button>
-                                </FormControl>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
+                             <PopoverContent className="w-auto p-0" align="start">
                                 <Calendar
                                     mode="single"
                                     selected={field.value}
@@ -390,15 +464,15 @@ export function SalesForm() {
                                   name={`payments.${index}.method`}
                                   render={({ field }) => (
                                     <FormItem>
-                                      <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
-                                        <FormControl>
-                                          <SelectTrigger><SelectValue/></SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                          <SelectItem value="Cash">کاش</SelectItem>
-                                          <SelectItem value="Transfer">حەواڵە</SelectItem>
-                                        </SelectContent>
-                                      </Select>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
+                                            <FormControl>
+                                                <SelectTrigger><SelectValue/></SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                            <SelectItem value="Cash">کاش</SelectItem>
+                                            <SelectItem value="Transfer">حەواڵە</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                       <FormMessage/>
                                     </FormItem>
                                   )}
@@ -417,7 +491,9 @@ export function SalesForm() {
         )}
 
         <div className="flex justify-end pt-6 border-t">
-            <Button type="submit" size="lg">پاشەکەوتکردنی فۆڕم</Button>
+            <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? "...پاشەکەوت دەکرێت" : "پاشەکەوتکردنی فۆڕم"}
+            </Button>
         </div>
       </form>
     </Form>
