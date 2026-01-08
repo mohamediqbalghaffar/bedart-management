@@ -216,7 +216,7 @@ export function BuyingForm() {
             
             await setDoc(productSubCollectionRef, productData);
             
-            // Update stock in products collection
+            // Update stock in products collection using a transaction
             await runTransaction(firestore, async (transaction) => {
                 const productDoc = await transaction.get(productRef);
                 if (!productDoc.exists()) {
@@ -234,6 +234,7 @@ export function BuyingForm() {
                     transaction.update(productRef, { 
                         currentQuantity: newQuantity,
                         supplierId: data.supplierId, // Update supplier to the latest one
+                        stockLocation: data.stockLocation // Update stock location
                     });
                 }
             });
@@ -463,3 +464,5 @@ export function BuyingForm() {
     </Form>
   );
 }
+
+    
