@@ -59,82 +59,63 @@ function ProductCombobox({ form, index }: { form: UseFormReturn<SalesFormValues>
   const firestore = useFirestore();
   const productsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'products') : null, [firestore]);
   const { data: products } = useCollection<Product>(productsQuery);
-
   const [open, setOpen] = React.useState(false);
-  const [inputValue, setInputValue] = useState(form.watch(`items.${index}.product`));
-
-  useEffect(() => {
-    // Sync local state with react-hook-form state
-    const subscription = form.watch((value) => {
-        setInputValue(value.items?.[index]?.product || "");
-    });
-    return () => subscription.unsubscribe();
-  }, [form, index]);
-
-
-  const handleSelect = (product: Product) => {
-    form.setValue(`items.${index}.product`, product.productName, { shouldValidate: true });
-    if (product.unitPrice) {
-      form.setValue(`items.${index}.unitPrice`, product.unitPrice);
-    }
-    setInputValue(product.productName);
-    setOpen(false);
-  };
   
-  const handleCommandItemSelect = (productName: string) => {
-    const product = products?.find(p => p.productName.toLowerCase() === productName.toLowerCase());
-    if (product) {
-      handleSelect(product);
-    }
-  }
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
-      setInputValue(value);
-      form.setValue(`items.${index}.product`, value, { shouldValidate: true });
-      if(!open) setOpen(true);
-  }
-  
-  const currentFieldValue = form.watch(`items.${index}.product`)
-  const filteredProducts = products?.filter(p => p.productName.toLowerCase().includes(inputValue.toLowerCase()));
+  const currentFieldValue = form.watch(`items.${index}.product`);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <div className="relative">
-             <FormControl>
-                <Input
-                    placeholder="کاڵایەک هەڵبژێرە..."
-                    value={inputValue}
-                    onChange={handleInputChange}
-                    onClick={() => setOpen(true)}
-                    className="w-full"
-                />
-             </FormControl>
-          <ChevronsUpDown className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 shrink-0 opacity-50" />
-        </div>
+        <FormControl>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between font-normal"
+          >
+            {currentFieldValue
+              ? products?.find((p) => p.productName.toLowerCase() === currentFieldValue.toLowerCase())?.productName || currentFieldValue
+              : "کاڵایەک هەڵبژێرە..."}
+            <ChevronsUpDown className="mr-auto h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </FormControl>
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-        <Command>
-          <CommandInput placeholder="گەڕان بۆ کاڵا..." value={inputValue} onValueChange={setInputValue} />
+        <Command
+            filter={(value, search) => {
+                const product = products?.find(p => p.productName.toLowerCase() === value.toLowerCase());
+                if(product?.productName.toLowerCase().includes(search.toLowerCase())) return 1;
+                return 0;
+            }}
+        >
+          <CommandInput placeholder="گەڕان بۆ کاڵا..." />
           <CommandList>
-            <CommandEmpty>
-                {inputValue ? `زیادکردنی کاڵای نوێ: "${inputValue}"` : "هیچ کاڵایەک نەدۆزرایەوە."}
-            </CommandEmpty>
+            <CommandEmpty>هیچ کاڵایەک نەدۆزرایەوە.</CommandEmpty>
             <CommandGroup>
               {products?.map((product) => (
                 <CommandItem
                   key={product.id}
                   value={product.productName}
-                  onSelect={handleCommandItemSelect}
+                  onSelect={(selectedValue) => {
+                    const selectedProduct = products.find(p => p.productName.toLowerCase() === selectedValue.toLowerCase());
+                    if (selectedProduct) {
+                         form.setValue(`items.${index}.product`, selectedProduct.productName, { shouldValidate: true });
+                         if(selectedProduct.unitPrice) {
+                            form.setValue(`items.${index}.unitPrice`, selectedProduct.unitPrice, { shouldValidate: true });
+                         }
+                    }
+                    setOpen(false);
+                  }}
                 >
                   <Check
                     className={cn(
                       "ml-2 h-4 w-4",
-                      currentFieldValue?.toLowerCase() === product.productName.toLowerCase() ? "opacity-100" : "opacity-0"
+                      currentFieldValue?.toLowerCase() === product.productName.toLowerCase()
+                        ? "opacity-100"
+                        : "opacity-0"
                     )}
                   />
-                   <div className="flex justify-between w-full">
+                  <div className="flex justify-between w-full">
                      <span>{product.productName}</span>
                      <span className="text-xs text-muted-foreground">({product.currentQuantity} دانە)</span>
                   </div>
@@ -598,5 +579,3 @@ export function SalesForm() {
     </Form>
   );
 }
-
-    

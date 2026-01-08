@@ -55,17 +55,8 @@ function ProductCombobox({ form, index }: { form: UseFormReturn<BuyingFormValues
   const firestore = useFirestore();
   const productsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'products') : null, [firestore]);
   const { data: products } = useCollection<Product>(productsQuery);
-
   const [open, setOpen] = useState(false);
-  
-  // This state holds the search term inside the combobox
-  const [searchValue, setSearchValue] = useState("");
-
-  const handleSelect = (productName: string) => {
-    form.setValue(`items.${index}.product`, productName, { shouldValidate: true });
-    setSearchValue(""); // Clear search value after selection
-    setOpen(false);
-  };
+  const [searchValue, setSearchValue] = useState('');
 
   const currentFieldValue = form.watch(`items.${index}.product`);
 
@@ -73,47 +64,58 @@ function ProductCombobox({ form, index }: { form: UseFormReturn<BuyingFormValues
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <FormControl>
-            <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={open}
-                className="w-full justify-between font-normal"
-            >
-                {currentFieldValue ? (
-                    products?.find((p) => p.productName.toLowerCase() === currentFieldValue.toLowerCase())?.productName || currentFieldValue
-                ) : (
-                    "کاڵایەک هەڵبژێرە..."
-                )}
-                <ChevronsUpDown className="mr-auto h-4 w-4 shrink-0 opacity-50" />
-            </Button>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between font-normal"
+          >
+            {currentFieldValue || "کاڵایەک هەڵبژێرە..."}
+            <ChevronsUpDown className="mr-auto h-4 w-4 shrink-0 opacity-50" />
+          </Button>
         </FormControl>
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-        <Command>
-          <CommandInput 
-            placeholder="گەڕان بۆ کاڵا..." 
+        <Command
+            filter={(value, search) => {
+                if (value.toLowerCase().includes(search.toLowerCase())) return 1;
+                return 0;
+            }}
+        >
+          <CommandInput
+            placeholder="گەڕان بۆ کاڵا..."
             value={searchValue}
             onValueChange={setSearchValue}
           />
           <CommandList>
             <CommandEmpty>
-                <Button variant="ghost" className="w-full" onClick={() => handleSelect(searchValue)}>
-                    زیادکردنی کاڵای نوێ: "{searchValue}"
-                </Button>
+              <Button
+                variant="ghost"
+                className="w-full"
+                onClick={() => {
+                  form.setValue(`items.${index}.product`, searchValue, { shouldValidate: true });
+                  setOpen(false);
+                }}
+              >
+                زیادکردنی کاڵای نوێ: "{searchValue}"
+              </Button>
             </CommandEmpty>
             <CommandGroup>
-              {products
-                ?.filter(p => p.productName.toLowerCase().includes(searchValue.toLowerCase()))
-                .map((product) => (
+              {products?.map((product) => (
                 <CommandItem
                   key={product.id}
                   value={product.productName}
-                  onSelect={() => handleSelect(product.productName)}
+                  onSelect={(currentValue) => {
+                    form.setValue(`items.${index}.product`, currentValue, { shouldValidate: true });
+                    setOpen(false);
+                  }}
                 >
                   <Check
                     className={cn(
                       "ml-2 h-4 w-4",
-                      currentFieldValue?.toLowerCase() === product.productName.toLowerCase() ? "opacity-100" : "opacity-0"
+                      currentFieldValue?.toLowerCase() === product.productName.toLowerCase()
+                        ? "opacity-100"
+                        : "opacity-0"
                     )}
                   />
                   {product.productName}
@@ -544,5 +546,3 @@ export function BuyingForm() {
     </Form>
   );
 }
-
-    
