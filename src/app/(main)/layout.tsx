@@ -7,10 +7,12 @@ import { cn } from '@/lib/utils';
 
 export default function MainLayout({
   children,
-  params, // Destructure params to prevent enumeration issues
+  params,
+  searchParams,
 }: {
   children: React.ReactNode;
   params: any;
+  searchParams: any;
 }) {
   const [hasMounted, setHasMounted] = useState(false);
 
