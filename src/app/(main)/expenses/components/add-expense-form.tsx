@@ -20,11 +20,12 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 
 const expenseSchema = z.object({
-  date: z.date({ required_error: "بەرواری خەرجی پێویستە." }),
+  name: z.string().min(1, { message: "ناوی خەرجی پێویستە." }),
+  note: z.string().optional(),
+  paidBy: z.enum(['Cash - Dinar', 'Cash - Dollar']),
   amount: z.coerce.number().min(1, "بڕی خەرجی دەبێت لانیکەم 1 بێت."),
   category: z.enum(['Daily', 'Salary', 'Rent', 'Electricity', 'Transport', 'Other']),
-  paidBy: z.enum(['Cash', 'Transfer']),
-  note: z.string().optional(),
+  date: z.date({ required_error: "بەرواری خەرجی پێویستە." }),
 });
 
 type ExpenseFormValues = z.infer<typeof expenseSchema>;
@@ -36,11 +37,12 @@ export function AddExpenseForm() {
   const form = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
     defaultValues: {
-      date: new Date(),
+      name: "",
+      note: "",
+      paidBy: 'Cash - Dinar',
       amount: 0,
       category: 'Daily',
-      paidBy: 'Cash',
-      note: "",
+      date: new Date(),
     },
   });
 
@@ -84,40 +86,55 @@ export function AddExpenseForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" dir="rtl">
         <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>ناوی خەرجی</FormLabel>
+              <FormControl>
+                <Input placeholder="بۆ نموونە: کڕینی چا و قاوە" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="note"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>تێبینی</FormLabel>
+              <FormControl>
+                <Textarea placeholder="تێبینی بنووسە (ئارەزوومەندانە)" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
             control={form.control}
-            name="date"
+            name="paidBy"
             render={({ field }) => (
-                <FormItem className="flex flex-col">
-                    <FormLabel>بەروار</FormLabel>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <FormControl>
-                            <Button
-                                variant={"outline"}
-                                className={cn(
-                                "w-full justify-start text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                                )}
-                            >
-                                <CalendarIcon className="ml-2 h-4 w-4" />
-                                {field.value ? (
-                                format(field.value, "yyyy/MM/dd")
-                                ) : (
-                                <span>بەروارێک هەڵبژێرە</span>
-                                )}
-                            </Button>
-                            </FormControl>
-                        </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                initialFocus
-                            />
-                        </PopoverContent>
-                    </Popover>
-                    <FormMessage />
+                <FormItem className="space-y-3">
+                <FormLabel>شێوازی پارەدان</FormLabel>
+                <FormControl>
+                    <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex items-center space-x-2 space-x-reverse"
+                        dir="rtl"
+                    >
+                        <FormItem className="flex items-center space-x-1 space-x-reverse">
+                            <FormControl><RadioGroupItem value="Cash - Dinar" /></FormControl>
+                            <FormLabel className="font-normal">کاش - دینار</FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-1 space-x-reverse">
+                            <FormControl><RadioGroupItem value="Cash - Dollar" /></FormControl>
+                            <FormLabel className="font-normal">کاش - دۆلار</FormLabel>
+                        </FormItem>
+                    </RadioGroup>
+                </FormControl>
+                <FormMessage />
                 </FormItem>
             )}
         />
@@ -161,43 +178,41 @@ export function AddExpenseForm() {
         />
         <FormField
             control={form.control}
-            name="paidBy"
+            name="date"
             render={({ field }) => (
-                <FormItem className="space-y-3">
-                <FormLabel>شێوازی پارەدان</FormLabel>
-                <FormControl>
-                    <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="flex items-center space-x-2 space-x-reverse"
-                        dir="rtl"
-                    >
-                        <FormItem className="flex items-center space-x-1 space-x-reverse">
-                            <FormControl><RadioGroupItem value="Cash" /></FormControl>
-                            <FormLabel className="font-normal">کاش</FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-1 space-x-reverse">
-                            <FormControl><RadioGroupItem value="Transfer" /></FormControl>
-                            <FormLabel className="font-normal">حەواڵە</FormLabel>
-                        </FormItem>
-                    </RadioGroup>
-                </FormControl>
-                <FormMessage />
+                <FormItem className="flex flex-col">
+                    <FormLabel>بەروار</FormLabel>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <FormControl>
+                            <Button
+                                variant={"outline"}
+                                className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                                )}
+                            >
+                                <CalendarIcon className="ml-2 h-4 w-4" />
+                                {field.value ? (
+                                format(field.value, "yyyy/MM/dd")
+                                ) : (
+                                <span>بەروارێک هەڵبژێرە</span>
+                                )}
+                            </Button>
+                            </FormControl>
+                        </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
+                    <FormMessage />
                 </FormItem>
             )}
-        />
-         <FormField
-          control={form.control}
-          name="note"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>تێبینی</FormLabel>
-              <FormControl>
-                <Textarea placeholder="تێبینی بنووسە (ئارەزوومەندانە)" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
         />
         <div className="flex justify-end pt-4">
             <Button type="submit" disabled={form.formState.isSubmitting}>

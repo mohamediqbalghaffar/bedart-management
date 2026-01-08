@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "SellingForm": {
@@ -134,6 +135,10 @@
           "type": "string",
           "description": "Unique identifier for the Expense entity."
         },
+        "name": {
+          "type": "string",
+          "description": "Name or title of the expense."
+        },
         "date": {
           "type": "string",
           "description": "Date of the expense.",
@@ -149,7 +154,7 @@
         },
         "paidBy": {
           "type": "string",
-          "description": "Method of payment: Cash, Transfer."
+          "description": "Method of payment: Cash - Dinar, Cash - Dollar."
         },
         "note": {
           "type": "string",
@@ -162,6 +167,7 @@
       },
       "required": [
         "id",
+        "name",
         "date",
         "amount",
         "category",
@@ -616,4 +622,3 @@
     "reasoning": "The Firestore structure is designed to facilitate a secure and scalable CRM for the mattress shop, adhering to the principles of Authorization Independence (CRITICAL), Clarity of Intent, DBAC (Database Based Access Control), and QAPs (Rules are not Filters). Authorization Independence is achieved through denormalization. For instance, user roles are stored in the `users` collection and potentially duplicated within collaborative documents or subcollections if needed (though explicit group roles were not specified in this iteration of the requirements). QAPs are supported by segregating data based on access requirements. The `users/{userId}` structure encapsulates private user data. Collaborative entities (if they existed) would use membership maps stored directly within the document, allowing list operations based on membership to be performed securely. The structure below creates dedicated collections to segregate the data based on roles and different access permissions."
   }
 }
-    

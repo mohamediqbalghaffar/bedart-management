@@ -14,11 +14,12 @@ import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 type Expense = {
-    date: string;
+    name: string;
+    note?: string;
+    paidBy: string;
     amount: number;
     category: string;
-    paidBy: string;
-    note?: string;
+    date: string;
 };
 
 function ExpensesList() {
@@ -40,6 +41,11 @@ function ExpensesList() {
         'Other': 'هەمەجۆر'
     };
 
+    const paidByTranslations: { [key: string]: string } = {
+        'Cash - Dinar': 'کاش - دینار',
+        'Cash - Dollar': 'کاش - دۆلار'
+    };
+
     return (
         <Card>
             <CardHeader>
@@ -49,34 +55,36 @@ function ExpensesList() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="text-right">بەروار</TableHead>
+                            <TableHead className="text-right">ناوی خەرجی</TableHead>
+                            <TableHead className="text-right">تێبینی</TableHead>
+                            <TableHead className="text-right">شێوازی پارەدان</TableHead>
                             <TableHead className="text-right">بڕ</TableHead>
                             <TableHead className="text-right">پۆل</TableHead>
-                            <TableHead className="text-right">شێوازی پارەدان</TableHead>
-                            <TableHead className="text-right">تێبینی</TableHead>
+                            <TableHead className="text-right">بەروار</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center">
+                                <TableCell colSpan={6} className="h-24 text-center">
                                     <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                                 </TableCell>
                             </TableRow>
                         ) : !expenses || expenses.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">هیچ خەرجییەک تۆمار نەکراوە.</TableCell>
+                                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">هیچ خەرجییەک تۆمار نەکراوە.</TableCell>
                             </TableRow>
                         ) : (
                             expenses.map((expense) => (
                                 <TableRow key={expense.id}>
-                                    <TableCell className="text-right">{expense.date}</TableCell>
-                                    <TableCell className="font-medium text-right">{new Intl.NumberFormat('en-US').format(expense.amount)}</TableCell>
+                                    <TableCell className="font-medium text-right">{expense.name}</TableCell>
+                                    <TableCell className="text-right">{expense.note || 'N/A'}</TableCell>
+                                    <TableCell className="text-right">{paidByTranslations[expense.paidBy] || expense.paidBy}</TableCell>
+                                    <TableCell className="text-right">{new Intl.NumberFormat('en-US').format(expense.amount)}</TableCell>
                                     <TableCell className="text-right">
                                          <Badge variant="outline">{categoryTranslations[expense.category] || expense.category}</Badge>
                                     </TableCell>
-                                    <TableCell className="text-right">{expense.paidBy === 'Cash' ? 'کاش' : 'حەواڵە'}</TableCell>
-                                    <TableCell className="text-right">{expense.note || 'N/A'}</TableCell>
+                                    <TableCell className="text-right">{expense.date}</TableCell>
                                 </TableRow>
                             ))
                         )}
