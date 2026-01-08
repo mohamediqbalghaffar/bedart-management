@@ -10,10 +10,13 @@ export function useIsMobile() {
       setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
     }
 
+    // Call on mount
     checkDevice()
 
+    // Add event listener for resize
     window.addEventListener("resize", checkDevice)
 
+    // Cleanup listener on unmount
     return () => window.removeEventListener("resize", checkDevice)
   }, [])
 
