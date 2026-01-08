@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { SalesForm } from "./components/sales-form";
-import { useFirestore, useCollection, useMemoFirebase, collection, deleteDocumentNonBlocking, doc } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, collection, deleteDoc, doc, getDocs, runTransaction } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { SalesDetails } from './components/sales-details';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -24,6 +24,12 @@ type SellingFormType = {
     paymentStatus: 'Unpaid' | 'Partially Paid' | 'Fully Paid';
     formNumber: string;
 };
+
+type SellingFormProduct = {
+    productId: string;
+    quantity: number;
+};
+
 
 function SalesList() {
     const firestore = useFirestore();
@@ -50,11 +56,39 @@ function SalesList() {
 
     const handleDelete = async (formId: string) => {
         if (!firestore) return;
+        
         try {
-            await deleteDocumentNonBlocking(doc(firestore, 'selling_forms', formId));
+            // 1. Fetch all items from the form's products subcollection
+            const productsSoldRef = collection(firestore, `selling_forms/${formId}/products`);
+            const productsSoldSnapshot = await getDocs(productsSoldRef);
+            const productsSold = productsSoldSnapshot.docs.map(d => d.data() as SellingFormProduct);
+
+            // 2. Run transactions to add stock back
+            for (const item of productsSold) {
+                const productRef = doc(firestore, 'products', item.productId);
+                await runTransaction(firestore, async (transaction) => {
+                    const productDoc = await transaction.get(productRef);
+                    if (productDoc.exists()) {
+                        const newQuantity = (productDoc.data().currentQuantity || 0) + item.quantity;
+                        transaction.update(productRef, { currentQuantity: newQuantity });
+                    }
+                });
+            }
+
+            // 3. Delete documents in subcollections (products, payments)
+            const paymentsRef = collection(firestore, `selling_forms/${formId}/payments`);
+            const productsSnapshot = await getDocs(productsSoldRef);
+            const paymentsSnapshot = await getDocs(paymentsRef);
+            await Promise.all(productsSnapshot.docs.map(d => deleteDoc(d.ref)));
+            await Promise.all(paymentsSnapshot.docs.map(p => deleteDoc(p.ref)));
+
+
+            // 4. Delete the main form document
+            await deleteDoc(doc(firestore, 'selling_forms', formId));
+
             toast({
                 title: "سەرکەوتوو بوو",
-                description: "فۆڕمی فرۆشتن بە سەرکەوتوویی سڕایەوە.",
+                description: "فۆڕمی فرۆشتن بە سەرکەوتوویی سڕایەوە و کاڵاکان گەڕێنرانەوە بۆ کۆگا.",
                 className: "bg-accent text-accent-foreground",
             });
         } catch (error) {
@@ -133,7 +167,7 @@ function SalesList() {
                                                     <AlertDialogHeader>
                                                         <AlertDialogTitle>دڵنیایت لە سڕینەوە؟</AlertDialogTitle>
                                                         <AlertDialogDescription>
-                                                            ئەم کردارە پاشگەزبوونەوەی نییە. ئەمە بە هەمیشەیی فۆڕمەکە دەسڕێتەوە.
+                                                            ئەم کردارە پاشگەزبوونەوەی نییە. کاڵاکان دەگەڕێنرێنەوە بۆ کۆگا و فۆڕمەکە بە هەمیشەیی دەسڕێتەوە.
                                                         </AlertDialogDescription>
                                                     </AlertDialogHeader>
                                                     <AlertDialogFooter>

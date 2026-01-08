@@ -8,11 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle, Loader2, Trash2, FileSpreadsheet } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { BuyingForm } from "./components/buying-form";
-import { useFirestore, useCollection, useMemoFirebase, collection, deleteDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, collection, deleteDoc, doc, getDocs, runTransaction } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { getDocs, collection as getCollection, doc } from 'firebase/firestore';
+import { getDocs as getDocsClient, collection as getCollectionClient } from 'firebase/firestore';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +40,7 @@ type Supplier = {
 };
 
 type BuyingFormProduct = {
+    productId: string;
     quantity: number;
     unitPrice: number;
 };
@@ -78,8 +79,8 @@ function PurchasesList() {
             const supplierMap = new Map(suppliers.map(s => [s.id, s.supplierName]));
 
             const enriched = await Promise.all(buyingForms.map(async (form) => {
-                const productsColRef = getCollection(firestore, `buying_forms/${form.id}/products`);
-                const productsSnapshot = await getDocs(productsColRef);
+                const productsColRef = getCollectionClient(firestore, `buying_forms/${form.id}/products`);
+                const productsSnapshot = await getDocsClient(productsColRef);
                 const products = productsSnapshot.docs.map(doc => doc.data() as BuyingFormProduct);
 
                 const subTotal = products.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
@@ -104,13 +105,32 @@ function PurchasesList() {
         if (!firestore) return;
         
         try {
-            // Note: This doesn't delete subcollections in Firestore. For a full delete,
-            // a cloud function would be required to handle subcollection deletion recursively.
-            // For this client-side app, we are just deleting the main document.
-            await deleteDocumentNonBlocking(doc(firestore, 'buying_forms', formId));
+            // 1. Fetch all items from the form's products subcollection
+            const productsPurchasedRef = collection(firestore, `buying_forms/${formId}/products`);
+            const productsPurchasedSnapshot = await getDocs(productsPurchasedRef);
+            const productsPurchased = productsPurchasedSnapshot.docs.map(d => d.data() as BuyingFormProduct);
+            
+            // 2. Run transactions to subtract stock
+            for (const item of productsPurchased) {
+                const productRef = doc(firestore, 'products', item.productId);
+                await runTransaction(firestore, async (transaction) => {
+                    const productDoc = await transaction.get(productRef);
+                    if (productDoc.exists()) {
+                        const newQuantity = (productDoc.data().currentQuantity || 0) - item.quantity;
+                        transaction.update(productRef, { currentQuantity: newQuantity < 0 ? 0 : newQuantity });
+                    }
+                });
+            }
+
+            // 3. Delete documents in subcollection
+            await Promise.all(productsPurchasedSnapshot.docs.map(d => deleteDoc(d.ref)));
+
+            // 4. Delete the main form document
+            await deleteDoc(doc(firestore, 'buying_forms', formId));
+
             toast({
                 title: "سەرکەوتوو بوو",
-                description: "پسوولەی کڕین بە سەرکەوتوویی سڕایەوە.",
+                description: "پسوولەی کڕین بە سەرکەوتوویی سڕایەوە و بڕی کاڵاکان لە کۆگا کەمکرایەوە.",
                 className: "bg-accent text-accent-foreground",
             });
         } catch (error) {
@@ -174,7 +194,7 @@ function PurchasesList() {
                                                 <AlertDialogHeader>
                                                 <AlertDialogTitle>دڵنیایت لە سڕینەوە؟</AlertDialogTitle>
                                                 <AlertDialogDescription>
-                                                    ئەم کردارە پاشگەزبوونەوەی نییە. ئەمە بە هەمیشەیی پسوولەکە دەسڕێتەوە.
+                                                    ئەم کردارە پاشگەزبوونەوەی نییە. کاڵاکان لە کۆگا کەم دەکرێنەوە و پسوولەکە بە هەمیشەیی دەسڕێتەوە.
                                                 </AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
