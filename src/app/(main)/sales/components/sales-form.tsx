@@ -60,57 +60,56 @@ function ProductCombobox({ form, index }: { form: UseFormReturn<SalesFormValues>
   const productsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'products') : null, [firestore]);
   const { data: products } = useCollection<Product>(productsQuery);
 
-  const [open, setOpen] = useState(false);
-  const [inputValue, setInputValue] = useState(form.watch(`items.${index}.product`));
-
-  const handleSelect = (product: WithId<Product>) => {
-    form.setValue(`items.${index}.product`, product.productName);
-    if(product.unitPrice) {
-        form.setValue(`items.${index}.unitPrice`, product.unitPrice);
-    }
-    setInputValue(product.productName);
-    setOpen(false);
-  };
+  const [open, setOpen] = React.useState(false)
   
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
-      setInputValue(value);
-      form.setValue(`items.${index}.product`, value);
-      if(!open) setOpen(true);
-  }
+  const currentProductValue = form.watch(`items.${index}.product`);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <div className="relative">
-          <Input
-            placeholder="ناوی کاڵا..."
-            value={inputValue}
-            onChange={handleInputChange}
-            className="w-full"
-          />
-          <ChevronsUpDown className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 shrink-0 opacity-50" />
-        </div>
+        <FormControl>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between"
+          >
+            {currentProductValue
+              ? products?.find((product) => product.productName.toLowerCase() === currentProductValue.toLowerCase())?.productName
+              : "کاڵایەک هەڵبژێرە..."}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </FormControl>
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
         <Command>
           <CommandInput placeholder="گەڕان بۆ کاڵا..." />
           <CommandList>
-            <CommandEmpty>هیچ کاڵایەک نەدۆزرایەوە. دەتوانیت کاڵای نوێ زیاد بکەیت.</CommandEmpty>
+            <CommandEmpty>
+                <Button variant="ghost" className="w-full" onClick={() => setOpen(false)}>
+                    زیادکردنی کاڵای نوێ: "{form.getValues(`items.${index}.product`)}"
+                </Button>
+            </CommandEmpty>
             <CommandGroup>
               {products?.map((product) => (
                 <CommandItem
                   key={product.id}
                   value={product.productName}
-                  onSelect={() => handleSelect(product)}
+                  onSelect={(currentValue) => {
+                    form.setValue(`items.${index}.product`, currentValue === form.getValues(`items.${index}.product`) ? "" : currentValue)
+                    if(product.unitPrice) {
+                        form.setValue(`items.${index}.unitPrice`, product.unitPrice);
+                    }
+                    setOpen(false)
+                  }}
                 >
                   <Check
                     className={cn(
-                      "ml-2 h-4 w-4",
-                      form.getValues(`items.${index}.product`) === product.productName ? "opacity-100" : "opacity-0"
+                      "mr-2 h-4 w-4",
+                      currentProductValue === product.productName ? "opacity-100" : "opacity-0"
                     )}
                   />
-                  <div className="flex justify-between w-full">
+                   <div className="flex justify-between w-full">
                      <span>{product.productName}</span>
                      <span className="text-xs text-muted-foreground">({product.currentQuantity} دانە)</span>
                   </div>
@@ -355,14 +354,16 @@ export function SalesForm() {
                     {fields.map((field, index) => (
                         <TableRow key={field.id}>
                             <TableCell className="align-top">
-                                <FormField control={form.control} name={`items.${index}.product`} render={({ field }) => (
-                                  <FormItem>
-                                    <FormControl>
-                                        <ProductCombobox form={form} index={index} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )} />
+                                <FormField
+                                    control={form.control}
+                                    name={`items.${index}.product`}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <ProductCombobox form={form} index={index} />
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
                             </TableCell>
                             <TableCell className="align-top">
                                 <FormField control={form.control} name={`items.${index}.quantity`} render={({ field }) => (<FormItem><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
