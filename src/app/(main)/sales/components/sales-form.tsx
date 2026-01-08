@@ -14,7 +14,6 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { SmartSuggestions } from "./smart-suggestions";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useFirestore, setDocumentNonBlocking } from "@/firebase";
@@ -48,7 +47,6 @@ const salesFormSchema = z.object({
 type SalesFormValues = z.infer<typeof salesFormSchema>;
 
 export function SalesForm() {
-  const [activeProductIndex, setActiveProductIndex] = useState<number | null>(null);
   const firestore = useFirestore();
   const { toast } = useToast();
   
@@ -202,13 +200,6 @@ export function SalesForm() {
     }
   }
 
-  const handleSelectSuggestion = (suggestion: string) => {
-    if (activeProductIndex !== null) {
-      form.setValue(`items.${activeProductIndex}.product`, suggestion);
-      setActiveProductIndex(null);
-    }
-  }
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" dir="rtl">
@@ -288,16 +279,7 @@ export function SalesForm() {
                                 <FormField control={form.control} name={`items.${index}.product`} render={({ field }) => (
                                   <FormItem>
                                     <FormControl>
-                                      <div className="relative">
-                                        <Input placeholder="ناوی کاڵا" {...field} onFocus={() => setActiveProductIndex(index)} />
-                                        {activeProductIndex === index && (
-                                          <SmartSuggestions
-                                              searchTerm={form.watch(`items.${index}.product`)}
-                                              onSelect={handleSelectSuggestion}
-                                              onClose={() => setActiveProductIndex(null)}
-                                          />
-                                        )}
-                                      </div>
+                                        <Input placeholder="ناوی کاڵا" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                   </FormItem>
