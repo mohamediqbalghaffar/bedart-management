@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -27,7 +26,9 @@ type SellingFormType = {
 
 type SellingFormProduct = {
     productId: string;
+    productName: string;
     quantity: number;
+    unitPrice: number;
 };
 
 
@@ -69,7 +70,8 @@ function SalesList() {
                 await runTransaction(firestore, async (transaction) => {
                     const productDoc = await transaction.get(productRef);
                     if (productDoc.exists()) {
-                        const newQuantity = (productDoc.data().currentQuantity || 0) + item.quantity;
+                        const currentQuantity = productDoc.data().currentQuantity || 0;
+                        const newQuantity = Number(currentQuantity) + Number(item.quantity);
                         transaction.update(productRef, { currentQuantity: newQuantity });
                     }
                 });
@@ -77,9 +79,8 @@ function SalesList() {
 
             // 3. Delete documents in subcollections (products, payments)
             const paymentsRef = collection(firestore, `selling_forms/${formId}/payments`);
-            const productsSnapshot = await getDocs(productsSoldRef);
             const paymentsSnapshot = await getDocs(paymentsRef);
-            await Promise.all(productsSnapshot.docs.map(d => deleteDoc(d.ref)));
+            await Promise.all(productsSoldSnapshot.docs.map(d => deleteDoc(d.ref)));
             await Promise.all(paymentsSnapshot.docs.map(p => deleteDoc(p.ref)));
 
 
