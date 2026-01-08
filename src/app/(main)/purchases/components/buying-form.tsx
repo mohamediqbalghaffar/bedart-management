@@ -359,11 +359,11 @@ export function BuyingForm() {
             <Table>
                 <TableHeader>
                     <TableRow className="bg-primary/90 hover:bg-primary">
-                        <TableHead className="w-[30%] text-primary-foreground">بابەت</TableHead>
-                        <TableHead className="w-[20%] text-primary-foreground">پۆل</TableHead>
-                        <TableHead className="text-primary-foreground">دانە</TableHead>
-                        <TableHead className="text-primary-foreground">نرخی تاک</TableHead>
-                        <TableHead className="text-primary-foreground">نرخی کۆ</TableHead>
+                        <TableHead className="w-[30%] text-primary-foreground text-center">بابەت</TableHead>
+                        <TableHead className="w-[20%] text-primary-foreground text-center">پۆل</TableHead>
+                        <TableHead className="text-primary-foreground text-center">دانە</TableHead>
+                        <TableHead className="text-primary-foreground text-center">نرخی تاک</TableHead>
+                        <TableHead className="text-primary-foreground text-center">نرخی کۆ</TableHead>
                         <TableHead></TableHead>
                     </TableRow>
                 </TableHeader>
