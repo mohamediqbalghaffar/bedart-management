@@ -31,7 +31,7 @@ const salesFormSchema = z.object({
   paymentStatus: z.enum(["Unpaid", "Partially Paid", "Fully Paid"]),
   paymentType: z.enum(["After Delivery", "Installments", "Pre-order"]),
   payments: z.array(z.object({
-      date: z.date(),
+      date: z.date({ required_error: "بەرواری پارەدان پێویستە." }),
       amount: z.coerce.number().min(0.01, "بڕ دەبێت موجەب بێت."),
       method: z.enum(["Cash", "Transfer"]),
       note: z.string().optional(),
@@ -244,10 +244,67 @@ export function SalesForm() {
                     <TableBody>
                         {paymentFields.map((field, index) => (
                            <TableRow key={field.id}>
-                               <TableCell><FormField control={form.control} name={`payments.${index}.date`} render={({ field }) => ( <FormItem><FormControl><Input type="date" {...field} onChange={e => field.onChange(e.target.valueAsDate)} value={field.value ? format(field.value, 'yyyy-MM-dd') : ''} /></FormControl></FormItem>)}/></TableCell>
-                               <TableCell><FormField control={form.control} name={`payments.${index}.amount`} render={({ field }) => ( <FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl></FormItem>)}/></TableCell>
-                               <TableCell><FormField control={form.control} name={`payments.${index}.method`} render={({ field }) => ( <FormItem><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="Cash">کاش</SelectItem><SelectItem value="Transfer">حەواڵە</SelectItem></SelectContent></Select></FormItem>)}/></TableCell>
-                               <TableCell><FormField control={form.control} name={`payments.${index}.note`} render={({ field }) => ( <FormItem><FormControl><Input {...field} /></FormControl></FormItem>)}/></TableCell>
+                               <TableCell>
+                                 <FormField
+                                    control={form.control}
+                                    name={`payments.${index}.date`}
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-col">
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                    <Button
+                                                        variant={"outline"}
+                                                        className={cn(
+                                                        "w-full justify-start text-left font-normal",
+                                                        !field.value && "text-muted-foreground"
+                                                        )}
+                                                    >
+                                                        <CalendarIcon className="ml-2 h-4 w-4" />
+                                                        {field.value ? (
+                                                        format(field.value, "PPP")
+                                                        ) : (
+                                                        <span>بەروارێک هەڵبژێرە</span>
+                                                        )}
+                                                    </Button>
+                                                    </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar
+                                                        mode="single"
+                                                        selected={field.value}
+                                                        onSelect={field.onChange}
+                                                        initialFocus
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                               </TableCell>
+                               <TableCell><FormField control={form.control} name={`payments.${index}.amount`} render={({ field }) => ( <FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage/></FormItem>)}/></TableCell>
+                               <TableCell>
+                                <FormField
+                                  control={form.control}
+                                  name={`payments.${index}.method`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                          <SelectTrigger><SelectValue/></SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                          <SelectItem value="Cash">کاش</SelectItem>
+                                          <SelectItem value="Transfer">حەواڵە</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                      <FormMessage/>
+                                    </FormItem>
+                                  )}
+                                />
+                              </TableCell>
+                               <TableCell><FormField control={form.control} name={`payments.${index}.note`} render={({ field }) => ( <FormItem><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem>)}/></TableCell>
                                <TableCell><Button variant="ghost" size="icon" onClick={() => removePayment(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
                            </TableRow>
                         ))}
@@ -275,3 +332,5 @@ export function SalesForm() {
     </Form>
   );
 }
+
+    
