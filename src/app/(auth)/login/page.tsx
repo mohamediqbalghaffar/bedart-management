@@ -102,7 +102,13 @@ export default function LoginPage() {
                     <FormLabel>وشەی نهێنی</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Input type={showPassword ? "text" : "password"} {...field} className="pl-10" />
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          {...field}
+                          className="pl-10"
+                          dir="ltr"
+                          style={{ textAlign: 'left' }}
+                        />
                         <Button
                           type="button"
                           variant="ghost"
