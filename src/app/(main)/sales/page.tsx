@@ -5,7 +5,7 @@ import { PlusCircle } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import type { Sale } from "@/lib/types";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { SalesForm } from "./components/sales-form";
 
 const sales: Omit<Sale, 'items'>[] = [];
@@ -23,10 +23,13 @@ export default function SalesPage() {
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-4xl">
                         <DialogHeader>
-                             <div className="text-center p-4">
-                                <h1 className="text-2xl font-bold">BedArt Group</h1>
-                                <p className="text-sm">ته ختی نوستن . دوشک . پشتی</p>
-                                <p className="text-xs text-muted-foreground">0770 817 1818 - 0770 077 1818</p>
+                            <div className="text-center p-4">
+                                <DialogTitle className="text-2xl font-bold">BedArt Group</DialogTitle>
+                                <DialogDescription className="text-sm">
+                                    ته ختی نوستن . دوشک . پشتی
+                                    <br />
+                                    <span className="text-xs text-muted-foreground">0770 817 1818 - 0770 077 1818</span>
+                                </DialogDescription>
                             </div>
                         </DialogHeader>
                         <div className="max-h-[80vh] overflow-y-auto p-2">
