@@ -1,8 +1,8 @@
 import type {Metadata} from 'next';
 import './globals.css';
-import { Toaster } from "@/components/ui/toaster"
 import { FirebaseClientProvider } from '@/firebase';
 import { Noto_Kufi_Arabic } from 'next/font/google';
+import { ClientToaster } from '@/components/client-toaster';
 
 const notoKufiArabic = Noto_Kufi_Arabic({
   subsets: ['arabic'],
@@ -27,7 +27,7 @@ export default function RootLayout({
         <FirebaseClientProvider>
           {children}
         </FirebaseClientProvider>
-        <Toaster />
+        <ClientToaster />
       </body>
     </html>
   );
