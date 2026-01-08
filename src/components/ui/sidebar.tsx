@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -67,7 +68,7 @@ const SidebarProvider = React.forwardRef<
     },
     ref
   ) => {
-    const isMobile = useIsMobile()
+    const { isMobile } = useIsMobile()
     const [openMobile, setOpenMobile] = React.useState(false)
 
     // This is the internal state of the sidebar.
@@ -175,7 +176,12 @@ const Sidebar = React.forwardRef<
     },
     ref
   ) => {
-    const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+    const { isMobile, hasMounted, state, openMobile, setOpenMobile } = useSidebar()
+
+    if (!hasMounted) {
+      // Don't render anything on the server or during the first client render.
+      return null
+    }
 
     if (collapsible === "none") {
       return (
