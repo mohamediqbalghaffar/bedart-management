@@ -68,12 +68,12 @@ function SalesList() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>ژ. فۆڕم</TableHead>
-                            <TableHead>کڕیار</TableHead>
-                            <TableHead>بەروار</TableHead>
-                            <TableHead>بڕ</TableHead>
-                            <TableHead>بارودۆخ</TableHead>
-                            <TableHead className="text-left">کردارەکان</TableHead>
+                            <TableHead className="text-center">ژ. فۆڕم</TableHead>
+                            <TableHead className="text-center">کڕیار</TableHead>
+                            <TableHead className="text-center">بەروار</TableHead>
+                            <TableHead className="text-center">بڕ</TableHead>
+                            <TableHead className="text-center">بارودۆخ</TableHead>
+                            <TableHead className="text-center">کردارەکان</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -90,11 +90,11 @@ function SalesList() {
                         ) : (
                             sales.map((sale) => (
                             <TableRow key={sale.id}>
-                                <TableCell className="font-medium">{sale.formNumber}</TableCell>
-                                <TableCell>{sale.customerName}</TableCell>
-                                <TableCell>{sale.issueDate}</TableCell>
-                                <TableCell>{new Intl.NumberFormat('en-US').format(sale.totalPrice || 0)}</TableCell>
-                                <TableCell>
+                                <TableCell className="font-medium text-center">{sale.formNumber}</TableCell>
+                                <TableCell className="text-center">{sale.customerName}</TableCell>
+                                <TableCell className="text-center">{sale.issueDate}</TableCell>
+                                <TableCell className="text-center">{new Intl.NumberFormat('en-US').format(sale.totalPrice || 0)}</TableCell>
+                                <TableCell className="text-center">
                                     <Badge 
                                         variant={sale.paymentStatus === 'Fully Paid' ? 'default' : sale.paymentStatus === 'Unpaid' ? 'destructive' : 'secondary'} 
                                         className={sale.paymentStatus === 'Fully Paid' ? 'bg-accent text-accent-foreground' : ''}
@@ -102,8 +102,8 @@ function SalesList() {
                                         {sale.paymentStatus === 'Fully Paid' ? 'هەمووی دراوە' : sale.paymentStatus === 'Partially Paid' ? 'بەشێکی دراوە' : 'نەدراوە'}
                                     </Badge>
                                 </TableCell>
-                                <TableCell className="text-left">
-                                     <div className="flex items-center justify-start gap-2">
+                                <TableCell className="text-center">
+                                     <div className="flex items-center justify-center gap-2">
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
                                                 <Button variant="ghost" size="icon">
