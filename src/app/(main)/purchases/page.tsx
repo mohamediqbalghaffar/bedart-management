@@ -1,12 +1,137 @@
 
 'use client';
 
+import React, { useEffect, useState } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { PlusCircle } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PlusCircle, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { BuyingForm } from "./components/buying-form";
+import { useFirestore, useCollection, useMemoFirebase, collection } from '@/firebase';
+import { WithId } from '@/firebase/firestore/use-collection';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { getDocs, collection as getCollection } from 'firebase/firestore';
+
+// Matches the structure in backend.json
+type BuyingFormType = {
+    supplierId: string;
+    issueDate: string;
+    customsFee?: number;
+};
+
+type Supplier = {
+    supplierName: string;
+};
+
+type BuyingFormProduct = {
+    quantity: number;
+    unitPrice: number;
+};
+
+type EnrichedBuyingForm = WithId<BuyingFormType> & {
+    supplierName?: string;
+    totalAmount?: number;
+};
+
+function PurchasesList() {
+    const firestore = useFirestore();
+
+    const buyingFormsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return collection(firestore, 'buying_forms');
+    }, [firestore]);
+
+    const suppliersQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return collection(firestore, 'suppliers');
+    }, [firestore]);
+
+    const { data: buyingForms, isLoading: isLoadingForms } = useCollection<BuyingFormType>(buyingFormsQuery);
+    const { data: suppliers, isLoading: isLoadingSuppliers } = useCollection<Supplier>(suppliersQuery);
+
+    const [enrichedForms, setEnrichedForms] = useState<EnrichedBuyingForm[]>([]);
+    const [isCalculating, setIsCalculating] = useState(false);
+
+    useEffect(() => {
+        async function enrichAndCalculateTotals() {
+            if (!buyingForms || !suppliers || !firestore) return;
+
+            setIsCalculating(true);
+            const supplierMap = new Map(suppliers.map(s => [s.id, s.supplierName]));
+
+            const enriched = await Promise.all(buyingForms.map(async (form) => {
+                const productsColRef = getCollection(firestore, `buying_forms/${form.id}/products`);
+                const productsSnapshot = await getDocs(productsColRef);
+                const products = productsSnapshot.docs.map(doc => doc.data() as BuyingFormProduct);
+
+                const subTotal = products.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
+                const totalAmount = subTotal + (form.customsFee || 0);
+
+                return {
+                    ...form,
+                    supplierName: supplierMap.get(form.supplierId) || 'Unknown Supplier',
+                    totalAmount: totalAmount,
+                };
+            }));
+
+            setEnrichedForms(enriched);
+            setIsCalculating(false);
+        }
+
+        enrichAndCalculateTotals();
+
+    }, [buyingForms, suppliers, firestore]);
+
+    const isLoading = isLoadingForms || isLoadingSuppliers || isCalculating;
+
+    return (
+         <Card>
+            <CardHeader>
+                <CardTitle>کڕینەکانی ئەم دواییە</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>دابینکەر</TableHead>
+                            <TableHead>بەروار</TableHead>
+                            <TableHead>کۆی گشتی</TableHead>
+                            <TableHead>IDی پسوولە</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading ? (
+                            <TableRow>
+                                <TableCell colSpan={4} className="h-24 text-center">
+                                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+                                </TableCell>
+                            </TableRow>
+                        ) : enrichedForms.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">هیچ کڕینێک تۆمار نەکراوە.</TableCell>
+                            </TableRow>
+                        ) : (
+                            enrichedForms.map((form) => (
+                            <TableRow key={form.id}>
+                                <TableCell className="font-medium">{form.supplierName}</TableCell>
+                                <TableCell>{form.issueDate}</TableCell>
+                                <TableCell>
+                                    <Badge variant="secondary">
+                                      {new Intl.NumberFormat('en-US').format(form.totalAmount || 0)}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell className="text-muted-foreground text-xs">{form.id}</TableCell>
+                            </TableRow>
+                        )))}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+    );
+}
+
 
 export default function PurchasesPage() {
     return (
@@ -32,11 +157,7 @@ export default function PurchasesPage() {
                     </DialogContent>
                 </Dialog>
             </PageHeader>
-            <Card>
-                <CardContent className="p-8 text-center text-muted-foreground">
-                    <p>لێرەدا لیستی کڕینەکان پیشان دەدرێت.</p>
-                </CardContent>
-            </Card>
+            <PurchasesList />
         </div>
     );
 }
