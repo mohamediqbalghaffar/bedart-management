@@ -54,7 +54,7 @@ export function ProductSelectorDialog({ onProductSelect }: ProductSelectorDialog
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
-      <ScrollArea className="h-72">
+      <ScrollArea className="h-72" dir="rtl">
         <Table>
           <TableHeader>
             <TableRow>
