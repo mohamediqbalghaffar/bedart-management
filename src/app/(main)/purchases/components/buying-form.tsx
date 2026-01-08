@@ -16,11 +16,13 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase, collection, doc } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase, collection, doc, setDoc } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { WithId } from "@/firebase/firestore/use-collection";
 import { analyzePurchaseExcel } from "@/ai/flows/analyze-purchase-excel";
 import * as XLSX from 'xlsx';
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 // Define Supplier type based on your Firestore structure
 type Supplier = {
@@ -190,9 +192,19 @@ export function BuyingForm() {
             issueDate: format(data.issueDate, "yyyy-MM-dd"),
         };
 
-        setDocumentNonBlocking(buyingFormRef, buyingFormData, { merge: true });
+        // Await the creation of the main document
+        await setDoc(buyingFormRef, buyingFormData, { merge: true }).catch(error => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: buyingFormRef.path,
+                operation: 'create',
+                requestResourceData: buyingFormData
+            }));
+            // Re-throw to be caught by the outer try-catch
+            throw error;
+        });
 
-        for (const item of items) {
+        // Use Promise.all to save all products concurrently after main doc is saved
+        const productSavePromises = items.map(item => {
             const productRef = doc(collection(firestore, `buying_forms/${buyingFormId}/products`));
             const productData = {
                 ...item,
@@ -200,8 +212,18 @@ export function BuyingForm() {
                 buyingFormId: buyingFormId,
                 landedCost: 0, // This needs calculation logic
             };
-            setDocumentNonBlocking(productRef, productData, { merge: true });
-        }
+            return setDoc(productRef, productData, { merge: true }).catch(error => {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: productRef.path,
+                    operation: 'create',
+                    requestResourceData: productData
+                }));
+                // Re-throw to be caught by Promise.all's catch
+                throw error;
+            });
+        });
+
+        await Promise.all(productSavePromises);
         
         toast({
             title: "سەرکەوتوو بوو!",
