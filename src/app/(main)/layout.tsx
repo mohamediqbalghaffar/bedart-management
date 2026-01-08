@@ -12,7 +12,7 @@ export default function MainLayout({
   return (
     <SidebarProvider>
         <div className="flex min-h-screen">
-            <Sidebar side="right" collapsible="icon" variant="sidebar">
+            <Sidebar side="left" collapsible="icon" variant="sidebar">
                 <SidebarNav />
             </Sidebar>
             <main className="flex-1">
