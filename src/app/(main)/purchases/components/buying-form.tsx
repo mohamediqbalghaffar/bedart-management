@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useAuth, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useCollection } from "@/firebase";
+import { useAuth, useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { WithId } from "@/firebase/firestore/use-collection";
@@ -44,8 +44,11 @@ export function BuyingForm() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const suppliersCollection = collection(firestore, "suppliers");
-  const { data: suppliers, isLoading: isLoadingSuppliers } = useCollection<Supplier>(suppliersCollection);
+  const suppliersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'suppliers');
+  }, [firestore]);
+  const { data: suppliers, isLoading: isLoadingSuppliers } = useCollection<Supplier>(suppliersQuery);
 
   const form = useForm<BuyingFormValues>({
     resolver: zodResolver(buyingFormSchema),
