@@ -21,7 +21,6 @@ import { WithId } from "@/firebase/firestore/use-collection";
 import { analyzePurchaseExcel } from "@/ai/flows/analyze-purchase-excel";
 import * as XLSX from 'xlsx';
 import { Textarea } from "@/components/ui/textarea";
-import { ProductSelector } from "../../components/product-selector";
 
 // Define types based on your Firestore structure
 type Supplier = {
@@ -375,7 +374,18 @@ export function BuyingForm() {
                     {fields.map((field, index) => (
                         <TableRow key={field.id}>
                             <TableCell className="align-top">
-                                <ProductSelector form={form} index={index} />
+                                <FormField
+                                  control={form.control}
+                                  name={`items.${index}.product`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormControl>
+                                        <Input placeholder="ناوی کاڵا..." {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
                             </TableCell>
                             <TableCell className="align-top">
                                 <FormField

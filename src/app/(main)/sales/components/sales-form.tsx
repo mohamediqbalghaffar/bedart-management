@@ -16,10 +16,9 @@ import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase, collection, doc, runTransaction } from "@/firebase";
+import { useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase, collection, doc, runTransaction, getDoc } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { WithId } from "@/firebase/firestore/use-collection";
-import { ProductSelector } from "../../components/product-selector";
 
 
 type Product = {
@@ -133,6 +132,24 @@ export function SalesForm() {
     }
     
     try {
+        // Run all stock updates
+        for (const item of data.items) {
+          const productDocId = item.product.toLowerCase().replace(/[^a-z0-9]/g, '-');
+          const productRef = doc(firestore, 'products', productDocId);
+          await runTransaction(firestore, async (transaction) => {
+              const productDoc = await transaction.get(productRef);
+              if (!productDoc.exists()) {
+                  throw new Error(`Product "${item.product}" not found in inventory.`);
+              }
+              const currentQuantity = productDoc.data().currentQuantity || 0;
+              if (currentQuantity < item.quantity) {
+                   throw new Error(`Insufficient stock for ${item.product}. Only ${currentQuantity} available.`);
+              }
+              const newQuantity = currentQuantity - item.quantity;
+              transaction.update(productRef, { currentQuantity: newQuantity });
+          });
+        }
+
         const sellingFormRef = doc(collection(firestore, "selling_forms"));
         const sellingFormId = sellingFormRef.id;
 
@@ -141,20 +158,17 @@ export function SalesForm() {
         const sellingFormData = {
             ...mainData,
             id: sellingFormId,
-            creatorId: "system", // This should be the logged-in user's ID
+            creatorId: "system",
             issueDate: format(data.issueDate, "yyyy-MM-dd"),
             totalPrice: totalAmount,
             remainingBalance: remainingBalance,
         };
+        
+        await setDocumentNonBlocking(sellingFormRef, sellingFormData, { merge: true });
 
-        // Defer inventory updates until after we attempt to write the form
-        const stockUpdates: (() => Promise<void>)[] = [];
-
-        for (const item of items) {
-            const productDocId = item.product.toLowerCase().replace(/[^a-z0-9]/g, '-');
-            const productRef = doc(firestore, 'products', productDocId);
-            
+        const itemPromises = items.map(item => {
             const productSubCollectionRef = doc(collection(firestore, `selling_forms/${sellingFormId}/products`));
+            const productDocId = item.product.toLowerCase().replace(/[^a-z0-9]/g, '-');
             const productData = {
                 id: productSubCollectionRef.id,
                 sellingFormId: sellingFormId,
@@ -164,33 +178,8 @@ export function SalesForm() {
                 unitPrice: item.unitPrice,
                 lineTotal: item.quantity * item.unitPrice,
             };
-            await setDocumentNonBlocking(productSubCollectionRef, productData, { merge: true });
-
-            // Prepare transaction function for stock update
-            const updateStock = async () => {
-                 await runTransaction(firestore, async (transaction) => {
-                    const productDoc = await transaction.get(productRef);
-                    if (!productDoc.exists()) {
-                        throw new Error(`Product "${item.product}" not found in inventory.`);
-                    }
-                    const currentQuantity = productDoc.data().currentQuantity || 0;
-                    if (currentQuantity < item.quantity) {
-                         throw new Error(`Insufficient stock for ${item.product}. Only ${currentQuantity} available.`);
-                    }
-                    const newQuantity = currentQuantity - item.quantity;
-                    transaction.update(productRef, { currentQuantity: newQuantity });
-                });
-            };
-            stockUpdates.push(updateStock);
-        }
-
-        // Run all stock updates
-        for (const updateFunc of stockUpdates) {
-            await updateFunc();
-        }
-
-        // If all stock updates are successful, save the main form
-        await setDocumentNonBlocking(sellingFormRef, sellingFormData, { merge: true });
+            return setDocumentNonBlocking(productSubCollectionRef, productData, { merge: true });
+        });
 
         const paymentPromises = (payments || []).map(payment => {
             const paymentRef = doc(collection(firestore, `selling_forms/${sellingFormId}/payments`));
@@ -203,7 +192,7 @@ export function SalesForm() {
             return setDocumentNonBlocking(paymentRef, paymentData, { merge: true });
         });
 
-        await Promise.all(paymentPromises);
+        await Promise.all([...itemPromises, ...paymentPromises]);
 
         toast({
             title: "سەرکەوتوو بوو!",
@@ -298,7 +287,18 @@ export function SalesForm() {
                     {fields.map((field, index) => (
                         <TableRow key={field.id}>
                             <TableCell className="align-top">
-                                <ProductSelector form={form} index={index} />
+                                <FormField
+                                  control={form.control}
+                                  name={`items.${index}.product`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormControl>
+                                        <Input placeholder="ناوی کاڵا..." {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
                             </TableCell>
                             <TableCell className="align-top">
                                 <FormField control={form.control} name={`items.${index}.quantity`} render={({ field }) => (<FormItem><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
