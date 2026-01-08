@@ -72,7 +72,7 @@ function ExcelImportButton({ form }: { form: UseFormReturn<BuyingFormValues> }) 
                     
                     // Clear existing items before adding new ones
                     const currentItems = form.getValues('items');
-                    if (currentItems.length === 1 && !currentItems[0].product && currentItems[0].unitPrice === 0) {
+                    if (currentItems.length === 1 && !currentItems[0].product && currentItems[0].quantity === 1 && currentItems[0].unitPrice === 0) {
                         form.setValue('items', []); // Clear the default empty item
                     }
 
@@ -82,9 +82,13 @@ function ExcelImportButton({ form }: { form: UseFormReturn<BuyingFormValues> }) 
                     } else {
                         toast({ variant: 'destructive', title: "هیچ کاڵایەک نەدۆزرایەوە", description: "دڵنیابە فایلەکە ستوونی ناوی کاڵا، دانە، و نرخی تێدایە." });
                     }
-                } catch (aiError) {
+                } catch (aiError: any) {
                      console.error("AI analysis failed:", aiError);
-                     toast({ variant: 'destructive', title: "هەڵە لە شیکردنەوەی فایل", description: "AI نەیتوانی داتاکان دەربهێنێت." });
+                     if (aiError.message && aiError.message.includes('503 Service Unavailable')) {
+                        toast({ variant: 'destructive', title: "خزمەتگوزاری سەرقاڵە", description: "مۆدێلی AI لەکارکەوتووە. تکایە چەند خولەکێکی تر هەوڵبدەرەوە." });
+                     } else {
+                        toast({ variant: 'destructive', title: "هەڵە لە شیکردنەوەی فایل", description: "AI نەیتوانی داتاکان دەربهێنێت." });
+                     }
                 } finally {
                     setIsLoading(false);
                      if (fileInputRef.current) {
@@ -187,7 +191,7 @@ export function BuyingForm() {
             issueDate: format(data.issueDate, "yyyy-MM-dd"),
         };
 
-        await setDocumentNonBlocking(buyingFormRef, buyingFormData, { merge: true });
+        setDocumentNonBlocking(buyingFormRef, buyingFormData, { merge: true });
 
         for (const item of items) {
             const productRef = doc(collection(firestore, `buying_forms/${buyingFormId}/products`));
@@ -197,7 +201,7 @@ export function BuyingForm() {
                 buyingFormId: buyingFormId,
                 landedCost: 0, // This needs calculation logic
             };
-            await setDocumentNonBlocking(productRef, productData, { merge: true });
+            setDocumentNonBlocking(productRef, productData, { merge: true });
         }
         
         toast({
@@ -374,3 +378,5 @@ export function BuyingForm() {
     </Form>
   );
 }
+
+    
