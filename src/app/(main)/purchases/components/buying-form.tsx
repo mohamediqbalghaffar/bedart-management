@@ -3,13 +3,13 @@
 
 import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, UseFormReturn } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Download, PlusCircle, Trash2 } from "lucide-react";
+import { CalendarIcon, Download, Loader2, PlusCircle, Trash2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -19,6 +19,8 @@ import { useAuth, useFirestore, setDocumentNonBlocking, useCollection, useMemoFi
 import { collection, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { WithId } from "@/firebase/firestore/use-collection";
+import { analyzePurchaseExcel } from "@/ai/flows/analyze-purchase-excel";
+import * as XLSX from 'xlsx';
 
 // Define Supplier type based on your Firestore structure
 type Supplier = {
@@ -38,6 +40,87 @@ const buyingFormSchema = z.object({
 });
 
 type BuyingFormValues = z.infer<typeof buyingFormSchema>;
+
+function ExcelImportButton({ form }: { form: UseFormReturn<BuyingFormValues> }) {
+    const [isLoading, setIsLoading] = React.useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const { toast } = useToast();
+
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setIsLoading(true);
+
+        try {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const data = e.target?.result;
+                if (typeof data !== 'string') {
+                    toast({ variant: 'destructive', title: "هەڵە لە خوێندنەوەی فایل" });
+                    setIsLoading(false);
+                    return;
+                }
+                
+                try {
+                    const result = await analyzePurchaseExcel({ excelDataUri: data });
+                    
+                    if (result && result.length > 0) {
+                        // Clear existing items before adding new ones
+                        form.setValue('items', []);
+                        result.forEach(item => {
+                            form.setValue('items', [...form.getValues('items'), item]);
+                        });
+                        toast({ title: "سەرکەوتوو بوو", description: `${result.length} کاڵا بە سەرکەوتوویی زیادکرا.` });
+                    } else {
+                        toast({ variant: 'destructive', title: "هیچ کاڵایەک نەدۆزرایەوە", description: "دڵنیابە فایلەکە ستوونی ناوی کاڵا، دانە، و نرخی تێدایە." });
+                    }
+                } catch (aiError) {
+                     console.error("AI analysis failed:", aiError);
+                     toast({ variant: 'destructive', title: "هەڵە لە شیکردنەوەی فایل", description: "AI نەیتوانی داتاکان دەربهێنێت." });
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            reader.readAsDataURL(file);
+
+        } catch (error) {
+            console.error("File processing error:", error);
+            toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "شیکردنەوەی فایلەکە سەرکەوتوو نەبوو." });
+            setIsLoading(false);
+        }
+    };
+
+    const handleClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    return (
+        <>
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+                accept=".xlsx, .xls"
+            />
+            <Button type="button" variant="outline" onClick={handleClick} disabled={isLoading}>
+                {isLoading ? (
+                    <>
+                        <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                        ...شیکردنەوە
+                    </>
+                ) : (
+                    <>
+                        <Download className="ml-2 h-4 w-4" />
+                        هاوردەکردن لە ئێکسڵ
+                    </>
+                )}
+            </Button>
+        </>
+    );
+}
+
 
 export function BuyingForm() {
   const firestore = useFirestore();
@@ -243,10 +326,7 @@ export function BuyingForm() {
 
         <div className="flex justify-between items-start gap-8 pt-6 border-t">
             <div className="space-y-4 flex-1">
-                 <Button variant="outline">
-                    <Download />
-                    هاوردەکردن لە ئێکسڵ
-                </Button>
+                 <ExcelImportButton form={form} />
             </div>
             <div className="space-y-2 text-left min-w-[280px]">
                 <div className="flex items-center justify-between gap-4 p-2 rounded-md">
