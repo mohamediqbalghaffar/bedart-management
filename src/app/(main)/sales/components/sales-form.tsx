@@ -18,7 +18,7 @@ import { SmartSuggestions } from "./smart-suggestions";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useFirestore, setDocumentNonBlocking } from "@/firebase";
-import { collection, doc } from "firebase/firestore";
+import { collection, doc, runTransaction } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
 const salesFormSchema = z.object({
@@ -126,54 +126,68 @@ export function SalesForm() {
     }
     
     try {
-        // Create a new document reference for the selling form
         const sellingFormRef = doc(collection(firestore, "selling_forms"));
         const sellingFormId = sellingFormRef.id;
 
         const { items, payments, ...mainData } = data;
 
-        // Prepare the main selling form data
         const sellingFormData = {
             ...mainData,
             id: sellingFormId,
-            creatorId: "system", // No user logged in,
+            creatorId: "system",
             issueDate: format(data.issueDate, "yyyy-MM-dd"),
             totalPrice: totalAmount,
             remainingBalance: remainingBalance,
         };
 
-        // Save the main form data
         await setDocumentNonBlocking(sellingFormRef, sellingFormData, { merge: true });
 
-        // Save the products as a subcollection
-        for (const item of items) {
-            const productRef = doc(collection(firestore, `selling_forms/${sellingFormId}/products`));
+        const productPromises = items.map(async (item) => {
+            const productDocId = item.product.toLowerCase().replace(/\s+/g, '-');
+            const productRef = doc(firestore, 'products', productDocId);
+            
+            const productSubCollectionRef = doc(collection(firestore, `selling_forms/${sellingFormId}/products`));
             const productData = {
                 ...item,
-                id: productRef.id,
+                id: productSubCollectionRef.id,
                 sellingFormId: sellingFormId,
+                productId: productDocId,
                 lineTotal: item.quantity * item.unitPrice,
             };
-            await setDocumentNonBlocking(productRef, productData, { merge: true });
-        }
+            await setDocumentNonBlocking(productSubCollectionRef, productData, { merge: true });
 
-        // Save payments if they exist
-        if (payments && payments.length > 0) {
-            for (const payment of payments) {
-                const paymentRef = doc(collection(firestore, `selling_forms/${sellingFormId}/payments`));
-                const paymentData = {
-                    ...payment,
-                    id: paymentRef.id,
-                    paymentDate: format(payment.date, "yyyy-MM-dd"),
-                    sellingFormId: sellingFormId,
-                };
-                await setDocumentNonBlocking(paymentRef, paymentData, { merge: true });
-            }
-        }
-        
+            // Update stock in products collection
+             await runTransaction(firestore, async (transaction) => {
+                const productDoc = await transaction.get(productRef);
+                if (productDoc.exists()) {
+                    const currentQuantity = productDoc.data().currentQuantity || 0;
+                    const newQuantity = Math.max(0, currentQuantity - item.quantity);
+                    transaction.update(productRef, { currentQuantity: newQuantity });
+                } else {
+                    // Product doesn't exist, which is an issue if we are selling it.
+                    // We can log this or handle it, but for now we will ignore.
+                    console.warn(`Product with ID ${productDocId} not found in stock, but was sold.`);
+                }
+            });
+        });
+
+
+        const paymentPromises = (payments || []).map(payment => {
+            const paymentRef = doc(collection(firestore, `selling_forms/${sellingFormId}/payments`));
+            const paymentData = {
+                ...payment,
+                id: paymentRef.id,
+                paymentDate: format(payment.date, "yyyy-MM-dd"),
+                sellingFormId: sellingFormId,
+            };
+            return setDocumentNonBlocking(paymentRef, paymentData, { merge: true });
+        });
+
+        await Promise.all([...productPromises, ...paymentPromises]);
+
         toast({
             title: "سەرکەوتوو بوو!",
-            description: "فۆڕمی فرۆشتن بە سەرکەوتوویی پاشەکەوت کرا.",
+            description: "فۆڕمی فرۆشتن بە سەرکەوتوویی پاشەکەوت کرا و کۆگا نوێکرایەوە.",
             className: "bg-accent text-accent-foreground",
         });
         form.reset();

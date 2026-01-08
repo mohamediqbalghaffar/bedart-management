@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI agent for analyzing purchase data from Excel files.
@@ -20,7 +21,7 @@ const ExcelDataInputSchema = z.object({
 export type ExcelDataInput = z.infer<typeof ExcelDataInputSchema>;
 
 const ProductSchema = z.object({
-    product: z.string().describe('The name of the product.'),
+    product: z.string().describe('The name of the product, including any size or model details.'),
     quantity: z.number().describe('The quantity of the product.'),
     unitPrice: z.number().describe('The price of a single unit of the product.'),
 });
@@ -40,9 +41,11 @@ const prompt = ai.definePrompt({
   prompt: `You are an expert data entry assistant for a purchasing department.
 Your task is to analyze the provided CSV data and extract a list of products.
 
-The user will provide a CSV string. You need to identify columns that represent the product name, quantity, and unit price. These columns might have different names like 'Item', 'Product', 'QTY', 'دانە', 'نرخ', 'نرخی تاک', etc.
+The user will provide a CSV string. You need to identify columns that represent the product name, quantity, and unit price. These columns might have different names like 'Item', 'Product', 'QTY', 'دانە', 'نرخ', 'نرخی تاک', 'Product Name', etc.
 
-Extract this information and return it as a structured JSON array, where each object contains 'product', 'quantity', and 'unitPrice'. Ignore any header rows, empty rows, or totals.
+- The product name may include size or model information. Combine them into a single 'product' field.
+- Extract this information and return it as a structured JSON array, where each object contains 'product', 'quantity', and 'unitPrice'.
+- Ignore any header rows, empty rows, or rows that contain totals or summaries. Only extract rows that represent individual products.
 
 CSV Data:
 {{{excelDataAsCsv}}}`,

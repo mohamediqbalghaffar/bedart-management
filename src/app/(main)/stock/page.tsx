@@ -1,31 +1,159 @@
+
+'use client';
+
+import React, { useState, useMemo } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { FileDown, Search } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FileDown, Search, Loader2, Info } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useFirestore, useCollection, useMemoFirebase, collection } from '@/firebase';
+import { WithId } from '@/firebase/firestore/use-collection';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+type Product = {
+    productName: string;
+    category: string;
+    sizeModel?: string;
+    stockLocation: string;
+    currentQuantity: number;
+    supplierId?: string;
+};
+
+type Supplier = {
+    supplierName: string;
+};
+
+type EnrichedProduct = WithId<Product> & {
+    supplierName?: string;
+};
+
+function StockList() {
+    const firestore = useFirestore();
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const productsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return collection(firestore, 'products');
+    }, [firestore]);
+    const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsQuery);
+
+    const suppliersQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return collection(firestore, 'suppliers');
+    }, [firestore]);
+    const { data: suppliers, isLoading: isLoadingSuppliers } = useCollection<Supplier>(suppliersQuery);
+
+    const supplierMap = useMemo(() => {
+        if (!suppliers) return new Map();
+        return new Map(suppliers.map(s => [s.id, s.supplierName]));
+    }, [suppliers]);
+
+    const filteredProducts = useMemo(() => {
+        if (!products) return [];
+        const enriched = products.map(p => ({
+            ...p,
+            supplierName: p.supplierId ? supplierMap.get(p.supplierId) : 'N/A',
+        }));
+
+        if (!searchTerm) return enriched;
+
+        return enriched.filter(p =>
+            p.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (p.sizeModel && p.sizeModel.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+    }, [products, searchTerm, supplierMap]);
+    
+    const isLoading = isLoadingProducts || isLoadingSuppliers;
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>لیستی کۆگا</CardTitle>
+                <div className="flex items-center justify-between gap-4 mt-4">
+                    <div className="relative w-full max-w-sm">
+                        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="گەڕان بۆ کاڵایەک..."
+                            className="pr-10"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <Button variant="outline">
+                        <FileDown />
+                        هەناردەکردنی ڕاپۆرت
+                    </Button>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="text-right">کاڵا</TableHead>
+                            <TableHead className="text-right">پۆل</TableHead>
+                            <TableHead className="text-right">دانە</TableHead>
+                            <TableHead className="text-right">شوێن</TableHead>
+                             <TableHead className="text-right">
+                                <div className='flex items-center gap-1'>
+                                    <span>دابینکەر</span>
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger>
+                                                <Info className="h-3 w-3 text-muted-foreground" />
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>کۆتا دابینکەر کە ئەم کاڵایەی لێ کڕاوە</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                </div>
+                            </TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading ? (
+                            <TableRow>
+                                <TableCell colSpan={5} className="h-24 text-center">
+                                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+                                </TableCell>
+                            </TableRow>
+                        ) : filteredProducts.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                                    {searchTerm ? `هیچ کاڵایەک نەدۆزرایەوە بۆ "${searchTerm}"` : "هیچ کاڵایەک لە کۆگا نییە."}
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            filteredProducts.map((product) => (
+                                <TableRow key={product.id}>
+                                    <TableCell className="font-medium text-right">{product.productName} {product.sizeModel && `(${product.sizeModel})`}</TableCell>
+                                    <TableCell className="text-right">{product.category}</TableCell>
+                                    <TableCell className="text-right">
+                                        <Badge variant={product.currentQuantity < 5 ? "destructive" : "secondary"}>
+                                            {product.currentQuantity}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right">{product.stockLocation === 'Warehouse' ? 'کۆگا' : 'فرۆشگا'}</TableCell>
+                                    <TableCell className="text-right">{product.supplierName}</TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+    );
+}
 
 export default function StockPage() {
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
-            <PageHeader title="بەڕێوەبردنی کۆگا" description="بەدواداچوون بۆ ئاستی کۆگا و نرخی کاڵاکان.">
-                 <Button variant="outline">
-                    <FileDown />
-                    هەناردەکردنی ڕاپۆرت
-                </Button>
-            </PageHeader>
-            <Card>
-                <CardContent className="p-6">
-                     <div className="flex items-center justify-between gap-4 mb-4">
-                        <div className="relative w-full max-w-sm">
-                            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input placeholder="گەڕان بۆ کاڵایەک..." className="pr-10" />
-                        </div>
-                    </div>
-                    <div className="p-8 text-center text-muted-foreground border rounded-lg">
-                        <p>خشتەی کاڵا و ئاستی کۆگاکان لێرە پیشان دەدرێت.</p>
-                    </div>
-                </CardContent>
-            </Card>
+            <PageHeader title="بەڕێوەبردنی کۆگا" description="بەدواداچوون بۆ ئاستی کۆگا و نرخی کاڵاکان." />
+            <StockList />
         </div>
     );
 }

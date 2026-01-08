@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React from "react";
@@ -16,13 +15,14 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useFirestore, useCollection, useMemoFirebase, collection, doc, setDoc } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase, collection, doc, setDoc, getDoc, runTransaction } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { WithId } from "@/firebase/firestore/use-collection";
 import { analyzePurchaseExcel } from "@/ai/flows/analyze-purchase-excel";
 import * as XLSX from 'xlsx';
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
+import { Textarea } from "@/components/ui/textarea";
 
 // Define Supplier type based on your Firestore structure
 type Supplier = {
@@ -35,10 +35,13 @@ const buyingFormSchema = z.object({
   issueDate: z.date({ required_error: "بەرواری دەرکردن پێویستە." }),
   items: z.array(z.object({
     product: z.string().min(1, "بابەت پێویستە."),
+    category: z.string().min(1, "پۆل پێویستە."),
+    sizeModel: z.string().optional(),
     quantity: z.coerce.number().min(1, "دانە دەبێت لانیکەم 1 بێت."),
     unitPrice: z.coerce.number().min(0, "نرخ پێویستە."),
   })).min(1, { message: "لانیکەم یەک کاڵا پێویستە." }),
   customsFee: z.coerce.number().optional().default(0),
+  stockLocation: z.enum(["Warehouse", "Shop Showroom"]),
 });
 
 type BuyingFormValues = z.infer<typeof buyingFormSchema>;
@@ -72,14 +75,16 @@ function ExcelImportButton({ form }: { form: UseFormReturn<BuyingFormValues> }) 
 
                     const result = await analyzePurchaseExcel({ excelDataAsCsv: csvData });
                     
-                    // Clear existing items before adding new ones
                     const currentItems = form.getValues('items');
+                    let newItems = result.map(item => ({ ...item, category: 'Mattress', sizeModel: '' }));
+
                     if (currentItems.length === 1 && !currentItems[0].product && currentItems[0].quantity === 1 && currentItems[0].unitPrice === 0) {
-                        form.setValue('items', []); // Clear the default empty item
+                       form.setValue('items', newItems);
+                    } else {
+                        form.setValue('items', [...form.getValues('items'), ...newItems]);
                     }
 
                     if (result && result.length > 0) {
-                        form.setValue('items', [...form.getValues('items'), ...result]);
                         toast({ title: "سەرکەوتوو بوو", description: `${result.length} کاڵا بە سەرکەوتوویی زیادکرا.` });
                     } else {
                         toast({ variant: 'destructive', title: "هیچ کاڵایەک نەدۆزرایەوە", description: "دڵنیابە فایلەکە ستوونی ناوی کاڵا، دانە، و نرخی تێدایە." });
@@ -153,8 +158,9 @@ export function BuyingForm() {
     defaultValues: {
       supplierId: "",
       issueDate: new Date(),
-      items: [{ product: "", quantity: 1, unitPrice: 0 }],
+      items: [{ product: "", quantity: 1, unitPrice: 0, category: "Mattress", sizeModel: "" }],
       customsFee: 0,
+      stockLocation: "Warehouse",
     },
   });
 
@@ -188,46 +194,56 @@ export function BuyingForm() {
         const buyingFormData = {
             ...mainData,
             id: buyingFormId,
-            creatorId: "system",
             issueDate: format(data.issueDate, "yyyy-MM-dd"),
         };
 
-        // Await the creation of the main document
-        await setDoc(buyingFormRef, buyingFormData, { merge: true }).catch(error => {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: buyingFormRef.path,
-                operation: 'create',
-                requestResourceData: buyingFormData
-            }));
-            // Re-throw to be caught by the outer try-catch
-            throw error;
-        });
+        await setDoc(buyingFormRef, buyingFormData);
 
-        // Use Promise.all to save all products concurrently after main doc is saved
-        const productSavePromises = items.map(item => {
-            const productRef = doc(collection(firestore, `buying_forms/${buyingFormId}/products`));
+        const productPromises = items.map(async (item) => {
+            const productDocId = item.product.toLowerCase().replace(/\s+/g, '-');
+            const productRef = doc(firestore, 'products', productDocId);
+            const productSubCollectionRef = doc(collection(firestore, `buying_forms/${buyingFormId}/products`));
+            
             const productData = {
-                ...item,
-                id: productRef.id,
+                id: productSubCollectionRef.id,
                 buyingFormId: buyingFormId,
-                landedCost: 0, // This needs calculation logic
+                productId: productDocId,
+                productName: item.product,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                landedCost: item.unitPrice, // Placeholder, can be adjusted
             };
-            return setDoc(productRef, productData, { merge: true }).catch(error => {
-                errorEmitter.emit('permission-error', new FirestorePermissionError({
-                    path: productRef.path,
-                    operation: 'create',
-                    requestResourceData: productData
-                }));
-                // Re-throw to be caught by Promise.all's catch
-                throw error;
+            
+            await setDoc(productSubCollectionRef, productData);
+            
+            // Update stock in products collection
+            await runTransaction(firestore, async (transaction) => {
+                const productDoc = await transaction.get(productRef);
+                if (!productDoc.exists()) {
+                    transaction.set(productRef, {
+                        id: productDocId,
+                        productName: item.product,
+                        category: item.category,
+                        sizeModel: item.sizeModel || "",
+                        stockLocation: data.stockLocation,
+                        currentQuantity: item.quantity,
+                        supplierId: data.supplierId,
+                    });
+                } else {
+                    const newQuantity = (productDoc.data().currentQuantity || 0) + item.quantity;
+                    transaction.update(productRef, { 
+                        currentQuantity: newQuantity,
+                        supplierId: data.supplierId, // Update supplier to the latest one
+                    });
+                }
             });
         });
 
-        await Promise.all(productSavePromises);
+        await Promise.all(productPromises);
         
         toast({
             title: "سەرکەوتوو بوو!",
-            description: "پسوولەی کڕین بە سەرکەوتوویی پاشەکەوت کرا.",
+            description: "پسوولەی کڕین بە سەرکەوتوویی پاشەکەوت کرا و کۆگا نوێکرایەوە.",
             className: "bg-accent text-accent-foreground",
         });
         form.reset();
@@ -286,14 +302,14 @@ export function BuyingForm() {
             />
         </div>
 
-        <div className="space-y-2 p-1 pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-1 pt-4">
           <FormField
             control={form.control}
             name="supplierId"
             render={({ field }) => (
                 <FormItem>
                     <FormLabel>دابینکەر</FormLabel>
-                     <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
+                     <Select onValueChange={field.onChange} value={field.value} dir="rtl">
                         <FormControl>
                             <SelectTrigger>
                                 <SelectValue placeholder={isLoadingSuppliers ? "..." : "دابینکەرێک هەڵبژێرە"} />
@@ -311,13 +327,35 @@ export function BuyingForm() {
                 </FormItem>
             )}
             />
+            <FormField
+                control={form.control}
+                name="stockLocation"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>شوێنی دانان</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value} dir="rtl">
+                            <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="شوێنێک هەڵبژێرە" />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectItem value="Warehouse">کۆگا</SelectItem>
+                                <SelectItem value="Shop Showroom">فرۆشگا</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
         </div>
         
         <div className="relative border-t pt-6">
             <Table>
                 <TableHeader>
                     <TableRow className="bg-primary/90 hover:bg-primary">
-                        <TableHead className="w-2/5 text-primary-foreground">بابەت</TableHead>
+                        <TableHead className="w-[30%] text-primary-foreground">بابەت</TableHead>
+                        <TableHead className="w-[20%] text-primary-foreground">پۆل</TableHead>
                         <TableHead className="text-primary-foreground">دانە</TableHead>
                         <TableHead className="text-primary-foreground">نرخی تاک</TableHead>
                         <TableHead className="text-primary-foreground">نرخی کۆ</TableHead>
@@ -331,11 +369,35 @@ export function BuyingForm() {
                                 <FormField control={form.control} name={`items.${index}.product`} render={({ field }) => (
                                   <FormItem>
                                     <FormControl>
-                                      <Input placeholder="ناوی کاڵا" {...field} />
+                                      <Textarea placeholder="ناوی کاڵا و سایز" {...field} className="h-10"/>
                                     </FormControl>
                                     <FormMessage />
                                   </FormItem>
                                 )} />
+                            </TableCell>
+                            <TableCell className="align-top">
+                                <FormField
+                                    control={form.control}
+                                    name={`items.${index}.category`}
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <Select onValueChange={field.onChange} value={field.value} dir="rtl">
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="Mattress">دۆشەک</SelectItem>
+                                            <SelectItem value="Bed">تەخت</SelectItem>
+                                            <SelectItem value="Pillow">سەرین</SelectItem>
+                                            <SelectItem value="Cover">بەرگ</SelectItem>
+                                        </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
                             </TableCell>
                             <TableCell className="align-top">
                                 <FormField control={form.control} name={`items.${index}.quantity`} render={({ field }) => (<FormItem><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -355,7 +417,7 @@ export function BuyingForm() {
                     ))}
                 </TableBody>
             </Table>
-            <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ product: "", quantity: 1, unitPrice: 0 })}>
+            <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ product: "", quantity: 1, unitPrice: 0, category: 'Mattress', sizeModel: '' })}>
                 <PlusCircle className="ml-2 h-4 w-4" />
                 زیادکردنی کاڵا
             </Button>
@@ -401,5 +463,3 @@ export function BuyingForm() {
     </Form>
   );
 }
-
-    

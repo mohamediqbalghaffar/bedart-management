@@ -1,3 +1,4 @@
+
 export type SaleStatus = 'Fully Paid' | 'Unpaid' | 'Partially Paid';
 export type PaymentType = 'After Delivery' | 'Installments' | 'Pre-order';
 export type PaymentMethod = 'Cash' | 'Transfer';
@@ -42,7 +43,8 @@ export type Product = {
 export type Customer = {
   id: string;
   name: string;
-  outstandingDebt: number;
+  phone?: string;
+  address?: string;
 };
 
 export type Expense = {

@@ -1,14 +1,88 @@
+
+'use client';
+
+import React from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Loader2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import type { Sale } from "@/lib/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { SalesForm } from "./components/sales-form";
+import { useFirestore, useCollection, useMemoFirebase, collection } from '@/firebase';
+import { WithId } from '@/firebase/firestore/use-collection';
 
-const sales: Omit<Sale, 'items'>[] = [];
+// Matches the structure in backend.json for SellingForm
+type SellingFormType = {
+    customerName: string;
+    issueDate: string;
+    totalPrice: number;
+    paymentStatus: 'Unpaid' | 'Partially Paid' | 'Fully Paid';
+    formNumber: string;
+};
+
+function SalesList() {
+    const firestore = useFirestore();
+
+    const sellingFormsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return collection(firestore, 'selling_forms');
+    }, [firestore]);
+
+    const { data: sales, isLoading: isLoadingSales } = useCollection<SellingFormType>(sellingFormsQuery);
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>فرۆشەکانی ئەم دواییە</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>ژ. فۆڕم</TableHead>
+                            <TableHead>کڕیار</TableHead>
+                            <TableHead>بەروار</TableHead>
+                            <TableHead>بڕ</TableHead>
+                            <TableHead>بارودۆخ</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isLoadingSales ? (
+                             <TableRow>
+                                <TableCell colSpan={5} className="h-24 text-center">
+                                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+                                </TableCell>
+                            </TableRow>
+                        ) : !sales || sales.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">هیچ فرۆشێک تۆمار نەکراوە.</TableCell>
+                            </TableRow>
+                        ) : (
+                            sales.map((sale) => (
+                            <TableRow key={sale.id}>
+                                <TableCell className="font-medium">{sale.formNumber}</TableCell>
+                                <TableCell>{sale.customerName}</TableCell>
+                                <TableCell>{sale.issueDate}</TableCell>
+                                <TableCell>{new Intl.NumberFormat('en-US').format(sale.totalPrice || 0)}</TableCell>
+                                <TableCell>
+                                    <Badge 
+                                        variant={sale.paymentStatus === 'Fully Paid' ? 'default' : sale.paymentStatus === 'Unpaid' ? 'destructive' : 'secondary'} 
+                                        className={sale.paymentStatus === 'Fully Paid' ? 'bg-accent text-accent-foreground' : ''}
+                                    >
+                                        {sale.paymentStatus === 'Fully Paid' ? 'هەمووی دراوە' : sale.paymentStatus === 'Partially Paid' ? 'بەشێکی دراوە' : 'نەدراوە'}
+                                    </Badge>
+                                </TableCell>
+                            </TableRow>
+                        )))}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+    );
+}
+
 
 export default function SalesPage() {
     return (
@@ -38,43 +112,7 @@ export default function SalesPage() {
                     </DialogContent>
                 </Dialog>
             </PageHeader>
-            <Card>
-                <CardHeader>
-                    <CardTitle>فرۆشەکانی ئەم دواییە</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>IDی پسوولە</TableHead>
-                                <TableHead>کڕیار</TableHead>
-                                <TableHead>بەروار</TableHead>
-                                <TableHead>بڕ</TableHead>
-                                <TableHead>بارودۆخ</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {sales.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="text-center text-muted-foreground">هیچ فرۆشێک تۆمار نەکراوە.</TableCell>
-                                </TableRow>
-                            ) : sales.map((sale) => (
-                                <TableRow key={sale.id}>
-                                    <TableCell className="font-medium">{sale.id}</TableCell>
-                                    <TableCell>{sale.customerName}</TableCell>
-                                    <TableCell>{new Date(sale.date).toLocaleDateString()}</TableCell>
-                                    <TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(sale.amount)}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={sale.status === 'Fully Paid' ? 'default' : sale.status === 'Unpaid' ? 'destructive' : 'secondary'} className={sale.status === 'Fully Paid' ? 'bg-accent text-accent-foreground' : ''}>
-                                            {sale.status}
-                                        </Badge>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+            <SalesList />
         </div>
     );
 }
