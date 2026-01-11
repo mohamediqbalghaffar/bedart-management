@@ -3,13 +3,13 @@
 
 import React, { useState } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
-import { useFirestore, useCollection, useMemoFirebase, collection } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, collection, getDocs as getDocsClient, collection as getCollectionClient } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, DollarSign, Users, Archive, ShoppingCart, TrendingUp, TrendingDown, Calendar as CalendarIcon } from 'lucide-react';
+import { Loader2, DollarSign, Users, Archive, ShoppingCart, TrendingUp, TrendingDown, Calendar as CalendarIcon, Package, LineChart } from 'lucide-react';
 import { StatCard } from '@/components/shared/stat-card';
 import { subDays, format, parseISO, differenceInDays } from 'date-fns';
 import { arSA } from 'date-fns/locale';
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis, Tooltip as RechartsTooltip } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,18 @@ type Expense = {
 type Product = {
     currentQuantity: number;
 };
+
+type BuyingForm = {
+    id: string;
+    issueDate: string;
+    customsFee?: number;
+};
+
+type BuyingFormProduct = {
+    quantity: number;
+    unitPrice: number;
+};
+
 
 function DashboardStats() {
     const firestore = useFirestore();
@@ -73,8 +85,18 @@ function DashboardStats() {
 
     if (isLoading) {
         return (
-            <div className="flex justify-center items-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {[...Array(4)].map((_, i) => (
+                    <Card key={i}>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <div className="h-4 bg-muted rounded w-2/4" />
+                        </CardHeader>
+                        <CardContent>
+                             <div className="h-8 bg-muted rounded w-3/4 mb-2" />
+                             <div className="h-3 bg-muted rounded w-full" />
+                        </CardContent>
+                    </Card>
+                ))}
             </div>
         );
     }
@@ -98,19 +120,32 @@ const chartConfig = {
     color: "hsl(var(--chart-2))",
     icon: TrendingUp,
   },
+   purchases: {
+    label: "کڕین",
+    color: "hsl(var(--chart-3))",
+    icon: Package,
+  },
   expenses: {
     label: "خەرجی",
     color: "hsl(var(--chart-5))",
     icon: TrendingDown,
   },
+  netProfit: {
+    label: "قازانجی پوخت",
+    color: "hsl(var(--chart-1))",
+    icon: LineChart,
+  }
 } satisfies ChartConfig
 
 function RecentActivityChart() {
     const firestore = useFirestore();
     const salesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'selling_forms') : null, [firestore]);
     const expensesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'expenses') : null, [firestore]);
+    const purchasesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'buying_forms') : null, [firestore]);
+
     const { data: sales, isLoading: salesLoading } = useCollection<SellingForm>(salesQuery);
     const { data: expenses, isLoading: expensesLoading } = useCollection<Expense>(expensesQuery);
+    const { data: purchases, isLoading: purchasesLoading } = useCollection<BuyingForm>(purchasesQuery);
 
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
         from: subDays(new Date(), 29),
@@ -120,55 +155,87 @@ function RecentActivityChart() {
     const [activeSubjects, setActiveSubjects] = useState({
         sales: true,
         expenses: true,
+        purchases: false,
+        netProfit: false,
     });
 
-    const chartData = React.useMemo(() => {
-        if (!dateRange?.from) return [];
+    const [chartData, setChartData] = useState<any[]>([]);
+    const [isCalculating, setIsCalculating] = useState(false);
 
-        const dateMap = new Map<string, { sales: number; expenses: number }>();
-        const days = differenceInDays(dateRange.to ?? dateRange.from, dateRange.from);
+    useEffect(() => {
+        async function calculateChartData() {
+            if (!dateRange?.from || !firestore) return [];
 
-        for (let i = days; i >= 0; i--) {
-            const date = subDays(dateRange.to ?? dateRange.from, i);
-            dateMap.set(format(date, 'yyyy-MM-dd'), { sales: 0, expenses: 0 });
-        }
+            setIsCalculating(true);
 
-        if (sales) {
-            sales.forEach(sale => {
-                try {
-                    const saleDate = format(parseISO(sale.issueDate), 'yyyy-MM-dd');
-                    if (dateMap.has(saleDate)) {
-                        const dayData = dateMap.get(saleDate)!;
-                        dayData.sales += sale.totalPrice;
-                    }
-                } catch (e) {
-                    console.warn("Invalid sale date format:", sale.issueDate);
-                }
+            const dateMap = new Map<string, { sales: number; expenses: number; purchases: number; netProfit: number }>();
+            const days = differenceInDays(dateRange.to ?? dateRange.from, dateRange.from);
+
+            for (let i = days; i >= 0; i--) {
+                const date = subDays(dateRange.to ?? dateRange.from, i);
+                dateMap.set(format(date, 'yyyy-MM-dd'), { sales: 0, expenses: 0, purchases: 0, netProfit: 0 });
+            }
+
+            if (sales) {
+                sales.forEach(sale => {
+                    try {
+                        const saleDate = format(parseISO(sale.issueDate), 'yyyy-MM-dd');
+                        if (dateMap.has(saleDate)) {
+                            dateMap.get(saleDate)!.sales += sale.totalPrice;
+                        }
+                    } catch (e) { console.warn("Invalid sale date format:", sale.issueDate); }
+                });
+            }
+            
+            if (expenses) {
+                expenses.forEach(expense => {
+                    try {
+                        const expenseDate = format(parseISO(expense.date), 'yyyy-MM-dd');
+                        if (dateMap.has(expenseDate)) {
+                            const amountInUsd = expense.paidBy === 'Cash - Dinar' ? expense.amount / 1500 : expense.amount;
+                            dateMap.get(expenseDate)!.expenses += amountInUsd;
+                        }
+                    } catch (e) { console.warn("Invalid expense date format:", expense.date); }
+                });
+            }
+
+            if(purchases) {
+                 for (const purchase of purchases) {
+                    try {
+                        const purchaseDate = format(parseISO(purchase.issueDate), 'yyyy-MM-dd');
+                        if (dateMap.has(purchaseDate)) {
+                            const productsColRef = getCollectionClient(firestore, `buying_forms/${purchase.id}/products`);
+                            const productsSnapshot = await getDocsClient(productsColRef);
+                            const subTotal = productsSnapshot.docs.reduce((acc, doc) => {
+                                const item = doc.data() as BuyingFormProduct;
+                                return acc + (item.quantity * item.unitPrice);
+                            }, 0);
+                            const totalAmount = subTotal + (purchase.customsFee || 0);
+                            dateMap.get(purchaseDate)!.purchases += totalAmount;
+                        }
+                    } catch(e) { console.warn("Invalid purchase date format:", purchase.issueDate); }
+                 }
+            }
+
+            dateMap.forEach((data, date) => {
+                data.netProfit = data.sales - data.expenses - data.purchases;
             });
+            
+            const finalData = Array.from(dateMap.entries()).map(([date, data]) => ({
+                date: format(parseISO(date), 'MMM d'),
+                ...data,
+            }));
+            
+            setChartData(finalData);
+            setIsCalculating(false);
         }
-        
-        if (expenses) {
-             expenses.forEach(expense => {
-                try {
-                    const expenseDate = format(parseISO(expense.date), 'yyyy-MM-dd');
-                    if (dateMap.has(expenseDate)) {
-                        const dayData = dateMap.get(expenseDate)!;
-                        const amountInUsd = expense.paidBy === 'Cash - Dinar' ? expense.amount / 1500 : expense.amount;
-                        dayData.expenses += amountInUsd;
-                    }
-                } catch (e) {
-                     console.warn("Invalid expense date format:", expense.date);
-                }
-            });
-        }
-        
-        return Array.from(dateMap.entries()).map(([date, data]) => ({
-            date: format(parseISO(date), 'MMM d'),
-            ...data,
-        }));
-    }, [sales, expenses, dateRange]);
+
+       if(!salesLoading && !expensesLoading && !purchasesLoading) {
+         calculateChartData();
+       }
+    }, [sales, expenses, purchases, dateRange, firestore, salesLoading, expensesLoading, purchasesLoading]);
     
-    const isLoading = salesLoading || expensesLoading;
+    const isLoading = salesLoading || expensesLoading || purchasesLoading || isCalculating;
     
     const currencyFormatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -183,19 +250,19 @@ function RecentActivityChart() {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <CardTitle className="text-white">چالاکییەکان</CardTitle>
-                        <CardDescription className="text-white/80">فرۆشتن و خەرجی بەپێی ماوەی دیاریکراو</CardDescription>
+                        <CardDescription className="text-white/80">فرۆشتن، کڕین، خەرجی، و قازانج بەپێی ماوەی دیاریکراو</CardDescription>
                     </div>
-                     <div className="flex items-center gap-4">
+                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
-                                    variant="outline"
+                                    variant={"outline"}
                                     className={cn(
                                         "w-[280px] justify-start text-left font-normal bg-white/10 text-white hover:bg-white/20 hover:text-white border-white/20",
                                         !dateRange && "text-muted-foreground"
                                     )}
                                 >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    <CalendarIcon className="ml-2 h-4 w-4" />
                                     {dateRange?.from ? (
                                         dateRange.to ? (
                                             <>
@@ -222,7 +289,7 @@ function RecentActivityChart() {
                                 />
                             </PopoverContent>
                         </Popover>
-                         <div className="flex items-center gap-4">
+                         <div className="grid grid-cols-2 sm:flex items-center gap-4">
                             {Object.entries(activeSubjects).map(([key, value]) => (
                                 <div key={key} className="flex items-center space-x-2 space-x-reverse">
                                     <Checkbox
@@ -261,7 +328,7 @@ function RecentActivityChart() {
                             tickLine={false}
                             axisLine={false}
                             tickMargin={8}
-                            tickFormatter={(value) => currencyFormatter.format(value)}
+                            tickFormatter={(value) => currencyFormatter.format(value as number)}
                             tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}
                         />
                         <ChartTooltip
@@ -286,25 +353,23 @@ function RecentActivityChart() {
                                 <stop offset="5%" stopColor="var(--color-sales)" stopOpacity={0.8} />
                                 <stop offset="95%" stopColor="var(--color-sales)" stopOpacity={0.1} />
                             </linearGradient>
+                            <linearGradient id="fillPurchases" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="var(--color-purchases)" stopOpacity={0.8} />
+                                <stop offset="95%" stopColor="var(--color-purchases)" stopOpacity={0.1} />
+                            </linearGradient>
                              <linearGradient id="fillExpenses" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="var(--color-expenses)" stopOpacity={0.8} />
                                 <stop offset="95%" stopColor="var(--color-expenses)" stopOpacity={0.1} />
                             </linearGradient>
+                            <linearGradient id="fillNetProfit" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="var(--color-netProfit)" stopOpacity={0.8} />
+                                <stop offset="95%" stopColor="var(--color-netProfit)" stopOpacity={0.1} />
+                            </linearGradient>
                         </defs>
-                        {activeSubjects.sales && <Area
-                            dataKey="sales"
-                            type="natural"
-                            fill="url(#fillSales)"
-                            stroke="var(--color-sales)"
-                            stackId="a"
-                        />}
-                       {activeSubjects.expenses && <Area
-                            dataKey="expenses"
-                            type="natural"
-                            fill="url(#fillExpenses)"
-                            stroke="var(--color-expenses)"
-                            stackId="b"
-                        />}
+                        {activeSubjects.sales && <Area dataKey="sales" type="natural" fill="url(#fillSales)" stroke="var(--color-sales)" stackId="a" />}
+                        {activeSubjects.purchases && <Area dataKey="purchases" type="natural" fill="url(#fillPurchases)" stroke="var(--color-purchases)" stackId="b" />}
+                        {activeSubjects.expenses && <Area dataKey="expenses" type="natural" fill="url(#fillExpenses)" stroke="var(--color-expenses)" stackId="c" />}
+                        {activeSubjects.netProfit && <Area dataKey="netProfit" type="natural" fill="url(#fillNetProfit)" stroke="var(--color-netProfit)" stackId="d" />}
                     </AreaChart>
                 </ChartContainer>
                 )}
@@ -322,3 +387,5 @@ export default function DashboardPage() {
         </div>
     );
 }
+
+    
