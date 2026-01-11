@@ -209,14 +209,14 @@ function RecentActivityChart() {
                                     )}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="end" dir="ltr">
+                            <PopoverContent className="w-auto p-0" align="end" dir="rtl">
                                 <Calendar
                                     initialFocus
                                     mode="range"
                                     defaultMonth={dateRange?.from}
                                     selected={dateRange}
                                     onSelect={setDateRange}
-                                    numberOfMonths={2}
+                                    numberOfMonths={1}
                                     locale={arSA}
                                 />
                             </PopoverContent>
@@ -321,3 +321,5 @@ export default function DashboardPage() {
         </div>
     );
 }
+
+    
