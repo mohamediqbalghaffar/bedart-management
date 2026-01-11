@@ -4,7 +4,7 @@ import React from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { useFirestore, useCollection, useMemoFirebase, collection } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, DollarSign, Users, Archive, AlertCircle, ShoppingCart } from 'lucide-react';
+import { Loader2, DollarSign, Users, Archive, AlertCircle, ShoppingCart, TrendingUp, TrendingDown } from 'lucide-react';
 import { StatCard } from '@/components/shared/stat-card';
 import { subDays, format, parseISO } from 'date-fns';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -19,6 +19,7 @@ type SellingForm = {
 type Expense = {
     amount: number;
     paidBy: 'Cash - Dinar' | 'Cash - Dollar';
+    date: string;
 };
 
 type Product = {
@@ -85,37 +86,67 @@ function DashboardStats() {
 const chartConfig = {
   sales: {
     label: "فرۆش",
-    color: "hsl(var(--chart-1))",
+    color: "hsl(var(--chart-2))",
+    icon: TrendingUp,
+  },
+  expenses: {
+    label: "خەرجی",
+    color: "hsl(var(--chart-5))",
+    icon: TrendingDown,
   },
 } satisfies ChartConfig
 
 function RecentActivityChart() {
     const firestore = useFirestore();
     const salesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'selling_forms') : null, [firestore]);
-    const { data: sales, isLoading } = useCollection<SellingForm>(salesQuery);
+    const expensesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'expenses') : null, [firestore]);
+    const { data: sales, isLoading: salesLoading } = useCollection<SellingForm>(salesQuery);
+    const { data: expenses, isLoading: expensesLoading } = useCollection<Expense>(expensesQuery);
 
     const chartData = React.useMemo(() => {
-        const last30Days = new Map<string, number>();
+        const dateMap = new Map<string, { sales: number; expenses: number }>();
         for (let i = 29; i >= 0; i--) {
             const date = subDays(new Date(), i);
-            last30Days.set(format(date, 'yyyy-MM-dd'), 0);
+            dateMap.set(format(date, 'yyyy-MM-dd'), { sales: 0, expenses: 0 });
         }
 
         if (sales) {
             sales.forEach(sale => {
-                const saleDate = format(parseISO(sale.issueDate), 'yyyy-MM-dd');
-                if (last30Days.has(saleDate)) {
-                    last30Days.set(saleDate, (last30Days.get(saleDate) || 0) + sale.totalPrice);
+                try {
+                    const saleDate = format(parseISO(sale.issueDate), 'yyyy-MM-dd');
+                    if (dateMap.has(saleDate)) {
+                        const dayData = dateMap.get(saleDate)!;
+                        dayData.sales += sale.totalPrice;
+                    }
+                } catch (e) {
+                    console.warn("Invalid sale date format:", sale.issueDate);
                 }
             });
         }
         
-        return Array.from(last30Days.entries()).map(([date, sales]) => ({
+        if (expenses) {
+             expenses.forEach(expense => {
+                try {
+                    const expenseDate = format(parseISO(expense.date), 'yyyy-MM-dd');
+                    if (dateMap.has(expenseDate)) {
+                        const dayData = dateMap.get(expenseDate)!;
+                        const amountInUsd = expense.paidBy === 'Cash - Dinar' ? expense.amount / 1500 : expense.amount;
+                        dayData.expenses += amountInUsd;
+                    }
+                } catch (e) {
+                     console.warn("Invalid expense date format:", expense.date);
+                }
+            });
+        }
+        
+        return Array.from(dateMap.entries()).map(([date, data]) => ({
             date: format(parseISO(date), 'MMM d'),
-            sales,
+            ...data,
         }));
-    }, [sales]);
+    }, [sales, expenses]);
     
+    const isLoading = salesLoading || expensesLoading;
+
     if (isLoading) {
         return (
             <div className="flex justify-center items-center h-80">
@@ -123,46 +154,78 @@ function RecentActivityChart() {
             </div>
         );
     }
+    
+    const currencyFormatter = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        notation: 'compact',
+        compactDisplay: 'short'
+    });
 
     return (
-        <Card>
+        <Card className="bg-gradient-to-br from-blue-900/50 via-purple-900/50 to-indigo-900/50 text-white border-blue-800/50">
             <CardHeader>
-                <CardTitle>چالاکییەکانی فرۆشتن (30 ڕۆژی ڕابردوو)</CardTitle>
+                <CardTitle className="text-white">چالاکییەکانی فرۆشتن و خەرجی (30 ڕۆژی ڕابردوو)</CardTitle>
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig} className="h-80 w-full">
                     <AreaChart accessibilityLayer data={chartData}>
-                        <CartesianGrid vertical={false} />
+                        <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)" />
                         <XAxis
                             dataKey="date"
                             tickLine={false}
                             axisLine={false}
                             tickMargin={8}
                             tickFormatter={(value) => value.slice(0, 3)}
+                             tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}
                         />
                         <YAxis
                             tickLine={false}
                             axisLine={false}
                             tickMargin={8}
-                            tickFormatter={(value) => `$${value / 1000}k`}
+                            tickFormatter={(value) => currencyFormatter.format(value)}
+                            tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}
                         />
                         <ChartTooltip
-                            cursor={false}
-                            content={<ChartTooltipContent indicator="dot" />}
+                            cursor={true}
+                            content={<ChartTooltipContent
+                                indicator="dot"
+                                labelClassName="text-white"
+                                className="bg-card/80 backdrop-blur-sm text-white border-border/50" 
+                                formatter={(value, name, item) => (
+                                    <div className="flex items-center gap-2">
+                                        <div style={{ backgroundColor: item.color }} className="w-2.5 h-2.5 rounded-full" />
+                                        <div className="flex justify-between w-full">
+                                            <span className="text-muted-foreground">{chartConfig[name as keyof typeof chartConfig].label}: </span>
+                                            <span className="font-bold ml-2">{currencyFormatter.format(value as number)}</span>
+                                        </div>
+                                    </div>
+                                )}
+                            />}
                         />
                         <defs>
                             <linearGradient id="fillSales" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8} />
-                                <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1} />
+                                <stop offset="5%" stopColor="var(--color-sales)" stopOpacity={0.8} />
+                                <stop offset="95%" stopColor="var(--color-sales)" stopOpacity={0.1} />
+                            </linearGradient>
+                             <linearGradient id="fillExpenses" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="var(--color-expenses)" stopOpacity={0.8} />
+                                <stop offset="95%" stopColor="var(--color-expenses)" stopOpacity={0.1} />
                             </linearGradient>
                         </defs>
                         <Area
                             dataKey="sales"
                             type="natural"
                             fill="url(#fillSales)"
-                            fillOpacity={0.4}
-                            stroke="hsl(var(--chart-1))"
+                            stroke="var(--color-sales)"
                             stackId="a"
+                        />
+                        <Area
+                            dataKey="expenses"
+                            type="natural"
+                            fill="url(#fillExpenses)"
+                            stroke="var(--color-expenses)"
+                            stackId="b"
                         />
                     </AreaChart>
                 </ChartContainer>
