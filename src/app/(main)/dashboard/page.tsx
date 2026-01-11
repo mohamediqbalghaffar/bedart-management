@@ -6,10 +6,14 @@ import { useFirestore, useCollection, useMemoFirebase, collection } from '@/fire
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, DollarSign, Users, Archive, AlertCircle, ShoppingCart } from 'lucide-react';
 import { StatCard } from '@/components/shared/stat-card';
+import { subDays, format, parseISO } from 'date-fns';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 type SellingForm = {
     totalPrice: number;
     customerName: string;
+    issueDate: string;
 };
 
 type Expense = {
@@ -78,19 +82,101 @@ function DashboardStats() {
     );
 }
 
+const chartConfig = {
+  sales: {
+    label: "فرۆش",
+    color: "hsl(var(--chart-1))",
+  },
+} satisfies ChartConfig
+
+function RecentActivityChart() {
+    const firestore = useFirestore();
+    const salesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'selling_forms') : null, [firestore]);
+    const { data: sales, isLoading } = useCollection<SellingForm>(salesQuery);
+
+    const chartData = React.useMemo(() => {
+        const last30Days = new Map<string, number>();
+        for (let i = 29; i >= 0; i--) {
+            const date = subDays(new Date(), i);
+            last30Days.set(format(date, 'yyyy-MM-dd'), 0);
+        }
+
+        if (sales) {
+            sales.forEach(sale => {
+                const saleDate = format(parseISO(sale.issueDate), 'yyyy-MM-dd');
+                if (last30Days.has(saleDate)) {
+                    last30Days.set(saleDate, (last30Days.get(saleDate) || 0) + sale.totalPrice);
+                }
+            });
+        }
+        
+        return Array.from(last30Days.entries()).map(([date, sales]) => ({
+            date: format(parseISO(date), 'MMM d'),
+            sales,
+        }));
+    }, [sales]);
+    
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center h-80">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>چالاکییەکانی فرۆشتن (30 ڕۆژی ڕابردوو)</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <ChartContainer config={chartConfig} className="h-80 w-full">
+                    <AreaChart accessibilityLayer data={chartData}>
+                        <CartesianGrid vertical={false} />
+                        <XAxis
+                            dataKey="date"
+                            tickLine={false}
+                            axisLine={false}
+                            tickMargin={8}
+                            tickFormatter={(value) => value.slice(0, 3)}
+                        />
+                        <YAxis
+                            tickLine={false}
+                            axisLine={false}
+                            tickMargin={8}
+                            tickFormatter={(value) => `$${value / 1000}k`}
+                        />
+                        <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent indicator="dot" />}
+                        />
+                        <defs>
+                            <linearGradient id="fillSales" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8} />
+                                <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1} />
+                            </linearGradient>
+                        </defs>
+                        <Area
+                            dataKey="sales"
+                            type="natural"
+                            fill="url(#fillSales)"
+                            fillOpacity={0.4}
+                            stroke="hsl(var(--chart-1))"
+                            stackId="a"
+                        />
+                    </AreaChart>
+                </ChartContainer>
+            </CardContent>
+        </Card>
+    )
+}
+
 export default function DashboardPage() {
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <PageHeader title="داشبۆرد" description="بەخێربێیتەوە بۆ سیستەمی بەڕێوەبردنی کارەکەت." />
             <DashboardStats />
-             <Card>
-                <CardHeader>
-                    <CardTitle>چالاکییەکانی ئەم دواییە</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-center text-muted-foreground py-8">لێرەدا لیستی چالاکییەکانی ئەم دواییە پیشان دەدرێت.</p>
-                </CardContent>
-            </Card>
+            <RecentActivityChart />
         </div>
     );
 }
