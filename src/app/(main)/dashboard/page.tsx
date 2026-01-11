@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -198,18 +199,18 @@ function RecentActivityChart() {
                                     {dateRange?.from ? (
                                         dateRange.to ? (
                                             <>
-                                                {format(dateRange.from, "d MMM, yyyy", { locale: arSA })} -{" "}
-                                                {format(dateRange.to, "d MMM, yyyy", { locale: arSA })}
+                                                {format(dateRange.from, "d MMMM, yyyy", { locale: arSA })} -{" "}
+                                                {format(dateRange.to, "d MMMM, yyyy", { locale: arSA })}
                                             </>
                                         ) : (
-                                            format(dateRange.from, "d MMM, yyyy", { locale: arSA })
+                                            format(dateRange.from, "d MMMM, yyyy", { locale: arSA })
                                         )
                                     ) : (
                                         <span>ماوەیەک هەڵبژێرە</span>
                                     )}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="end" dir="rtl">
+                            <PopoverContent className="w-auto p-0 bg-background text-foreground" align="end">
                                 <Calendar
                                     initialFocus
                                     mode="range"
@@ -321,5 +322,7 @@ export default function DashboardPage() {
         </div>
     );
 }
+
+    
 
     
