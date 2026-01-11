@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Loader2, DollarSign, Users, Archive, ShoppingCart, TrendingUp, TrendingDown, Calendar as CalendarIcon } from 'lucide-react';
 import { StatCard } from '@/components/shared/stat-card';
 import { subDays, format, parseISO, differenceInDays } from 'date-fns';
+import { arSA } from 'date-fns/locale';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { DateRange } from 'react-day-picker';
@@ -197,18 +198,18 @@ function RecentActivityChart() {
                                     {dateRange?.from ? (
                                         dateRange.to ? (
                                             <>
-                                                {format(dateRange.from, "LLL dd, y")} -{" "}
-                                                {format(dateRange.to, "LLL dd, y")}
+                                                {format(dateRange.from, "PPP", { locale: arSA })} -{" "}
+                                                {format(dateRange.to, "PPP", { locale: arSA })}
                                             </>
                                         ) : (
-                                            format(dateRange.from, "LLL dd, y")
+                                            format(dateRange.from, "PPP", { locale: arSA })
                                         )
                                     ) : (
                                         <span>ماوەیەک هەڵبژێرە</span>
                                     )}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="end">
+                            <PopoverContent className="w-auto p-0" align="end" dir="ltr">
                                 <Calendar
                                     initialFocus
                                     mode="range"
@@ -216,6 +217,7 @@ function RecentActivityChart() {
                                     selected={dateRange}
                                     onSelect={setDateRange}
                                     numberOfMonths={2}
+                                    locale={arSA}
                                 />
                             </PopoverContent>
                         </Popover>

@@ -13,10 +13,11 @@ import { CalendarIcon, PlusCircle, Trash2, List } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
+import { arSA } from "date-fns/locale";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useFirestore, setDocumentNonBlocking, doc, runTransaction, getDoc, collection, getDocs } from "@/firebase";
+import { useFirestore, setDocumentNonBlocking, doc, runTransaction, getDoc, collection, getDocs, deleteDoc } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ProductSelectorDialog } from "../../components/product-selector-dialog";
@@ -60,6 +61,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [originalItems, setOriginalItems] = useState<any[]>([]);
+  const [isIssueDateOpen, setIssueDateOpen] = useState(false);
 
   const form = useForm<SalesFormValues>({
     resolver: zodResolver(salesFormSchema),
@@ -212,7 +214,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                         throw new Error(`Product "${docId}" not found.`);
                     }
                     const currentQuantity = productDoc.data().currentQuantity || 0;
-                    const newQuantity = currentQuantity + qtyChange;
+                    const newQuantity = currentQuantity + qtyChange; // Here it's + qtyChange which can be negative
                     if(newQuantity < 0){
                         throw new Error(`Insufficient stock for ${productDoc.data().productName}. Only ${currentQuantity - qtyChange} were originally sold and ${currentQuantity} are available.`);
                     }
@@ -326,7 +328,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                 render={({ field }) => (
                     <FormItem className="flex items-center gap-2">
                         <FormLabel className="mt-2">بەروار:</FormLabel>
-                        <Popover>
+                        <Popover open={isIssueDateOpen} onOpenChange={setIssueDateOpen}>
                             <PopoverTrigger asChild>
                                 <Button
                                     variant={"outline"}
@@ -337,18 +339,24 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                                 >
                                     <CalendarIcon className="ml-2 h-4 w-4" />
                                     {field.value ? (
-                                    format(field.value, "yyyy/MM/dd")
+                                    format(field.value, "PPP", { locale: arSA })
                                     ) : (
                                     <span>بەروارێک</span>
                                     )}
                                 </Button>
                             </PopoverTrigger>
-                             <PopoverContent className="w-auto p-0" align="start">
+                             <PopoverContent className="w-auto p-0" align="start" dir="ltr">
                                 <Calendar
                                     mode="single"
                                     selected={field.value}
-                                    onSelect={field.onChange}
+                                    onSelect={(date) => {
+                                        if (date) {
+                                            field.onChange(date);
+                                            setIssueDateOpen(false);
+                                        }
+                                    }}
                                     initialFocus
+                                    locale={arSA}
                                 />
                             </PopoverContent>
                         </Popover>
@@ -567,12 +575,12 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                                                         className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")}
                                                     >
                                                         <CalendarIcon className="ml-2 h-4 w-4" />
-                                                        {field.value ? format(field.value, "PPP") : (<span>بەروار</span>)}
+                                                        {field.value ? format(field.value, "PPP", { locale: arSA }) : (<span>بەروار</span>)}
                                                     </Button>
                                                     </FormControl>
                                                 </PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0" align="start">
-                                                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus/>
+                                                <PopoverContent className="w-auto p-0" align="start" dir="ltr">
+                                                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={arSA}/>
                                                 </PopoverContent>
                                             </Popover>
                                             <FormMessage />

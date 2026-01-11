@@ -19,6 +19,7 @@ import { CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
+import { arSA } from "date-fns/locale";
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
@@ -124,9 +125,9 @@ function EditableExpenseRow({ expense }: { expense: WithId<Expense> }) {
                 <TableCell>
                     <Popover>
                         <PopoverTrigger asChild>
-                            <Button variant="outline" className="w-full justify-start text-left font-normal"><CalendarIcon className="ml-2 h-4 w-4" /><span>{format(parseISO(editedExpense.date), "yyyy/MM/dd")}</span></Button>
+                            <Button variant="outline" className="w-full justify-start text-left font-normal"><CalendarIcon className="ml-2 h-4 w-4" /><span>{format(parseISO(editedExpense.date), "PPP", { locale: arSA })}</span></Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={parseISO(editedExpense.date)} onSelect={handleDateChange} initialFocus /></PopoverContent>
+                        <PopoverContent className="w-auto p-0" dir="ltr"><Calendar mode="single" selected={parseISO(editedExpense.date)} onSelect={handleDateChange} initialFocus locale={arSA} /></PopoverContent>
                     </Popover>
                 </TableCell>
                 <TableCell className="text-left">
@@ -251,5 +252,3 @@ export default function ExpensesPage() {
         </div>
     );
 }
-
-    

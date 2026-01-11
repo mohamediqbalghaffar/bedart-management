@@ -13,6 +13,7 @@ import { CalendarIcon, Download, Loader2, PlusCircle, Trash2, Check, ChevronsUpD
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { arSA } from 'date-fns/locale';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFirestore, useCollection, useMemoFirebase, collection, doc, setDoc, getDoc, runTransaction } from "@/firebase";
@@ -148,6 +149,7 @@ function ExcelImportButton({ form }: { form: UseFormReturn<BuyingFormValues> }) 
 export function BuyingForm() {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const [isIssueDateOpen, setIssueDateOpen] = useState(false);
 
   const suppliersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -273,7 +275,7 @@ export function BuyingForm() {
                 render={({ field }) => (
                     <FormItem className="flex items-center gap-2">
                         <FormLabel className="mt-2">بەروار:</FormLabel>
-                        <Popover>
+                        <Popover open={isIssueDateOpen} onOpenChange={setIssueDateOpen}>
                             <PopoverTrigger asChild>
                                 <FormControl>
                                 <Button
@@ -285,19 +287,25 @@ export function BuyingForm() {
                                 >
                                     <CalendarIcon className="ml-2 h-4 w-4" />
                                     {field.value ? (
-                                    format(field.value, "yyyy/MM/dd")
+                                    format(field.value, "PPP", { locale: arSA })
                                     ) : (
                                     <span>بەروارێک</span>
                                     )}
                                 </Button>
                                 </FormControl>
                             </PopoverTrigger>
-                             <PopoverContent className="w-auto p-0" align="start">
+                             <PopoverContent className="w-auto p-0" align="start" dir="ltr">
                                 <Calendar
                                     mode="single"
                                     selected={field.value}
-                                    onSelect={field.onChange}
+                                    onSelect={(date) => {
+                                        if (date) {
+                                            field.onChange(date);
+                                            setIssueDateOpen(false);
+                                        }
+                                    }}
                                     initialFocus
+                                    locale={arSA}
                                 />
                             </PopoverContent>
                         </Popover>
