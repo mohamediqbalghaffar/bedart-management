@@ -198,11 +198,11 @@ function RecentActivityChart() {
                                     {dateRange?.from ? (
                                         dateRange.to ? (
                                             <>
-                                                {format(dateRange.from, "PPP", { locale: arSA })} -{" "}
-                                                {format(dateRange.to, "PPP", { locale: arSA })}
+                                                {format(dateRange.from, "d MMM, yyyy", { locale: arSA })} -{" "}
+                                                {format(dateRange.to, "d MMM, yyyy", { locale: arSA })}
                                             </>
                                         ) : (
-                                            format(dateRange.from, "PPP", { locale: arSA })
+                                            format(dateRange.from, "d MMM, yyyy", { locale: arSA })
                                         )
                                     ) : (
                                         <span>ماوەیەک هەڵبژێرە</span>
