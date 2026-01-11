@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useFieldArray, UseFormReturn } from "react-hook-form";
+import { useForm, useFieldArray, UseFormReturn, Control } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -145,6 +145,94 @@ function ExcelImportButton({ form }: { form: UseFormReturn<BuyingFormValues> }) 
     );
 }
 
+function BuyingFormItemRow({
+    form,
+    index,
+    remove,
+    fieldId
+}: {
+    form: UseFormReturn<BuyingFormValues>;
+    index: number;
+    remove: (index: number) => void;
+    fieldId: string;
+}) {
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const watchedItem = form.watch(`items.${index}`);
+    
+    return (
+        <TableRow key={fieldId}>
+            <TableCell className="align-top">
+                <FormField
+                    control={form.control}
+                    name={`items.${index}.product`}
+                    render={({ field }) => (
+                        <FormItem>
+                            <div className="flex gap-2">
+                                <FormControl>
+                                    <Input placeholder="ناوی کاڵا..." {...field} />
+                                </FormControl>
+                                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button variant="outline" size="icon"><List className="h-4 w-4" /></Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>لیستی کاڵاکان</DialogTitle>
+                                        </DialogHeader>
+                                        <ProductSelectorDialog onProductSelect={({ name, price }) => {
+                                            form.setValue(`items.${index}.product`, name);
+                                            form.setValue(`items.${index}.unitPrice`, price);
+                                            setDialogOpen(false);
+                                        }} />
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </TableCell>
+            <TableCell className="align-top">
+                <FormField
+                    control={form.control}
+                    name={`items.${index}.category`}
+                    render={({ field }) => (
+                        <FormItem>
+                            <Select onValueChange={field.onChange} value={field.value} dir="rtl">
+                                <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value="Mattress">دۆشەک</SelectItem>
+                                    <SelectItem value="Bed">تەخت</SelectItem>
+                                    <SelectItem value="Pillow">سەرین</SelectItem>
+                                    <SelectItem value="Cover">بەرگ</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </TableCell>
+            <TableCell className="align-top">
+                <FormField control={form.control} name={`items.${index}.quantity`} render={({ field }) => (<FormItem><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </TableCell>
+            <TableCell className="align-top">
+                <FormField control={form.control} name={`items.${index}.unitPrice`} render={({ field }) => (<FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </TableCell>
+            <TableCell className="align-top pt-5 font-semibold">
+                {new Intl.NumberFormat('en-US').format(watchedItem?.quantity * watchedItem?.unitPrice || 0)}
+            </TableCell>
+            <TableCell className="align-top">
+                <Button variant="ghost" size="icon" onClick={() => remove(index)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+            </TableCell>
+        </TableRow>
+    );
+}
 
 export function BuyingForm() {
   const firestore = useFirestore();
@@ -376,82 +464,15 @@ export function BuyingForm() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {fields.map((field, index) => {
-                      const [dialogOpen, setDialogOpen] = useState(false);
-                      return(
-                        <TableRow key={field.id}>
-                            <TableCell className="align-top">
-                                <FormField
-                                  control={form.control}
-                                  name={`items.${index}.product`}
-                                  render={({ field }) => (
-                                    <FormItem>
-                                       <div className="flex gap-2">
-                                        <FormControl>
-                                            <Input placeholder="ناوی کاڵا..." {...field} />
-                                        </FormControl>
-                                        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                                          <DialogTrigger asChild>
-                                            <Button variant="outline" size="icon"><List className="h-4 w-4" /></Button>
-                                          </DialogTrigger>
-                                          <DialogContent>
-                                              <DialogHeader>
-                                                  <DialogTitle>لیستی کاڵاکان</DialogTitle>
-                                              </DialogHeader>
-                                              <ProductSelectorDialog onProductSelect={({name, price}) => {
-                                                  form.setValue(`items.${index}.product`, name);
-                                                  form.setValue(`items.${index}.unitPrice`, price);
-                                                  setDialogOpen(false);
-                                              }} />
-                                          </DialogContent>
-                                        </Dialog>
-                                      </div>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-                            </TableCell>
-                            <TableCell className="align-top">
-                                <FormField
-                                    control={form.control}
-                                    name={`items.${index}.category`}
-                                    render={({ field }) => (
-                                    <FormItem>
-                                        <Select onValueChange={field.onChange} value={field.value} dir="rtl">
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="Mattress">دۆشەک</SelectItem>
-                                            <SelectItem value="Bed">تەخت</SelectItem>
-                                            <SelectItem value="Pillow">سەرین</SelectItem>
-                                            <SelectItem value="Cover">بەرگ</SelectItem>
-                                        </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                    )}
-                                />
-                            </TableCell>
-                            <TableCell className="align-top">
-                                <FormField control={form.control} name={`items.${index}.quantity`} render={({ field }) => (<FormItem><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            </TableCell>
-                            <TableCell className="align-top">
-                                <FormField control={form.control} name={`items.${index}.unitPrice`} render={({ field }) => (<FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            </TableCell>
-                             <TableCell className="align-top pt-5 font-semibold">
-                                {new Intl.NumberFormat('en-US').format(watchedItems[index]?.quantity * watchedItems[index]?.unitPrice || 0)}
-                            </TableCell>
-                            <TableCell className="align-top">
-                                <Button variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1}>
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                            </TableCell>
-                        </TableRow>
-                      )
-                    })}
+                     {fields.map((field, index) => (
+                        <BuyingFormItemRow
+                            key={field.id}
+                            fieldId={field.id}
+                            form={form}
+                            index={index}
+                            remove={() => fields.length > 1 && remove(index)}
+                        />
+                    ))}
                 </TableBody>
             </Table>
             <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ product: "", quantity: 1, unitPrice: 0, category: 'Mattress', sizeModel: '' })}>
