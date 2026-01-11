@@ -28,7 +28,7 @@ function Calendar({
         nav: "flex items-center",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
-          "h-7 w-7 bg-transparent p-0 hover:opacity-100 text-white"
+          "h-7 w-7 bg-transparent p-0 hover:opacity-100"
         ),
         nav_button_previous: "absolute left-1",
         nav_button_next: "absolute right-1",
