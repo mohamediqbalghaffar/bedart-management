@@ -199,7 +199,7 @@ function RecentActivityChart() {
                                     {dateRange?.from ? (
                                         dateRange.to ? (
                                             <>
-                                                {format(dateRange.from, "d MMMM, yyyy", { locale: arSA })} -{" "}
+                                                {format(dateRange.from, "d MMMM", { locale: arSA })} - {" "}
                                                 {format(dateRange.to, "d MMMM, yyyy", { locale: arSA })}
                                             </>
                                         ) : (
@@ -322,7 +322,3 @@ export default function DashboardPage() {
         </div>
     );
 }
-
-    
-
-    
