@@ -1,14 +1,21 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { useFirestore, useCollection, useMemoFirebase, collection } from '@/firebase';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, DollarSign, Users, Archive, AlertCircle, ShoppingCart, TrendingUp, TrendingDown } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, DollarSign, Users, Archive, ShoppingCart, TrendingUp, TrendingDown, Calendar as CalendarIcon } from 'lucide-react';
 import { StatCard } from '@/components/shared/stat-card';
-import { subDays, format, parseISO } from 'date-fns';
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { subDays, format, parseISO, differenceInDays } from 'date-fns';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { DateRange } from 'react-day-picker';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
+
 
 type SellingForm = {
     totalPrice: number;
@@ -103,10 +110,24 @@ function RecentActivityChart() {
     const { data: sales, isLoading: salesLoading } = useCollection<SellingForm>(salesQuery);
     const { data: expenses, isLoading: expensesLoading } = useCollection<Expense>(expensesQuery);
 
+    const [dateRange, setDateRange] = useState<DateRange | undefined>({
+        from: subDays(new Date(), 29),
+        to: new Date(),
+    });
+
+    const [activeSubjects, setActiveSubjects] = useState({
+        sales: true,
+        expenses: true,
+    });
+
     const chartData = React.useMemo(() => {
+        if (!dateRange?.from) return [];
+
         const dateMap = new Map<string, { sales: number; expenses: number }>();
-        for (let i = 29; i >= 0; i--) {
-            const date = subDays(new Date(), i);
+        const days = differenceInDays(dateRange.to ?? dateRange.from, dateRange.from);
+
+        for (let i = days; i >= 0; i--) {
+            const date = subDays(dateRange.to ?? dateRange.from, i);
             dateMap.set(format(date, 'yyyy-MM-dd'), { sales: 0, expenses: 0 });
         }
 
@@ -143,17 +164,9 @@ function RecentActivityChart() {
             date: format(parseISO(date), 'MMM d'),
             ...data,
         }));
-    }, [sales, expenses]);
+    }, [sales, expenses, dateRange]);
     
     const isLoading = salesLoading || expensesLoading;
-
-    if (isLoading) {
-        return (
-            <div className="flex justify-center items-center h-80">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        );
-    }
     
     const currencyFormatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -165,9 +178,71 @@ function RecentActivityChart() {
     return (
         <Card className="bg-gradient-to-br from-blue-900/50 via-purple-900/50 to-indigo-900/50 text-white border-blue-800/50">
             <CardHeader>
-                <CardTitle className="text-white">چالاکییەکانی فرۆشتن و خەرجی (30 ڕۆژی ڕابردوو)</CardTitle>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <CardTitle className="text-white">چالاکییەکان</CardTitle>
+                        <CardDescription className="text-white/80">فرۆشتن و خەرجی بەپێی ماوەی دیاریکراو</CardDescription>
+                    </div>
+                     <div className="flex items-center gap-4">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className={cn(
+                                        "w-[280px] justify-start text-left font-normal bg-white/10 text-white hover:bg-white/20 hover:text-white border-white/20",
+                                        !dateRange && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {dateRange?.from ? (
+                                        dateRange.to ? (
+                                            <>
+                                                {format(dateRange.from, "LLL dd, y")} -{" "}
+                                                {format(dateRange.to, "LLL dd, y")}
+                                            </>
+                                        ) : (
+                                            format(dateRange.from, "LLL dd, y")
+                                        )
+                                    ) : (
+                                        <span>ماوەیەک هەڵبژێرە</span>
+                                    )}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="end">
+                                <Calendar
+                                    initialFocus
+                                    mode="range"
+                                    defaultMonth={dateRange?.from}
+                                    selected={dateRange}
+                                    onSelect={setDateRange}
+                                    numberOfMonths={2}
+                                />
+                            </PopoverContent>
+                        </Popover>
+                         <div className="flex items-center gap-4">
+                            {Object.entries(activeSubjects).map(([key, value]) => (
+                                <div key={key} className="flex items-center space-x-2 space-x-reverse">
+                                    <Checkbox
+                                        id={key}
+                                        checked={value}
+                                        onCheckedChange={(checked) => setActiveSubjects(prev => ({...prev, [key]: !!checked}))}
+                                        className="border-white/50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                                    />
+                                    <label htmlFor={key} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                        {chartConfig[key as keyof typeof chartConfig].label}
+                                    </label>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
             </CardHeader>
             <CardContent>
+                 {isLoading ? (
+                    <div className="flex justify-center items-center h-80">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                ) : (
                 <ChartContainer config={chartConfig} className="h-80 w-full">
                     <AreaChart accessibilityLayer data={chartData}>
                         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)" />
@@ -213,22 +288,23 @@ function RecentActivityChart() {
                                 <stop offset="95%" stopColor="var(--color-expenses)" stopOpacity={0.1} />
                             </linearGradient>
                         </defs>
-                        <Area
+                        {activeSubjects.sales && <Area
                             dataKey="sales"
                             type="natural"
                             fill="url(#fillSales)"
                             stroke="var(--color-sales)"
                             stackId="a"
-                        />
-                        <Area
+                        />}
+                       {activeSubjects.expenses && <Area
                             dataKey="expenses"
                             type="natural"
                             fill="url(#fillExpenses)"
                             stroke="var(--color-expenses)"
                             stackId="b"
-                        />
+                        />}
                     </AreaChart>
                 </ChartContainer>
+                )}
             </CardContent>
         </Card>
     )
