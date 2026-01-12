@@ -188,42 +188,44 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
     try {
         const itemChanges = new Map<string, number>();
 
-        // Calculate changes from original items for edits
-        if(formId){
-            originalItems.forEach(origItem => {
-                const docId = origItem.productName.toLowerCase().replace(/[^a-z0-9]/g, '-');
-                itemChanges.set(docId, (itemChanges.get(docId) || 0) + origItem.quantity); // Add back to stock
-            });
+        // STOCK VALIDATION
+        for (const item of data.items) {
+            const docId = item.product.toLowerCase().replace(/[^a-z0-9]/g, '-');
+            const productRef = doc(firestore, 'products', docId);
+            const productDoc = await getDoc(productRef);
+
+            if (!productDoc.exists()) {
+                toast({ variant: "destructive", title: "کاڵا نەدۆزرایەوە", description: `کاڵای "${item.product}" لە کۆگا نەدۆزرایەوە.` });
+                return;
+            }
+
+            const currentQuantity = productDoc.data().currentQuantity || 0;
+            const originalQuantity = originalItems.find(orig => orig.productName === item.product)?.quantity || 0;
+            const requestedChange = item.quantity - originalQuantity;
+
+            if (requestedChange > 0 && currentQuantity < requestedChange) {
+                toast({ variant: "destructive", title: "بڕی کاڵا بەشی ناکات", description: `تەنها ${currentQuantity} دانە لە "${item.product}" لە کۆگا ماوە.` });
+                return;
+            }
+
+            itemChanges.set(docId, (itemChanges.get(docId) || 0) - (item.quantity - originalQuantity));
         }
 
-        // Calculate new item quantities
-        data.items.forEach(newItem => {
-             const docId = newItem.product.toLowerCase().replace(/[^a-z0-9]/g, '-');
-             itemChanges.set(docId, (itemChanges.get(docId) || 0) - newItem.quantity); // Remove from stock
-        });
-        
+
         // Apply stock changes via transaction
         for (const [docId, qtyChange] of itemChanges.entries()) {
             if(qtyChange === 0) continue;
             
             const productRef = doc(firestore, 'products', docId);
-            try {
-                await runTransaction(firestore, async (transaction) => {
-                    const productDoc = await transaction.get(productRef);
-                    if (!productDoc.exists()) {
-                        throw new Error(`Product "${docId}" not found.`);
-                    }
-                    const currentQuantity = productDoc.data().currentQuantity || 0;
-                    const newQuantity = currentQuantity + qtyChange; // Here it's + qtyChange which can be negative
-                    if(newQuantity < 0){
-                        throw new Error(`Insufficient stock for ${productDoc.data().productName}. Only ${currentQuantity - qtyChange} were originally sold and ${currentQuantity} are available.`);
-                    }
-                    transaction.update(productRef, { currentQuantity: newQuantity });
-                });
-            } catch (e: any) {
-                toast({ variant: "destructive", title: "هەڵە لە بڕی کاڵا", description: e.message });
-                return;
-            }
+             await runTransaction(firestore, async (transaction) => {
+                const productDoc = await transaction.get(productRef);
+                if (!productDoc.exists()) {
+                    throw new Error(`Product "${docId}" not found.`);
+                }
+                const currentQuantity = productDoc.data().currentQuantity || 0;
+                const newQuantity = currentQuantity + qtyChange;
+                transaction.update(productRef, { currentQuantity: newQuantity });
+            });
         }
 
 
@@ -243,10 +245,6 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
         
         await setDocumentNonBlocking(sellingFormRef, sellingFormData, { merge: true });
         
-        // For edits, we might need to delete old items/payments first. A simpler approach for now is just to overwrite.
-        // A more robust solution would handle deletions of removed items.
-        
-        // Delete existing items and payments before adding new ones
         if (formId) {
             const existingItems = await getDocs(collection(firestore, `selling_forms/${formId}/products`));
             await Promise.all(existingItems.docs.map(d => deleteDoc(d.ref)));
