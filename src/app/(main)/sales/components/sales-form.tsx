@@ -250,98 +250,88 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
         return;
     }
     
+    const sellingFormRef = formId ? doc(firestore, "selling_forms", formId) : doc(collection(firestore, "selling_forms"));
+    const sellingFormId = sellingFormRef.id;
+
     try {
-        const itemChanges = new Map<string, number>();
-
-        // STOCK VALIDATION
-        for (const item of data.items) {
-            const docId = item.product.toLowerCase().replace(/[^a-z0-9]/g, '-');
-            const productRef = doc(firestore, 'products', docId);
-            const productDoc = await getDoc(productRef);
-
-            if (!productDoc.exists()) {
-                toast({ variant: "destructive", title: "کاڵا نەدۆزرایەوە", description: `کاڵای "${item.product}" لە کۆگا نەدۆزرایەوە.` });
-                return;
-            }
-
-            const currentQuantity = productDoc.data().currentQuantity || 0;
-            const originalQuantity = originalItems.find(orig => orig.productName === item.product)?.quantity || 0;
-            const requestedChange = item.quantity - originalQuantity;
-
-            if (requestedChange > 0 && currentQuantity < requestedChange) {
-                toast({ variant: "destructive", title: "بڕی کاڵا بەشی ناکات", description: `تەنها ${currentQuantity} دانە لە "${item.product}" لە کۆگا ماوە.` });
-                return;
-            }
-
-            itemChanges.set(docId, (itemChanges.get(docId) || 0) - (item.quantity - originalQuantity));
-        }
-
-
-        // Apply stock changes via transaction
-        for (const [docId, qtyChange] of itemChanges.entries()) {
-            if(qtyChange === 0) continue;
-            
-            const productRef = doc(firestore, 'products', docId);
-             await runTransaction(firestore, async (transaction) => {
-                const productDoc = await transaction.get(productRef);
-                if (!productDoc.exists()) {
-                    throw new Error(`Product "${docId}" not found.`);
+        await runTransaction(firestore, async (transaction) => {
+            // 1. Restore original stock for existing items (if editing)
+            if (formId) {
+                for (const item of originalItems) {
+                    const productDocId = item.productName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                    const productRef = doc(firestore, 'products', productDocId);
+                    const productDoc = await transaction.get(productRef);
+                    if (productDoc.exists()) {
+                        const newQuantity = (productDoc.data().currentQuantity || 0) + item.quantity;
+                        transaction.update(productRef, { currentQuantity: newQuantity });
+                    }
                 }
+            }
+
+            // 2. Validate and deduct new stock
+            for (const item of data.items) {
+                const productDocId = item.product.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                const productRef = doc(firestore, 'products', productDocId);
+                const productDoc = await transaction.get(productRef);
+
+                if (!productDoc.exists()) {
+                    throw new Error(`کاڵای "${item.product}" لە کۆگا نەدۆزرایەوە.`);
+                }
+
                 const currentQuantity = productDoc.data().currentQuantity || 0;
-                const newQuantity = currentQuantity + qtyChange;
+                if (currentQuantity < item.quantity) {
+                    throw new Error(`بڕی کاڵا بەشی ناکات. تەنها ${currentQuantity} دانە لە "${item.product}" لە کۆگا ماوە.`);
+                }
+
+                const newQuantity = currentQuantity - item.quantity;
                 transaction.update(productRef, { currentQuantity: newQuantity });
-            });
-        }
+            }
 
-
-        const sellingFormRef = formId ? doc(firestore, "selling_forms", formId) : doc(collection(firestore, "selling_forms"));
-        const sellingFormId = sellingFormRef.id;
-
-        const { items, payments, ...mainData } = data;
-
-        const sellingFormData: any = {
-            ...mainData,
-            id: sellingFormId,
-            creatorId: "system",
-            issueDate: format(data.issueDate, "yyyy-MM-dd"),
-            totalPrice: totalAmount,
-            remainingBalance: remainingBalance,
-        };
-
-        // Remove discount fields if they are not set to avoid 'undefined' error
-        if (!sellingFormData.discountType) {
-            delete sellingFormData.discountType;
-            delete sellingFormData.discountValue;
-        } else {
-            sellingFormData.discountValue = sellingFormData.discountValue || 0;
-        }
-        
-        await setDocumentNonBlocking(sellingFormRef, sellingFormData, { merge: true });
-        
-        if (formId) {
-            const existingItems = await getDocs(collection(firestore, `selling_forms/${formId}/products`));
-            await Promise.all(existingItems.docs.map(d => deleteDoc(d.ref)));
-            const existingPayments = await getDocs(collection(firestore, `selling_forms/${formId}/payments`));
-            await Promise.all(existingPayments.docs.map(p => deleteDoc(p.ref)));
-        }
-
-
-        const itemPromises = items.map(item => {
-            const productSubCollectionRef = doc(collection(firestore, `selling_forms/${sellingFormId}/products`));
-            const productDocId = item.product.toLowerCase().replace(/[^a-z0-9]/g, '-');
-            const productData = {
-                id: productSubCollectionRef.id,
-                sellingFormId: sellingFormId,
-                productId: productDocId,
-                productName: item.product,
-                quantity: item.quantity,
-                unitPrice: item.unitPrice,
-                lineTotal: item.quantity * item.unitPrice,
+            // 3. Create/Update the main selling_form document
+            const { items, payments, ...mainData } = data;
+            const sellingFormData: any = {
+                ...mainData,
+                id: sellingFormId,
+                creatorId: "system", // Replace with actual user ID if auth is used
+                issueDate: format(data.issueDate, "yyyy-MM-dd"),
+                totalPrice: totalAmount,
+                remainingBalance: remainingBalance,
             };
-            return setDocumentNonBlocking(productSubCollectionRef, productData, { merge: true });
-        });
+            if (sellingFormData.discountValue === undefined || sellingFormData.discountValue === null) {
+                sellingFormData.discountValue = 0;
+            }
+            if (sellingFormData.discountType === undefined || sellingFormData.discountType === null) {
+                 delete sellingFormData.discountType;
+            }
 
-        const paymentPromises = (payments || []).map(payment => {
+            transaction.set(sellingFormRef, sellingFormData, { merge: true });
+
+            // 4. Clear and create new sub-collection documents
+            if (formId) {
+                const existingItemsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/products`));
+                existingItemsSnap.docs.forEach(d => transaction.delete(d.ref));
+                const existingPaymentsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/payments`));
+                existingPaymentsSnap.docs.forEach(p => transaction.delete(p.ref));
+            }
+            
+            items.forEach(item => {
+                const productSubCollectionRef = doc(collection(firestore, `selling_forms/${sellingFormId}/products`));
+                const productDocId = item.product.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                const productData = {
+                    id: productSubCollectionRef.id,
+                    sellingFormId: sellingFormId,
+                    productId: productDocId,
+                    productName: item.product,
+                    quantity: item.quantity,
+                    unitPrice: item.unitPrice,
+                    lineTotal: item.quantity * item.unitPrice,
+                };
+                transaction.set(productSubCollectionRef, productData);
+            });
+        });
+        
+        // Handle payments outside the main transaction, as they don't affect stock
+        const paymentPromises = (data.payments || []).map(payment => {
             const paymentRef = doc(collection(firestore, `selling_forms/${sellingFormId}/payments`));
             const paymentData = {
                 ...payment,
@@ -351,8 +341,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
             };
             return setDocumentNonBlocking(paymentRef, paymentData, { merge: true });
         });
-
-        await Promise.all([...itemPromises, ...paymentPromises]);
+        await Promise.all(paymentPromises);
 
         toast({
             title: "سەرکەوتوو بوو!",
@@ -369,7 +358,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
         toast({
             variant: "destructive",
             title: "هەڵەیەک ڕوویدا",
-            description: error.message || "پاشەکەوتکردنی فۆڕمی فرۆشتن سەرکەوتوو نەبوو.",
+            description: error.message || "پاشەکەوتکردنی فۆڕمی فرۆشتن سەرکەوتوو نەبوو. گۆڕانکارییەکان پاشگەزکرانەوە.",
         });
     }
   }
@@ -658,3 +647,5 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
     </Form>
   );
 }
+
+    
