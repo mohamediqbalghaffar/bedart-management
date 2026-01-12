@@ -45,7 +45,7 @@ export default function LoginPage() {
     if (!auth) return;
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
-      // The useEffect will handle the redirect
+      router.push('/dashboard');
     } catch (error) {
       const authError = error as AuthError;
       if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential') {
@@ -61,7 +61,7 @@ export default function LoginPage() {
               role: 'Salesman',
             });
           }
-           // The useEffect will handle the redirect
+          router.push('/dashboard');
         } catch (creationError) {
           console.error('Account creation failed:', creationError);
           form.setError('root', { message: 'هەژمار دروستنەکرا. تکایە دووبارە هەوڵبدەرەوە.' });
