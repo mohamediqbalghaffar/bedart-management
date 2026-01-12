@@ -84,30 +84,16 @@
     background-image: radial-gradient(circle at 1px 1px, #1a203f 1px, transparent 0);
     background-size: 2.5rem 2.5rem;
   }
-}
-
-@layer components {
-  .liquid-glass-button {
-    @apply relative overflow-hidden rounded-full p-px;
-    background: var(--btn-bg);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1), inset 0 1px 0 var(--btn-glow);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-  }
-
-  .liquid-glass-button::before {
-    content: '';
-    @apply absolute inset-0 z-10 rounded-full;
-    background: linear-gradient(to bottom, var(--btn-border-from), var(--btn-border-to));
-    -webkit-mask:
-      linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-  }
-
-  .liquid-glass-button-inner {
-    @apply relative z-20 flex h-full w-full items-center justify-center rounded-full;
-    background: transparent;
+  
+  .rdp {
+    --rdp-cell-size: 40px;
+    --rdp-caption-font-size: 18px;
+    --rdp-accent-color: hsl(var(--primary));
+    --rdp-background-color: hsl(var(--secondary));
+    --rdp-accent-color-dark: hsl(var(--primary));
+    --rdp-background-color-dark: hsl(var(--secondary));
+    --rdp-outline: 2px solid var(--rdp-accent-color);
+    --rdp-outline-selected: 3px solid var(--rdp-accent-color);
+    --rdp-selected-color: hsl(var(--primary-foreground));
   }
 }
