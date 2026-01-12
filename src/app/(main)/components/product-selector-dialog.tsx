@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -32,8 +33,14 @@ export function ProductSelectorDialog({ onProductSelect }: ProductSelectorDialog
 
   const filteredProducts = useMemo(() => {
     if (!products) return [];
-    if (!searchTerm) return products;
-    return products.filter(p => p.productName.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const availableProducts = products.filter(p => p.currentQuantity > 0);
+
+    if (!searchTerm) {
+      return availableProducts;
+    }
+    
+    return availableProducts.filter(p => p.productName.toLowerCase().includes(searchTerm.toLowerCase()));
   }, [products, searchTerm]);
 
   const handleSelect = (product: WithId<Product>) => {
