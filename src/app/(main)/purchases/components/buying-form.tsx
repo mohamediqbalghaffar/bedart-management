@@ -33,7 +33,7 @@ type Supplier = {
 
 const buyingFormSchema = z.object({
   supplierId: z.string().min(1, "دابینکەر پێویستە."),
-  issueDate: z.date({ required_error: "بەرواری دەرکردن پێویستە." }),
+  issueDate: z.string().min(1, "بەرواری دەرکردن پێویستە."),
   items: z.array(z.object({
     product: z.string().min(1, "بابەت پێویستە."),
     category: z.string().min(1, "پۆل پێویستە."),
@@ -239,7 +239,6 @@ function BuyingFormItemRow({
 export function BuyingForm({ onSave }: BuyingFormProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
-  const [isIssueDateOpen, setIssueDateOpen] = useState(false);
 
   const suppliersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -251,7 +250,7 @@ export function BuyingForm({ onSave }: BuyingFormProps) {
     resolver: zodResolver(buyingFormSchema),
     defaultValues: {
       supplierId: "",
-      issueDate: new Date(),
+      issueDate: format(new Date(), "yyyy-MM-dd"),
       items: [{ product: "", quantity: 1, unitPrice: 0, category: "Mattress", sizeModel: "" }],
       customsFee: 0,
       stockLocation: "Warehouse",
@@ -288,7 +287,6 @@ export function BuyingForm({ onSave }: BuyingFormProps) {
         const buyingFormData = {
             ...mainData,
             id: buyingFormId,
-            issueDate: format(data.issueDate, "yyyy-MM-dd"),
         };
 
         await setDoc(buyingFormRef, buyingFormData);
@@ -365,39 +363,9 @@ export function BuyingForm({ onSave }: BuyingFormProps) {
                 render={({ field }) => (
                     <FormItem className="flex items-center gap-2">
                         <FormLabel className="mt-2">بەروار:</FormLabel>
-                        <Popover open={isIssueDateOpen} onOpenChange={setIssueDateOpen}>
-                            <PopoverTrigger asChild>
-                                <FormControl>
-                                <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                    "w-[180px] justify-start text-left font-normal",
-                                    !field.value && "text-muted-foreground"
-                                    )}
-                                >
-                                    <CalendarIcon className="ml-2 h-4 w-4" />
-                                    {field.value ? (
-                                    format(field.value, "PPP")
-                                    ) : (
-                                    <span>بەروارێک</span>
-                                    )}
-                                </Button>
-                                </FormControl>
-                            </PopoverTrigger>
-                             <PopoverContent className="w-auto p-0" align="start" dir="rtl">
-                                <Calendar
-                                    mode="single"
-                                    selected={field.value}
-                                    onSelect={(date) => {
-                                        if (date) {
-                                            field.onChange(date);
-                                            setIssueDateOpen(false);
-                                        }
-                                    }}
-                                    initialFocus
-                                />
-                            </PopoverContent>
-                        </Popover>
+                        <FormControl>
+                            <Input placeholder="YYYY-MM-DD" {...field} className="w-[180px]" />
+                        </FormControl>
                         <FormMessage />
                     </FormItem>
                 )}
@@ -522,7 +490,5 @@ export function BuyingForm({ onSave }: BuyingFormProps) {
     </Form>
   );
 }
-
-    
 
     

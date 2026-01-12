@@ -24,7 +24,7 @@ const expenseSchema = z.object({
   paidBy: z.enum(['Cash - Dinar', 'Cash - Dollar']),
   amount: z.coerce.number().min(1, "بڕی خەرجی دەبێت لانیکەم 1 بێت."),
   category: z.enum(['Daily', 'Salary', 'Rent', 'Electricity', 'Transport', 'Other']),
-  date: z.date({ required_error: "بەرواری خەرجی پێویستە." }),
+  date: z.string().min(1, { message: "بەرواری خەرجی پێویستە." }),
 });
 
 type ExpenseFormValues = z.infer<typeof expenseSchema>;
@@ -41,7 +41,7 @@ export function AddExpenseForm({ onExpenseAdded }: { onExpenseAdded?: () => void
       paidBy: 'Cash - Dinar',
       amount: 0,
       category: 'Daily',
-      date: new Date(),
+      date: format(new Date(), "yyyy-MM-dd"),
     },
   });
 
@@ -59,7 +59,7 @@ export function AddExpenseForm({ onExpenseAdded }: { onExpenseAdded?: () => void
     
     addDocumentNonBlocking(expensesColRef, {
       ...data,
-      date: format(data.date, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
+      date: data.date,
     });
 
     toast({
@@ -173,38 +173,9 @@ export function AddExpenseForm({ onExpenseAdded }: { onExpenseAdded?: () => void
             render={({ field }) => (
                 <FormItem className="flex flex-col">
                     <FormLabel>بەروار</FormLabel>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <FormControl>
-                            <Button
-                                variant={"outline"}
-                                className={cn(
-                                "w-full justify-start text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                                )}
-                            >
-                                <CalendarIcon className="ml-2 h-4 w-4" />
-                                {field.value ? (
-                                format(field.value, "PPP")
-                                ) : (
-                                <span>بەروارێک هەڵبژێرە</span>
-                                )}
-                            </Button>
-                            </FormControl>
-                        </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start" dir="rtl">
-                            <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={(date) => {
-                                  if (date) {
-                                    field.onChange(date);
-                                  }
-                                }}
-                                initialFocus
-                            />
-                        </PopoverContent>
-                    </Popover>
+                    <FormControl>
+                      <Input placeholder="YYYY-MM-DD" {...field} />
+                    </FormControl>
                     <FormMessage />
                 </FormItem>
             )}
@@ -218,7 +189,5 @@ export function AddExpenseForm({ onExpenseAdded }: { onExpenseAdded?: () => void
     </Form>
   );
 }
-
-    
 
     

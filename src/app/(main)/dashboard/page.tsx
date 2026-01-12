@@ -186,7 +186,7 @@ function RecentActivityChart() {
             if (sales) {
                 sales.forEach(sale => {
                     try {
-                        const saleDate = format(parseISO(sale.issueDate), 'yyyy-MM-dd');
+                        const saleDate = sale.issueDate;
                         if (dateMap.has(saleDate)) {
                             dateMap.get(saleDate)!.sales += sale.totalPrice;
                         }
@@ -197,7 +197,7 @@ function RecentActivityChart() {
             if (expenses) {
                 expenses.forEach(expense => {
                     try {
-                        const expenseDate = format(parseISO(expense.date), 'yyyy-MM-dd');
+                        const expenseDate = expense.date;
                         if (dateMap.has(expenseDate)) {
                             const amountInUsd = expense.paidBy === 'Cash - Dinar' ? expense.amount / 1500 : expense.amount;
                             dateMap.get(expenseDate)!.expenses += amountInUsd;
@@ -209,7 +209,7 @@ function RecentActivityChart() {
             if(purchases) {
                  for (const purchase of purchases) {
                     try {
-                        const purchaseDate = format(parseISO(purchase.issueDate), 'yyyy-MM-dd');
+                        const purchaseDate = purchase.issueDate;
                         if (dateMap.has(purchaseDate)) {
                             const productsColRef = getCollectionClient(firestore, `buying_forms/${purchase.id}/products`);
                             const productsSnapshot = await getDocsClient(productsColRef);
@@ -393,7 +393,5 @@ export default function DashboardPage() {
         </div>
     );
 }
-
-    
 
     

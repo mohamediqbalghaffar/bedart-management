@@ -29,7 +29,7 @@ const salesFormSchema = z.object({
   customerName: z.string().min(1, { message: "ناوی کڕیار پێویستە." }),
   customerPhone: z.string().optional(),
   customerAddress: z.string().optional(),
-  issueDate: z.date({ required_error: "بەرواری دەرکردن پێویستە." }),
+  issueDate: z.string().min(1, "بەرواری دەرکردن پێویستە."),
   items: z.array(z.object({
     product: z.string().min(1, "بابەت پێویستە."),
     quantity: z.coerce.number().min(1, "دانە دەبێت لانیکەم 1 بێت."),
@@ -41,7 +41,7 @@ const salesFormSchema = z.object({
   paymentStatus: z.enum(["Unpaid", "Partially Paid", "Fully Paid"]),
   paymentType: z.enum(["After Delivery", "Installments", "Pre-order"]),
   payments: z.array(z.object({
-      date: z.date({ required_error: "بەرواری پارەدان پێویستە." }),
+      date: z.string().min(1, { message: "بەرواری پارەدان پێویستە." }),
       amount: z.coerce.number().min(0.01, "بڕ دەبێت موجەب بێت."),
       method: z.enum(["Cash", "Transfer"]),
       note: z.string().optional(),
@@ -126,7 +126,6 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [originalItems, setOriginalItems] = useState<any[]>([]);
-  const [isIssueDateOpen, setIssueDateOpen] = useState(false);
 
   const form = useForm<SalesFormValues>({
     resolver: zodResolver(salesFormSchema),
@@ -135,7 +134,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
       customerName: "",
       customerPhone: "",
       customerAddress: "",
-      issueDate: new Date(),
+      issueDate: format(new Date(), "yyyy-MM-dd"),
       items: [{ product: "", quantity: 1, unitPrice: 0 }],
       deliveryCost: 0,
       discountValue: 0,
@@ -164,14 +163,14 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
             const paymentsSnap = await getDocs(paymentsRef);
             const payments = paymentsSnap.docs.map(d => ({
                 ...d.data(),
-                date: parseISO(d.data().paymentDate), // parse string back to Date
+                date: d.data().paymentDate,
             }));
 
             setOriginalItems(items); // Store original items for stock calculation
 
             form.reset({
               ...data,
-              issueDate: data.issueDate ? parseISO(data.issueDate) : new Date(),
+              issueDate: data.issueDate,
               items: items.map(item => ({
                   product: item.productName,
                   quantity: item.quantity,
@@ -293,7 +292,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                 ...mainData,
                 id: sellingFormId,
                 creatorId: "system", // Replace with actual user ID if auth is used
-                issueDate: format(data.issueDate, "yyyy-MM-dd"),
+                issueDate: data.issueDate,
                 totalPrice: totalAmount,
                 remainingBalance: remainingBalance,
             };
@@ -336,7 +335,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
             const paymentData = {
                 ...payment,
                 id: paymentRef.id,
-                paymentDate: format(payment.date, "yyyy-MM-dd"),
+                paymentDate: payment.date,
                 sellingFormId: sellingFormId,
             };
             return setDocumentNonBlocking(paymentRef, paymentData, { merge: true });
@@ -388,37 +387,9 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                 render={({ field }) => (
                     <FormItem className="flex items-center gap-2">
                         <FormLabel className="mt-2">بەروار:</FormLabel>
-                        <Popover open={isIssueDateOpen} onOpenChange={setIssueDateOpen}>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                    "w-[180px] justify-start text-left font-normal",
-                                    !field.value && "text-muted-foreground"
-                                    )}
-                                >
-                                    <CalendarIcon className="ml-2 h-4 w-4" />
-                                    {field.value ? (
-                                    format(field.value, "PPP")
-                                    ) : (
-                                    <span>بەروارێک</span>
-                                    )}
-                                </Button>
-                            </PopoverTrigger>
-                             <PopoverContent className="w-auto p-0" align="start" dir="rtl">
-                                <Calendar
-                                    mode="single"
-                                    selected={field.value}
-                                    onSelect={(date) => {
-                                        if (date) {
-                                            field.onChange(date);
-                                            setIssueDateOpen(false);
-                                        }
-                                    }}
-                                    initialFocus
-                                />
-                            </PopoverContent>
-                        </Popover>
+                        <FormControl>
+                            <Input placeholder="YYYY-MM-DD" {...field} className="w-[180px]" />
+                        </FormControl>
                         <FormMessage />
                     </FormItem>
                 )}
@@ -583,22 +554,9 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                                     name={`payments.${index}.date`}
                                     render={({ field }) => (
                                         <FormItem>
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <FormControl>
-                                                    <Button
-                                                        variant={"outline"}
-                                                        className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")}
-                                                    >
-                                                        <CalendarIcon className="ml-2 h-4 w-4" />
-                                                        {field.value ? format(field.value, "PPP") : (<span>بەروار</span>)}
-                                                    </Button>
-                                                    </FormControl>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0" align="start" dir="rtl">
-                                                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
-                                                </PopoverContent>
-                                            </Popover>
+                                            <FormControl>
+                                                <Input placeholder="YYYY-MM-DD" {...field} />
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -631,7 +589,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                         ))}
                     </TableBody>
                 </Table>
-                <Button type="button" variant="outline" size="sm" onClick={() => appendPayment({ date: new Date(), amount: 0, method: 'Cash', note:'' })}>
+                <Button type="button" variant="outline" size="sm" onClick={() => appendPayment({ date: format(new Date(), "yyyy-MM-dd"), amount: 0, method: 'Cash', note:'' })}>
                     <PlusCircle className="ml-2 h-4 w-4" /> زیادکردنی پارەدان
                 </Button>
             </div>
@@ -646,7 +604,5 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
     </Form>
   );
 }
-
-    
 
     

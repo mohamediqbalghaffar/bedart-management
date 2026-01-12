@@ -14,12 +14,6 @@ import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
-import { parseISO } from 'date-fns';
-import { format } from 'date-fns-jalali';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
@@ -90,12 +84,6 @@ function EditableExpenseRow({ expense }: { expense: WithId<Expense> }) {
         setEditedExpense(prev => ({ ...prev, [name]: value }));
     };
     
-    const handleDateChange = (date: Date | undefined) => {
-        if (date) {
-            setEditedExpense(prev => ({ ...prev, date: format(date, "yyyy-MM-dd") }));
-        }
-    };
-
     const handleSave = async () => {
         if (!firestore) return;
         setIsSaving(true);
@@ -149,14 +137,7 @@ function EditableExpenseRow({ expense }: { expense: WithId<Expense> }) {
                         </SelectContent>
                     </Select>
                 </TableCell>
-                <TableCell>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button variant="outline" className="w-full justify-start text-left font-normal"><CalendarIcon className="ml-2 h-4 w-4" /><span>{format(parseISO(editedExpense.date), "PPP")}</span></Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" dir="rtl"><Calendar mode="single" selected={parseISO(editedExpense.date)} onSelect={handleDateChange} initialFocus /></PopoverContent>
-                    </Popover>
-                </TableCell>
+                <TableCell><Input name="date" value={editedExpense.date} onChange={handleInputChange} /></TableCell>
                 <TableCell className="text-left">
                     <div className="flex gap-2">
                         <Button size="icon" variant="ghost" onClick={handleSave} disabled={isSaving}>
@@ -176,7 +157,7 @@ function EditableExpenseRow({ expense }: { expense: WithId<Expense> }) {
             <TableCell className="text-right">{paidByTranslations[expense.paidBy] || expense.paidBy}</TableCell>
             <TableCell className="text-right">{new Intl.NumberFormat('en-US').format(expense.amount)}</TableCell>
             <TableCell className="text-right"><Badge variant="outline">{categoryTranslations[expense.category] || expense.category}</Badge></TableCell>
-            <TableCell className="text-right">{format(parseISO(expense.date), "PPP")}</TableCell>
+            <TableCell className="text-right">{expense.date}</TableCell>
             <TableCell className="text-left">
                 <div className="flex gap-2">
                      <Button size="icon" variant="ghost" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4 text-blue-500"/></Button>
@@ -258,7 +239,5 @@ export default function ExpensesPage() {
         </div>
     );
 }
-
-    
 
     
