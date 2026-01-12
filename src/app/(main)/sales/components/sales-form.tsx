@@ -12,8 +12,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, PlusCircle, Trash2, List } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { format, parseISO } from "date-fns";
-import { ckb } from "@/lib/ckb-locale";
+import { parseISO } from "date-fns";
+import { format } from "date-fns-jalali";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -399,7 +399,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                                 >
                                     <CalendarIcon className="ml-2 h-4 w-4" />
                                     {field.value ? (
-                                    format(field.value, "PPP", { locale: ckb })
+                                    format(field.value, "PPP")
                                     ) : (
                                     <span>بەروارێک</span>
                                     )}
@@ -416,7 +416,6 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                                         }
                                     }}
                                     initialFocus
-                                    locale={ckb}
                                 />
                             </PopoverContent>
                         </Popover>
@@ -592,12 +591,12 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                                                         className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")}
                                                     >
                                                         <CalendarIcon className="ml-2 h-4 w-4" />
-                                                        {field.value ? format(field.value, "PPP", { locale: ckb }) : (<span>بەروار</span>)}
+                                                        {field.value ? format(field.value, "PPP") : (<span>بەروار</span>)}
                                                     </Button>
                                                     </FormControl>
                                                 </PopoverTrigger>
                                                 <PopoverContent className="w-auto p-0" align="start" dir="rtl">
-                                                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={ckb}/>
+                                                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
                                                 </PopoverContent>
                                             </Popover>
                                             <FormMessage />
@@ -647,5 +646,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
     </Form>
   );
 }
+
+    
 
     

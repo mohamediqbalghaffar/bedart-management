@@ -7,8 +7,8 @@ import { useFirestore, useCollection, useMemoFirebase, collection, getDocs as ge
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, DollarSign, Users, Archive, ShoppingCart, TrendingUp, TrendingDown, Calendar as CalendarIcon, Package, LineChart } from 'lucide-react';
 import { StatCard } from '@/components/shared/stat-card';
-import { subDays, format, parseISO, differenceInDays } from 'date-fns';
-import { ckb } from '@/lib/ckb-locale';
+import { subDays, parseISO } from 'date-fns';
+import { format } from 'date-fns-jalali';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis, Tooltip as RechartsTooltip } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { DateRange } from 'react-day-picker';
@@ -161,6 +161,13 @@ function RecentActivityChart() {
 
     const [chartData, setChartData] = useState<any[]>([]);
     const [isCalculating, setIsCalculating] = useState(false);
+    
+    // Helper function to get the number of days in a given range
+    const differenceInDays = (dateLeft: Date, dateRight: Date): number => {
+        const diffTime = Math.abs(dateLeft.getTime() - dateRight.getTime());
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+
 
     useEffect(() => {
         async function calculateChartData() {
@@ -266,11 +273,11 @@ function RecentActivityChart() {
                                     {dateRange?.from ? (
                                         dateRange.to ? (
                                             <>
-                                                {format(dateRange.from, "d MMMM", { locale: ckb })} - {" "}
-                                                {format(dateRange.to, "d MMMM, yyyy", { locale: ckb })}
+                                                {format(dateRange.from, "d MMMM yyyy")} - {" "}
+                                                {format(dateRange.to, "d MMMM, yyyy")}
                                             </>
                                         ) : (
-                                            format(dateRange.from, "d MMMM, yyyy", { locale: ckb })
+                                            format(dateRange.from, "d MMMM, yyyy")
                                         )
                                     ) : (
                                         <span>ماوەیەک هەڵبژێرە</span>
@@ -285,7 +292,6 @@ function RecentActivityChart() {
                                     selected={dateRange}
                                     onSelect={setDateRange}
                                     numberOfMonths={1}
-                                    locale={ckb}
                                 />
                             </PopoverContent>
                         </Popover>
@@ -387,5 +393,7 @@ export default function DashboardPage() {
         </div>
     );
 }
+
+    
 
     

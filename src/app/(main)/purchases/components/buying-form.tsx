@@ -12,8 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, Download, Loader2, PlusCircle, Trash2, Check, ChevronsUpDown, List } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import { ckb } from '@/lib/ckb-locale';
+import { format } from "date-fns-jalali";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFirestore, useCollection, useMemoFirebase, collection, doc, setDoc, getDoc, runTransaction } from "@/firebase";
@@ -378,7 +377,7 @@ export function BuyingForm({ onSave }: BuyingFormProps) {
                                 >
                                     <CalendarIcon className="ml-2 h-4 w-4" />
                                     {field.value ? (
-                                    format(field.value, "PPP", { locale: ckb })
+                                    format(field.value, "PPP")
                                     ) : (
                                     <span>بەروارێک</span>
                                     )}
@@ -396,7 +395,6 @@ export function BuyingForm({ onSave }: BuyingFormProps) {
                                         }
                                     }}
                                     initialFocus
-                                    locale={ckb}
                                 />
                             </PopoverContent>
                         </Popover>
@@ -524,5 +522,7 @@ export function BuyingForm({ onSave }: BuyingFormProps) {
     </Form>
   );
 }
+
+    
 
     

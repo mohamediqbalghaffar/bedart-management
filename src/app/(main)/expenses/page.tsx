@@ -18,8 +18,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { format, parseISO } from 'date-fns';
-import { ckb } from "@/lib/ckb-locale";
+import { parseISO } from 'date-fns';
+import { format } from 'date-fns-jalali';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
@@ -152,9 +152,9 @@ function EditableExpenseRow({ expense }: { expense: WithId<Expense> }) {
                 <TableCell>
                     <Popover>
                         <PopoverTrigger asChild>
-                            <Button variant="outline" className="w-full justify-start text-left font-normal"><CalendarIcon className="ml-2 h-4 w-4" /><span>{format(parseISO(editedExpense.date), "PPP", { locale: ckb })}</span></Button>
+                            <Button variant="outline" className="w-full justify-start text-left font-normal"><CalendarIcon className="ml-2 h-4 w-4" /><span>{format(parseISO(editedExpense.date), "PPP")}</span></Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" dir="rtl"><Calendar mode="single" selected={parseISO(editedExpense.date)} onSelect={handleDateChange} initialFocus locale={ckb} /></PopoverContent>
+                        <PopoverContent className="w-auto p-0" dir="rtl"><Calendar mode="single" selected={parseISO(editedExpense.date)} onSelect={handleDateChange} initialFocus /></PopoverContent>
                     </Popover>
                 </TableCell>
                 <TableCell className="text-left">
@@ -176,7 +176,7 @@ function EditableExpenseRow({ expense }: { expense: WithId<Expense> }) {
             <TableCell className="text-right">{paidByTranslations[expense.paidBy] || expense.paidBy}</TableCell>
             <TableCell className="text-right">{new Intl.NumberFormat('en-US').format(expense.amount)}</TableCell>
             <TableCell className="text-right"><Badge variant="outline">{categoryTranslations[expense.category] || expense.category}</Badge></TableCell>
-            <TableCell className="text-right">{format(parseISO(expense.date), "PPP", { locale: ckb })}</TableCell>
+            <TableCell className="text-right">{format(parseISO(expense.date), "PPP")}</TableCell>
             <TableCell className="text-left">
                 <div className="flex gap-2">
                      <Button size="icon" variant="ghost" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4 text-blue-500"/></Button>
@@ -258,5 +258,7 @@ export default function ExpensesPage() {
         </div>
     );
 }
+
+    
 
     
