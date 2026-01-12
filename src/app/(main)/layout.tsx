@@ -4,6 +4,7 @@ import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
+import { Header } from '@/components/layout/header';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -24,8 +25,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     }
     
     return (
-        <div className="min-h-screen w-full">
-            <main className="flex flex-col">
+        <div className="flex flex-col min-h-screen">
+            <Header />
+            <main className="flex-1">
                 {children}
             </main>
         </div>
