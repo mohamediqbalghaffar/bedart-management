@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Loader2, DollarSign, Users, Archive, ShoppingCart, TrendingUp, TrendingDown, Calendar as CalendarIcon, Package, LineChart } from 'lucide-react';
 import { StatCard } from '@/components/shared/stat-card';
 import { subDays, format, parseISO, differenceInDays } from 'date-fns';
-import { arSA } from 'date-fns/locale';
+import { ckb } from '@/lib/ckb-locale';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis, Tooltip as RechartsTooltip } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { DateRange } from 'react-day-picker';
@@ -266,18 +266,18 @@ function RecentActivityChart() {
                                     {dateRange?.from ? (
                                         dateRange.to ? (
                                             <>
-                                                {format(dateRange.from, "d MMMM", { locale: arSA })} - {" "}
-                                                {format(dateRange.to, "d MMMM, yyyy", { locale: arSA })}
+                                                {format(dateRange.from, "d MMMM", { locale: ckb })} - {" "}
+                                                {format(dateRange.to, "d MMMM, yyyy", { locale: ckb })}
                                             </>
                                         ) : (
-                                            format(dateRange.from, "d MMMM, yyyy", { locale: arSA })
+                                            format(dateRange.from, "d MMMM, yyyy", { locale: ckb })
                                         )
                                     ) : (
                                         <span>ماوەیەک هەڵبژێرە</span>
                                     )}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0 bg-background text-foreground" align="end">
+                            <PopoverContent className="w-auto p-0 bg-background text-foreground" align="end" dir="rtl">
                                 <Calendar
                                     initialFocus
                                     mode="range"
@@ -285,7 +285,7 @@ function RecentActivityChart() {
                                     selected={dateRange}
                                     onSelect={setDateRange}
                                     numberOfMonths={1}
-                                    locale={arSA}
+                                    locale={ckb}
                                 />
                             </PopoverContent>
                         </Popover>

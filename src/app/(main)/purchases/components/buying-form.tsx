@@ -13,7 +13,7 @@ import { CalendarIcon, Download, Loader2, PlusCircle, Trash2, Check, ChevronsUpD
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { arSA } from 'date-fns/locale';
+import { ckb } from '@/lib/ckb-locale';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFirestore, useCollection, useMemoFirebase, collection, doc, setDoc, getDoc, runTransaction } from "@/firebase";
@@ -378,14 +378,14 @@ export function BuyingForm({ onSave }: BuyingFormProps) {
                                 >
                                     <CalendarIcon className="ml-2 h-4 w-4" />
                                     {field.value ? (
-                                    format(field.value, "PPP", { locale: arSA })
+                                    format(field.value, "PPP", { locale: ckb })
                                     ) : (
                                     <span>بەروارێک</span>
                                     )}
                                 </Button>
                                 </FormControl>
                             </PopoverTrigger>
-                             <PopoverContent className="w-auto p-0" align="start" dir="ltr">
+                             <PopoverContent className="w-auto p-0" align="start" dir="rtl">
                                 <Calendar
                                     mode="single"
                                     selected={field.value}
@@ -396,7 +396,7 @@ export function BuyingForm({ onSave }: BuyingFormProps) {
                                         }
                                     }}
                                     initialFocus
-                                    locale={arSA}
+                                    locale={ckb}
                                 />
                             </PopoverContent>
                         </Popover>

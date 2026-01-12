@@ -14,7 +14,7 @@ import { CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { arSA } from "date-fns/locale";
+import { ckb } from '@/lib/ckb-locale';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
@@ -186,14 +186,14 @@ export function AddExpenseForm({ onExpenseAdded }: { onExpenseAdded?: () => void
                             >
                                 <CalendarIcon className="ml-2 h-4 w-4" />
                                 {field.value ? (
-                                format(field.value, "PPP", { locale: arSA })
+                                format(field.value, "PPP", { locale: ckb })
                                 ) : (
                                 <span>بەروارێک هەڵبژێرە</span>
                                 )}
                             </Button>
                             </FormControl>
                         </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start" dir="ltr">
+                            <PopoverContent className="w-auto p-0" align="start" dir="rtl">
                             <Calendar
                                 mode="single"
                                 selected={field.value}
@@ -203,7 +203,7 @@ export function AddExpenseForm({ onExpenseAdded }: { onExpenseAdded?: () => void
                                   }
                                 }}
                                 initialFocus
-                                locale={arSA}
+                                locale={ckb}
                             />
                         </PopoverContent>
                     </Popover>
