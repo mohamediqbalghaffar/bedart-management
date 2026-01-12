@@ -12,6 +12,6 @@ export function ConditionalLayout({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
-  // For all other pages, wrap them in the main application layout which includes the sidebar
+  // For all other pages, wrap them in the main application layout
   return <MainLayout>{children}</MainLayout>;
 }
