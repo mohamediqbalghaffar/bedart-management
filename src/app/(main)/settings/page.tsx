@@ -292,38 +292,40 @@ function DataManagement() {
         setIsDeleting(true);
         toast({ title: "...سڕینەوە", description: "تکایە چاوەڕوان بە.", variant: 'destructive' });
 
-        for (const collectionName of COLLECTIONS_TO_MANAGE) {
-            try {
-                const querySnapshot = await getDocs(collection(firestore, collectionName));
-                const batch = writeBatch(firestore);
-                querySnapshot.docs.forEach(async (doc) => {
-                    // Also delete subcollections if they exist
-                    if (collectionName === 'selling_forms' || collectionName === 'buying_forms') {
-                        const productsSnap = await getDocs(collection(firestore, `${collectionName}/${doc.id}/products`));
-                        productsSnap.docs.forEach(p => batch.delete(p.ref));
-                         if (collectionName === 'selling_forms') {
-                             const paymentsSnap = await getDocs(collection(firestore, `${collectionName}/${doc.id}/payments`));
-                             paymentsSnap.docs.forEach(p => batch.delete(p.ref));
-                         }
-                    }
-                    batch.delete(doc.ref);
-                });
-                await batch.commit();
-            } catch (error) {
-                console.error(`Failed to delete collection ${collectionName}:`, error);
-                toast({
-                    variant: 'destructive',
-                    title: `هەڵە لە سڕینەوەی ${collectionName}`,
-                    description: "هەوڵێکی تر بدەرەوە.",
-                });
-                setIsDeleting(false);
-                return;
-            }
-        }
+        try {
+            const batch = writeBatch(firestore);
 
-        toast({ title: "هەموو داتاکان سڕانەوە", description: "سیستەمەکە ئێستا بەتاڵە.", className: "bg-accent text-accent-foreground" });
-        setIsDeleting(false);
-        setDeleteConfirmation('');
+            for (const collectionName of COLLECTIONS_TO_MANAGE) {
+                const querySnapshot = await getDocs(collection(firestore, collectionName));
+                
+                for (const docSnap of querySnapshot.docs) {
+                    if (collectionName === 'selling_forms' || collectionName === 'buying_forms') {
+                        const productsSnap = await getDocs(collection(firestore, `${collectionName}/${docSnap.id}/products`));
+                        productsSnap.docs.forEach(p => batch.delete(p.ref));
+                        
+                        if (collectionName === 'selling_forms') {
+                            const paymentsSnap = await getDocs(collection(firestore, `${collectionName}/${docSnap.id}/payments`));
+                            paymentsSnap.docs.forEach(p => batch.delete(p.ref));
+                        }
+                    }
+                    batch.delete(docSnap.ref);
+                }
+            }
+
+            await batch.commit();
+            toast({ title: "هەموو داتاکان سڕانەوە", description: "سیستەمەکە ئێستا بەتاڵە.", className: "bg-accent text-accent-foreground" });
+
+        } catch (error) {
+            console.error(`Failed to delete all data:`, error);
+            toast({
+                variant: 'destructive',
+                title: `هەڵە لە سڕینەوەی داتاکان`,
+                description: "هەوڵێکی تر بدەرەوە.",
+            });
+        } finally {
+            setIsDeleting(false);
+            setDeleteConfirmation('');
+        }
     }
 
     return (
@@ -417,3 +419,5 @@ export default function SettingsPage() {
         </div>
     );
 }
+
+    
