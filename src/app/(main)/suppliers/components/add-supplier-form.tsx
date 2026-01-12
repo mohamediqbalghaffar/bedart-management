@@ -8,8 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore, addDocumentNonBlocking } from "@/firebase";
-import { collection, doc } from "firebase/firestore";
+import { useFirestore, addDoc, collection } from "@/firebase";
 import { Textarea } from "@/components/ui/textarea";
 
 const supplierSchema = z.object({
@@ -19,7 +18,7 @@ const supplierSchema = z.object({
 
 type SupplierFormValues = z.infer<typeof supplierSchema>;
 
-export function AddSupplierForm() {
+export function AddSupplierForm({ onSupplierAdded }: { onSupplierAdded?: () => void }) {
   const firestore = useFirestore();
   const { toast } = useToast();
 
@@ -43,12 +42,7 @@ export function AddSupplierForm() {
 
     try {
       const suppliersColRef = collection(firestore, "suppliers");
-      const newSupplierRef = doc(suppliersColRef);
-      
-      await addDocumentNonBlocking(suppliersColRef, {
-        id: newSupplierRef.id,
-        ...data,
-      });
+      await addDoc(suppliersColRef, data);
 
       toast({
         title: "سەرکەوتوو بوو!",
@@ -56,7 +50,9 @@ export function AddSupplierForm() {
         className: "bg-accent text-accent-foreground",
       });
       form.reset();
-      // Here you might want to close the dialog
+      if (onSupplierAdded) {
+        onSupplierAdded();
+      }
     } catch (error: any) {
       console.error("Error adding supplier:", error);
       toast({

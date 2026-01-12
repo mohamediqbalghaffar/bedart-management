@@ -50,10 +50,35 @@ type EnrichedBuyingForm = WithId<BuyingFormType> & {
     totalAmount?: number;
 };
 
+function NewPurchaseDialog() {
+    const [open, setOpen] = useState(false);
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button>
+                    <PlusCircle />
+                    پسوولەی کڕینی نوێ
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-4xl">
+                <DialogHeader>
+                    <DialogTitle>تۆمارکردنی پسوولەی کڕین</DialogTitle>
+                        <DialogDescription>
+                        زانیارییەکانی پسوولەی کڕینی نوێ بنووسە.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="max-h-[80vh] overflow-y-auto p-2">
+                    <BuyingForm onSave={() => setOpen(false)} />
+                </div>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 function PurchasesList() {
     const firestore = useFirestore();
     const { toast } = useToast();
-    const [selectedFormId, setSelectedFormId] = useState<string | null>(null);
 
     const buyingFormsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -105,12 +130,10 @@ function PurchasesList() {
         if (!firestore) return;
         
         try {
-            // 1. Fetch all items from the form's products subcollection
             const productsPurchasedRef = collection(firestore, `buying_forms/${formId}/products`);
             const productsPurchasedSnapshot = await getDocs(productsPurchasedRef);
             const productsPurchased = productsPurchasedSnapshot.docs.map(d => d.data() as BuyingFormProduct);
             
-            // 2. Run transactions to subtract stock
             for (const item of productsPurchased) {
                 const productRef = doc(firestore, 'products', item.productId);
                 await runTransaction(firestore, async (transaction) => {
@@ -122,10 +145,8 @@ function PurchasesList() {
                 });
             }
 
-            // 3. Delete documents in subcollection
             await Promise.all(productsPurchasedSnapshot.docs.map(d => deleteDoc(d.ref)));
 
-            // 4. Delete the main form document
             await deleteDoc(doc(firestore, 'buying_forms', formId));
 
             toast({
@@ -234,25 +255,7 @@ export default function PurchasesPage() {
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <PageHeader title="کڕینەکان" description="پسوولەکانی کڕین و دابینکەرەکانت بەڕێوەببە.">
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button>
-                            <PlusCircle />
-                            پسوولەی کڕینی نوێ
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-4xl">
-                        <DialogHeader>
-                            <DialogTitle>تۆمارکردنی پسوولەی کڕین</DialogTitle>
-                             <DialogDescription>
-                                زانیارییەکانی پسوولەی کڕینی نوێ بنووسە.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="max-h-[80vh] overflow-y-auto p-2">
-                            <BuyingForm />
-                        </div>
-                    </DialogContent>
-                </Dialog>
+                <NewPurchaseDialog />
             </PageHeader>
             <PurchasesList />
         </div>

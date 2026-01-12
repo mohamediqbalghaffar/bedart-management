@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -31,40 +32,58 @@ type SellingFormProduct = {
     unitPrice: number;
 };
 
+function SalesFormDialog({ formId, onSave, trigger }: { formId: string | null, onSave: () => void, trigger: React.ReactNode }) {
+    const [open, setOpen] = useState(false);
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>{trigger}</DialogTrigger>
+            <DialogContent className="sm:max-w-4xl">
+                <DialogHeader>
+                    <div className="text-center p-4">
+                        <DialogTitle className="text-2xl font-bold">BedArt Group</DialogTitle>
+                        <DialogDescription className="text-sm">
+                            ته ختی نوستن . دوشک . پشتی
+                            <br />
+                            <span className="text-xs text-muted-foreground">0770 817 1818 - 0770 077 1818</span>
+                        </DialogDescription>
+                    </div>
+                </DialogHeader>
+                <div className="max-h-[80vh] overflow-y-auto p-2">
+                    <SalesForm formId={formId} onSave={() => { onSave(); setOpen(false); }} />
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 function SalesList() {
     const firestore = useFirestore();
     const { toast } = useToast();
-    const [dialogOpen, setDialogOpen] = useState(false);
     const [editingFormId, setEditingFormId] = useState<string | null>(null);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     const sellingFormsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
+        // The refreshKey is added to re-trigger the query when a sale is added/edited
         return collection(firestore, 'selling_forms');
-    }, [firestore]);
+    }, [firestore, refreshKey]);
 
     const { data: sales, isLoading: isLoadingSales } = useCollection<SellingFormType>(sellingFormsQuery);
 
-    const handleEdit = (formId: string) => {
-        setEditingFormId(formId);
-        setDialogOpen(true);
-    };
-    
-    const handleAddNew = () => {
+    const handleFormSave = () => {
         setEditingFormId(null);
-        setDialogOpen(true);
+        setRefreshKey(prev => prev + 1); // Trigger a re-fetch
     };
 
     const handleDelete = async (formId: string) => {
         if (!firestore) return;
         
         try {
-            // 1. Fetch all items from the form's products subcollection
             const productsSoldRef = collection(firestore, `selling_forms/${formId}/products`);
             const productsSoldSnapshot = await getDocs(productsSoldRef);
             const productsSold = productsSoldSnapshot.docs.map(d => d.data() as SellingFormProduct);
 
-            // 2. Run transactions to add stock back
             for (const item of productsSold) {
                 const productRef = doc(firestore, 'products', item.productId);
                 await runTransaction(firestore, async (transaction) => {
@@ -77,14 +96,11 @@ function SalesList() {
                 });
             }
 
-            // 3. Delete documents in subcollections (products, payments)
             const paymentsRef = collection(firestore, `selling_forms/${formId}/payments`);
             const paymentsSnapshot = await getDocs(paymentsRef);
             await Promise.all(productsSoldSnapshot.docs.map(d => deleteDoc(d.ref)));
             await Promise.all(paymentsSnapshot.docs.map(p => deleteDoc(p.ref)));
 
-
-            // 4. Delete the main form document
             await deleteDoc(doc(firestore, 'selling_forms', formId));
 
             toast({
@@ -106,10 +122,16 @@ function SalesList() {
     return (
         <>
             <PageHeader title="فرۆشەکان" description="بەڕێوەبردن و بەدواداچوونی هەموو کارەکانی فرۆشتنت.">
-                <Button onClick={handleAddNew}>
-                    <PlusCircle />
-                    دروستکردنی فۆڕمی فرۆشتن
-                </Button>
+                 <SalesFormDialog
+                    formId={null}
+                    onSave={handleFormSave}
+                    trigger={
+                        <Button>
+                            <PlusCircle />
+                            دروستکردنی فۆڕمی فرۆشتن
+                        </Button>
+                    }
+                />
             </PageHeader>
             <Card>
                 <CardHeader>
@@ -155,9 +177,15 @@ function SalesList() {
                                     </TableCell>
                                     <TableCell className="text-center">
                                         <div className="flex items-center justify-center gap-2">
-                                            <Button variant="ghost" size="icon" onClick={() => handleEdit(sale.id)}>
-                                                <Edit className="h-4 w-4 text-blue-500" />
-                                            </Button>
+                                            <SalesFormDialog
+                                                formId={sale.id}
+                                                onSave={handleFormSave}
+                                                trigger={
+                                                    <Button variant="ghost" size="icon">
+                                                        <Edit className="h-4 w-4 text-blue-500" />
+                                                    </Button>
+                                                }
+                                            />
                                             <AlertDialog>
                                                 <AlertDialogTrigger asChild>
                                                     <Button variant="ghost" size="icon">
@@ -200,27 +228,9 @@ function SalesList() {
                     </Table>
                 </CardContent>
             </Card>
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent className="sm:max-w-4xl">
-                    <DialogHeader>
-                        <div className="text-center p-4">
-                            <DialogTitle className="text-2xl font-bold">BedArt Group</DialogTitle>
-                            <DialogDescription className="text-sm">
-                                ته ختی نوستن . دوشک . پشتی
-                                <br />
-                                <span className="text-xs text-muted-foreground">0770 817 1818 - 0770 077 1818</span>
-                            </DialogDescription>
-                        </div>
-                    </DialogHeader>
-                    <div className="max-h-[80vh] overflow-y-auto p-2">
-                        <SalesForm formId={editingFormId} onSave={() => setDialogOpen(false)} />
-                    </div>
-                </DialogContent>
-            </Dialog>
         </>
     );
 }
-
 
 export default function SalesPage() {
     return (

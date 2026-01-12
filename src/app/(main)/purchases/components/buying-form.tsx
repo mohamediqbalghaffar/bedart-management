@@ -48,6 +48,9 @@ const buyingFormSchema = z.object({
 
 type BuyingFormValues = z.infer<typeof buyingFormSchema>;
 
+type BuyingFormProps = {
+    onSave?: () => void;
+};
 
 function ExcelImportButton({ form }: { form: UseFormReturn<BuyingFormValues> }) {
     const [isLoading, setIsLoading] = React.useState(false);
@@ -234,7 +237,7 @@ function BuyingFormItemRow({
     );
 }
 
-export function BuyingForm() {
+export function BuyingForm({ onSave }: BuyingFormProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isIssueDateOpen, setIssueDateOpen] = useState(false);
@@ -308,7 +311,6 @@ export function BuyingForm() {
             
             await setDoc(productSubCollectionRef, productData);
             
-            // Update stock in products collection using a transaction
             await runTransaction(firestore, async (transaction) => {
                 const productDoc = await transaction.get(productRef);
                 if (!productDoc.exists()) {
@@ -326,9 +328,9 @@ export function BuyingForm() {
                     const newQuantity = (productDoc.data().currentQuantity || 0) + item.quantity;
                     transaction.update(productRef, { 
                         currentQuantity: newQuantity,
-                        supplierId: data.supplierId, // Update supplier to the latest one
-                        stockLocation: data.stockLocation, // Update stock location
-                        unitPrice: item.unitPrice, // Update to latest price
+                        supplierId: data.supplierId, 
+                        stockLocation: data.stockLocation, 
+                        unitPrice: item.unitPrice, 
                     });
                 }
             });
@@ -341,6 +343,7 @@ export function BuyingForm() {
             description: "پسوولەی کڕین بە سەرکەوتوویی پاشەکەوت کرا و کۆگا نوێکرایەوە.",
             className: "bg-accent text-accent-foreground",
         });
+        if (onSave) onSave();
         form.reset();
 
     } catch (error: any) {

@@ -8,8 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore, addDocumentNonBlocking } from "@/firebase";
-import { collection, doc } from "firebase/firestore";
+import { useFirestore, addDoc, collection } from "@/firebase";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
@@ -31,7 +30,7 @@ const expenseSchema = z.object({
 
 type ExpenseFormValues = z.infer<typeof expenseSchema>;
 
-export function AddExpenseForm() {
+export function AddExpenseForm({ onExpenseAdded }: { onExpenseAdded?: () => void }) {
   const firestore = useFirestore();
   const { toast } = useToast();
 
@@ -59,12 +58,10 @@ export function AddExpenseForm() {
 
     try {
       const expensesColRef = collection(firestore, "expenses");
-      const newExpenseRef = doc(expensesColRef);
       
-      await addDocumentNonBlocking(expensesColRef, {
-        id: newExpenseRef.id,
+      await addDoc(expensesColRef, {
         ...data,
-        date: format(data.date, "yyyy-MM-dd"),
+        date: format(data.date, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
       });
 
       toast({
@@ -73,6 +70,9 @@ export function AddExpenseForm() {
         className: "bg-accent text-accent-foreground",
       });
       form.reset();
+      if (onExpenseAdded) {
+        onExpenseAdded();
+      }
     } catch (error: any) {
       console.error("Error adding expense:", error);
       toast({

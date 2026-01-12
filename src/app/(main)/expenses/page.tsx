@@ -46,6 +46,33 @@ const paidByTranslations: { [key: string]: string } = {
     'Cash - Dollar': 'کاش - دۆلار'
 };
 
+function AddExpenseCollapsible() {
+    const [open, setOpen] = useState(false);
+    
+    return (
+        <Collapsible open={open} onOpenChange={setOpen}>
+            <div className="flex justify-start mb-4">
+                <CollapsibleTrigger asChild>
+                    <Button>
+                        <PlusCircle />
+                        زیادکردنی خەرجی
+                    </Button>
+                </CollapsibleTrigger>
+            </div>
+            <CollapsibleContent>
+                <Card className="mb-8">
+                    <CardHeader>
+                        <CardTitle>خەرجی نوێ زیاد بکە</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <AddExpenseForm onExpenseAdded={() => setOpen(false)} />
+                    </CardContent>
+                </Card>
+            </CollapsibleContent>
+        </Collapsible>
+    );
+}
+
 function EditableExpenseRow({ expense }: { expense: WithId<Expense> }) {
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -95,7 +122,7 @@ function EditableExpenseRow({ expense }: { expense: WithId<Expense> }) {
             // The component will be unmounted by the parent's re-render
         } catch (error) {
             console.error("Error deleting expense:", error);
-            toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "سڕینەوە سەرکەوتوو نەبوو." });
+            toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "srinewe serkewtu nebu." });
             setIsDeleting(false);
         }
     };
@@ -226,28 +253,7 @@ export default function ExpensesPage() {
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <PageHeader title="خەرجییەکان" description="بەدواداچوون بۆ هەموو خەرجییەکانی کارەکەت بکە، جێگیر و گۆڕاو." />
-            
-            <Collapsible>
-                 <div className="flex justify-start mb-4">
-                    <CollapsibleTrigger asChild>
-                         <Button>
-                            <PlusCircle />
-                            زیادکردنی خەرجی
-                        </Button>
-                    </CollapsibleTrigger>
-                </div>
-                <CollapsibleContent>
-                    <Card className="mb-8">
-                        <CardHeader>
-                            <CardTitle>خەرجی نوێ زیاد بکە</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                             <AddExpenseForm />
-                        </CardContent>
-                    </Card>
-                </CollapsibleContent>
-            </Collapsible>
-            
+            <AddExpenseCollapsible />
             <ExpensesList />
         </div>
     );

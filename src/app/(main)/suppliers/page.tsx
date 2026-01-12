@@ -1,6 +1,7 @@
 
 'use client';
 
+import React from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +16,30 @@ type Supplier = {
     supplierName: string;
     contactInformation?: string;
 };
+
+function AddSupplierDialog() {
+    const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+
+    return (
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+                <Button>
+                    <PlusCircle />
+                    زیادکردنی دابینکەر
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>دابینکەری نوێ زیاد بکە</DialogTitle>
+                    <DialogDescription>
+                        زانیارییەکانی دابینکەری نوێ بنووسە بۆ زیادکردنی بۆ سیستەم.
+                    </DialogDescription>
+                </DialogHeader>
+                <AddSupplierForm onSupplierAdded={() => setIsDialogOpen(false)} />
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 function SuppliersList() {
     const firestore = useFirestore();
@@ -68,23 +93,7 @@ export default function SuppliersPage() {
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <PageHeader title="دابینکەران" description="لیستی دابینکەران و داتاکانیان بەڕێوەببە.">
-                 <Dialog>
-                    <DialogTrigger asChild>
-                        <Button>
-                            <PlusCircle />
-                            زیادکردنی دابینکەر
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
-                        <DialogHeader>
-                            <DialogTitle>دابینکەری نوێ زیاد بکە</DialogTitle>
-                            <DialogDescription>
-                                زانیارییەکانی دابینکەری نوێ بنووسە بۆ زیادکردنی بۆ سیستەم.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <AddSupplierForm />
-                    </DialogContent>
-                </Dialog>
+                <AddSupplierDialog />
             </PageHeader>
             <SuppliersList />
         </div>
