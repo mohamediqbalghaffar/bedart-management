@@ -12,7 +12,7 @@ import { Download, Loader2, PlusCircle, Trash2, List } from "lucide-react";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useFirestore, useCollection, useMemoFirebase, collection, doc, setDoc, getDoc, runTransaction } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase, collection, doc, setDoc, getDoc, runTransaction, getDocs, deleteDoc } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { WithId } from "@/firebase/firestore/use-collection";
 import { analyzePurchaseExcel } from "@/ai/flows/analyze-purchase-excel";
@@ -44,6 +44,7 @@ const buyingFormSchema = z.object({
 type BuyingFormValues = z.infer<typeof buyingFormSchema>;
 
 type BuyingFormProps = {
+    formId?: string | null;
     onSave?: () => void;
 };
 
@@ -221,7 +222,7 @@ function BuyingFormItemRow({
                 <FormField control={form.control} name={`items.${index}.unitPrice`} render={({ field }) => (<FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
             </TableCell>
             <TableCell className="align-top pt-5 font-semibold">
-                {new Intl.NumberFormat('en-US').format(watchedItem?.quantity * watchedItem?.unitPrice || 0)}
+                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(watchedItem?.quantity * watchedItem?.unitPrice || 0)}
             </TableCell>
             <TableCell className="align-top">
                 <Button variant="ghost" size="icon" onClick={() => remove(index)}>
@@ -232,9 +233,11 @@ function BuyingFormItemRow({
     );
 }
 
-export function BuyingForm({ onSave }: BuyingFormProps) {
+export function BuyingForm({ onSave, formId }: BuyingFormProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const [isLoadingData, setIsLoadingData] = useState(false);
+  const [originalItems, setOriginalItems] = useState<any[]>([]);
 
   const suppliersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -252,6 +255,48 @@ export function BuyingForm({ onSave }: BuyingFormProps) {
       stockLocation: "Warehouse",
     },
   });
+
+  useEffect(() => {
+    async function fetchFormData() {
+      if (formId && firestore) {
+        setIsLoadingData(true);
+        try {
+          const formRef = doc(firestore, 'buying_forms', formId);
+          const formSnap = await getDoc(formRef);
+
+          if (formSnap.exists()) {
+            const data = formSnap.data();
+            
+            const itemsRef = collection(firestore, `buying_forms/${formId}/products`);
+            const itemsSnap = await getDocs(itemsRef);
+            const items = itemsSnap.docs.map(d => ({ ...d.data() }));
+
+            setOriginalItems(items); // Store original items for stock calculation
+
+            form.reset({
+              ...data,
+              issueDate: data.issueDate,
+              items: items.map(item => ({
+                  product: item.productName,
+                  quantity: item.quantity,
+                  unitPrice: item.unitPrice,
+                  category: item.category || 'Mattress',
+                  sizeModel: item.sizeModel || '',
+              })),
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching form data:", error);
+          toast({ variant: 'destructive', title: "Error fetching data" });
+        } finally {
+          setIsLoadingData(false);
+        }
+      }
+    }
+
+    fetchFormData();
+  }, [formId, firestore, form, toast]);
+
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -274,39 +319,31 @@ export function BuyingForm({ onSave }: BuyingFormProps) {
         return;
     }
     
+    const buyingFormRef = formId ? doc(firestore, "buying_forms", formId) : doc(collection(firestore, "buying_forms"));
+    const buyingFormId = buyingFormRef.id;
+
     try {
-        const buyingFormRef = doc(collection(firestore, "buying_forms"));
-        const buyingFormId = buyingFormRef.id;
+         await runTransaction(firestore, async (transaction) => {
+            // 1. Restore original stock for existing items (if editing)
+            if (formId) {
+                for (const item of originalItems) {
+                    const productDocId = item.productId;
+                    const productRef = doc(firestore, 'products', productDocId);
+                    const productDoc = await transaction.get(productRef);
+                    if (productDoc.exists()) {
+                        const newQuantity = (productDoc.data().currentQuantity || 0) - item.quantity;
+                        transaction.update(productRef, { currentQuantity: newQuantity });
+                    }
+                }
+            }
 
-        const { items, ...mainData } = data;
-
-        const buyingFormData = {
-            ...mainData,
-            id: buyingFormId,
-        };
-
-        await setDoc(buyingFormRef, buyingFormData);
-
-        const productPromises = items.map(async (item) => {
-            const productDocId = item.product.toLowerCase().replace(/[^a-z0-9]/g, '-');
-            const productRef = doc(firestore, 'products', productDocId);
-            const productSubCollectionRef = doc(collection(firestore, `buying_forms/${buyingFormId}/products`));
-            
-            const productData = {
-                id: productSubCollectionRef.id,
-                buyingFormId: buyingFormId,
-                productId: productDocId,
-                productName: item.product,
-                quantity: item.quantity,
-                unitPrice: item.unitPrice,
-                landedCost: item.unitPrice + ((customsFee || 0) / items.reduce((sum, i) => sum + i.quantity, 0)),
-            };
-            
-            await setDoc(productSubCollectionRef, productData);
-            
-            await runTransaction(firestore, async (transaction) => {
+            // 2. Add new stock
+            for (const item of data.items) {
+                const productDocId = item.product.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                const productRef = doc(firestore, 'products', productDocId);
                 const productDoc = await transaction.get(productRef);
-                if (!productDoc.exists()) {
+                
+                 if (!productDoc.exists()) {
                     transaction.set(productRef, {
                         id: productDocId,
                         productName: item.product,
@@ -326,18 +363,44 @@ export function BuyingForm({ onSave }: BuyingFormProps) {
                         unitPrice: item.unitPrice, 
                     });
                 }
+            }
+
+            // 3. Create/Update the main buying_form document
+            const { items, ...mainData } = data;
+            const buyingFormData = { ...mainData, id: buyingFormId };
+            transaction.set(buyingFormRef, buyingFormData, { merge: true });
+
+            // 4. Clear and create new sub-collection documents
+            if (formId) {
+                const existingItemsSnap = await getDocs(collection(firestore, `buying_forms/${formId}/products`));
+                existingItemsSnap.docs.forEach(d => transaction.delete(d.ref));
+            }
+            
+            items.forEach(item => {
+                const productSubCollectionRef = doc(collection(firestore, `buying_forms/${buyingFormId}/products`));
+                const productDocId = item.product.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                const productData = {
+                    id: productSubCollectionRef.id,
+                    buyingFormId: buyingFormId,
+                    productId: productDocId,
+                    productName: item.product,
+                    category: item.category,
+                    sizeModel: item.sizeModel,
+                    quantity: item.quantity,
+                    unitPrice: item.unitPrice,
+                    landedCost: item.unitPrice + ((customsFee || 0) / items.reduce((sum, i) => sum + i.quantity, 0)),
+                };
+                transaction.set(productSubCollectionRef, productData);
             });
         });
 
-        await Promise.all(productPromises);
-        
         toast({
             title: "سەرکەوتوو بوو!",
-            description: "پسوولەی کڕین بە سەرکەوتوویی پاشەکەوت کرا و کۆگا نوێکرایەوە.",
+            description: `پسوولەی کڕین بە سەرکەوتوویی ${formId ? 'نوێکرایەوە' : 'پاشەکەوت کرا'}.`,
             className: "bg-accent text-accent-foreground",
         });
         if (onSave) onSave();
-        form.reset();
+        if(!formId) form.reset();
 
     } catch (error: any) {
         console.error("Error saving buying form:", error);
@@ -347,6 +410,10 @@ export function BuyingForm({ onSave }: BuyingFormProps) {
             description: error.message || "پاشەکەوتکردنی پسوولەی کڕین سەرکەوتوو نەبوو.",
         });
     }
+  }
+
+  if (isLoadingData) {
+      return <div className="flex h-96 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   return (
@@ -423,8 +490,8 @@ export function BuyingForm({ onSave }: BuyingFormProps) {
                         <TableHead className="w-[30%] text-primary-foreground text-center">بابەت</TableHead>
                         <TableHead className="w-[20%] text-primary-foreground text-center">پۆل</TableHead>
                         <TableHead className="text-primary-foreground text-center">دانە</TableHead>
-                        <TableHead className="text-primary-foreground text-center">نرخی تاک</TableHead>
-                        <TableHead className="text-primary-foreground text-center">نرخی کۆ</TableHead>
+                        <TableHead className="text-primary-foreground text-center">نرخی تاک (USD)</TableHead>
+                        <TableHead className="text-primary-foreground text-center">نرخی کۆ (USD)</TableHead>
                         <TableHead></TableHead>
                     </TableRow>
                 </TableHeader>
@@ -453,7 +520,7 @@ export function BuyingForm({ onSave }: BuyingFormProps) {
             <div className="space-y-2 text-left min-w-[280px]">
                 <div className="flex items-center justify-between gap-4 p-2 rounded-md">
                     <span className="text-muted-foreground">:کۆی کاڵاکان</span>
-                    <span className="font-semibold">{new Intl.NumberFormat('en-US').format(subTotal)}</span>
+                    <span className="font-semibold">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(subTotal)}</span>
                 </div>
                  <div className="flex items-center justify-between gap-4 p-2 rounded-md">
                     <FormField
@@ -461,7 +528,7 @@ export function BuyingForm({ onSave }: BuyingFormProps) {
                         name="customsFee"
                         render={({ field }) => (
                             <FormItem className="flex items-center justify-between w-full">
-                                <FormLabel className="text-muted-foreground">:گومرگ</FormLabel>
+                                <FormLabel className="text-muted-foreground">:گومرگ (USD)</FormLabel>
                                 <FormControl>
                                     <Input type="number" step="0.01" {...field} className="w-32" />
                                 </FormControl>
@@ -471,18 +538,20 @@ export function BuyingForm({ onSave }: BuyingFormProps) {
                     />
                 </div>
                  <div className="flex items-center justify-between gap-4 p-2 rounded-md bg-secondary/80">
-                    <span className="font-bold">:کۆی گشتی</span>
-                    <span className="font-bold text-lg">{new Intl.NumberFormat('en-US').format(totalAmount)}</span>
+                    <span className="font-bold">:کۆی گشتی (USD)</span>
+                    <span className="font-bold text-lg">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalAmount)}</span>
                 </div>
             </div>
         </div>
 
         <div className="flex justify-end pt-6 border-t">
             <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "...پاشەکەوت دەکرێت" : "پاشەکەوتکردنی پسوولە"}
+                {form.formState.isSubmitting ? "...پاشەکەوت دەکرێت" : (formId ? "نوێکردنەوەی پسوولە" : "پاشەکەوتکردنی پسوولە")}
             </Button>
         </div>
       </form>
     </Form>
   );
 }
+
+    

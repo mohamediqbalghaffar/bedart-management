@@ -46,6 +46,7 @@ export function PurchaseDetails({ formId }: { formId: string }) {
     }, [products]);
 
     const totalAmount = subTotal + (formData?.customsFee || 0);
+    const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
     if (isLoading) {
         return <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -89,18 +90,18 @@ export function PurchaseDetails({ formId }: { formId: string }) {
                             <TableRow>
                                 <TableHead className="text-right">بابەت</TableHead>
                                 <TableHead className="text-right">دانە</TableHead>
-                                <TableHead className="text-right">نرخی تاک</TableHead>
-                                <TableHead className="text-left">نرخی کۆ</TableHead>
+                                <TableHead className="text-right">نرخی تاک (USD)</TableHead>
+                                <TableHead className="text-left">نرخی کۆ (USD)</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {products && products.length > 0 ? (
-                                products.map((item) => (
-                                    <TableRow key={item.id}>
+                                products.map((item, index) => (
+                                    <TableRow key={index}>
                                         <TableCell className="text-right">{item.productName}</TableCell>
                                         <TableCell className="text-right">{item.quantity}</TableCell>
-                                        <TableCell className="text-right">{new Intl.NumberFormat('en-US').format(item.unitPrice)}</TableCell>
-                                        <TableCell className="text-left font-semibold">{new Intl.NumberFormat('en-US').format(item.quantity * item.unitPrice)}</TableCell>
+                                        <TableCell className="text-right">{currencyFormatter.format(item.unitPrice)}</TableCell>
+                                        <TableCell className="text-left font-semibold">{currencyFormatter.format(item.quantity * item.unitPrice)}</TableCell>
                                     </TableRow>
                                 ))
                             ) : (
@@ -111,12 +112,14 @@ export function PurchaseDetails({ formId }: { formId: string }) {
                         </TableBody>
                     </Table>
                     <div className="mt-4 space-y-2 text-left p-4 border-t">
-                         <div className="flex justify-between"><span>کۆی کاڵاکان:</span><span className="font-medium">{new Intl.NumberFormat('en-US').format(subTotal)}</span></div>
-                        <div className="flex justify-between"><span>تێچووی گومرگ:</span><span className="font-medium">{new Intl.NumberFormat('en-US').format(formData.customsFee || 0)}</span></div>
-                        <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2"><span>کۆی گشتی:</span><span>{new Intl.NumberFormat('en-US').format(totalAmount)}</span></div>
+                         <div className="flex justify-between"><span>کۆی کاڵاکان:</span><span className="font-medium">{currencyFormatter.format(subTotal)}</span></div>
+                        <div className="flex justify-between"><span>تێچووی گومرگ:</span><span className="font-medium">{currencyFormatter.format(formData.customsFee || 0)}</span></div>
+                        <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2"><span>کۆی گشتی:</span><span>{currencyFormatter.format(totalAmount)}</span></div>
                     </div>
                 </CardContent>
             </Card>
         </div>
     );
 }
+
+    

@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Loader2, Trash2, FileSpreadsheet } from "lucide-react";
+import { PlusCircle, Loader2, Trash2, FileSpreadsheet, Edit } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { BuyingForm } from "./components/buying-form";
 import { useFirestore, useCollection, useMemoFirebase, collection, runTransaction, doc, getDocs, deleteDoc } from '@/firebase';
@@ -50,26 +50,21 @@ type EnrichedBuyingForm = WithId<BuyingFormType> & {
     totalAmount?: number;
 };
 
-function NewPurchaseDialog() {
+function PurchaseFormDialog({ formId, onSave, trigger }: { formId: string | null, onSave: () => void, trigger: React.ReactNode }) {
     const [open, setOpen] = useState(false);
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button>
-                    <PlusCircle />
-                    پسوولەی کڕینی نوێ
-                </Button>
-            </DialogTrigger>
+            <DialogTrigger asChild>{trigger}</DialogTrigger>
             <DialogContent className="sm:max-w-4xl">
                 <DialogHeader>
-                    <DialogTitle>تۆمارکردنی پسوولەی کڕین</DialogTitle>
-                        <DialogDescription>
-                        زانیارییەکانی پسوولەی کڕینی نوێ بنووسە.
+                    <DialogTitle>{formId ? 'دەستکاری کردنی پسوولەی کڕین' : 'تۆمارکردنی پسوولەی کڕین'}</DialogTitle>
+                    <DialogDescription>
+                        {formId ? 'زانیارییەکانی پسوولەکە دەستکاری بکە.' : 'زانیارییەکانی پسوولەی کڕینی نوێ بنووسە.'}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="max-h-[80vh] overflow-y-auto p-2">
-                    <BuyingForm onSave={() => setOpen(false)} />
+                    <BuyingForm formId={formId} onSave={() => { onSave(); setOpen(false); }} />
                 </div>
             </DialogContent>
         </Dialog>
@@ -79,11 +74,12 @@ function NewPurchaseDialog() {
 function PurchasesList() {
     const firestore = useFirestore();
     const { toast } = useToast();
+    const [refreshKey, setRefreshKey] = useState(0);
 
     const buyingFormsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return collection(firestore, 'buying_forms');
-    }, [firestore]);
+    }, [firestore, refreshKey]);
 
     const suppliersQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -95,6 +91,10 @@ function PurchasesList() {
 
     const [enrichedForms, setEnrichedForms] = useState<EnrichedBuyingForm[]>([]);
     const [isCalculating, setIsCalculating] = useState(false);
+    
+    const handleFormSave = () => {
+        setRefreshKey(prev => prev + 1); // Trigger a re-fetch
+    };
 
     useEffect(() => {
         async function enrichAndCalculateTotals() {
@@ -160,6 +160,7 @@ function PurchasesList() {
                 description: "پسوولەی کڕین بە سەرکەوتوویی سڕایەوە و بڕی کاڵاکان لە کۆگا کەمکرایەوە.",
                 className: "bg-accent text-accent-foreground",
             });
+            handleFormSave();
         } catch (error: any) {
             console.error("Error deleting purchase form:", error);
             toast({
@@ -206,7 +207,7 @@ function PurchasesList() {
                                 <TableCell className="text-right">{form.issueDate}</TableCell>
                                 <TableCell className="text-right">
                                     <Badge variant="secondary">
-                                      {new Intl.NumberFormat('en-US').format(form.totalAmount || 0)}
+                                      {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(form.totalAmount || 0)}
                                     </Badge>
                                 </TableCell>
                                 <TableCell className="text-left">
@@ -232,6 +233,17 @@ function PurchasesList() {
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
+
+                                        <PurchaseFormDialog 
+                                            formId={form.id} 
+                                            onSave={handleFormSave}
+                                            trigger={
+                                                <Button variant="ghost" size="icon">
+                                                    <Edit className="h-4 w-4 text-blue-500" />
+                                                </Button>
+                                            }
+                                        />
+
                                         <Dialog>
                                             <DialogTrigger asChild>
                                                 <Button variant="ghost" size="icon">
@@ -258,12 +270,22 @@ function PurchasesList() {
 
 
 export default function PurchasesPage() {
+    const [refreshKey, setRefreshKey] = useState(0);
+    const handleSave = () => setRefreshKey(prev => prev + 1);
+
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <PageHeader title="کڕینەکان" description="پسوولەکانی کڕین و دابینکەرەکانت بەڕێوەببە.">
-                <NewPurchaseDialog />
+                <PurchaseFormDialog formId={null} onSave={handleSave} trigger={
+                     <Button>
+                        <PlusCircle />
+                        پسوولەی کڕینی نوێ
+                    </Button>
+                }/>
             </PageHeader>
             <PurchasesList />
         </div>
     );
 }
+
+    
