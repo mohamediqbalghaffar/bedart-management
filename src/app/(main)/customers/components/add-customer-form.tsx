@@ -8,13 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore, setDocumentNonBlocking } from "@/firebase";
+import { useFirestore, addDocumentNonBlocking } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
 import { Textarea } from "@/components/ui/textarea";
 
 const customerSchema = z.object({
   customerName: z.string().min(1, { message: "ناوی کڕیار پێویستە." }),
-  customerPhone: z.string().optional(),
+  customerPhoneNumber: z.string().optional(),
   customerAddress: z.string().optional(),
 });
 
@@ -28,7 +28,7 @@ export function AddCustomerForm() {
     resolver: zodResolver(customerSchema),
     defaultValues: {
       customerName: "",
-      customerPhone: "",
+      customerPhoneNumber: "",
       customerAddress: "",
     },
   });
@@ -44,20 +44,13 @@ export function AddCustomerForm() {
     }
 
     try {
-      const dummyFormRef = doc(collection(firestore, "selling_forms"));
+      const customersColRef = collection(firestore, "customers");
+      const newCustomerRef = doc(customersColRef);
       
-      await setDocumentNonBlocking(dummyFormRef, {
-        id: dummyFormRef.id,
-        customerName: data.customerName,
-        customerPhoneNumber: data.customerPhone,
-        customerAddress: data.customerAddress,
-        issueDate: new Date().toISOString().split('T')[0],
-        totalPrice: 0,
-        paymentStatus: 'Unpaid',
-        paymentType: 'Pre-order',
-        formNumber: `CUST-${Math.floor(Math.random() * 1000)}`,
-        items: [],
-      }, { merge: true });
+      await addDocumentNonBlocking(customersColRef, {
+        id: newCustomerRef.id,
+        ...data,
+      });
 
 
       toast({
@@ -94,7 +87,7 @@ export function AddCustomerForm() {
         />
         <FormField
           control={form.control}
-          name="customerPhone"
+          name="customerPhoneNumber"
           render={({ field }) => (
             <FormItem>
               <FormLabel>ژمارەی تەلەفۆن</FormLabel>
@@ -127,3 +120,5 @@ export function AddCustomerForm() {
     </Form>
   );
 }
+
+    

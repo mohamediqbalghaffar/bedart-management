@@ -12,7 +12,6 @@ import { useFirestore, useCollection, useMemoFirebase, collection } from '@/fire
 import { WithId } from '@/firebase/firestore/use-collection';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-// This should align with the implicit customer data in SellingForm
 type Customer = {
     customerName: string;
     customerPhoneNumber?: string;
@@ -24,28 +23,10 @@ function CustomersList() {
 
     const customersQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        // There is no dedicated customers collection. We derive customers from selling_forms.
-        // For a real app, a `customers` collection would be better.
-        // This is a simplified approach to show *some* data.
-        return collection(firestore, 'selling_forms');
+        return collection(firestore, 'customers');
     }, [firestore]);
 
-    const { data: sellingForms, isLoading } = useCollection<{ customerName: string; customerPhoneNumber?: string; customerAddress?: string }>(customersQuery);
-
-    const customers = React.useMemo(() => {
-        if (!sellingForms) return [];
-        const customerMap = new Map<string, Customer>();
-        sellingForms.forEach(form => {
-            if (form.customerName && !customerMap.has(form.customerName.toLowerCase())) {
-                customerMap.set(form.customerName.toLowerCase(), {
-                    customerName: form.customerName,
-                    customerPhoneNumber: form.customerPhoneNumber,
-                    customerAddress: form.customerAddress
-                });
-            }
-        });
-        return Array.from(customerMap.values());
-    }, [sellingForms]);
+    const { data: customers, isLoading } = useCollection<Customer>(customersQuery);
 
     return (
         <Card>
@@ -68,13 +49,13 @@ function CustomersList() {
                                     <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                                 </TableCell>
                             </TableRow>
-                        ) : customers.length === 0 ? (
+                        ) : customers && customers.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={3} className="py-8 text-center text-muted-foreground">هیچ کڕیارێک تۆمار نەکراوە.</TableCell>
                             </TableRow>
                         ) : (
-                            customers.map((customer) => (
-                                <TableRow key={customer.customerName}>
+                            customers?.map((customer) => (
+                                <TableRow key={customer.id}>
                                     <TableCell className="font-medium text-right">{customer.customerName}</TableCell>
                                     <TableCell className="text-right">{customer.customerPhoneNumber || 'N/A'}</TableCell>
                                     <TableCell className="text-right">{customer.customerAddress || 'N/A'}</TableCell>
@@ -103,7 +84,7 @@ export default function CustomersPage() {
                         <DialogHeader>
                             <DialogTitle>کڕیاری نوێ زیاد بکە</DialogTitle>
                             <DialogDescription>
-                                زانیارییەکانی کڕیاری نوێ بنووسە. کڕیارەکان بە شێوەیەکی ئۆتۆماتیکیش زیاد دەبن لە کاتی دروستکردنی فۆڕمی فرۆشتن.
+                                زانیارییەکانی کڕیاری نوێ بنووسە. 
                             </DialogDescription>
                         </DialogHeader>
                         <AddCustomerForm />
@@ -114,3 +95,5 @@ export default function CustomersPage() {
         </div>
     );
 }
+
+    
