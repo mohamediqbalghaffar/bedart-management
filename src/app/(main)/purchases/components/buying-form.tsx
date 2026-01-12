@@ -262,7 +262,7 @@ export function BuyingForm({ onSave }: BuyingFormProps) {
   const customsFee = form.watch('customsFee');
   
   const subTotal = watchedItems.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
-  const totalAmount = subTotal + (customsFee || 0);
+  const totalAmount = subTotal + Number(customsFee || 0);
 
   async function onSubmit(data: BuyingFormValues) {
     if (!firestore) {
@@ -486,4 +486,3 @@ export function BuyingForm({ onSave }: BuyingFormProps) {
     </Form>
   );
 }
-
