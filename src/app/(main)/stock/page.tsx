@@ -12,6 +12,7 @@ import { WithId } from '@/firebase/firestore/use-collection';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import * as XLSX from 'xlsx';
 
 type Product = {
     productName: string;
@@ -33,6 +34,7 @@ type EnrichedProduct = WithId<Product> & {
 function StockList() {
     const firestore = useFirestore();
     const [searchTerm, setSearchTerm] = useState('');
+    const { toast } = useToast();
 
     const productsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -53,10 +55,12 @@ function StockList() {
 
     const filteredProducts = useMemo(() => {
         if (!products) return [];
-        const enriched = products.map(p => ({
-            ...p,
-            supplierName: p.supplierId ? supplierMap.get(p.supplierId) : 'N/A',
-        }));
+        const enriched = products
+            .filter(p => p.currentQuantity > 0)
+            .map(p => ({
+                ...p,
+                supplierName: p.supplierId ? supplierMap.get(p.supplierId) : 'N/A',
+            }));
 
         if (!searchTerm) return enriched;
 
@@ -68,6 +72,27 @@ function StockList() {
     }, [products, searchTerm, supplierMap]);
     
     const isLoading = isLoadingProducts || isLoadingSuppliers;
+    
+    const exportToExcel = () => {
+        if (!filteredProducts) return;
+        toast({title: "...چاوەڕوانبە", description: `هەناردەکردنی ڕاپۆرتی کۆگا`})
+
+        const dataToExport = filteredProducts.map(p => ({
+            "ناوی کاڵا": p.productName,
+            "پۆل": p.category,
+            "قەبارە/مۆدێل": p.sizeModel || 'N/A',
+            "دانە": p.currentQuantity,
+            "شوێن": p.stockLocation === 'Warehouse' ? 'کۆگا' : 'فرۆشگا',
+            "دابینکەر": p.supplierName,
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Stock Report');
+        XLSX.writeFile(workbook, `Stock_Report.xlsx`);
+        
+        toast({title: "سەرکەوتوو بوو", description: `ڕاپۆرتی کۆگا بەسەرکەوتوویی هەناردەکرا.`})
+    }
 
     return (
         <Card>
@@ -83,7 +108,7 @@ function StockList() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={exportToExcel}>
                         <FileDown />
                         هەناردەکردنی ڕاپۆرت
                     </Button>
@@ -98,7 +123,7 @@ function StockList() {
                             <TableHead className="text-right">دانە</TableHead>
                             <TableHead className="text-right">شوێن</TableHead>
                              <TableHead className="text-right">
-                                <div className='flex items-center gap-1'>
+                                <div className='flex items-center justify-end gap-1'>
                                     <span>دابینکەر</span>
                                     <TooltipProvider>
                                         <Tooltip>
@@ -157,3 +182,5 @@ export default function StockPage() {
         </div>
     );
 }
+
+    

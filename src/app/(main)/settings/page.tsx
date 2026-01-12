@@ -86,7 +86,7 @@ function CategoryManagement({ title, collectionName, placeholder }: { title: str
     const [newCategory, setNewCategory] = useState('');
     
     const categoryQuery = useMemoFirebase(() => firestore ? collection(firestore, collectionName) : null, [firestore, collectionName]);
-    const { data: categories, isLoading } = useCollection<Category>(categoryQuery);
+    const { data: categories, isLoading, error } = useCollection<Category>(categoryQuery);
     
     const handleAddCategory = async () => {
         if (!firestore || !newCategory.trim()) return;
@@ -124,6 +124,8 @@ function CategoryManagement({ title, collectionName, placeholder }: { title: str
                     <TableBody>
                         {isLoading ? (
                             <TableRow><TableCell colSpan={2} className="h-24 text-center"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></TableCell></TableRow>
+                        ) : error ? (
+                            <TableRow><TableCell colSpan={2} className="h-24 text-center text-destructive">Error: Could not load categories.</TableCell></TableRow>
                         ) : categories?.map(cat => (
                             <TableRow key={cat.id}>
                                 <TableCell className="font-medium text-right">{cat.name}</TableCell>
@@ -179,6 +181,10 @@ function DataManagement() {
                     <FileDown className="ml-2 h-4 w-4" />
                     هەناردەکردنی خەرجییەکان
                 </Button>
+                 <Button variant="outline" onClick={() => exportToExcel('products', 'کاڵاکان')}>
+                    <FileDown className="ml-2 h-4 w-4" />
+                    هەناردەکردنی کۆگا
+                </Button>
             </CardContent>
         </Card>
     )
@@ -209,3 +215,5 @@ export default function SettingsPage() {
         </div>
     );
 }
+
+    
