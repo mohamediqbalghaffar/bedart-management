@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFirestore, useCollection, useMemoFirebase, collection, doc, updateDoc, addDoc, deleteDoc, getDocs, writeBatch, getDoc, setDoc } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
@@ -417,7 +417,3 @@ export default function SettingsPage() {
         </div>
     );
 }
-
-    
-
-    
