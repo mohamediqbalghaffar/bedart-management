@@ -12,7 +12,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, Download, Loader2, PlusCircle, Trash2, Check, ChevronsUpDown, List } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns-jalali";
+import { format } from 'date-fns';
+import { ckb } from "@/lib/ckb-locale";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFirestore, useCollection, useMemoFirebase, collection, doc, setDoc, getDoc, runTransaction } from "@/firebase";
@@ -33,7 +34,7 @@ type Supplier = {
 
 const buyingFormSchema = z.object({
   supplierId: z.string().min(1, "دابینکەر پێویستە."),
-  issueDate: z.string().min(1, "بەرواری دەرکردن پێویستە."),
+  issueDate: z.date({ required_error: "بەرواری دەرکردن پێویستە." }),
   items: z.array(z.object({
     product: z.string().min(1, "بابەت پێویستە."),
     category: z.string().min(1, "پۆل پێویستە."),
@@ -250,7 +251,7 @@ export function BuyingForm({ onSave }: BuyingFormProps) {
     resolver: zodResolver(buyingFormSchema),
     defaultValues: {
       supplierId: "",
-      issueDate: format(new Date(), "yyyy-MM-dd"),
+      issueDate: new Date(),
       items: [{ product: "", quantity: 1, unitPrice: 0, category: "Mattress", sizeModel: "" }],
       customsFee: 0,
       stockLocation: "Warehouse",
@@ -286,6 +287,7 @@ export function BuyingForm({ onSave }: BuyingFormProps) {
 
         const buyingFormData = {
             ...mainData,
+            issueDate: format(data.issueDate, "yyyy-MM-dd"),
             id: buyingFormId,
         };
 
@@ -363,9 +365,35 @@ export function BuyingForm({ onSave }: BuyingFormProps) {
                 render={({ field }) => (
                     <FormItem className="flex items-center gap-2">
                         <FormLabel className="mt-2">بەروار:</FormLabel>
-                        <FormControl>
-                            <Input placeholder="YYYY-MM-DD" {...field} className="w-[180px]" />
-                        </FormControl>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <FormControl>
+                                    <Button
+                                        variant={"outline"}
+                                        className={cn(
+                                            "w-[180px] justify-start text-left font-normal",
+                                            !field.value && "text-muted-foreground"
+                                        )}
+                                    >
+                                        <CalendarIcon className="ml-2 h-4 w-4" />
+                                        {field.value ? (
+                                        format(field.value, "PPP", { locale: ckb })
+                                        ) : (
+                                        <span>بەروارێک</span>
+                                        )}
+                                    </Button>
+                                </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" dir="rtl">
+                                <Calendar
+                                    mode="single"
+                                    selected={field.value}
+                                    onSelect={field.onChange}
+                                    initialFocus
+                                    locale={ckb}
+                                />
+                            </PopoverContent>
+                        </Popover>
                         <FormMessage />
                     </FormItem>
                 )}
@@ -491,4 +519,3 @@ export function BuyingForm({ onSave }: BuyingFormProps) {
   );
 }
 
-    

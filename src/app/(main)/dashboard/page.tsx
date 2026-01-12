@@ -8,7 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Loader2, DollarSign, Users, Archive, ShoppingCart, TrendingUp, TrendingDown, Calendar as CalendarIcon, Package, LineChart } from 'lucide-react';
 import { StatCard } from '@/components/shared/stat-card';
 import { subDays, parseISO } from 'date-fns';
-import { format } from 'date-fns-jalali';
+import { format } from 'date-fns';
+import { ckb } from '@/lib/ckb-locale';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis, Tooltip as RechartsTooltip } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { DateRange } from 'react-day-picker';
@@ -229,7 +230,7 @@ function RecentActivityChart() {
             });
             
             const finalData = Array.from(dateMap.entries()).map(([date, data]) => ({
-                date: format(parseISO(date), 'MMM d'),
+                date: format(parseISO(date), 'MMM d', { locale: ckb }),
                 ...data,
             }));
             
@@ -273,11 +274,11 @@ function RecentActivityChart() {
                                     {dateRange?.from ? (
                                         dateRange.to ? (
                                             <>
-                                                {format(dateRange.from, "d MMMM yyyy")} - {" "}
-                                                {format(dateRange.to, "d MMMM, yyyy")}
+                                                {format(dateRange.from, "d MMMM yyyy", { locale: ckb })} - {" "}
+                                                {format(dateRange.to, "d MMMM, yyyy", { locale: ckb })}
                                             </>
                                         ) : (
-                                            format(dateRange.from, "d MMMM, yyyy")
+                                            format(dateRange.from, "d MMMM, yyyy", { locale: ckb })
                                         )
                                     ) : (
                                         <span>ماوەیەک هەڵبژێرە</span>
@@ -292,6 +293,7 @@ function RecentActivityChart() {
                                     selected={dateRange}
                                     onSelect={setDateRange}
                                     numberOfMonths={1}
+                                    locale={ckb}
                                 />
                             </PopoverContent>
                         </Popover>
@@ -327,7 +329,7 @@ function RecentActivityChart() {
                             tickLine={false}
                             axisLine={false}
                             tickMargin={8}
-                            tickFormatter={(value) => value.slice(0, 3)}
+                            tickFormatter={(value) => value}
                              tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}
                         />
                         <YAxis
@@ -394,4 +396,3 @@ export default function DashboardPage() {
     );
 }
 
-    
