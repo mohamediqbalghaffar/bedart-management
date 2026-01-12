@@ -1,6 +1,5 @@
 'use client';
 
-import { Sidebar, SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { SidebarNav } from '@/components/layout/sidebar-nav';
 import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
@@ -26,13 +25,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     }
     
     return (
-        <SidebarProvider>
-            <Sidebar>
-                <SidebarNav />
-            </Sidebar>
-            <SidebarInset>
+        <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+            <SidebarNav />
+            <main className="flex flex-col">
                 {children}
-            </SidebarInset>
-        </SidebarProvider>
+            </main>
+        </div>
     );
 }
