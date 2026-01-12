@@ -299,7 +299,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
 
         const { items, payments, ...mainData } = data;
 
-        const sellingFormData = {
+        const sellingFormData: any = {
             ...mainData,
             id: sellingFormId,
             creatorId: "system",
@@ -307,6 +307,14 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
             totalPrice: totalAmount,
             remainingBalance: remainingBalance,
         };
+
+        // Remove discount fields if they are not set to avoid 'undefined' error
+        if (!sellingFormData.discountType) {
+            delete sellingFormData.discountType;
+            delete sellingFormData.discountValue;
+        } else {
+            sellingFormData.discountValue = sellingFormData.discountValue || 0;
+        }
         
         await setDocumentNonBlocking(sellingFormRef, sellingFormData, { merge: true });
         
@@ -650,5 +658,3 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
     </Form>
   );
 }
-
-    
