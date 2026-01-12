@@ -1,6 +1,4 @@
 
-import { buildLocalizeFn, buildMatchFn } from 'date-fns/locale/build';
-
 const eraValues = {
   narrow: ['پ.ز', 'ز'],
   abbreviated: ['پ.ز', 'ز'],
@@ -33,14 +31,36 @@ const dayPeriodValues = {
 };
 
 const formattingDayPeriodValues = {
-  narrow: { am: 'پ.ن', pm: 'د.ن', midnight: 'نیوەشەو', noon: 'نیوەڕۆ', morning: 'بەیانی', afternoon: 'دوای نیوەڕۆ', evening: 'ئێوارە', night: 'شەو' },
+  narrow: { am: 'پ.ن', pm: 'د.n', midnight: 'نیوەشەو', noon: 'نیوەڕۆ', morning: 'بەیانی', afternoon: 'دوای نیوەڕۆ', evening: 'ئێوارە', night: 'شەو' },
   abbreviated: { am: 'پ.ن', pm: 'د.ن', midnight: 'نیوەشەو', noon: 'نیوەڕۆ', morning: 'بەیانی', afternoon: 'دوای نیوەڕۆ', evening: 'ئێوارە', night: 'شەو' },
   wide: { am: 'پێш نیوەڕۆ', pm: 'دوای نیوەڕۆ', midnight: 'نیوەشەو', noon: 'نیوەڕۆ', morning: 'بەیانی', afternoon: 'دوای نیوەڕۆ', evening: 'ئێوارە', night: 'شەو' },
 };
 
-const ordinalNumber: any = (dirtyNumber: any, _options: any) => {
+const ordinalNumber: any = (dirtyNumber: any) => {
   return String(dirtyNumber);
 };
+
+const localize = {
+    ordinalNumber,
+    era: (value: 'narrow' | 'abbreviated' | 'wide') => eraValues[value],
+    quarter: (value: number, options: { width: 'narrow' | 'abbreviated' | 'wide' }) => quarterValues[options.width][value - 1],
+    month: (value: number, options: { width: 'narrow' | 'abbreviated' | 'wide' }) => monthValues[options.width][value],
+    day: (value: number, options: { width: 'narrow' | 'short' | 'abbreviated' | 'wide' }) => dayValues[options.width][value],
+    dayPeriod: (value: 'am' | 'pm' | 'midnight' | 'noon' | 'morning' | 'afternoon' | 'evening' | 'night', options: { width: 'narrow' | 'abbreviated' | 'wide' }) => {
+      const dayPeriod = options.width === 'wide' ? formattingDayPeriodValues[options.width] : dayPeriodValues[options.width]
+      return dayPeriod[value]
+    }
+} as const;
+
+const match = {
+    ordinalNumber: /^(\d+)(.)?/i,
+    era: (str: string) => Object.values(eraValues.wide).find(e => e === str) || Object.values(eraValues.abbreviated).find(e => e === str) || Object.values(eraValues.narrow).find(e => e === str),
+    quarter: (str: string) => (Object.values(quarterValues.wide).find(q => q === str) || Object.values(quarterValues.abbreviated).find(q => q === str) || Object.values(quarterValues.narrow).find(q => q === str)),
+    month: (str: string) => (Object.values(monthValues.wide).find(m => m === str) || Object.values(monthValues.abbreviated).find(m => m === str) || Object.values(monthValues.narrow).find(m => m === str)),
+    day: (str: string) => (Object.values(dayValues.wide).find(d => d === str) || Object.values(dayValues.abbreviated).find(d => d === str) || Object.values(dayValues.short).find(d => d === str) || Object.values(dayValues.narrow).find(d => d === str)),
+    dayPeriod: (str: string) => (Object.values(dayPeriodValues.wide).find(p => p === str) || Object.values(dayPeriodValues.abbreviated).find(p => p === str) || Object.values(dayPeriodValues.narrow).find(p => p === str))
+} as const;
+
 
 export const ckb = {
   code: 'ckb',
@@ -90,21 +110,7 @@ export const ckb = {
       nextWeek: "eeee 'کاتژمێر' p",
       other: 'P',
     }[token]),
-  localize: {
-    ordinalNumber,
-    era: buildLocalizeFn({ values: eraValues, defaultWidth: 'wide' }),
-    quarter: buildLocalizeFn({ values: quarterValues, defaultWidth: 'wide', argumentCallback: (quarter) => quarter - 1 }),
-    month: buildLocalizeFn({ values: monthValues, defaultWidth: 'wide' }),
-    day: buildLocalizeFn({ values: dayValues, defaultWidth: 'wide' }),
-    dayPeriod: buildLocalizeFn({ values: dayPeriodValues, defaultWidth: 'wide', formattingValues: formattingDayPeriodValues, defaultFormattingWidth: 'wide' }),
-  },
-  match: {
-    ordinalNumber: /^(\d+)(.)?/i,
-    era: buildMatchFn({ values: eraValues, defaultWidth: 'wide' }),
-    quarter: buildMatchFn({ values: quarterValues, defaultWidth: 'wide', parsePatterns: [/1/i, /2/i, /3/i, /4/i] }),
-    month: buildMatchFn({ values: monthValues, defaultWidth: 'wide' }),
-    day: buildMatchFn({ values: dayValues, defaultWidth: 'wide' }),
-    dayPeriod: buildMatchFn({ values: dayPeriodValues, defaultWidth: 'wide' }),
-  },
+  localize: localize,
+  match: match,
   options: { weekStartsOn: 6, firstWeekContainsDate: 1 },
 };
