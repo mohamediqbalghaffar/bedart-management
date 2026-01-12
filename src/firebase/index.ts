@@ -4,7 +4,7 @@
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, collection, doc, setDoc, addDoc, updateDoc, deleteDoc, getDoc, getDocs, runTransaction } from 'firebase/firestore'
+import { getFirestore, collection, doc, setDoc, addDoc, updateDoc, deleteDoc, getDoc, getDocs, runTransaction, writeBatch } from 'firebase/firestore'
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
@@ -49,5 +49,8 @@ export * from './non-blocking-updates';
 export * from './errors';
 export * from './error-emitter';
 
-export { collection, doc, setDoc, addDoc, updateDoc, deleteDoc, getDoc, getDocs, runTransaction };
+export { collection, doc, setDoc, addDoc, updateDoc, deleteDoc, getDoc, getDocs, runTransaction, writeBatch };
 
+
+
+    
