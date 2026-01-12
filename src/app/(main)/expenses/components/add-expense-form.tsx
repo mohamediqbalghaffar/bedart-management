@@ -9,12 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore, addDocumentNonBlocking, collection } from "@/firebase";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { ckb } from "@/lib/ckb-locale";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,7 +20,7 @@ const expenseSchema = z.object({
   paidBy: z.enum(['Cash - Dinar', 'Cash - Dollar']),
   amount: z.coerce.number().min(1, "بڕی خەرجی دەبێت لانیکەم 1 بێت."),
   category: z.enum(['Daily', 'Salary', 'Rent', 'Electricity', 'Transport', 'Other']),
-  date: z.date({ required_error: "بەرواری خەرجی پێویستە." }),
+  date: z.string().refine((val) => /^\d{4}-\d{2}-\d{2}$/.test(val), { message: "فۆرماتی بەروار هەڵەیە (YYYY-MM-DD)." }),
 });
 
 type ExpenseFormValues = z.infer<typeof expenseSchema>;
@@ -42,7 +37,7 @@ export function AddExpenseForm({ onExpenseAdded }: { onExpenseAdded?: () => void
       paidBy: 'Cash - Dinar',
       amount: 0,
       category: 'Daily',
-      date: new Date(),
+      date: format(new Date(), "yyyy-MM-dd"),
     },
   });
 
@@ -60,7 +55,7 @@ export function AddExpenseForm({ onExpenseAdded }: { onExpenseAdded?: () => void
     
     addDocumentNonBlocking(expensesColRef, {
       ...data,
-      date: format(data.date, "yyyy-MM-dd"),
+      date: data.date,
     });
 
     toast({
@@ -172,37 +167,11 @@ export function AddExpenseForm({ onExpenseAdded }: { onExpenseAdded?: () => void
             control={form.control}
             name="date"
             render={({ field }) => (
-                <FormItem className="flex flex-col">
+                <FormItem>
                     <FormLabel>بەروار</FormLabel>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <FormControl>
-                                <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                        "w-full justify-start text-left font-normal",
-                                        !field.value && "text-muted-foreground"
-                                    )}
-                                >
-                                    <CalendarIcon className="ml-2 h-4 w-4" />
-                                    {field.value ? (
-                                        format(field.value, "PPP", { locale: ckb })
-                                    ) : (
-                                        <span>بەروارێک هەڵبژێرە</span>
-                                    )}
-                                </Button>
-                            </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start" dir="rtl">
-                            <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                initialFocus
-                                locale={ckb}
-                            />
-                        </PopoverContent>
-                    </Popover>
+                    <FormControl>
+                        <Input placeholder="YYYY-MM-DD" {...field} />
+                    </FormControl>
                     <FormMessage />
                 </FormItem>
             )}

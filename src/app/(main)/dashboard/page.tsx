@@ -5,20 +5,15 @@ import React, { useState, useEffect } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { useFirestore, useCollection, useMemoFirebase, collection, getDocs as getDocsClient, collection as getCollectionClient } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, DollarSign, Users, Archive, ShoppingCart, TrendingUp, TrendingDown, Calendar as CalendarIcon, Package, LineChart } from 'lucide-react';
+import { Loader2, DollarSign, Users, Archive, ShoppingCart, TrendingUp, TrendingDown, Package, LineChart } from 'lucide-react';
 import { StatCard } from '@/components/shared/stat-card';
-import { subDays, parseISO } from 'date-fns';
+import { subDays, parseISO, isValid, startOfDay, endOfDay } from 'date-fns';
 import { format } from 'date-fns';
-import { ckb } from '@/lib/ckb-locale';
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis, Tooltip as RechartsTooltip } from 'recharts';
+import { AreaChart, Area, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { cn } from '@/lib/utils';
-
+import { Input } from '@/components/ui/input';
 
 type SellingForm = {
     totalPrice: number;
@@ -148,9 +143,9 @@ function RecentActivityChart() {
     const { data: expenses, isLoading: expensesLoading } = useCollection<Expense>(expensesQuery);
     const { data: purchases, isLoading: purchasesLoading } = useCollection<BuyingForm>(purchasesQuery);
 
-    const [dateRange, setDateRange] = useState<DateRange | undefined>({
-        from: subDays(new Date(), 29),
-        to: new Date(),
+    const [dateRange, setDateRange] = useState({
+        from: format(subDays(new Date(), 29), 'yyyy-MM-dd'),
+        to: format(new Date(), 'yyyy-MM-dd'),
     });
 
     const [activeSubjects, setActiveSubjects] = useState({
@@ -172,15 +167,20 @@ function RecentActivityChart() {
 
     useEffect(() => {
         async function calculateChartData() {
-            if (!dateRange?.from || !firestore) return [];
+            const fromDate = parseISO(dateRange.from);
+            const toDate = parseISO(dateRange.to);
+            if (!isValid(fromDate) || !isValid(toDate) || !firestore) return;
 
             setIsCalculating(true);
+            
+            const startDate = startOfDay(fromDate);
+            const endDate = endOfDay(toDate);
 
             const dateMap = new Map<string, { sales: number; expenses: number; purchases: number; netProfit: number }>();
-            const days = differenceInDays(dateRange.to ?? dateRange.from, dateRange.from);
+            const days = differenceInDays(endDate, startDate);
 
             for (let i = days; i >= 0; i--) {
-                const date = subDays(dateRange.to ?? dateRange.from, i);
+                const date = subDays(endDate, i);
                 dateMap.set(format(date, 'yyyy-MM-dd'), { sales: 0, expenses: 0, purchases: 0, netProfit: 0 });
             }
 
@@ -230,7 +230,7 @@ function RecentActivityChart() {
             });
             
             const finalData = Array.from(dateMap.entries()).map(([date, data]) => ({
-                date: format(parseISO(date), 'MMM d', { locale: ckb }),
+                date: format(parseISO(date), 'MMM d'),
                 ...data,
             }));
             
@@ -260,43 +260,24 @@ function RecentActivityChart() {
                         <CardTitle className="text-white">چالاکییەکان</CardTitle>
                         <CardDescription className="text-white/80">فرۆشتن، کڕین، خەرجی، و قازانج بەپێی ماوەی دیاریکراو</CardDescription>
                     </div>
-                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                        "w-[280px] justify-start text-left font-normal bg-white/10 text-white hover:bg-white/20 hover:text-white border-white/20",
-                                        !dateRange && "text-muted-foreground"
-                                    )}
-                                >
-                                    <CalendarIcon className="ml-2 h-4 w-4" />
-                                    {dateRange?.from ? (
-                                        dateRange.to ? (
-                                            <>
-                                                {format(dateRange.from, "d MMMM yyyy", { locale: ckb })} - {" "}
-                                                {format(dateRange.to, "d MMMM, yyyy", { locale: ckb })}
-                                            </>
-                                        ) : (
-                                            format(dateRange.from, "d MMMM, yyyy", { locale: ckb })
-                                        )
-                                    ) : (
-                                        <span>ماوەیەک هەڵبژێرە</span>
-                                    )}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0 bg-background text-foreground" align="end" dir="rtl">
-                                <Calendar
-                                    initialFocus
-                                    mode="range"
-                                    defaultMonth={dateRange?.from}
-                                    selected={dateRange}
-                                    onSelect={setDateRange}
-                                    numberOfMonths={1}
-                                    locale={ckb}
-                                />
-                            </PopoverContent>
-                        </Popover>
+                     <div className="flex flex-col sm:flex-row items-center gap-4">
+                        <div className="flex items-center gap-2">
+                            <Input
+                                type="text"
+                                value={dateRange.from}
+                                onChange={(e) => setDateRange(prev => ({...prev, from: e.target.value }))}
+                                placeholder="YYYY-MM-DD"
+                                className="w-36 bg-white/10 text-white placeholder:text-white/50 border-white/20"
+                            />
+                            <span className="text-white/80">-</span>
+                             <Input
+                                type="text"
+                                value={dateRange.to}
+                                onChange={(e) => setDateRange(prev => ({...prev, to: e.target.value }))}
+                                placeholder="YYYY-MM-DD"
+                                className="w-36 bg-white/10 text-white placeholder:text-white/50 border-white/20"
+                            />
+                        </div>
                          <div className="grid grid-cols-2 sm:flex items-center gap-4">
                             {Object.entries(activeSubjects).map(([key, value]) => (
                                 <div key={key} className="flex items-center space-x-2 space-x-reverse">
@@ -395,4 +376,3 @@ export default function DashboardPage() {
         </div>
     );
 }
-
