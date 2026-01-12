@@ -1,8 +1,10 @@
 
+import { buildFormatLongFn } from 'date-fns/locale/build_format_long_fn'
+
 const eraValues = {
   narrow: ['پ.ز', 'ز'],
   abbreviated: ['پ.ز', 'ز'],
-  wide: ['پێш زایین', 'زایینی'],
+  wide: ['پێش زایین', 'زایینی'],
 };
 
 const quarterValues = {
@@ -42,12 +44,12 @@ const ordinalNumber: any = (dirtyNumber: any) => {
 
 const localize = {
     ordinalNumber,
-    era: (value: 'narrow' | 'abbreviated' | 'wide') => eraValues[value],
-    quarter: (value: number, options: { width: 'narrow' | 'abbreviated' | 'wide' }) => quarterValues[options.width][value - 1],
-    month: (value: number, options: { width: 'narrow' | 'abbreviated' | 'wide' }) => monthValues[options.width][value],
-    day: (value: number, options: { width: 'narrow' | 'short' | 'abbreviated' | 'wide' }) => dayValues[options.width][value],
-    dayPeriod: (value: 'am' | 'pm' | 'midnight' | 'noon' | 'morning' | 'afternoon' | 'evening' | 'night', options: { width: 'narrow' | 'abbreviated' | 'wide' }) => {
-      const dayPeriod = options.width === 'wide' ? formattingDayPeriodValues[options.width] : dayPeriodValues[options.width]
+    era: (value: 0 | 1) => eraValues['wide'][value],
+    quarter: (value: 1 | 2 | 3 | 4) => quarterValues['wide'][value - 1],
+    month: (value: number) => monthValues['wide'][value],
+    day: (value: number) => dayValues['wide'][value],
+    dayPeriod: (value: 'am' | 'pm' | 'midnight' | 'noon' | 'morning' | 'afternoon' | 'evening' | 'night', options: { width?: 'narrow' | 'abbreviated' | 'wide' } = {}) => {
+      const dayPeriod = dayPeriodValues[options.width || 'wide'];
       return dayPeriod[value]
     }
 } as const;
@@ -61,13 +63,22 @@ const match = {
     dayPeriod: (str: string) => (Object.values(dayPeriodValues.wide).find(p => p === str) || Object.values(dayPeriodValues.abbreviated).find(p => p === str) || Object.values(dayPeriodValues.narrow).find(p => p === str))
 } as const;
 
+const formatLong = buildFormatLongFn({
+  formats: {
+    full: 'EEEE, d MMMM yyyy',
+    long: 'd MMMM yyyy',
+    medium: 'd MMM yyyy',
+    short: 'dd/MM/yyyy',
+  },
+  defaultWidth: 'full',
+});
 
-export const ckb = {
+const ckbLocale = {
   code: 'ckb',
   formatDistance: (token: any, count: any, options: any) => {
     options = options || {};
-    const result = (
-      {
+    let result;
+    const a = {
         lessThanXSeconds: { one: 'کەمتر لە چرکەیەک', other: 'کەمتر لە {{count}} چرکە' },
         xSeconds: { one: '1 چرکە', other: '{{count}} چرکە' },
         halfAMinute: 'نیو خولەک',
@@ -84,8 +95,8 @@ export const ckb = {
         xYears: { one: '1 ساڵ', other: '{{count}} ساڵ' },
         overXYears: { one: 'زیاتر لە 1 ساڵ', other: 'زیاتر لە {{count}} ساڵ' },
         almostXYears: { one: 'نزیکەی 1 ساڵ', other: 'نزیکەی {{count}} ساڵ' },
-      }[token] as any
-    )[count === 1 ? 'one' : 'other'].replace('{{count}}', count);
+    };
+    result = (a[token as keyof typeof a] as any)[count === 1 ? 'one' : 'other'].replace('{{count}}', count);
 
     if (options.addSuffix) {
       if (options.comparison > 0) {
@@ -97,11 +108,31 @@ export const ckb = {
     return result;
   },
   formatLong: {
-    date: 'yyyy/MM/dd',
-    time: 'HH:mm:ss',
-    dateTime: 'yyyy/MM/dd HH:mm:ss',
+    date: formatLong,
+    time: buildFormatLongFn({
+        formats: {
+            full: 'h:mm:ss a zzzz',
+            long: 'h:mm:ss a z',
+            medium: 'h:mm:ss a',
+            short: 'h:mm a',
+        },
+        defaultWidth: 'full',
+    }),
+    dateTime: (options: { width: 'full' | 'long' | 'medium' | 'short' }) => {
+        const date = formatLong(options);
+        const time = buildFormatLongFn({
+            formats: {
+                full: 'h:mm:ss a zzzz',
+                long: 'h:mm:ss a z',
+                medium: 'h:mm:ss a',
+                short: 'h:mm a',
+            },
+            defaultWidth: 'full',
+        })(options);
+        return `${date} ${time}`;
+    },
   },
-  formatRelative: (token: any, _date: any, _baseDate: any, _options: any) =>
+  formatRelative: (token: 'lastWeek' | 'yesterday' | 'today' | 'tomorrow' | 'nextWeek' | 'other', _date: Date, _baseDate: Date, _options: object) =>
     ({
       lastWeek: "eeee 'لەمەوپێش کاتژمێر' p",
       yesterday: "'دوێنێ کاتژمێر' p",
@@ -114,3 +145,7 @@ export const ckb = {
   match: match,
   options: { weekStartsOn: 6, firstWeekContainsDate: 1 },
 };
+
+export { ckbLocale as ckb };
+
+    

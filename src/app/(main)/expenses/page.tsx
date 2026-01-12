@@ -176,7 +176,7 @@ function EditableExpenseRow({ expense }: { expense: WithId<Expense> }) {
             <TableCell className="text-right">{paidByTranslations[expense.paidBy] || expense.paidBy}</TableCell>
             <TableCell className="text-right">{new Intl.NumberFormat('en-US').format(expense.amount)}</TableCell>
             <TableCell className="text-right"><Badge variant="outline">{categoryTranslations[expense.category] || expense.category}</Badge></TableCell>
-            <TableCell className="text-right">{expense.date}</TableCell>
+            <TableCell className="text-right">{format(parseISO(expense.date), "PPP", { locale: ckb })}</TableCell>
             <TableCell className="text-left">
                 <div className="flex gap-2">
                      <Button size="icon" variant="ghost" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4 text-blue-500"/></Button>
@@ -258,3 +258,5 @@ export default function ExpensesPage() {
         </div>
     );
 }
+
+    
