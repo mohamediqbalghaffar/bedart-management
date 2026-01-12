@@ -11,14 +11,12 @@ import { useToast } from "@/hooks/use-toast";
 import { useFirestore, addDocumentNonBlocking, collection } from "@/firebase";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 
 const expenseSchema = z.object({
   name: z.string().min(1, { message: "ناوی خەرجی پێویستە." }),
   note: z.string().optional(),
-  paidBy: z.enum(['Cash - Dinar', 'Cash - Dollar']),
-  amount: z.coerce.number().min(1, "بڕی خەرجی دەبێت لانیکەم 1 بێت."),
+  amount: z.coerce.number().min(0.01, "بڕی خەرجی دەبێت لانیکەم 0.01 بێت."),
   category: z.enum(['Daily', 'Salary', 'Rent', 'Electricity', 'Transport', 'Other']),
   date: z.string().refine((val) => /^\d{4}-\d{2}-\d{2}$/.test(val), { message: "فۆرماتی بەروار هەڵەیە (YYYY-MM-DD)." }),
 });
@@ -34,7 +32,6 @@ export function AddExpenseForm({ onExpenseAdded }: { onExpenseAdded?: () => void
     defaultValues: {
       name: "",
       note: "",
-      paidBy: 'Cash - Dinar',
       amount: 0,
       category: 'Daily',
       date: format(new Date(), "yyyy-MM-dd"),
@@ -99,40 +96,13 @@ export function AddExpenseForm({ onExpenseAdded }: { onExpenseAdded?: () => void
           )}
         />
         <FormField
-            control={form.control}
-            name="paidBy"
-            render={({ field }) => (
-                <FormItem className="space-y-3">
-                <FormLabel>شێوازی پارەدان</FormLabel>
-                <FormControl>
-                    <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="flex items-center space-x-2 space-x-reverse"
-                        dir="rtl"
-                    >
-                        <FormItem className="flex items-center space-x-1 space-x-reverse">
-                            <FormControl><RadioGroupItem value="Cash - Dinar" /></FormControl>
-                            <FormLabel className="font-normal">کاش - دینار</FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-1 space-x-reverse">
-                            <FormControl><RadioGroupItem value="Cash - Dollar" /></FormControl>
-                            <FormLabel className="font-normal">کاش - دۆلار</FormLabel>
-                        </FormItem>
-                    </RadioGroup>
-                </FormControl>
-                <FormMessage />
-                </FormItem>
-            )}
-        />
-        <FormField
           control={form.control}
           name="amount"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>بڕی خەرجی</FormLabel>
+              <FormLabel>بڕی خەرجی (USD)</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="0" {...field} />
+                <Input type="number" placeholder="0.00" {...field} step="0.01" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -185,3 +155,5 @@ export function AddExpenseForm({ onExpenseAdded }: { onExpenseAdded?: () => void
     </Form>
   );
 }
+
+    

@@ -20,7 +20,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 type Expense = {
     name: string;
     note?: string;
-    paidBy: 'Cash - Dinar' | 'Cash - Dollar';
     amount: number;
     category: 'Daily' | 'Salary' | 'Rent' | 'Electricity' | 'Transport' | 'Other';
     date: string;
@@ -33,11 +32,6 @@ const categoryTranslations: { [key: string]: string } = {
     'Electricity': 'کارەبا',
     'Transport': 'گواستنەوە',
     'Other': 'هەمەجۆر'
-};
-
-const paidByTranslations: { [key: string]: string } = {
-    'Cash - Dinar': 'کاش - دینار',
-    'Cash - Dollar': 'کاش - دۆلار'
 };
 
 function AddExpenseCollapsible() {
@@ -114,20 +108,15 @@ function EditableExpenseRow({ expense }: { expense: WithId<Expense> }) {
             setIsDeleting(false);
         }
     };
+    
+    const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+
 
     if (isEditing) {
         return (
             <TableRow className="bg-secondary/20">
                 <TableCell><Input name="name" value={editedExpense.name} onChange={handleInputChange} /></TableCell>
                 <TableCell><Input name="note" value={editedExpense.note || ''} onChange={handleInputChange} /></TableCell>
-                <TableCell>
-                    <Select value={editedExpense.paidBy} onValueChange={(value) => handleSelectChange('paidBy', value)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            {Object.entries(paidByTranslations).map(([key, value]) => <SelectItem key={key} value={key}>{value}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </TableCell>
                 <TableCell><Input type="number" name="amount" value={editedExpense.amount} onChange={handleInputChange} /></TableCell>
                 <TableCell>
                     <Select value={editedExpense.category} onValueChange={(value) => handleSelectChange('category', value)}>
@@ -154,8 +143,7 @@ function EditableExpenseRow({ expense }: { expense: WithId<Expense> }) {
         <TableRow key={expense.id}>
             <TableCell className="font-medium text-right">{expense.name}</TableCell>
             <TableCell className="text-right">{expense.note || 'N/A'}</TableCell>
-            <TableCell className="text-right">{paidByTranslations[expense.paidBy] || expense.paidBy}</TableCell>
-            <TableCell className="text-right">{new Intl.NumberFormat('en-US').format(expense.amount)}</TableCell>
+            <TableCell className="text-right">{currencyFormatter.format(expense.amount)}</TableCell>
             <TableCell className="text-right"><Badge variant="outline">{categoryTranslations[expense.category] || expense.category}</Badge></TableCell>
             <TableCell className="text-right">{expense.date}</TableCell>
             <TableCell className="text-left">
@@ -200,8 +188,7 @@ function ExpensesList() {
                         <TableRow>
                             <TableHead className="text-right">ناوی خەرجی</TableHead>
                             <TableHead className="text-right">تێبینی</TableHead>
-                            <TableHead className="text-right">شێوازی پارەدان</TableHead>
-                            <TableHead className="text-right">بڕ</TableHead>
+                            <TableHead className="text-right">بڕ (USD)</TableHead>
                             <TableHead className="text-right">پۆل</TableHead>
                             <TableHead className="text-right">بەروار</TableHead>
                             <TableHead className="text-left">کردارەکان</TableHead>
@@ -210,13 +197,13 @@ function ExpensesList() {
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="h-24 text-center">
+                                <TableCell colSpan={6} className="h-24 text-center">
                                     <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                                 </TableCell>
                             </TableRow>
                         ) : !expenses || expenses.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">هیچ خەرجییەک تۆمار نەکراوە.</TableCell>
+                                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">هیچ خەرجییەک تۆمار نەکراوە.</TableCell>
                             </TableRow>
                         ) : (
                             expenses.map((expense) => (

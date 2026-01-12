@@ -23,7 +23,6 @@ type SellingForm = {
 
 type Expense = {
     amount: number;
-    paidBy: 'Cash - Dinar' | 'Cash - Dollar';
     date: string;
 };
 
@@ -58,12 +57,7 @@ function DashboardStats() {
     
     const totalExpenses = React.useMemo(() => {
         if (!expenses) return 0;
-        return expenses.reduce((acc, expense) => {
-            if (expense.paidBy === 'Cash - Dinar') {
-                return acc + (expense.amount / 1500);
-            }
-            return acc + expense.amount;
-        }, 0);
+        return expenses.reduce((acc, expense) => acc + expense.amount, 0);
     }, [expenses]);
     
     const uniqueCustomers = React.useMemo(() => {
@@ -200,8 +194,7 @@ function RecentActivityChart() {
                     try {
                         const expenseDate = expense.date;
                         if (dateMap.has(expenseDate)) {
-                            const amountInUsd = expense.paidBy === 'Cash - Dinar' ? expense.amount / 1500 : expense.amount;
-                            dateMap.get(expenseDate)!.expenses += amountInUsd;
+                            dateMap.get(expenseDate)!.expenses += expense.amount;
                         }
                     } catch (e) { console.warn("Invalid expense date format:", expense.date); }
                 });
@@ -376,3 +369,5 @@ export default function DashboardPage() {
         </div>
     );
 }
+
+    

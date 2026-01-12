@@ -146,15 +146,11 @@
         },
         "amount": {
           "type": "number",
-          "description": "Amount of the expense."
+          "description": "Amount of the expense in USD."
         },
         "category": {
           "type": "string",
           "description": "Category of the expense: Daily, Salary, Rent, Electricity, Transport, Other."
-        },
-        "paidBy": {
-          "type": "string",
-          "description": "Method of payment: Cash - Dinar, Cash - Dollar."
         },
         "note": {
           "type": "string",
@@ -170,8 +166,7 @@
         "name",
         "date",
         "amount",
-        "category",
-        "paidBy"
+        "category"
       ]
     },
     "Product": {
