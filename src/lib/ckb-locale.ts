@@ -1,6 +1,4 @@
 
-import { buildFormatLongFn } from 'date-fns/locale/build_format_long_fn'
-
 const eraValues = {
   narrow: ['پ.ز', 'ز'],
   abbreviated: ['پ.ز', 'ز'],
@@ -29,13 +27,7 @@ const dayValues = {
 const dayPeriodValues = {
   narrow: { am: 'پ.ن', pm: 'د.ن', midnight: 'نیوەشەو', noon: 'نیوەڕۆ', morning: 'بەیانی', afternoon: 'دوای نیوەڕۆ', evening: 'ئێوارە', night: 'شەو' },
   abbreviated: { am: 'پ.ن', pm: 'د.ن', midnight: 'نیوەشەو', noon: 'نیوەڕۆ', morning: 'بەیانی', afternoon: 'دوای نیوەڕۆ', evening: 'ئێوارە', night: 'شەو' },
-  wide: { am: 'پێш نیوەڕۆ', pm: 'دوای نیوەڕۆ', midnight: 'نیوەشەو', noon: 'نیوەڕۆ', morning: 'بەیانی', afternoon: 'دوای نیوەڕۆ', evening: 'ئێوارە', night: 'شەو' },
-};
-
-const formattingDayPeriodValues = {
-  narrow: { am: 'پ.ن', pm: 'د.n', midnight: 'نیوەشەو', noon: 'نیوەڕۆ', morning: 'بەیانی', afternoon: 'دوای نیوەڕۆ', evening: 'ئێوارە', night: 'شەو' },
-  abbreviated: { am: 'پ.ن', pm: 'د.ن', midnight: 'نیوەشەو', noon: 'نیوەڕۆ', morning: 'بەیانی', afternoon: 'دوای نیوەڕۆ', evening: 'ئێوارە', night: 'شەو' },
-  wide: { am: 'پێш نیوەڕۆ', pm: 'دوای نیوەڕۆ', midnight: 'نیوەشەو', noon: 'نیوەڕۆ', morning: 'بەیانی', afternoon: 'دوای نیوەڕۆ', evening: 'ئێوارە', night: 'شەو' },
+  wide: { am: 'پێش نیوەڕۆ', pm: 'دوای نیوەڕۆ', midnight: 'نیوەشەو', noon: 'نیوەڕۆ', morning: 'بەیانی', afternoon: 'دوای نیوەڕۆ', evening: 'ئێوارە', night: 'شەو' },
 };
 
 const ordinalNumber: any = (dirtyNumber: any) => {
@@ -63,15 +55,26 @@ const match = {
     dayPeriod: (str: string) => (Object.values(dayPeriodValues.wide).find(p => p === str) || Object.values(dayPeriodValues.abbreviated).find(p => p === str) || Object.values(dayPeriodValues.narrow).find(p => p === str))
 } as const;
 
-const formatLong = buildFormatLongFn({
-  formats: {
+const formatLong = {
+  date: {
     full: 'EEEE, d MMMM yyyy',
     long: 'd MMMM yyyy',
     medium: 'd MMM yyyy',
     short: 'dd/MM/yyyy',
   },
-  defaultWidth: 'full',
-});
+  time: {
+    full: 'h:mm:ss a zzzz',
+    long: 'h:mm:ss a z',
+    medium: 'h:mm:ss a',
+    short: 'h:mm a',
+  },
+  dateTime: {
+    full: "{{date}} 'کاتژمێر' {{time}}",
+    long: "{{date}} 'کاتژمێر' {{time}}",
+    medium: '{{date}}, {{time}}',
+    short: '{{date}}, {{time}}',
+  },
+};
 
 const ckbLocale = {
   code: 'ckb',
@@ -107,31 +110,7 @@ const ckbLocale = {
     }
     return result;
   },
-  formatLong: {
-    date: formatLong,
-    time: buildFormatLongFn({
-        formats: {
-            full: 'h:mm:ss a zzzz',
-            long: 'h:mm:ss a z',
-            medium: 'h:mm:ss a',
-            short: 'h:mm a',
-        },
-        defaultWidth: 'full',
-    }),
-    dateTime: (options: { width: 'full' | 'long' | 'medium' | 'short' }) => {
-        const date = formatLong(options);
-        const time = buildFormatLongFn({
-            formats: {
-                full: 'h:mm:ss a zzzz',
-                long: 'h:mm:ss a z',
-                medium: 'h:mm:ss a',
-                short: 'h:mm a',
-            },
-            defaultWidth: 'full',
-        })(options);
-        return `${date} ${time}`;
-    },
-  },
+  formatLong: formatLong,
   formatRelative: (token: 'lastWeek' | 'yesterday' | 'today' | 'tomorrow' | 'nextWeek' | 'other', _date: Date, _baseDate: Date, _options: object) =>
     ({
       lastWeek: "eeee 'لەمەوپێش کاتژمێر' p",
@@ -147,5 +126,3 @@ const ckbLocale = {
 };
 
 export { ckbLocale as ckb };
-
-    
