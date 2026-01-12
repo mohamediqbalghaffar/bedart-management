@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import * as XLSX from 'xlsx';
+import { useToast } from '@/hooks/use-toast';
 
 type Product = {
     productName: string;
@@ -182,5 +183,3 @@ export default function StockPage() {
         </div>
     );
 }
-
-    
