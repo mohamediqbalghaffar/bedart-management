@@ -1,8 +1,10 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { FirebaseClientProvider } from '@/firebase';
 import { Noto_Kufi_Arabic } from 'next/font/google';
 import { ClientToaster } from '@/components/client-toaster';
+import { ConditionalLayout } from './conditional-layout';
 
 const notoKufiArabic = Noto_Kufi_Arabic({
   subsets: ['arabic'],
@@ -21,11 +23,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
   return (
     <html lang="ku" dir="rtl">
       <body className={`${notoKufiArabic.variable} font-body antialiased`}>
         <FirebaseClientProvider>
-          {children}
+            <ConditionalLayout>
+                {children}
+            </ConditionalLayout>
         </FirebaseClientProvider>
         <ClientToaster />
       </body>

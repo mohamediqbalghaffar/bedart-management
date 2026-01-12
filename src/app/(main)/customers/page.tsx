@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,30 @@ type Customer = {
     customerPhoneNumber?: string;
     customerAddress?: string;
 };
+
+function AddCustomerDialog() {
+    const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+
+    return (
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+                <Button>
+                    <PlusCircle />
+                    زیادکردنی کڕیar
+                </Button>
+            </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>کڕیاری نوێ زیاد بکە</DialogTitle>
+                    <DialogDescription>
+                        زانیارییەکانی کڕیاری نوێ بنووسە. 
+                    </DialogDescription>
+                </DialogHeader>
+                <AddCustomerForm onCustomerAdded={() => setIsDialogOpen(false)} />
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 function CustomersList() {
     const firestore = useFirestore();
@@ -69,28 +93,10 @@ function CustomersList() {
 }
 
 export default function CustomersPage() {
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <PageHeader title="کڕیارەکان" description="لیستی کڕیارەکان و مێژوویان بەڕێوەببە.">
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                    <DialogTrigger asChild>
-                        <Button>
-                            <PlusCircle />
-                            زیادکردنی کڕیar
-                        </Button>
-                    </DialogTrigger>
-                     <DialogContent className="sm:max-w-md">
-                        <DialogHeader>
-                            <DialogTitle>کڕیاری نوێ زیاد بکە</DialogTitle>
-                            <DialogDescription>
-                                زانیارییەکانی کڕیاری نوێ بنووسە. 
-                            </DialogDescription>
-                        </DialogHeader>
-                        <AddCustomerForm onCustomerAdded={() => setIsDialogOpen(false)} />
-                    </DialogContent>
-                </Dialog>
+                <AddCustomerDialog />
             </PageHeader>
             <CustomersList />
         </div>
