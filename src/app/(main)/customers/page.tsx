@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,6 @@ import { PlusCircle, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { AddCustomerForm } from "./components/add-customer-form";
 import { useFirestore, useCollection, useMemoFirebase, collection } from '@/firebase';
-import { WithId } from '@/firebase/firestore/use-collection';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 type Customer = {
@@ -70,10 +69,12 @@ function CustomersList() {
 }
 
 export default function CustomersPage() {
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <PageHeader title="کڕیارەکان" description="لیستی کڕیارەکان و مێژوویان بەڕێوەببە.">
-                <Dialog>
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger asChild>
                         <Button>
                             <PlusCircle />
@@ -87,7 +88,7 @@ export default function CustomersPage() {
                                 زانیارییەکانی کڕیاری نوێ بنووسە. 
                             </DialogDescription>
                         </DialogHeader>
-                        <AddCustomerForm />
+                        <AddCustomerForm onCustomerAdded={() => setIsDialogOpen(false)} />
                     </DialogContent>
                 </Dialog>
             </PageHeader>
@@ -95,5 +96,3 @@ export default function CustomersPage() {
         </div>
     );
 }
-
-    

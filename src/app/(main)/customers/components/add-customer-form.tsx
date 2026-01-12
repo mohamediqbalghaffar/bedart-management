@@ -8,8 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore, addDocumentNonBlocking } from "@/firebase";
-import { collection, doc } from "firebase/firestore";
+import { useFirestore, addDoc, collection } from "@/firebase";
 import { Textarea } from "@/components/ui/textarea";
 
 const customerSchema = z.object({
@@ -20,7 +19,7 @@ const customerSchema = z.object({
 
 type CustomerFormValues = z.infer<typeof customerSchema>;
 
-export function AddCustomerForm() {
+export function AddCustomerForm({ onCustomerAdded }: { onCustomerAdded?: () => void }) {
   const firestore = useFirestore();
   const { toast } = useToast();
 
@@ -45,13 +44,7 @@ export function AddCustomerForm() {
 
     try {
       const customersColRef = collection(firestore, "customers");
-      const newCustomerRef = doc(customersColRef);
-      
-      await addDocumentNonBlocking(customersColRef, {
-        id: newCustomerRef.id,
-        ...data,
-      });
-
+      await addDoc(customersColRef, data);
 
       toast({
         title: "سەرکەوتوو بوو!",
@@ -59,6 +52,9 @@ export function AddCustomerForm() {
         className: "bg-accent text-accent-foreground",
       });
       form.reset();
+      if (onCustomerAdded) {
+        onCustomerAdded();
+      }
     } catch (error: any) {
       console.error("Error adding customer:", error);
       toast({
@@ -120,5 +116,3 @@ export function AddCustomerForm() {
     </Form>
   );
 }
-
-    
