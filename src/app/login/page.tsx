@@ -3,12 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth, useFirestore, useUser } from '@/firebase';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, AuthError } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { BedDouble, Eye, EyeOff } from 'lucide-react';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
@@ -22,7 +23,15 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const auth = useAuth();
   const firestore = useFirestore();
+  const router = useRouter();
+  const { user, isUserLoading } = useUser();
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      router.replace('/dashboard');
+    }
+  }, [user, isUserLoading, router]);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -33,28 +42,26 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
+    if (!auth) return;
     try {
-      // First, try to sign in the user
       await signInWithEmailAndPassword(auth, data.email, data.password);
-      window.location.href = '/';
+      // The useEffect will handle the redirect
     } catch (error) {
       const authError = error as AuthError;
-      // If the user does not exist, create a new account
       if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential') {
         try {
           const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-          const user = userCredential.user;
+          const newUser = userCredential.user;
 
-          if (user && firestore) {
-            // Create user profile in Firestore
-            const userDocRef = doc(firestore, 'users', user.uid);
+          if (newUser && firestore) {
+            const userDocRef = doc(firestore, 'users', newUser.uid);
             await setDoc(userDocRef, {
-              id: user.uid,
-              username: user.email,
-              role: 'Salesman', // Default role for new sign-ups
+              id: newUser.uid,
+              username: newUser.email,
+              role: 'Salesman',
             });
           }
-          window.location.href = '/';
+           // The useEffect will handle the redirect
         } catch (creationError) {
           console.error('Account creation failed:', creationError);
           form.setError('root', { message: 'هەژمار دروستنەکرا. تکایە دووبارە هەوڵبدەرەوە.' });
@@ -65,6 +72,14 @@ export default function LoginPage() {
       }
     }
   };
+
+  if (isUserLoading || user) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background/80" style={{ backgroundImage: 'url(https://picsum.photos/seed/login-bg/1920/1080)', backgroundSize: 'cover' }}>

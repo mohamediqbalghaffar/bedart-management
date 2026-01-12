@@ -20,9 +20,12 @@ import {
   Truck,
   Settings,
   BedDouble,
+  LogOut,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/firebase';
+import { UserNav } from './user-nav';
 
 const menuItems = [
   { href: '/dashboard', label: 'داشبۆرد', icon: LayoutDashboard },
@@ -36,6 +39,13 @@ const menuItems = [
 
 export function SidebarNav() {
   const pathname = usePathname();
+  const auth = useAuth();
+
+  const handleLogout = () => {
+    if(auth) {
+      auth.signOut();
+    }
+  }
 
   return (
     <>
@@ -66,7 +76,8 @@ export function SidebarNav() {
           ))}
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className='flex flex-col gap-4'>
+        <UserNav />
         <SidebarMenu>
           <SidebarMenuItem>
              <Link href="/settings">
@@ -78,6 +89,15 @@ export function SidebarNav() {
                   <span>ڕێکخستنەکان</span>
                 </SidebarMenuButton>
               </Link>
+          </SidebarMenuItem>
+           <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={handleLogout}
+                tooltip={{ children: 'چوونەدەرەوە', side: 'left' }}
+              >
+                <LogOut />
+                <span>چوونەدەرەوە</span>
+              </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

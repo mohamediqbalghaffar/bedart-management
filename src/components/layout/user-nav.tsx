@@ -1,5 +1,6 @@
+'use client';
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,10 +11,51 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "../ui/button";
-import { ChevronUp } from "lucide-react";
+import { ChevronUp, LogOut } from "lucide-react";
+import { useAuth, useUser, useDoc, useMemoFirebase, doc, useFirestore } from "@/firebase";
+import { Skeleton } from "../ui/skeleton";
+
+type UserProfile = {
+  username: string;
+  role: string;
+}
 
 export function UserNav() {
-  const userAvatar = PlaceHolderImages.find(p => p.id === 'user-avatar-1');
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+
+  const userProfileRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+
+  const handleLogout = () => {
+    if (auth) {
+      auth.signOut();
+    }
+  };
+
+  if (isUserLoading || isProfileLoading) {
+    return (
+      <div className="p-2">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-9 w-9 rounded-full" />
+          <div className="space-y-1 group-data-[collapsible=icon]:hidden">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-3 w-16" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const getInitials = (email?: string | null) => {
+    if (!email) return "U";
+    return email.substring(0, 2).toUpperCase();
+  }
 
   return (
     <DropdownMenu>
@@ -21,12 +63,12 @@ export function UserNav() {
         <Button variant="ghost" className="w-full justify-start h-auto p-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:justify-center">
             <div className="flex items-center gap-3 w-full">
                 <Avatar className="h-9 w-9">
-                    <AvatarImage src={userAvatar?.imageUrl} alt="User Avatar" data-ai-hint={userAvatar?.imageHint} />
-                    <AvatarFallback>AD</AvatarFallback>
+                    {user?.photoURL && <AvatarImage src={user.photoURL} alt="User Avatar" />}
+                    <AvatarFallback>{getInitials(user?.email)}</AvatarFallback>
                 </Avatar>
                 <div className="text-right group-data-[collapsible=icon]:hidden">
-                    <p className="text-sm font-medium leading-none text-sidebar-foreground">ئەلێکس دۆ</p>
-                    <p className="text-xs leading-none text-muted-foreground">بەڕێوەبەر</p>
+                    <p className="text-sm font-medium leading-none text-sidebar-foreground">{user?.displayName || user?.email?.split('@')[0]}</p>
+                    <p className="text-xs leading-none text-muted-foreground">{userProfile?.role || "بەکارهێنەر"}</p>
                 </div>
                 <ChevronUp className="h-4 w-4 mr-auto text-muted-foreground group-data-[collapsible=icon]:hidden" />
             </div>
@@ -35,20 +77,20 @@ export function UserNav() {
       <DropdownMenuContent className="w-56" align="end" forceMount dir="rtl">
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">ئەلێکس دۆ</p>
+            <p className="text-sm font-medium leading-none">{user?.displayName || user?.email?.split('@')[0]}</p>
             <p className="text-xs leading-none text-muted-foreground">
-              alex.doe@example.com
+              {user?.email}
             </p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem>پڕۆفایل</DropdownMenuItem>
-          <DropdownMenuItem>پسوولە</DropdownMenuItem>
           <DropdownMenuItem>ڕێکخستنەکان</DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={handleLogout}>
+          <LogOut className="ml-2" />
           چوونەدەرەوە
         </DropdownMenuItem>
       </DropdownMenuContent>
