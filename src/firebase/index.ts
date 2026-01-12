@@ -50,7 +50,3 @@ export * from './errors';
 export * from './error-emitter';
 
 export { collection, doc, setDoc, addDoc, updateDoc, deleteDoc, getDoc, getDocs, runTransaction, writeBatch };
-
-
-
-    

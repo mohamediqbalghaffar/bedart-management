@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore, addDoc, collection } from "@/firebase";
+import { useFirestore, addDocumentNonBlocking, collection } from "@/firebase";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
@@ -56,30 +56,21 @@ export function AddExpenseForm({ onExpenseAdded }: { onExpenseAdded?: () => void
       return;
     }
 
-    try {
-      const expensesColRef = collection(firestore, "expenses");
-      
-      await addDoc(expensesColRef, {
-        ...data,
-        date: format(data.date, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
-      });
+    const expensesColRef = collection(firestore, "expenses");
+    
+    addDocumentNonBlocking(expensesColRef, {
+      ...data,
+      date: format(data.date, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
+    });
 
-      toast({
-        title: "سەرکەوتوو بوو!",
-        description: "خەرجی نوێ بە سەرکەوتوویی زیادکرا.",
-        className: "bg-accent text-accent-foreground",
-      });
-      form.reset();
-      if (onExpenseAdded) {
-        onExpenseAdded();
-      }
-    } catch (error: any) {
-      console.error("Error adding expense:", error);
-      toast({
-        variant: "destructive",
-        title: "هەڵەیەک ڕوویدا",
-        description: error.message || "زیادکردنی خەرجی سەرکەوتوو نەبوو.",
-      });
+    toast({
+      title: "سەرکەوتوو بوو!",
+      description: "خەرجی نوێ بە سەرکەوتوویی زیادکرا.",
+      className: "bg-accent text-accent-foreground",
+    });
+    form.reset();
+    if (onExpenseAdded) {
+      onExpenseAdded();
     }
   }
 

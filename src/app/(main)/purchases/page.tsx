@@ -6,9 +6,9 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle, Loader2, Trash2, FileSpreadsheet } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { BuyingForm } from "./components/buying-form";
-import { useFirestore, useCollection, useMemoFirebase, collection, deleteDoc, doc, getDocs, runTransaction } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, collection, runTransaction, doc, getDocs, deleteDoc } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -128,38 +128,44 @@ function PurchasesList() {
 
     const handleDelete = async (formId: string) => {
         if (!firestore) return;
-        
+
         try {
-            const productsPurchasedRef = collection(firestore, `buying_forms/${formId}/products`);
-            const productsPurchasedSnapshot = await getDocs(productsPurchasedRef);
-            const productsPurchased = productsPurchasedSnapshot.docs.map(d => d.data() as BuyingFormProduct);
-            
-            for (const item of productsPurchased) {
-                const productRef = doc(firestore, 'products', item.productId);
-                await runTransaction(firestore, async (transaction) => {
-                    const productDoc = await transaction.get(productRef);
-                    if (productDoc.exists()) {
-                        const newQuantity = (productDoc.data().currentQuantity || 0) - item.quantity;
+            await runTransaction(firestore, async (transaction) => {
+                const productsPurchasedRef = collection(firestore, `buying_forms/${formId}/products`);
+                const productsPurchasedSnapshot = await getDocs(productsPurchasedRef);
+                
+                // First, update the stock quantities
+                for (const productDoc of productsPurchasedSnapshot.docs) {
+                    const item = productDoc.data() as BuyingFormProduct;
+                    const productRef = doc(firestore, 'products', item.productId);
+                    const currentProductDoc = await transaction.get(productRef);
+                    if (currentProductDoc.exists()) {
+                        const newQuantity = (currentProductDoc.data().currentQuantity || 0) - item.quantity;
                         transaction.update(productRef, { currentQuantity: newQuantity < 0 ? 0 : newQuantity });
                     }
-                });
-            }
+                }
 
-            await Promise.all(productsPurchasedSnapshot.docs.map(d => deleteDoc(d.ref)));
-
-            await deleteDoc(doc(firestore, 'buying_forms', formId));
+                // Then, delete the subcollection documents
+                for (const docToDelete of productsPurchasedSnapshot.docs) {
+                    transaction.delete(docToDelete.ref);
+                }
+                
+                // Finally, delete the main form document
+                const formRef = doc(firestore, 'buying_forms', formId);
+                transaction.delete(formRef);
+            });
 
             toast({
                 title: "سەرکەوتوو بوو",
                 description: "پسوولەی کڕین بە سەرکەوتوویی سڕایەوە و بڕی کاڵاکان لە کۆگا کەمکرایەوە.",
                 className: "bg-accent text-accent-foreground",
             });
-        } catch (error) {
-            console.error("Error deleting document: ", error);
+        } catch (error: any) {
+            console.error("Error deleting purchase form:", error);
             toast({
                 variant: 'destructive',
                 title: "هەڵەیەک ڕوویدا",
-                description: "سڕینەوەی پسوولەی کڕین سەرکەوتوو نەبوو.",
+                description: error.message || "سڕینەوەی پسوولەی کڕین سەرکەوتوو نەبوو.",
             });
         }
     };

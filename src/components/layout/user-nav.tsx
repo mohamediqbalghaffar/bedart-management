@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -28,7 +29,7 @@ export function UserNav() {
   const userProfileRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
+  }, [firestore, user?.uid]);
 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
@@ -67,7 +68,7 @@ export function UserNav() {
                     <AvatarFallback>{getInitials(user?.email)}</AvatarFallback>
                 </Avatar>
                 <div className="text-right group-data-[collapsible=icon]:hidden">
-                    <p className="text-sm font-medium leading-none text-sidebar-foreground">{user?.displayName || user?.email?.split('@')[0]}</p>
+                    <p className="text-sm font-medium leading-none text-sidebar-foreground">{userProfile?.username || user?.email?.split('@')[0]}</p>
                     <p className="text-xs leading-none text-muted-foreground">{userProfile?.role || "بەکارهێنەر"}</p>
                 </div>
                 <ChevronUp className="h-4 w-4 mr-auto text-muted-foreground group-data-[collapsible=icon]:hidden" />
@@ -77,7 +78,7 @@ export function UserNav() {
       <DropdownMenuContent className="w-56" align="end" forceMount dir="rtl">
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user?.displayName || user?.email?.split('@')[0]}</p>
+            <p className="text-sm font-medium leading-none">{userProfile?.username || user?.email?.split('@')[0]}</p>
             <p className="text-xs leading-none text-muted-foreground">
               {user?.email}
             </p>

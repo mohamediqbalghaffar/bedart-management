@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore, addDoc, collection } from "@/firebase";
+import { useFirestore, addDocumentNonBlocking, collection } from "@/firebase";
 import { Textarea } from "@/components/ui/textarea";
 
 const supplierSchema = z.object({
@@ -40,26 +40,17 @@ export function AddSupplierForm({ onSupplierAdded }: { onSupplierAdded?: () => v
       return;
     }
 
-    try {
-      const suppliersColRef = collection(firestore, "suppliers");
-      await addDoc(suppliersColRef, data);
+    const suppliersColRef = collection(firestore, "suppliers");
+    addDocumentNonBlocking(suppliersColRef, data);
 
-      toast({
-        title: "سەرکەوتوو بوو!",
-        description: "دابینکەری نوێ بە سەرکەوتوویی زیادکرا.",
-        className: "bg-accent text-accent-foreground",
-      });
-      form.reset();
-      if (onSupplierAdded) {
-        onSupplierAdded();
-      }
-    } catch (error: any) {
-      console.error("Error adding supplier:", error);
-      toast({
-        variant: "destructive",
-        title: "هەڵەیەک ڕوویدا",
-        description: error.message || "زیادکردنی دابینکەر سەرکەوتوو نەبوو.",
-      });
+    toast({
+      title: "سەرکەوتوو بوو!",
+      description: "دابینکەری نوێ بە سەرکەوتوویی زیادکرا.",
+      className: "bg-accent text-accent-foreground",
+    });
+    form.reset();
+    if (onSupplierAdded) {
+      onSupplierAdded();
     }
   }
 

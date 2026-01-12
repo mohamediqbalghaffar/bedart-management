@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore, addDoc, collection } from "@/firebase";
+import { useFirestore, addDocumentNonBlocking, collection } from "@/firebase";
 import { Textarea } from "@/components/ui/textarea";
 
 const customerSchema = z.object({
@@ -42,26 +42,17 @@ export function AddCustomerForm({ onCustomerAdded }: { onCustomerAdded?: () => v
       return;
     }
 
-    try {
-      const customersColRef = collection(firestore, "customers");
-      await addDoc(customersColRef, data);
+    const customersColRef = collection(firestore, "customers");
+    addDocumentNonBlocking(customersColRef, data);
 
-      toast({
-        title: "سەرکەوتوو بوو!",
-        description: "کڕیاری نوێ بە سەرکەوتوویی زیادکرا.",
-        className: "bg-accent text-accent-foreground",
-      });
-      form.reset();
-      if (onCustomerAdded) {
-        onCustomerAdded();
-      }
-    } catch (error: any) {
-      console.error("Error adding customer:", error);
-      toast({
-        variant: "destructive",
-        title: "هەڵەیەک ڕوویدا",
-        description: error.message || "زیادکردنی کڕیار سەرکەوتوو نەبوو.",
-      });
+    toast({
+      title: "سەرکەوتوو بوو!",
+      description: "کڕیاری نوێ بە سەرکەوتوویی زیادکرا.",
+      className: "bg-accent text-accent-foreground",
+    });
+    form.reset();
+    if (onCustomerAdded) {
+      onCustomerAdded();
     }
   }
 
