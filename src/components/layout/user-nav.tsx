@@ -19,6 +19,7 @@ import {
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase, doc } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { LogOut } from 'lucide-react';
 
 type UserProfile = {
   role?: string;
@@ -51,35 +52,18 @@ export function UserNav() {
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src="#" alt="User avatar" />
-            <AvatarFallback>{user ? getInitials(user.email || '') : '...'}</AvatarFallback>
-          </Avatar>
+    <div className="flex items-center gap-4">
+        <Avatar className="hidden h-9 w-9 sm:flex">
+          <AvatarImage src="#" alt="Avatar" />
+          <AvatarFallback>{user ? getInitials(user.email || '') : '...'}</AvatarFallback>
+        </Avatar>
+        <div className="grid gap-0.5">
+          <p className="text-sm font-medium leading-none">{userProfile?.role || 'بەکارهێنەر'}</p>
+          <p className="text-xs text-muted-foreground">{user?.email}</p>
+        </div>
+        <Button variant="ghost" size="icon" className="mr-auto" onClick={handleSignOut}>
+            <LogOut className="h-4 w-4" />
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{userProfile?.role || 'بەکارهێنەر'}</p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {user?.email}
-            </p>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-           <DropdownMenuItem onClick={() => router.push('/settings')}>
-            ڕێکخستنەکان
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleSignOut}>
-          چوونەدەرەوە
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    </div>
   );
 }
