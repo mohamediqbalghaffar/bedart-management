@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { WithId } from '@/firebase/firestore/use-collection';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useRouter } from 'next/navigation';
 
 type SellingForm = {
     totalPrice: number;
@@ -136,7 +137,13 @@ function CustomersDetailDialog({ customers }: { customers: string[] }) {
 }
 
 function LowStockDetailDialog({ products }: { products: WithId<Product>[] | null }) {
-     const lowStockProducts = products?.filter(p => p.currentQuantity < 5);
+    const router = useRouter();
+    const lowStockProducts = products?.filter(p => p.currentQuantity < 5);
+
+    const handleRowClick = (productName: string) => {
+        router.push(`/stock?search=${encodeURIComponent(productName)}`);
+    };
+
     return (
         <div className="max-h-[60vh] overflow-y-auto">
             <Table>
@@ -148,7 +155,7 @@ function LowStockDetailDialog({ products }: { products: WithId<Product>[] | null
                 </TableHeader>
                 <TableBody>
                     {lowStockProducts?.map(product => (
-                        <TableRow key={product.id}>
+                        <TableRow key={product.id} onClick={() => handleRowClick(product.productName)} className="cursor-pointer">
                             <TableCell>{product.productName}</TableCell>
                             <TableCell>{product.currentQuantity}</TableCell>
                         </TableRow>
@@ -303,18 +310,15 @@ function RecentActivityChart() {
             const startDate = startOfDay(fromDate);
             const endDate = endOfDay(toDate);
             
-            // --- Build base queries ---
             let salesQuery = query(collection(firestore, 'selling_forms'), where('issueDate', '>=', dateRange.from), where('issueDate', '<=', dateRange.to));
             let purchasesQuery = query(collection(firestore, 'buying_forms'), where('issueDate', '>=', dateRange.from), where('issueDate', '<=', dateRange.to));
             let expensesQuery = query(collection(firestore, 'expenses'), where('date', '>=', dateRange.from), where('date', '<=', dateRange.to));
             
-            // --- Fetch initial data ---
             const [salesSnap, purchasesSnap, expensesSnap] = await Promise.all([ getDocs(salesQuery), getDocs(purchasesQuery), getDocs(expensesQuery) ]);
             let sales = salesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as WithId<SellingForm>[];
             let purchases = purchasesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as WithId<BuyingForm>[];
             const expenses = expensesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as WithId<Expense>[];
 
-            // --- Aggregate Data ---
             let totalSales = 0, totalPurchases = 0, totalExpenses = 0;
             const dateMap = new Map<string, { sales: number; expenses: number; purchases: number; netProfit: number }>();
             

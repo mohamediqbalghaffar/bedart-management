@@ -1,7 +1,7 @@
-
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,7 +45,9 @@ type Supplier = {
 
 function StockList() {
     const firestore = useFirestore();
-    const [searchTerm, setSearchTerm] = useState('');
+    const searchParams = useSearchParams();
+    const initialSearch = searchParams.get('search') || '';
+    const [searchTerm, setSearchTerm] = useState(initialSearch);
     const { toast } = useToast();
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -60,6 +62,10 @@ function StockList() {
         return collection(firestore, 'suppliers');
     }, [firestore]);
     const { data: suppliers, isLoading: isLoadingSuppliers } = useCollection<Supplier>(suppliersQuery);
+    
+    useEffect(() => {
+        setSearchTerm(initialSearch);
+    }, [initialSearch]);
 
     const supplierMap = useMemo(() => {
         if (!suppliers) return new Map();
@@ -227,11 +233,20 @@ function StockList() {
     );
 }
 
-export default function StockPage() {
+const StockPageContent = () => {
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <PageHeader title="بەڕێوەبردنی کۆگا" description="بەدواداچوون بۆ ئاستی کۆگا و نرخی کاڵاکان." />
             <StockList />
         </div>
+    );
+};
+
+
+export default function StockPage() {
+    return (
+        <React.Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+            <StockPageContent />
+        </React.Suspense>
     );
 }
