@@ -18,6 +18,7 @@ import { useFirestore, setDocumentNonBlocking, doc, runTransaction, getDoc, coll
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ProductSelectorDialog } from "../../components/product-selector-dialog";
+import { CustomerSelectorDialog } from "../../components/customer-selector-dialog";
 import { Loader2 } from "lucide-react";
 
 
@@ -123,6 +124,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [originalItems, setOriginalItems] = useState<any[]>([]);
+  const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
 
   const form = useForm<SalesFormValues>({
     resolver: zodResolver(salesFormSchema),
@@ -395,7 +397,37 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
 
         <div className="space-y-2 p-1 border-t pt-4">
           <div className="flex items-center gap-4">
-            <FormField control={form.control} name="customerName" render={({ field }) => ( <FormItem className="flex-1 flex items-center gap-2"> <FormLabel>بەڕێز:</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+            <FormField
+              control={form.control}
+              name="customerName"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>بەڕێز:</FormLabel>
+                    <div className="flex gap-2">
+                        <FormControl>
+                            <Input {...field} />
+                        </FormControl>
+                        <Dialog open={isCustomerDialogOpen} onOpenChange={setIsCustomerDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" size="icon"><List className="h-4 w-4" /></Button>
+                            </DialogTrigger>
+                            <DialogContent dir="rtl" className="sm:max-w-3xl">
+                                <DialogHeader>
+                                    <DialogTitle>لیستی کڕیارەکان</DialogTitle>
+                                </DialogHeader>
+                                <CustomerSelectorDialog onCustomerSelect={(customer) => {
+                                    form.setValue('customerName', customer.customerName);
+                                    form.setValue('customerPhone', customer.customerPhoneNumber);
+                                    form.setValue('customerAddress', customer.customerAddress);
+                                    setIsCustomerDialogOpen(false);
+                                }} />
+                            </DialogContent>
+                        </Dialog>
+                    </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField control={form.control} name="customerPhone" render={({ field }) => ( <FormItem className="flex-1 flex items-center gap-2"> <FormLabel>ژ. مۆبایل:</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
           </div>
           <FormField control={form.control} name="customerAddress" render={({ field }) => ( <FormItem className="flex items-center gap-2"> <FormLabel>ناونیشان:</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
