@@ -14,12 +14,21 @@ import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useFirestore, setDocumentNonBlocking, doc, runTransaction, getDoc, collection, getDocs, deleteDoc } from "@/firebase";
+import { useFirestore, setDocumentNonBlocking, doc, runTransaction, getDoc, collection, getDocs, deleteDoc, useMemoFirebase } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ProductSelectorDialog } from "../../components/product-selector-dialog";
 import { CustomerSelectorDialog } from "../../components/customer-selector-dialog";
 import { Loader2 } from "lucide-react";
+import { useDebounce } from "@/hooks/use-debounce";
+import { useCollection } from "@/firebase";
+import { WithId } from "@/firebase/firestore/use-collection";
+
+type Customer = {
+  customerName: string;
+  customerPhoneNumber?: string;
+  customerAddress?: string;
+};
 
 
 const salesFormSchema = z.object({
@@ -142,6 +151,26 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
       payments: [],
     },
   });
+
+  const customersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'customers');
+  }, [firestore]);
+  const { data: customers } = useCollection<Customer>(customersQuery);
+
+  const customerNameValue = form.watch('customerName');
+  const debouncedCustomerName = useDebounce(customerNameValue, 300);
+
+  useEffect(() => {
+      if (debouncedCustomerName && customers) {
+          const foundCustomer = customers.find(c => c.customerName.toLowerCase() === debouncedCustomerName.toLowerCase());
+          if (foundCustomer) {
+              form.setValue('customerPhone', foundCustomer.customerPhoneNumber || '');
+              form.setValue('customerAddress', foundCustomer.customerAddress || '');
+          }
+      }
+  }, [debouncedCustomerName, customers, form]);
+
 
   useEffect(() => {
     async function fetchFormData() {
@@ -644,3 +673,5 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
     </Form>
   );
 }
+
+    
