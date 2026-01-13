@@ -16,6 +16,7 @@ type Product = {
   productName: string;
   currentQuantity: number;
   unitPrice?: number;
+  sellingPrice?: number;
   category: ProductCategory;
   stockLocation: StockLocation;
 };
@@ -73,7 +74,7 @@ export function ProductSelectorDialog({ onProductSelect }: ProductSelectorDialog
   const handleSelect = (product: WithId<Product>) => {
     onProductSelect({
       name: product.productName,
-      price: product.unitPrice || 0,
+      price: product.sellingPrice || 0,
     });
   };
 
@@ -109,6 +110,7 @@ export function ProductSelectorDialog({ onProductSelect }: ProductSelectorDialog
           <TableHeader>
             <TableRow>
               <TableHead className="text-right">ناوی کاڵا</TableHead>
+              <TableHead className="text-right">نرخی فرۆشتن</TableHead>
               <TableHead className="text-right">دانە</TableHead>
               <TableHead className="text-right">پۆل</TableHead>
               <TableHead className="text-right">شوێن</TableHead>
@@ -118,13 +120,13 @@ export function ProductSelectorDialog({ onProductSelect }: ProductSelectorDialog
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={6} className="h-24 text-center">
                   <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                 </TableCell>
               </TableRow>
             ) : filteredProducts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                   هیچ کاڵایەک نەدۆزرایەوە.
                 </TableCell>
               </TableRow>
@@ -132,6 +134,7 @@ export function ProductSelectorDialog({ onProductSelect }: ProductSelectorDialog
               filteredProducts.map(product => (
                 <TableRow key={product.id}>
                   <TableCell className="text-right font-medium">{product.productName}</TableCell>
+                  <TableCell className="text-right font-semibold text-primary">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.sellingPrice || 0)}</TableCell>
                   <TableCell className="text-right">{product.currentQuantity}</TableCell>
                   <TableCell className="text-right">{categoryTranslations[product.category] || product.category}</TableCell>
                   <TableCell className="text-right">{locationTranslations[product.stockLocation] || product.stockLocation}</TableCell>

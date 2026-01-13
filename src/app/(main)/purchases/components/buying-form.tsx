@@ -36,6 +36,7 @@ const buyingFormSchema = z.object({
     sizeModel: z.string().optional(),
     quantity: z.coerce.number().min(1, "دانە دەبێت لانیکەم 1 بێت."),
     unitPrice: z.coerce.number().min(0, "نرخ پێویستە."),
+    sellingPrice: z.coerce.number().min(0, "نرخی فرۆشتن پێویستە."),
   })).min(1, { message: "لانیکەم یەک کاڵا پێویستە." }),
   customsFee: z.coerce.number().optional().default(0),
   stockLocation: z.enum(["Warehouse", "Shop Showroom"]),
@@ -54,8 +55,8 @@ function TemplateDownloadButton() {
     const handleDownload = () => {
         try {
             const templateData = [
-                { product: "Mattress A", quantity: 10, unitPrice: 150 },
-                { product: "Pillow B", quantity: 20, unitPrice: 25 },
+                { product: "Mattress A", quantity: 10, unitPrice: 150, sellingPrice: 250 },
+                { product: "Pillow B", quantity: 20, unitPrice: 25, sellingPrice: 40 },
             ];
             const worksheet = XLSX.utils.json_to_sheet(templateData);
             const workbook = XLSX.utils.book_new();
@@ -66,6 +67,7 @@ function TemplateDownloadButton() {
                 { wch: 30 }, // product
                 { wch: 10 }, // quantity
                 { wch: 15 }, // unitPrice
+                { wch: 15 }, // sellingPrice
             ];
             
             XLSX.writeFile(workbook, "Purchase_Template.xlsx");
@@ -116,7 +118,7 @@ function ExcelImportButton({ form }: { form: UseFormReturn<BuyingFormValues> }) 
                     const result = await analyzePurchaseExcel({ excelDataAsCsv: csvData });
                     
                     const currentItems = form.getValues('items');
-                    let newItems = result.map(item => ({ ...item, category: 'Mattress', sizeModel: '' }));
+                    let newItems = result.map(item => ({ ...item, category: 'Mattress', sizeModel: '', sellingPrice: item.unitPrice * 1.2 })); // Default selling price logic
 
                     if (currentItems.length === 1 && !currentItems[0].product && currentItems[0].quantity === 1 && currentItems[0].unitPrice === 0) {
                        form.setValue('items', newItems);
@@ -218,7 +220,7 @@ function BuyingFormItemRow({
                                         </DialogHeader>
                                         <ProductSelectorDialog onProductSelect={({ name, price }) => {
                                             form.setValue(`items.${index}.product`, name);
-                                            form.setValue(`items.${index}.unitPrice`, price);
+                                            form.setValue(`items.${index}.sellingPrice`, price); // Note: selector provides selling price
                                             setDialogOpen(false);
                                         }} />
                                     </DialogContent>
@@ -259,6 +261,9 @@ function BuyingFormItemRow({
             <TableCell className="align-top">
                 <FormField control={form.control} name={`items.${index}.unitPrice`} render={({ field }) => (<FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
             </TableCell>
+            <TableCell className="align-top">
+                <FormField control={form.control} name={`items.${index}.sellingPrice`} render={({ field }) => (<FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </TableCell>
             <TableCell className="align-top pt-5 font-semibold">
                 {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(watchedItem?.quantity * watchedItem?.unitPrice || 0)}
             </TableCell>
@@ -288,7 +293,7 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
     defaultValues: {
       supplierId: "",
       issueDate: format(new Date(), "yyyy-MM-dd"),
-      items: [{ product: "", quantity: 1, unitPrice: 0, category: "Mattress", sizeModel: "" }],
+      items: [{ product: "", quantity: 1, unitPrice: 0, sellingPrice: 0, category: "Mattress", sizeModel: "" }],
       customsFee: 0,
       stockLocation: "Warehouse",
     },
@@ -318,6 +323,7 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
                   product: item.productName,
                   quantity: item.quantity,
                   unitPrice: item.unitPrice,
+                  sellingPrice: item.sellingPrice || 0,
                   category: item.category || 'Mattress',
                   sizeModel: item.sizeModel || '',
               })),
@@ -391,6 +397,7 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
                         currentQuantity: item.quantity,
                         supplierId: data.supplierId,
                         unitPrice: item.unitPrice,
+                        sellingPrice: item.sellingPrice,
                     });
                 } else {
                     const newQuantity = (productDoc.data().currentQuantity || 0) + item.quantity;
@@ -398,7 +405,8 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
                         currentQuantity: newQuantity,
                         supplierId: data.supplierId, 
                         stockLocation: data.stockLocation, 
-                        unitPrice: item.unitPrice, 
+                        unitPrice: item.unitPrice,
+                        sellingPrice: item.sellingPrice,
                     });
                 }
             }
@@ -426,6 +434,7 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
                     sizeModel: item.sizeModel,
                     quantity: item.quantity,
                     unitPrice: item.unitPrice,
+                    sellingPrice: item.sellingPrice,
                     landedCost: item.unitPrice + ((customsFee || 0) / items.reduce((sum, i) => sum + i.quantity, 0)),
                 };
                 transaction.set(productSubCollectionRef, productData);
@@ -526,9 +535,10 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
                 <TableHeader>
                     <TableRow className="bg-primary/90 hover:bg-primary">
                         <TableHead className="w-2/5 text-primary-foreground text-center">بابەت</TableHead>
-                        <TableHead className="w-[20%] text-primary-foreground text-center">پۆل</TableHead>
+                        <TableHead className="w-[15%] text-primary-foreground text-center">پۆل</TableHead>
                         <TableHead className="text-primary-foreground text-center">دانە</TableHead>
-                        <TableHead className="text-primary-foreground text-center">نرخی تاک (USD)</TableHead>
+                        <TableHead className="text-primary-foreground text-center">نرخی کڕین (USD)</TableHead>
+                        <TableHead className="text-primary-foreground text-center">نرخی فرۆشتن (USD)</TableHead>
                         <TableHead className="text-primary-foreground text-center">نرخی کۆ (USD)</TableHead>
                         <TableHead></TableHead>
                     </TableRow>
@@ -546,7 +556,7 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
                 </TableBody>
             </Table>
             <div className="flex gap-2 mt-4">
-                <Button type="button" variant="outline" size="sm" onClick={() => append({ product: "", quantity: 1, unitPrice: 0, category: 'Mattress', sizeModel: '' })}>
+                <Button type="button" variant="outline" size="sm" onClick={() => append({ product: "", quantity: 1, unitPrice: 0, sellingPrice: 0, category: 'Mattress', sizeModel: '' })}>
                     <PlusCircle className="ml-2 h-4 w-4" />
                     زیادکردنی کاڵا
                 </Button>
