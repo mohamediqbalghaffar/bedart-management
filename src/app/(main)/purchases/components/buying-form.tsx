@@ -401,34 +401,29 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
             const productDocs = new Map<string, DocumentSnapshot>();
 
             // --- READ PHASE ---
-            const allProductReads: Promise<DocumentSnapshot>[] = [];
-            const productIds: string[] = [];
+            // Create a set of unique product IDs to read to avoid reading the same doc multiple times
+            const uniqueProductIds = new Set<string>();
 
+            // Add product IDs from original items (if editing)
             if (formId) {
-                for (const item of originalItems) {
-                    const productRef = doc(firestore, 'products', item.productId);
-                    if (!productIds.includes(item.productId)) {
-                        allProductReads.push(transaction.get(productRef));
-                        productIds.push(item.productId);
-                    }
-                }
+                originalItems.forEach(item => uniqueProductIds.add(item.productId));
             }
+            // Add product IDs from current form items
+            data.items.forEach(item => uniqueProductIds.add(item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')));
 
-            for (const item of data.items) {
-                const productDocId = item.product.toLowerCase().replace(/[^a-z0-9]/g, '-');
-                const productRef = doc(firestore, 'products', productDocId);
-                 if (!productIds.includes(productDocId)) {
-                    allProductReads.push(transaction.get(productRef));
-                    productIds.push(productDocId);
-                }
-            }
-            
-            const readSnapshots = await Promise.all(allProductReads);
+            // Batch read all unique product documents
+            const productReads: Promise<DocumentSnapshot>[] = [];
+            uniqueProductIds.forEach(id => {
+                productReads.push(transaction.get(doc(firestore, 'products', id)));
+            });
+
+            const readSnapshots = await Promise.all(productReads);
             readSnapshots.forEach(snap => productDocs.set(snap.id, snap));
 
             // --- CALCULATION PHASE (no reads/writes) ---
             const stockAdjustments = new Map<string, number>();
 
+            // 1. Calculate stock decrements from original items (for edits)
             if (formId) {
                 for (const item of originalItems) {
                     const currentAdjustment = stockAdjustments.get(item.productId) || 0;
@@ -436,6 +431,7 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
                 }
             }
 
+            // 2. Calculate stock increments from new/updated items
             for (const item of data.items) {
                 const productDocId = item.product.toLowerCase().replace(/[^a-z0-9]/g, '-');
                 const currentAdjustment = stockAdjustments.get(productDocId) || 0;
@@ -444,7 +440,7 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
 
             // --- WRITE PHASE ---
             
-            // 1. Update stock quantities
+            // 3. Update stock quantities and product details
             for (const [productId, quantityChange] of stockAdjustments.entries()) {
                  const productRef = doc(firestore, 'products', productId);
                  const productDoc = productDocs.get(productId);
@@ -477,12 +473,12 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
                  }
             }
 
-            // 2. Create/Update the main buying_form document
+            // 4. Create/Update the main buying_form document
             const { items, ...mainData } = data;
             const buyingFormData = { ...mainData, id: buyingFormId };
             transaction.set(buyingFormRef, buyingFormData, { merge: true });
 
-            // 3. Clear and create new sub-collection documents
+            // 5. Clear and create new sub-collection documents
             if (formId) {
                 const existingItemsSnap = await getDocs(collection(firestore, `buying_forms/${formId}/products`));
                 existingItemsSnap.docs.forEach(d => transaction.delete(d.ref));
