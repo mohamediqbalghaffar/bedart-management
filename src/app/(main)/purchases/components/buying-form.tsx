@@ -525,7 +525,7 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
             <Table>
                 <TableHeader>
                     <TableRow className="bg-primary/90 hover:bg-primary">
-                        <TableHead className="w-[30%] text-primary-foreground text-center">بابەت</TableHead>
+                        <TableHead className="w-2/5 text-primary-foreground text-center">بابەت</TableHead>
                         <TableHead className="w-[20%] text-primary-foreground text-center">پۆل</TableHead>
                         <TableHead className="text-primary-foreground text-center">دانە</TableHead>
                         <TableHead className="text-primary-foreground text-center">نرخی تاک (USD)</TableHead>
