@@ -345,7 +345,7 @@ function RecentActivityChart() {
             let purchasesQuery = query(collection(firestore, 'buying_forms'), where('issueDate', '>=', dateRange.from), where('issueDate', '<=', dateRange.to));
             let expensesQuery = query(collection(firestore, 'expenses'), where('date', '>=', dateRange.from), where('date', '<=', dateRange.to));
             
-            const [salesSnap, purchasesSnap, expensesSnap] = await Promise.all([ getDocs(salesQuery), getDocs(purchasesSnap), getDocs(expensesQuery) ]);
+            const [salesSnap, purchasesSnap, expensesSnap] = await Promise.all([ getDocs(salesQuery), getDocs(purchasesQuery), getDocs(expensesQuery) ]);
             let sales = salesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as WithId<SellingForm>[];
             let purchases = purchasesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as WithId<BuyingForm>[];
             const expenses = expensesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as WithId<Expense>[];
