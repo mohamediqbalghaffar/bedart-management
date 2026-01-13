@@ -52,15 +52,17 @@ type SellingFormProduct = {
     productId: string;
 }
 
-type User = {
-    username: string;
-}
-
 type Supplier = {
     supplierName: string;
 }
 
 const productCategories = ["Mattress", "Bed", "Pillow", "Cover"];
+const categoryTranslations: Record<string, string> = {
+  "Mattress": "دۆشەک",
+  "Bed": "تەخت",
+  "Pillow": "سەرین",
+  "Cover": "بەرگ",
+};
 
 
 function DashboardStats() {
@@ -140,8 +142,6 @@ function RecentActivityChart() {
     
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
     
-    
-
     const [chartData, setChartData] = useState<any[]>([]);
     const [totalData, setTotalData] = useState<{ name: string; value: number; fill: string }[]>([]);
     const [isCalculating, setIsCalculating] = useState(false);
@@ -278,14 +278,17 @@ function RecentActivityChart() {
                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4" dir="rtl">
                     <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                         <SelectTrigger className="bg-white/10 text-white border-white/20"><SelectValue placeholder="فلتەری پۆلی کاڵا" /></SelectTrigger>
-                        <SelectContent>
+                        <SelectContent dir="rtl">
                             <SelectItem value="all">هەموو پۆلەکان</SelectItem>
-                            {productCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                            {productCategories.map(cat => <SelectItem key={cat} value={cat}>{categoryTranslations[cat] || cat}</SelectItem>)}
                         </SelectContent>
                     </Select>
                     <Select value={viewMode} onValueChange={(v) => setViewMode(v as any)}>
                         <SelectTrigger className="bg-white/10 text-white border-white/20"><SelectValue /></SelectTrigger>
-                        <SelectContent><SelectItem value="daily">نمایشی ڕۆژانە</SelectItem><SelectItem value="total">نمایشی گشتی</SelectItem></SelectContent>
+                        <SelectContent dir="rtl">
+                            <SelectItem value="daily">نمایشی ڕۆژانە</SelectItem>
+                            <SelectItem value="total">نمایشی گشتی</SelectItem>
+                        </SelectContent>
                     </Select>
                 </div>
             </CardHeader>
@@ -351,3 +354,5 @@ export default function DashboardPage() {
         </div>
     );
 }
+
+    
