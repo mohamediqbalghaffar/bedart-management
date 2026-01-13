@@ -27,6 +27,18 @@ type ProductSelectorDialogProps = {
 const productCategories: ProductCategory[] = ["Mattress", "Bed", "Pillow", "Cover"];
 const stockLocations: StockLocation[] = ["Warehouse", "Shop Showroom"];
 
+const categoryTranslations: Record<ProductCategory, string> = {
+  Mattress: "دۆشەک",
+  Bed: "تەخت",
+  Pillow: "سەرین",
+  Cover: "بەرگ",
+};
+
+const locationTranslations: Record<StockLocation, string> = {
+  Warehouse: "کۆگا",
+  "Shop Showroom": "فرۆشگا",
+};
+
 export function ProductSelectorDialog({ onProductSelect }: ProductSelectorDialogProps) {
   const firestore = useFirestore();
   const [searchTerm, setSearchTerm] = useState('');
@@ -81,14 +93,14 @@ export function ProductSelectorDialog({ onProductSelect }: ProductSelectorDialog
                 <SelectTrigger><SelectValue placeholder="پۆل" /></SelectTrigger>
                 <SelectContent>
                     <SelectItem value="all">هەموو پۆلەکان</SelectItem>
-                    {productCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                    {productCategories.map(cat => <SelectItem key={cat} value={cat}>{categoryTranslations[cat]}</SelectItem>)}
                 </SelectContent>
             </Select>
              <Select value={locationFilter} onValueChange={(value) => setLocationFilter(value as any)}>
                 <SelectTrigger><SelectValue placeholder="شوێن" /></SelectTrigger>
                 <SelectContent>
                     <SelectItem value="all">هەموو شوێنەکان</SelectItem>
-                    {stockLocations.map(loc => <SelectItem key={loc} value={loc}>{loc === 'Warehouse' ? 'کۆگا' : 'فرۆشگا'}</SelectItem>)}
+                    {stockLocations.map(loc => <SelectItem key={loc} value={loc}>{locationTranslations[loc]}</SelectItem>)}
                 </SelectContent>
             </Select>
         </div>
@@ -121,8 +133,8 @@ export function ProductSelectorDialog({ onProductSelect }: ProductSelectorDialog
                 <TableRow key={product.id}>
                   <TableCell className="text-right font-medium">{product.productName}</TableCell>
                   <TableCell className="text-right">{product.currentQuantity}</TableCell>
-                  <TableCell className="text-right">{product.category}</TableCell>
-                  <TableCell className="text-right">{product.stockLocation === 'Warehouse' ? 'کۆگا' : 'فرۆشگا'}</TableCell>
+                  <TableCell className="text-right">{categoryTranslations[product.category] || product.category}</TableCell>
+                  <TableCell className="text-right">{locationTranslations[product.stockLocation] || product.stockLocation}</TableCell>
                   <TableCell className="text-left">
                     <Button variant="ghost" size="sm" onClick={() => handleSelect(product)}>
                       هەڵبژاردن
