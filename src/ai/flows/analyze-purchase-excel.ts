@@ -17,13 +17,15 @@ const ExcelDataInputSchema = z.object({
     .describe(
       "A CSV string extracted from an Excel file."
     ),
+  existingProductNames: z.array(z.string()).describe("An array of existing product names to check against for similarities.")
 });
 export type ExcelDataInput = z.infer<typeof ExcelDataInputSchema>;
 
 const ProductSchema = z.object({
-    product: z.string().describe('The name of the product, including any size or model details.'),
+    product: z.string().describe('The name of the product, translated into Central Kurdish. If a similar product exists in the provided list, use the existing name.'),
     quantity: z.number().describe('The quantity of the product.'),
     unitPrice: z.number().describe('The price of a single unit of the product.'),
+    category: z.string().describe('The category of the product, must be one of: Mattress, Bed, Pillow, Cover.'),
 });
 
 const ExcelDataOutputSchema = z.array(ProductSchema);
@@ -39,13 +41,22 @@ const prompt = ai.definePrompt({
   input: {schema: ExcelDataInputSchema},
   output: {schema: ExcelDataOutputSchema},
   prompt: `You are an expert data entry assistant for a purchasing department.
-Your task is to analyze the provided CSV data and extract a list of products.
+Your task is to analyze the provided CSV data and extract a list of products with enhanced details.
 
-The user will provide a CSV string. You need to identify columns that represent the product name, quantity, and unit price. These columns might have different names like 'Item', 'Product', 'QTY', 'دانە', 'نرخ', 'نرخی تاک', 'Product Name', etc.
+The user will provide a CSV string and a list of existing product names.
 
-- The product name may include size or model information. Combine them into a single 'product' field.
-- Extract this information and return it as a structured JSON array, where each object contains 'product', 'quantity', and 'unitPrice'.
-- Ignore any header rows, empty rows, or rows that contain totals or summaries. Only extract rows that represent individual products.
+Your tasks are:
+1.  **Identify Columns**: Identify columns that represent the product name, quantity, and unit price. These columns might have different names in various languages (e.g., 'Item', 'Product', 'QTY', 'دانە', 'نرخ', 'نرخی تاک').
+2.  **Translate to Central Kurdish**: Translate the product name to Central Kurdish (Sorani).
+3.  **Check for Duplicates**: Compare the translated product name with the list of 'existingProductNames'. If a very similar product already exists, use the existing name from the list.
+4.  **Categorize Product**: Based on the product name, determine its category. The category must be one of the following: "Mattress", "Bed", "Pillow", "Cover".
+5.  **Structure Output**: Return a structured JSON array. Each object must contain 'product' (the final standardized name), 'quantity', 'unitPrice', and 'category'.
+6.  **Filter Rows**: Ignore any header rows, empty rows, or rows that contain totals or summaries. Only extract rows that represent individual products.
+
+Existing Product Names:
+{{#each existingProductNames}}
+- {{{this}}}
+{{/each}}
 
 CSV Data:
 {{{excelDataAsCsv}}}`,

@@ -12,7 +12,7 @@ import { Download, Loader2, PlusCircle, Trash2, List, FileUp } from "lucide-reac
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useFirestore, useCollection, useMemoFirebase, collection, doc, setDoc, getDoc, runTransaction, getDocs, deleteDoc, DocumentSnapshot } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase, collection, doc, setDoc, getDoc, runTransaction, getDocs, deleteDoc, DocumentReference } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { WithId } from "@/firebase/firestore/use-collection";
 import { analyzePurchaseExcel } from "@/ai/flows/analyze-purchase-excel";
@@ -95,7 +95,7 @@ function TemplateDownloadButton() {
     )
 }
 
-function ExcelImportButton({ form }: { form: UseFormReturn<BuyingFormValues> }) {
+function ExcelImportButton({ form, allProducts }: { form: UseFormReturn<BuyingFormValues>, allProducts: WithId<Product>[] | null }) {
     const [isLoading, setIsLoading] = React.useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const { toast } = useToast();
@@ -122,10 +122,19 @@ function ExcelImportButton({ form }: { form: UseFormReturn<BuyingFormValues> }) 
                     const worksheet = workbook.Sheets[sheetName];
                     const csvData = XLSX.utils.sheet_to_csv(worksheet);
 
-                    const result = await analyzePurchaseExcel({ excelDataAsCsv: csvData });
+                    const existingProductNames = allProducts?.map(p => p.productName) || [];
+                    const result = await analyzePurchaseExcel({ excelDataAsCsv: csvData, existingProductNames });
                     
                     const currentItems = form.getValues('items');
-                    let newItems = result.map(item => ({ ...item, category: 'Mattress', sizeModel: '', sellingPrice: 0 }));
+                    
+                    const newItems = result.map(item => {
+                        const existingProduct = allProducts?.find(p => p.productName.toLowerCase() === item.product.toLowerCase());
+                        return {
+                            ...item,
+                            sellingPrice: existingProduct?.sellingPrice || 0,
+                            sizeModel: '', // AI doesn't provide this yet
+                        }
+                    });
 
                     if (currentItems.length === 1 && !currentItems[0].product && currentItems[0].quantity === 1 && currentItems[0].unitPrice === 0) {
                        form.setValue('items', newItems);
@@ -396,13 +405,15 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
 
     try {
         await runTransaction(firestore, async (transaction) => {
-            const productDocsToRead = new Map<string, DocumentReference>();
+            const productDocsToRead = new Map<string, DocumentReference<DocumentData>>();
 
             // Phase 1: Determine all documents to read
             if (formId) {
                 originalItems.forEach(item => {
-                    const productId = item.productId.toLowerCase().replace(/[^a-z0-9-]/g, '');
-                    productDocsToRead.set(productId, doc(firestore, 'products', productId));
+                    const productId = item.productId;
+                    if(productId) {
+                        productDocsToRead.set(productId, doc(firestore, 'products', productId));
+                    }
                 });
             }
             data.items.forEach(item => {
@@ -421,8 +432,10 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
 
             if (formId) {
                 originalItems.forEach(item => {
-                     const productId = item.productId.toLowerCase().replace(/[^a-z0-9-]/g, '');
-                    stockAdjustments.set(productId, (stockAdjustments.get(productId) || 0) - item.quantity);
+                     const productId = item.productId;
+                     if(productId) {
+                        stockAdjustments.set(productId, (stockAdjustments.get(productId) || 0) - item.quantity);
+                     }
                 });
             }
 
@@ -613,7 +626,7 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
                     <PlusCircle className="ml-2 h-4 w-4" />
                     زیادکردنی کاڵا
                 </Button>
-                <ExcelImportButton form={form} />
+                <ExcelImportButton form={form} allProducts={products} />
                 <TemplateDownloadButton />
             </div>
         </div>
