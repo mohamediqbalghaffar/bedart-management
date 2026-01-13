@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { PageHeader } from "@/components/shared/page-header";
 import { useFirestore, useCollection, useMemoFirebase, collection, getDocs, query, where } from '@/firebase';
@@ -34,10 +34,22 @@ type Expense = {
 };
 
 type Product = {
+    id: string;
     currentQuantity: number;
     category: string;
     productName: string;
+    sizeModel?: string;
+    stockLocation: 'Warehouse' | 'Shop Showroom';
 };
+
+type GroupedProduct = {
+    productName: string;
+    locations: {
+        Warehouse?: WithId<Product>;
+        'Shop Showroom'?: WithId<Product>;
+    };
+    totalQuantity: number;
+}
 
 type BuyingForm = {
     id: string;
@@ -136,9 +148,9 @@ function CustomersDetailDialog({ customers }: { customers: string[] }) {
     );
 }
 
-function LowStockDetailDialog({ products }: { products: WithId<Product>[] | null }) {
+function LowStockDetailDialog({ groupedProducts }: { groupedProducts: GroupedProduct[] }) {
     const router = useRouter();
-    const lowStockProducts = products?.filter(p => p.currentQuantity < 5);
+    const lowStockProducts = groupedProducts.filter(p => p.totalQuantity < 5);
 
     const handleRowClick = (productName: string) => {
         router.push(`/stock?search=${encodeURIComponent(productName)}`);
@@ -155,9 +167,9 @@ function LowStockDetailDialog({ products }: { products: WithId<Product>[] | null
                 </TableHeader>
                 <TableBody>
                     {lowStockProducts?.map(product => (
-                        <TableRow key={product.id} onClick={() => handleRowClick(product.productName)} className="cursor-pointer">
+                        <TableRow key={product.productName} onClick={() => handleRowClick(product.productName)} className="cursor-pointer">
                             <TableCell>{product.productName}</TableCell>
-                            <TableCell>{product.currentQuantity}</TableCell>
+                            <TableCell>{product.totalQuantity}</TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
@@ -190,10 +202,29 @@ function DashboardStats() {
         return Array.from(new Set(sales.map(s => s.customerName)));
     }, [sales]);
 
-    const lowStockProductsCount = React.useMemo(() => {
-        if (!products) return 0;
-        return products.filter(p => p.currentQuantity < 5).length;
+    const groupedProducts = useMemo(() => {
+        if (!products) return [];
+        const productMap = new Map<string, GroupedProduct>();
+        products.forEach(p => {
+            const key = `${p.productName}-${p.sizeModel || ''}`;
+            if (!productMap.has(key)) {
+                productMap.set(key, {
+                    productName: p.productName,
+                    locations: {},
+                    totalQuantity: 0,
+                });
+            }
+            const grouped = productMap.get(key)!;
+            grouped.locations[p.stockLocation] = p;
+            grouped.totalQuantity += p.currentQuantity;
+        });
+        return Array.from(productMap.values());
     }, [products]);
+
+
+    const lowStockProductsCount = React.useMemo(() => {
+        return groupedProducts.filter(p => p.totalQuantity < 5).length;
+    }, [groupedProducts]);
 
     const isLoading = loadingSales || loadingExpenses || loadingProducts;
 
@@ -275,7 +306,7 @@ function DashboardStats() {
                         <DialogTitle>کاڵا کەمەکان</DialogTitle>
                         <DialogDescription>لیستی ئەو کاڵایانەی کە بڕیان لە 5 دانە کەمترە.</DialogDescription>
                     </DialogHeader>
-                    <LowStockDetailDialog products={products} />
+                    <LowStockDetailDialog groupedProducts={groupedProducts} />
                 </DialogContent>
             </Dialog>
         </div>
@@ -314,7 +345,7 @@ function RecentActivityChart() {
             let purchasesQuery = query(collection(firestore, 'buying_forms'), where('issueDate', '>=', dateRange.from), where('issueDate', '<=', dateRange.to));
             let expensesQuery = query(collection(firestore, 'expenses'), where('date', '>=', dateRange.from), where('date', '<=', dateRange.to));
             
-            const [salesSnap, purchasesSnap, expensesSnap] = await Promise.all([ getDocs(salesQuery), getDocs(purchasesQuery), getDocs(expensesQuery) ]);
+            const [salesSnap, purchasesSnap, expensesSnap] = await Promise.all([ getDocs(salesQuery), getDocs(purchasesSnap), getDocs(expensesQuery) ]);
             let sales = salesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as WithId<SellingForm>[];
             let purchases = purchasesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as WithId<BuyingForm>[];
             const expenses = expensesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as WithId<Expense>[];
