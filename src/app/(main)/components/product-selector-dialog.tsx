@@ -78,8 +78,8 @@ export function ProductSelectorDialog({ onProductSelect }: ProductSelectorDialog
   };
 
   return (
-    <div className="space-y-4" dir="rtl">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4" dir="rtl">
             <div className="relative col-span-3 sm:col-span-1">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -89,14 +89,14 @@ export function ProductSelectorDialog({ onProductSelect }: ProductSelectorDialog
                 onChange={(e) => setSearchTerm(e.target.value)}
                 />
             </div>
-             <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value as any)}>
+             <Select dir="rtl" value={categoryFilter} onValueChange={(value) => setCategoryFilter(value as any)}>
                 <SelectTrigger><SelectValue placeholder="پۆل" /></SelectTrigger>
                 <SelectContent>
                     <SelectItem value="all">هەموو پۆلەکان</SelectItem>
                     {productCategories.map(cat => <SelectItem key={cat} value={cat}>{categoryTranslations[cat]}</SelectItem>)}
                 </SelectContent>
             </Select>
-             <Select value={locationFilter} onValueChange={(value) => setLocationFilter(value as any)}>
+             <Select dir="rtl" value={locationFilter} onValueChange={(value) => setLocationFilter(value as any)}>
                 <SelectTrigger><SelectValue placeholder="شوێن" /></SelectTrigger>
                 <SelectContent>
                     <SelectItem value="all">هەموو شوێنەکان</SelectItem>
