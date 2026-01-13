@@ -3,7 +3,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
-import { useFirestore, useCollection, useMemoFirebase, collection, getDocs as getDocsClient, collection as getCollectionClient, where, query } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, collection, getDocs as getDocsClient, collection as getCollectionClient } from '@/firebase';
+import { where, query } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, DollarSign, Users, Archive, ShoppingCart, TrendingUp, TrendingDown, Package, LineChart } from 'lucide-react';
 import { StatCard } from '@/components/shared/stat-card';
