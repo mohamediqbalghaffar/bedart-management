@@ -56,7 +56,7 @@ function PurchaseFormDialog({ formId, onSave, trigger }: { formId: string | null
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>{trigger}</DialogTrigger>
-            <DialogContent className="sm:max-w-4xl">
+            <DialogContent className="sm:max-w-5xl">
                 <DialogHeader>
                     <DialogTitle>{formId ? 'دەستکاری کردنی پسوولەی کڕین' : 'تۆمارکردنی پسوولەی کڕین'}</DialogTitle>
                     <DialogDescription>
@@ -287,4 +287,3 @@ export default function PurchasesPage() {
         </div>
     );
 }
-
