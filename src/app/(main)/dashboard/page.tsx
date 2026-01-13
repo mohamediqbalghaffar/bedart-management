@@ -2,9 +2,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { PageHeader } from "@/components/shared/page-header";
-import { useFirestore, useCollection, useMemoFirebase, collection, getDocs } from '@/firebase';
-import { where, query, collectionGroup } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, collection, getDocs, collectionGroup, query, where } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, DollarSign, Users, Archive, ShoppingCart, TrendingUp, TrendingDown, Package, LineChart } from 'lucide-react';
 import { StatCard } from '@/components/shared/stat-card';
@@ -53,19 +53,12 @@ type BuyingFormProduct = {
 type SellingFormProduct = {
     productId: string;
     productName: string;
+    sellingFormId: string;
 }
 
 type Supplier = {
     supplierName: string;
 }
-
-const productCategories = ["Mattress", "Bed", "Pillow", "Cover"];
-const categoryTranslations: Record<string, string> = {
-  "Mattress": "دۆشەک",
-  "Bed": "تەخت",
-  "Pillow": "سەرین",
-  "Cover": "بەرگ",
-};
 
 
 function DashboardStats() {
@@ -122,10 +115,10 @@ function DashboardStats() {
 
     return (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard title="کۆی گشتی فرۆش" value={currencyFormatter.format(totalRevenue)} icon={ShoppingCart} description="هەموو فرۆشە تۆمارکراوەکان" />
-            <StatCard title="کۆی گشتی خەرجی" value={currencyFormatter.format(totalExpenses)} icon={DollarSign} description="هەموو خەرجییە تۆمارکراوەکان" />
-            <StatCard title="کڕیارەکان" value={uniqueCustomers.toString()} icon={Users} description="کۆی ژمارەی کڕیارەکان" />
-            <StatCard title="کاڵای کەم لە کۆگا" value={lowStockProducts.toString()} icon={Archive} description="کاڵاکان کە لە 5 دانە کەمتریان ماوە" isNegative={lowStockProducts > 0} />
+            <Link href="/sales"><StatCard title="کۆی گشتی فرۆش" value={currencyFormatter.format(totalRevenue)} icon={ShoppingCart} description="هەموو فرۆشە تۆمارکراوەکان" /></Link>
+            <Link href="/expenses"><StatCard title="کۆی گشتی خەرجی" value={currencyFormatter.format(totalExpenses)} icon={DollarSign} description="هەموو خەرجییە تۆمارکراوەکان" /></Link>
+            <Link href="/customers"><StatCard title="کڕیارەکان" value={uniqueCustomers.toString()} icon={Users} description="کۆی ژمارەی کڕیارەکان" /></Link>
+            <Link href="/stock"><StatCard title="کاڵای کەم لە کۆگا" value={lowStockProducts.toString()} icon={Archive} description="کاڵاکان کە لە 5 دانە کەمتریان ماوە" isNegative={lowStockProducts > 0} /></Link>
         </div>
     );
 }
