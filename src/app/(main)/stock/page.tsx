@@ -5,7 +5,7 @@ import React, { useState, useMemo } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileDown, Search, Loader2, Info } from "lucide-react";
+import { FileDown, Search, Loader2, Info, ArrowRightLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useFirestore, useCollection, useMemoFirebase, collection } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import * as XLSX from 'xlsx';
 import { useToast } from '@/hooks/use-toast';
+import { StockTransferDialog } from './components/stock-transfer-dialog';
 
 type Product = {
     productName: string;
@@ -28,19 +29,16 @@ type Supplier = {
     supplierName: string;
 };
 
-type EnrichedProduct = WithId<Product> & {
-    supplierName?: string;
-};
-
 function StockList() {
     const firestore = useFirestore();
     const [searchTerm, setSearchTerm] = useState('');
     const { toast } = useToast();
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const productsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return collection(firestore, 'products');
-    }, [firestore]);
+    }, [firestore, refreshTrigger]);
     const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsQuery);
 
     const suppliersQuery = useMemoFirebase(() => {
@@ -95,6 +93,10 @@ function StockList() {
         toast({title: "سەرکەوتوو بوو", description: `ڕاپۆرتی کۆگا بەسەرکەوتوویی هەناردەکرا.`})
     }
 
+    const onTransferSuccess = () => {
+        setRefreshTrigger(prev => prev + 1);
+    }
+
     return (
         <Card>
             <CardHeader>
@@ -138,18 +140,19 @@ function StockList() {
                                     </TooltipProvider>
                                 </div>
                             </TableHead>
+                            <TableHead className="text-center">گواستنەوە</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center">
+                                <TableCell colSpan={6} className="h-24 text-center">
                                     <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                                 </TableCell>
                             </TableRow>
                         ) : filteredProducts.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
                                     {searchTerm ? `هیچ کاڵایەک نەدۆزرایەوە بۆ "${searchTerm}"` : "هیچ کاڵایەک لە کۆگا نییە."}
                                 </TableCell>
                             </TableRow>
@@ -165,6 +168,13 @@ function StockList() {
                                     </TableCell>
                                     <TableCell className="text-right">{product.stockLocation === 'Warehouse' ? 'کۆگا' : 'فرۆشگا'}</TableCell>
                                     <TableCell className="text-right">{product.supplierName}</TableCell>
+                                    <TableCell className="text-center">
+                                       <StockTransferDialog product={product} onTransferSuccess={onTransferSuccess}>
+                                            <Button variant="ghost" size="icon">
+                                                <ArrowRightLeft className="h-4 w-4 text-blue-500" />
+                                            </Button>
+                                       </StockTransferDialog>
+                                    </TableCell>
                                 </TableRow>
                             ))
                         )}

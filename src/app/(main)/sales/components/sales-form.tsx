@@ -277,7 +277,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
             // 1. Restore original stock for existing items (if editing)
             if (formId) {
                 for (const item of originalItems) {
-                    const productDocId = item.productName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                    const productDocId = item.productId
                     const productRef = doc(firestore, 'products', productDocId);
                     const productDoc = await transaction.get(productRef);
                     if (productDoc.exists()) {
@@ -289,21 +289,30 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
 
             // 2. Validate and deduct new stock
             for (const item of data.items) {
-                const productDocId = item.product.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                // This assumes a product sold from the shop showroom by default
+                const productDocId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-shopshowroom`;
                 const productRef = doc(firestore, 'products', productDocId);
                 const productDoc = await transaction.get(productRef);
 
-                if (!productDoc.exists()) {
-                    throw new Error(`کاڵای "${item.product}" لە کۆگا نەدۆزرایەوە.`);
-                }
+                if (!productDoc.exists() || productDoc.data().currentQuantity < item.quantity) {
+                     // If not enough in showroom, try warehouse
+                    const warehouseProductId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-warehouse`;
+                    const warehouseProductRef = doc(firestore, 'products', warehouseProductId);
+                    const warehouseProductDoc = await transaction.get(warehouseProductRef);
+                    
+                    if (!warehouseProductDoc.exists() || warehouseProductDoc.data().currentQuantity < item.quantity) {
+                         throw new Error(`بڕی کاڵا بەشی ناکات. "${item.product}" لە کۆگا و فرۆشگا بەردەست نییە.`);
+                    }
 
-                const currentQuantity = productDoc.data().currentQuantity || 0;
-                if (currentQuantity < item.quantity) {
-                    throw new Error(`بڕی کاڵا بەشی ناکات. تەنها ${currentQuantity} دانە لە "${item.product}" لە کۆگا ماوە.`);
-                }
+                    // Deduct from warehouse if sufficient
+                    const newQuantity = warehouseProductDoc.data().currentQuantity - item.quantity;
+                    transaction.update(warehouseProductRef, { currentQuantity: newQuantity });
 
-                const newQuantity = currentQuantity - item.quantity;
-                transaction.update(productRef, { currentQuantity: newQuantity });
+                } else {
+                     // Deduct from showroom
+                    const newQuantity = productDoc.data().currentQuantity - item.quantity;
+                    transaction.update(productRef, { currentQuantity: newQuantity });
+                }
             }
 
             // 3. Create/Update the main selling_form document
@@ -343,11 +352,12 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
             
             items.forEach(item => {
                 const productSubCollectionRef = doc(collection(firestore, `selling_forms/${sellingFormId}/products`));
-                const productDocId = item.product.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                const productDocId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-shopshowroom`; // Assume sale from showroom
+
                 const productData = {
                     id: productSubCollectionRef.id,
                     sellingFormId: sellingFormId,
-                    productId: productDocId,
+                    productId: productDocId, // Store reference to specific stock item
                     productName: item.product,
                     quantity: item.quantity,
                     unitPrice: item.unitPrice,
