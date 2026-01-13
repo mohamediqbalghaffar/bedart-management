@@ -468,7 +468,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
             <Table>
                 <TableHeader>
                     <TableRow className="bg-primary/90 hover:bg-primary">
-                        <TableHead className="w-2/5 text-primary-foreground text-center">بابەت</TableHead>
+                        <TableHead className="w-[30%] text-primary-foreground text-center">بابەت</TableHead>
                         <TableHead className="text-primary-foreground text-center">دانە</TableHead>
                         <TableHead className="text-primary-foreground text-center">نرخی تاک</TableHead>
                         <TableHead className="text-primary-foreground text-center">نرخی کۆ</TableHead>
@@ -673,5 +673,3 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
     </Form>
   );
 }
-
-    
