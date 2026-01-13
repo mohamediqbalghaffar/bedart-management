@@ -33,6 +33,7 @@ type Expense = {
 type Product = {
     currentQuantity: number;
     category: string;
+    productName: string;
 };
 
 type BuyingForm = {
@@ -46,10 +47,12 @@ type BuyingFormProduct = {
     quantity: number;
     unitPrice: number;
     productId: string;
+    productName: string;
 };
 
 type SellingFormProduct = {
     productId: string;
+    productName: string;
 }
 
 type Supplier = {
@@ -171,17 +174,17 @@ function RecentActivityChart() {
 
             // --- Category Filter (most complex) ---
             if (categoryFilter !== 'all') {
-                const productIdsInCategory = new Set<string>();
+                const productNamesInCategory = new Set<string>();
                 const productsInCategoryQuery = query(collection(firestore, 'products'), where('category', '==', categoryFilter));
                 const productsSnap = await getDocsClient(productsInCategoryQuery);
-                productsSnap.forEach(doc => productIdsInCategory.add(doc.id));
+                productsSnap.forEach(doc => productNamesInCategory.add(doc.data().productName));
 
                 const filterFormsByProductCategory = async (formCollection: string, forms: WithId<any>[]) => {
                     const filteredFormIds = new Set<string>();
                     for (const form of forms) {
                         const productsSnap = await getDocsClient(collection(firestore, `${formCollection}/${form.id}/products`));
                         for (const productDoc of productsSnap.docs) {
-                            if (productIdsInCategory.has(productDoc.data().productId)) {
+                            if (productNamesInCategory.has(productDoc.data().productName)) {
                                 filteredFormIds.add(form.id);
                                 break; 
                             }
@@ -276,14 +279,14 @@ function RecentActivityChart() {
                     </div>
                 </div>
                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4" dir="rtl">
-                    <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <Select dir="rtl" value={categoryFilter} onValueChange={setCategoryFilter}>
                         <SelectTrigger className="bg-white/10 text-white border-white/20"><SelectValue placeholder="فلتەری پۆلی کاڵا" /></SelectTrigger>
                         <SelectContent dir="rtl">
                             <SelectItem value="all">هەموو پۆلەکان</SelectItem>
                             {productCategories.map(cat => <SelectItem key={cat} value={cat}>{categoryTranslations[cat] || cat}</SelectItem>)}
                         </SelectContent>
                     </Select>
-                    <Select value={viewMode} onValueChange={(v) => setViewMode(v as any)}>
+                    <Select dir="rtl" value={viewMode} onValueChange={(v) => setViewMode(v as any)}>
                         <SelectTrigger className="bg-white/10 text-white border-white/20"><SelectValue /></SelectTrigger>
                         <SelectContent dir="rtl">
                             <SelectItem value="daily">نمایشی ڕۆژانە</SelectItem>
