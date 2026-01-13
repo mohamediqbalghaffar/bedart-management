@@ -125,7 +125,7 @@ function ExcelImportButton({ form }: { form: UseFormReturn<BuyingFormValues> }) 
                     const result = await analyzePurchaseExcel({ excelDataAsCsv: csvData });
                     
                     const currentItems = form.getValues('items');
-                    let newItems = result.map(item => ({ ...item, category: 'Mattress', sizeModel: '', sellingPrice: item.unitPrice * 1.2 })); // Default selling price logic
+                    let newItems = result.map(item => ({ ...item, category: 'Mattress', sizeModel: '', sellingPrice: 0 }));
 
                     if (currentItems.length === 1 && !currentItems[0].product && currentItems[0].quantity === 1 && currentItems[0].unitPrice === 0) {
                        form.setValue('items', newItems);
@@ -213,6 +213,8 @@ function BuyingFormItemRow({
             const foundProduct = products.find(p => p.productName.toLowerCase() === debouncedProductName.toLowerCase());
             if (foundProduct) {
                 form.setValue(`items.${index}.sellingPrice`, foundProduct.sellingPrice || 0);
+            } else {
+                form.setValue(`items.${index}.sellingPrice`, 0);
             }
         }
     }, [debouncedProductName, products, form, index]);
