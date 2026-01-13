@@ -212,7 +212,7 @@ function BuyingFormItemRow({
                                     <DialogTrigger asChild>
                                         <Button variant="outline" size="icon"><List className="h-4 w-4" /></Button>
                                     </DialogTrigger>
-                                    <DialogContent>
+                                    <DialogContent className="sm:max-w-3xl">
                                         <DialogHeader>
                                             <DialogTitle>لیستی کاڵاکان</DialogTitle>
                                         </DialogHeader>
@@ -592,5 +592,3 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
     </Form>
   );
 }
-
-    

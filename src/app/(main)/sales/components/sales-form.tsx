@@ -10,7 +10,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { PlusCircle, Trash2, List } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { parseISO } from "date-fns";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -84,7 +83,7 @@ function SalesFormItemRow({
                           <DialogTrigger asChild>
                             <Button variant="outline" size="icon"><List className="h-4 w-4" /></Button>
                           </DialogTrigger>
-                          <DialogContent dir="rtl">
+                          <DialogContent dir="rtl" className="sm:max-w-3xl">
                               <DialogHeader>
                                   <DialogTitle>لیستی کاڵاکان</DialogTitle>
                               </DialogHeader>

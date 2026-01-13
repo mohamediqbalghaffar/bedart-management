@@ -9,20 +9,29 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Loader2, Search } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ProductCategory, StockLocation } from '@/lib/types';
 
 type Product = {
   productName: string;
   currentQuantity: number;
   unitPrice?: number;
+  category: ProductCategory;
+  stockLocation: StockLocation;
 };
 
 type ProductSelectorDialogProps = {
   onProductSelect: (product: { name: string; price: number }) => void;
 };
 
+const productCategories: ProductCategory[] = ["Mattress", "Bed", "Pillow", "Cover"];
+const stockLocations: StockLocation[] = ["Warehouse", "Shop Showroom"];
+
 export function ProductSelectorDialog({ onProductSelect }: ProductSelectorDialogProps) {
   const firestore = useFirestore();
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<ProductCategory | 'all'>('all');
+  const [locationFilter, setLocationFilter] = useState<StockLocation | 'all'>('all');
 
   const productsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -34,14 +43,20 @@ export function ProductSelectorDialog({ onProductSelect }: ProductSelectorDialog
   const filteredProducts = useMemo(() => {
     if (!products) return [];
     
-    const availableProducts = products.filter(p => p.currentQuantity > 0);
+    let availableProducts = products.filter(p => p.currentQuantity > 0);
 
-    if (!searchTerm) {
-      return availableProducts;
+    if (categoryFilter !== 'all') {
+        availableProducts = availableProducts.filter(p => p.category === categoryFilter);
+    }
+    if (locationFilter !== 'all') {
+        availableProducts = availableProducts.filter(p => p.stockLocation === locationFilter);
+    }
+    if (searchTerm) {
+      availableProducts = availableProducts.filter(p => p.productName.toLowerCase().includes(searchTerm.toLowerCase()));
     }
     
-    return availableProducts.filter(p => p.productName.toLowerCase().includes(searchTerm.toLowerCase()));
-  }, [products, searchTerm]);
+    return availableProducts;
+  }, [products, searchTerm, categoryFilter, locationFilter]);
 
   const handleSelect = (product: WithId<Product>) => {
     onProductSelect({
@@ -52,34 +67,52 @@ export function ProductSelectorDialog({ onProductSelect }: ProductSelectorDialog
 
   return (
     <div className="space-y-4" dir="rtl">
-      <div className="relative">
-        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="...گەڕان"
-          className="pr-10"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
-      <ScrollArea className="h-72" dir="rtl">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="relative col-span-3 sm:col-span-1">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                placeholder="...گەڕان"
+                className="pr-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
+             <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value as any)}>
+                <SelectTrigger><SelectValue placeholder="پۆل" /></SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">هەموو پۆلەکان</SelectItem>
+                    {productCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                </SelectContent>
+            </Select>
+             <Select value={locationFilter} onValueChange={(value) => setLocationFilter(value as any)}>
+                <SelectTrigger><SelectValue placeholder="شوێن" /></SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">هەموو شوێنەکان</SelectItem>
+                    {stockLocations.map(loc => <SelectItem key={loc} value={loc}>{loc === 'Warehouse' ? 'کۆگا' : 'فرۆشگا'}</SelectItem>)}
+                </SelectContent>
+            </Select>
+        </div>
+      <ScrollArea className="h-[450px]" dir="rtl">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead className="text-right">ناوی کاڵا</TableHead>
               <TableHead className="text-right">دانە</TableHead>
+              <TableHead className="text-right">پۆل</TableHead>
+              <TableHead className="text-right">شوێن</TableHead>
               <TableHead className="text-left"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={3} className="h-24 text-center">
+                <TableCell colSpan={5} className="h-24 text-center">
                   <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                 </TableCell>
               </TableRow>
             ) : filteredProducts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                   هیچ کاڵایەک نەدۆزرایەوە.
                 </TableCell>
               </TableRow>
@@ -88,6 +121,8 @@ export function ProductSelectorDialog({ onProductSelect }: ProductSelectorDialog
                 <TableRow key={product.id}>
                   <TableCell className="text-right font-medium">{product.productName}</TableCell>
                   <TableCell className="text-right">{product.currentQuantity}</TableCell>
+                  <TableCell className="text-right">{product.category}</TableCell>
+                  <TableCell className="text-right">{product.stockLocation === 'Warehouse' ? 'کۆگا' : 'فرۆشگا'}</TableCell>
                   <TableCell className="text-left">
                     <Button variant="ghost" size="sm" onClick={() => handleSelect(product)}>
                       هەڵبژاردن
