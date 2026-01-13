@@ -104,7 +104,7 @@ function PurchasesList() {
             const supplierMap = new Map(suppliers.map(s => [s.id, s.supplierName]));
 
             const enriched = await Promise.all(buyingForms.map(async (form) => {
-                const productsColRef = getCollectionClient(firestore, `buying_forms/${form.id}/products`);
+                const productsColRef = getCollectionClient(firestore, `buying_forms/${form.id}/buying_form_products`);
                 const productsSnapshot = await getDocsClient(productsColRef);
                 const products = productsSnapshot.docs.map(doc => doc.data() as BuyingFormProduct);
 
@@ -131,7 +131,7 @@ function PurchasesList() {
 
         try {
             await runTransaction(firestore, async (transaction) => {
-                const productsPurchasedRef = collection(firestore, `buying_forms/${formId}/products`);
+                const productsPurchasedRef = collection(firestore, `buying_forms/${formId}/buying_form_products`);
                 const productsPurchasedSnapshot = await getDocs(productsPurchasedRef); // This is a non-transactional read.
                 
                 const productRefsToUpdate: { ref: any; newQuantity: number }[] = [];
@@ -298,5 +298,7 @@ export default function PurchasesPage() {
         </div>
     );
 }
+
+    
 
     

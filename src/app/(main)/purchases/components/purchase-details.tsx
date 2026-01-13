@@ -31,7 +31,7 @@ export function PurchaseDetails({ formId }: { formId: string }) {
     const firestore = useFirestore();
 
     const formRef = useMemoFirebase(() => firestore ? doc(firestore, 'buying_forms', formId) : null, [firestore, formId]);
-    const productsRef = useMemoFirebase(() => firestore ? collection(firestore, `buying_forms/${formId}/products`) : null, [firestore, formId]);
+    const productsRef = useMemoFirebase(() => firestore ? collection(firestore, `buying_forms/${formId}/buying_form_products`) : null, [firestore, formId]);
 
     const { data: formData, isLoading: isLoadingForm } = useDoc<BuyingFormType>(formRef);
     const { data: products, isLoading: isLoadingProducts } = useCollection<ProductBuyingForm>(productsRef);
@@ -121,5 +121,7 @@ export function PurchaseDetails({ formId }: { formId: string }) {
         </div>
     );
 }
+
+    
 
     

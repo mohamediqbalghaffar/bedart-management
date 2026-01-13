@@ -1,14 +1,15 @@
+
 {
   "indexes": [
     {
-      "collectionGroup": "selling_forms_products",
+      "collectionGroup": "selling_form_products",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "productName", "order": "ASCENDING" }
       ]
     },
     {
-      "collectionGroup": "buying_forms_products",
+      "collectionGroup": "buying_form_products",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "productName", "order": "ASCENDING" }
@@ -16,3 +17,5 @@
     }
   ]
 }
+
+    

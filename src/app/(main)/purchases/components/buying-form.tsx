@@ -20,6 +20,7 @@ import * as XLSX from 'xlsx';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ProductSelectorDialog } from "../../components/product-selector-dialog";
 import { useDebounce } from "@/hooks/use-debounce";
+import { DocumentData } from "firebase/firestore";
 
 
 // Define types based on your Firestore structure
@@ -347,7 +348,7 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
           if (formSnap.exists()) {
             const data = formSnap.data();
             
-            const itemsRef = collection(firestore, `buying_forms/${formId}/products`);
+            const itemsRef = collection(firestore, `buying_forms/${formId}/buying_form_products`);
             const itemsSnap = await getDocs(itemsRef);
             const items = itemsSnap.docs.map(d => ({ ...d.data() }));
 
@@ -482,12 +483,12 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
             
             // Delete old items and add new ones (this is okay as it's not interleaved with reads from the same documents)
             if (formId) {
-                 const existingItemsSnap = await getDocs(collection(firestore, `buying_forms/${formId}/products`));
+                 const existingItemsSnap = await getDocs(collection(firestore, `buying_forms/${formId}/buying_form_products`));
                  existingItemsSnap.forEach(doc => transaction.delete(doc.ref));
             }
 
             items.forEach(item => {
-                const productSubCollectionRef = doc(collection(firestore, `buying_forms/${buyingFormId}/products`));
+                const productSubCollectionRef = doc(collection(firestore, `buying_forms/${buyingFormId}/buying_form_products`));
                 const productDocId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${data.stockLocation.toLowerCase().replace(/\s/g, '')}`;
 
                 const productData = {
@@ -668,3 +669,6 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
     </Form>
   );
 }
+
+
+    

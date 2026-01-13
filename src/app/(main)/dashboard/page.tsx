@@ -161,7 +161,7 @@ function RecentActivityChart() {
             const endDate = endOfDay(toDate);
 
             // --- Define helper to get forms by category ---
-            const getFormIdsForCategory = async (formCollectionGroup: 'selling_forms' | 'buying_forms') => {
+            const getFormIdsForCategory = async (formCollectionGroup: 'selling_form_products' | 'buying_form_products') => {
                 if (categoryFilter === 'all') return null;
 
                 const productNamesInCategory = new Set<string>();
@@ -170,27 +170,35 @@ function RecentActivityChart() {
                 productsSnap.forEach(doc => productNamesInCategory.add(doc.data().productName));
 
                 if (productNamesInCategory.size === 0) return new Set<string>();
-
-                const formProductQuery = query(
-                    collectionGroup(firestore, `${formCollectionGroup}_products`), 
-                    where('productName', 'in', Array.from(productNamesInCategory))
-                );
-
-                const formProductSnap = await getDocs(formProductQuery);
+                
+                // Firestore 'in' query has a limit of 30 values.
+                // We'll process in chunks if necessary.
+                const productNamesArray = Array.from(productNamesInCategory);
                 const formIds = new Set<string>();
-                formProductSnap.forEach(doc => {
-                    const pathParts = doc.ref.path.split('/');
-                    const formId = pathParts[pathParts.length - 3];
-                    formIds.add(formId);
-                });
+                const CHUNK_SIZE = 30;
+
+                for (let i = 0; i < productNamesArray.length; i += CHUNK_SIZE) {
+                    const chunk = productNamesArray.slice(i, i + CHUNK_SIZE);
+                    const formProductQuery = query(
+                        collectionGroup(firestore, formCollectionGroup), 
+                        where('productName', 'in', chunk)
+                    );
+
+                    const formProductSnap = await getDocs(formProductQuery);
+                    formProductSnap.forEach(doc => {
+                        const pathParts = doc.ref.path.split('/');
+                        const formId = pathParts[pathParts.length - 3];
+                        formIds.add(formId);
+                    });
+                }
                 
                 return formIds;
             };
 
             // --- Get filtered form IDs ---
             const [salesFormIds, purchaseFormIds] = await Promise.all([
-                getFormIdsForCategory('selling_forms'),
-                getFormIdsForCategory('buying_forms')
+                getFormIdsForCategory('selling_form_products'),
+                getFormIdsForCategory('buying_form_products')
             ]);
             
             // --- Build base queries ---
@@ -238,7 +246,7 @@ function RecentActivityChart() {
             });
 
             for (const purchase of purchases) {
-                const productsSnap = await getDocs(collection(firestore, `buying_forms/${purchase.id}/products`));
+                const productsSnap = await getDocs(collection(firestore, `buying_forms/${purchase.id}/buying_form_products`));
                 const subTotal = productsSnap.docs.reduce((acc, doc) => acc + (doc.data().quantity * doc.data().unitPrice), 0);
                 const totalAmount = subTotal + (purchase.customsFee || 0);
                 totalPurchases += totalAmount;
@@ -373,5 +381,7 @@ export default function DashboardPage() {
         </div>
     );
 }
+
+    
 
     

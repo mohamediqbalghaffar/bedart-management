@@ -183,7 +183,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
           if (formSnap.exists()) {
             const data = formSnap.data();
             
-            const itemsRef = collection(firestore, `selling_forms/${formId}/products`);
+            const itemsRef = collection(firestore, `selling_forms/${formId}/selling_form_products`);
             const itemsSnap = await getDocs(itemsRef);
             const items = itemsSnap.docs.map(d => ({...d.data()}));
             
@@ -344,14 +344,14 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
 
             // 4. Clear and create new sub-collection documents
             if (formId) {
-                const existingItemsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/products`));
+                const existingItemsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/selling_form_products`));
                 existingItemsSnap.docs.forEach(d => transaction.delete(d.ref));
                 const existingPaymentsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/payments`));
                 existingPaymentsSnap.docs.forEach(p => transaction.delete(p.ref));
             }
             
             items.forEach(item => {
-                const productSubCollectionRef = doc(collection(firestore, `selling_forms/${sellingFormId}/products`));
+                const productSubCollectionRef = doc(collection(firestore, `selling_forms/${sellingFormId}/selling_form_products`));
                 const productDocId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-shopshowroom`; // Assume sale from showroom
 
                 const productData = {
@@ -683,3 +683,6 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
     </Form>
   );
 }
+
+
+    

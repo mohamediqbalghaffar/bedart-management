@@ -80,7 +80,7 @@ function SalesList() {
         if (!firestore) return;
         
         try {
-            const productsSoldRef = collection(firestore, `selling_forms/${formId}/products`);
+            const productsSoldRef = collection(firestore, `selling_forms/${formId}/selling_form_products`);
             const productsSoldSnapshot = await getDocs(productsSoldRef);
             const productsSold = productsSoldSnapshot.docs.map(d => d.data() as SellingFormProduct);
 
@@ -239,3 +239,6 @@ export default function SalesPage() {
         </div>
     );
 }
+
+
+    

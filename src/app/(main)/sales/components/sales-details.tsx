@@ -43,7 +43,7 @@ export function SalesDetails({ formId }: { formId: string }) {
     const firestore = useFirestore();
 
     const formRef = useMemoFirebase(() => firestore ? doc(firestore, 'selling_forms', formId) : null, [firestore, formId]);
-    const productsRef = useMemoFirebase(() => firestore ? collection(firestore, `selling_forms/${formId}/products`) : null, [firestore, formId]);
+    const productsRef = useMemoFirebase(() => firestore ? collection(firestore, `selling_forms/${formId}/selling_form_products`) : null, [firestore, formId]);
     const paymentsRef = useMemoFirebase(() => firestore ? collection(firestore, `selling_forms/${formId}/payments`) : null, [firestore, formId]);
 
     const { data: formData, isLoading: isLoadingForm } = useDoc<SellingFormType>(formRef);
@@ -155,3 +155,6 @@ export function SalesDetails({ formId }: { formId: string }) {
         </div>
     );
 }
+
+
+    
