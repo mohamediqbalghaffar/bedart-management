@@ -137,7 +137,7 @@ const chartConfig = {
 function RecentActivityChart() {
     const firestore = useFirestore();
     const [dateRange, setDateRange] = useState({ from: format(subDays(new Date(), 29), 'yyyy-MM-dd'), to: format(new Date(), 'yyyy-MM-dd') });
-    const [activeSubjects, setActiveSubjects] = useState({ sales: true, expenses: true, purchases: false, netProfit: false });
+    const [activeSubjects, setActiveSubjects] = useState({ sales: true, expenses: true, purchases: true, netProfit: true });
     const [viewMode, setViewMode] = useState<'daily' | 'total'>('daily');
     
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -250,8 +250,8 @@ function RecentActivityChart() {
                 const totalNetProfit = totalSales - totalExpenses - totalPurchases;
                 setTotalData([
                     { name: 'کۆی فرۆش', value: totalSales, fill: 'var(--color-sales)' },
-                    { name: 'کۆی خەرجی', value: totalExpenses, fill: 'var(--color-expenses)' },
                     { name: 'کۆی کڕین', value: totalPurchases, fill: 'var(--color-purchases)' },
+                    { name: 'کۆی خەرجی', value: totalExpenses, fill: 'var(--color-expenses)' },
                     { name: 'کۆی قازانج', value: totalNetProfit, fill: 'var(--color-netProfit)' },
                 ]);
             }
@@ -336,14 +336,25 @@ function RecentActivityChart() {
                     </AreaChart>
                 </ChartContainer>
                 ) : (
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center h-80 items-center">
-                    {totalData.filter(d => activeSubjects[d.name.includes('فرۆش') ? 'sales' : d.name.includes('خەرجی') ? 'expenses' : d.name.includes('کڕین') ? 'purchases' : 'netProfit']).map(d => (
-                         <div key={d.name} className="flex flex-col gap-2 p-4 rounded-lg" style={{backgroundColor: d.fill.replace('hsl', 'hsla').replace(')', ', 0.2)')}}>
-                            <h3 className="text-lg font-semibold text-white/90">{d.name}</h3>
-                            <p className="text-3xl font-bold" style={{color: d.fill}}>{currencyFormatter(d.value)}</p>
-                        </div>
-                    ))}
-                </div>
+                 <ChartContainer config={chartConfig} className="h-80 w-full">
+                    <BarChart accessibilityLayer data={totalData.filter(d => activeSubjects[d.name.includes('فرۆش') ? 'sales' : d.name.includes('کڕین') ? 'purchases' : d.name.includes('خەرجی') ? 'expenses' : 'netProfit'])}>
+                         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)" />
+                        <XAxis
+                            dataKey="name"
+                            tickLine={false}
+                            tickMargin={10}
+                            axisLine={false}
+                            tickFormatter={(value) => value}
+                            tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}
+                        />
+                         <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={currencyFormatter} tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}/>
+                        <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent indicator="dot" labelClassName="text-white" className="bg-card/80 backdrop-blur-sm text-white border-border/50" />}
+                        />
+                        <Bar dataKey="value" radius={8} />
+                    </BarChart>
+                </ChartContainer>
                 )}
             </CardContent>
         </Card>
@@ -359,5 +370,7 @@ export default function DashboardPage() {
         </div>
     );
 }
+
+    
 
     
