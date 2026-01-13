@@ -22,7 +22,7 @@ type Product = {
 };
 
 type ProductSelectorDialogProps = {
-  onProductSelect: (product: { name: string; price: number }) => void;
+  onProductSelect: (product: { name: string; price: number, purchasePrice?: number }) => void;
 };
 
 const productCategories: ProductCategory[] = ["Mattress", "Bed", "Pillow", "Cover"];
@@ -75,6 +75,7 @@ export function ProductSelectorDialog({ onProductSelect }: ProductSelectorDialog
     onProductSelect({
       name: product.productName,
       price: product.sellingPrice || 0,
+      purchasePrice: product.unitPrice || 0,
     });
   };
 

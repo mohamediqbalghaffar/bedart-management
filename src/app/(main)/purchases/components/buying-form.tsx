@@ -19,6 +19,7 @@ import { analyzePurchaseExcel } from "@/ai/flows/analyze-purchase-excel";
 import * as XLSX from 'xlsx';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ProductSelectorDialog } from "../../components/product-selector-dialog";
+import { useDebounce } from "@/hooks/use-debounce";
 
 
 // Define types based on your Firestore structure
@@ -26,6 +27,12 @@ type Supplier = {
   id: string;
   supplierName: string;
 };
+
+type Product = {
+    productName: string;
+    sellingPrice?: number;
+    unitPrice?: number;
+}
 
 const buyingFormSchema = z.object({
   supplierId: z.string().min(1, "دابینکەر پێویستە."),
@@ -188,15 +195,27 @@ function BuyingFormItemRow({
     form,
     index,
     remove,
-    fieldId
+    fieldId,
+    products
 }: {
     form: UseFormReturn<BuyingFormValues>;
     index: number;
     remove: (index: number) => void;
     fieldId: string;
+    products: WithId<Product>[] | null
 }) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const watchedItem = form.watch(`items.${index}`);
+    const debouncedProductName = useDebounce(watchedItem.product, 500);
+
+    useEffect(() => {
+        if (debouncedProductName && products) {
+            const foundProduct = products.find(p => p.productName.toLowerCase() === debouncedProductName.toLowerCase());
+            if (foundProduct) {
+                form.setValue(`items.${index}.sellingPrice`, foundProduct.sellingPrice || 0);
+            }
+        }
+    }, [debouncedProductName, products, form, index]);
     
     return (
         <TableRow key={fieldId}>
@@ -218,9 +237,10 @@ function BuyingFormItemRow({
                                         <DialogHeader>
                                             <DialogTitle>لیستی کاڵاکان</DialogTitle>
                                         </DialogHeader>
-                                        <ProductSelectorDialog onProductSelect={({ name, price }) => {
+                                        <ProductSelectorDialog onProductSelect={({ name, price, purchasePrice }) => {
                                             form.setValue(`items.${index}.product`, name);
-                                            form.setValue(`items.${index}.sellingPrice`, price); // Note: selector provides selling price
+                                            form.setValue(`items.${index}.sellingPrice`, price);
+                                            form.setValue(`items.${index}.unitPrice`, purchasePrice || 0);
                                             setDialogOpen(false);
                                         }} />
                                     </DialogContent>
@@ -287,6 +307,12 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
     return collection(firestore, 'suppliers');
   }, [firestore]);
   const { data: suppliers, isLoading: isLoadingSuppliers } = useCollection<Supplier>(suppliersQuery);
+  
+  const productsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'products');
+  }, [firestore]);
+  const { data: products } = useCollection<Product>(productsQuery);
 
   const form = useForm<BuyingFormValues>({
     resolver: zodResolver(buyingFormSchema),
@@ -551,6 +577,7 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
                             form={form}
                             index={index}
                             remove={() => fields.length > 1 && remove(index)}
+                            products={products}
                         />
                     ))}
                 </TableBody>
@@ -602,3 +629,4 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
     </Form>
   );
 }
+
