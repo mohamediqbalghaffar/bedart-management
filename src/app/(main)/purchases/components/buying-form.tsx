@@ -8,7 +8,7 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Download, Loader2, PlusCircle, Trash2, List } from "lucide-react";
+import { Download, Loader2, PlusCircle, Trash2, List, FileUp } from "lucide-react";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -47,6 +47,44 @@ type BuyingFormProps = {
     formId?: string | null;
     onSave?: () => void;
 };
+
+function TemplateDownloadButton() {
+    const { toast } = useToast();
+
+    const handleDownload = () => {
+        try {
+            const templateData = [
+                { product: "Mattress A", quantity: 10, unitPrice: 150 },
+                { product: "Pillow B", quantity: 20, unitPrice: 25 },
+            ];
+            const worksheet = XLSX.utils.json_to_sheet(templateData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
+
+            // Set column widths
+            worksheet['!cols'] = [
+                { wch: 30 }, // product
+                { wch: 10 }, // quantity
+                { wch: 15 }, // unitPrice
+            ];
+            
+            XLSX.writeFile(workbook, "Purchase_Template.xlsx");
+
+            toast({ title: "سەرکەوتوو بوو", description: "داواکارییەکە بە سەرکەوتوویی دابەزێنرا." });
+
+        } catch (error) {
+             console.error("Template download error:", error);
+             toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "دابەزاندنی داواکارییەکە سەرکەوتوو نەبوو." });
+        }
+    }
+
+    return (
+        <Button type="button" variant="outline" size="sm" onClick={handleDownload}>
+            <Download className="ml-2 h-4 w-4" />
+            دابەزاندنی داواکاری
+        </Button>
+    )
+}
 
 function ExcelImportButton({ form }: { form: UseFormReturn<BuyingFormValues> }) {
     const [isLoading, setIsLoading] = React.useState(false);
@@ -127,7 +165,7 @@ function ExcelImportButton({ form }: { form: UseFormReturn<BuyingFormValues> }) 
                 className="hidden"
                 accept=".xlsx, .xls"
             />
-            <Button type="button" variant="outline" onClick={handleClick} disabled={isLoading}>
+            <Button type="button" variant="outline" size="sm" onClick={handleClick} disabled={isLoading}>
                 {isLoading ? (
                     <>
                         <Loader2 className="ml-2 h-4 w-4 animate-spin" />
@@ -135,7 +173,7 @@ function ExcelImportButton({ form }: { form: UseFormReturn<BuyingFormValues> }) 
                     </>
                 ) : (
                     <>
-                        <Download className="ml-2 h-4 w-4" />
+                        <FileUp className="ml-2 h-4 w-4" />
                         هاوردەکردن لە ئێکسڵ
                     </>
                 )}
@@ -507,16 +545,17 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
                     ))}
                 </TableBody>
             </Table>
-            <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ product: "", quantity: 1, unitPrice: 0, category: 'Mattress', sizeModel: '' })}>
-                <PlusCircle className="ml-2 h-4 w-4" />
-                زیادکردنی کاڵا
-            </Button>
+            <div className="flex gap-2 mt-4">
+                <Button type="button" variant="outline" size="sm" onClick={() => append({ product: "", quantity: 1, unitPrice: 0, category: 'Mattress', sizeModel: '' })}>
+                    <PlusCircle className="ml-2 h-4 w-4" />
+                    زیادکردنی کاڵا
+                </Button>
+                <ExcelImportButton form={form} />
+                <TemplateDownloadButton />
+            </div>
         </div>
 
-        <div className="flex justify-between items-start gap-8 pt-6 border-t">
-            <div className="space-y-4 flex-1">
-                 <ExcelImportButton form={form} />
-            </div>
+        <div className="flex justify-end items-start gap-8 pt-6 border-t">
             <div className="space-y-2 text-left min-w-[280px]">
                 <div className="flex items-center justify-between gap-4 p-2 rounded-md">
                     <span className="text-muted-foreground">:کۆی کاڵاکان</span>
