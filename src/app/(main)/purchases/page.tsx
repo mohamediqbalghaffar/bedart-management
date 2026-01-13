@@ -132,25 +132,36 @@ function PurchasesList() {
         try {
             await runTransaction(firestore, async (transaction) => {
                 const productsPurchasedRef = collection(firestore, `buying_forms/${formId}/products`);
-                const productsPurchasedSnapshot = await getDocs(productsPurchasedRef);
+                const productsPurchasedSnapshot = await getDocs(productsPurchasedRef); // This is a non-transactional read.
                 
-                // First, update the stock quantities
-                for (const productDoc of productsPurchasedSnapshot.docs) {
-                    const item = productDoc.data() as BuyingFormProduct;
-                    const productRef = doc(firestore, 'products', item.productId);
-                    const currentProductDoc = await transaction.get(productRef);
-                    if (currentProductDoc.exists()) {
-                        const newQuantity = (currentProductDoc.data().currentQuantity || 0) - item.quantity;
-                        transaction.update(productRef, { currentQuantity: newQuantity < 0 ? 0 : newQuantity });
+                const productRefsToUpdate: { ref: any; newQuantity: number }[] = [];
+                
+                // Phase 1: Read all product documents within the transaction
+                const productSnapshots = await Promise.all(
+                    productsPurchasedSnapshot.docs.map(productDoc => {
+                        const item = productDoc.data() as BuyingFormProduct;
+                        const productRef = doc(firestore, 'products', item.productId);
+                        return transaction.get(productRef).then(snap => ({ snap, item }));
+                    })
+                );
+
+                // Phase 2: Calculate new quantities (no reads or writes)
+                for (const { snap, item } of productSnapshots) {
+                     if (snap.exists()) {
+                        const newQuantity = (snap.data().currentQuantity || 0) - item.quantity;
+                        productRefsToUpdate.push({ ref: snap.ref, newQuantity: newQuantity < 0 ? 0 : newQuantity });
                     }
                 }
 
-                // Then, delete the subcollection documents
-                for (const docToDelete of productsPurchasedSnapshot.docs) {
-                    transaction.delete(docToDelete.ref);
-                }
+                // Phase 3: Perform all writes
+                productRefsToUpdate.forEach(({ ref, newQuantity }) => {
+                    transaction.update(ref, { currentQuantity: newQuantity });
+                });
                 
-                // Finally, delete the main form document
+                productsPurchasedSnapshot.docs.forEach(docToDelete => {
+                    transaction.delete(docToDelete.ref);
+                });
+
                 const formRef = doc(firestore, 'buying_forms', formId);
                 transaction.delete(formRef);
             });
@@ -287,3 +298,5 @@ export default function PurchasesPage() {
         </div>
     );
 }
+
+    
