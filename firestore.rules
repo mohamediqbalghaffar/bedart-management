@@ -45,6 +45,10 @@ service cloud.firestore {
         allow read, write: if request.auth.uid != null || isAdmin();
       }
     }
+    
+    match /selling_forms_products/{docId} {
+        allow get, list: if request.auth.uid != null;
+    }
 
     // Buying forms and their subcollections
     match /buying_forms/{buyingFormId} {
@@ -53,6 +57,10 @@ service cloud.firestore {
       match /products/{productId} {
         allow read, write: if request.auth.uid != null || isAdmin();
       }
+    }
+    
+    match /buying_forms_products/{docId} {
+        allow get, list: if request.auth.uid != null;
     }
     
     // Expenses

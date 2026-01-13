@@ -1,34 +1,6 @@
 {
   "indexes": [
     {
-      "collectionGroup": "buying_forms",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "supplierId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "issueDate",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "selling_forms",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "creatorId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "issueDate",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
       "collectionGroup": "selling_forms_products",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
