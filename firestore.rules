@@ -11,7 +11,7 @@ service cloud.firestore {
       allow read, update: if request.auth.uid == userId || isAdmin();
       allow create: if request.auth.uid != null;
       allow delete: if isAdmin();
-      allow list: if isAdmin();
+      allow list: if request.auth.uid != null;
     }
     
     // Allow logged-in users to read from collections, but only admins can write/delete widely.
