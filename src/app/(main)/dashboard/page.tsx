@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
-import { useFirestore, useCollection, useMemoFirebase, collection, getDocs, doc } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, collection, getDocs } from '@/firebase';
 import { where, query, collectionGroup } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, DollarSign, Users, Archive, ShoppingCart, TrendingUp, TrendingDown, Package, LineChart } from 'lucide-react';
@@ -143,8 +143,6 @@ function RecentActivityChart() {
     const [activeSubjects, setActiveSubjects] = useState({ sales: true, expenses: true, purchases: true, netProfit: true });
     const [viewMode, setViewMode] = useState<'daily' | 'total'>('daily');
     
-    const [categoryFilter, setCategoryFilter] = useState<string>('all');
-    
     const [chartData, setChartData] = useState<any[]>([]);
     const [totalData, setTotalData] = useState<{ name: string; value: number; fill: string }[]>([]);
     const [isCalculating, setIsCalculating] = useState(false);
@@ -159,47 +157,6 @@ function RecentActivityChart() {
             
             const startDate = startOfDay(fromDate);
             const endDate = endOfDay(toDate);
-
-            // --- Define helper to get forms by category ---
-            const getFormIdsForCategory = async (formCollectionGroup: 'selling_form_products' | 'buying_form_products') => {
-                if (categoryFilter === 'all') return null;
-
-                const productNamesInCategory = new Set<string>();
-                const productsInCategoryQuery = query(collection(firestore, 'products'), where('category', '==', categoryFilter));
-                const productsSnap = await getDocs(productsInCategoryQuery);
-                productsSnap.forEach(doc => productNamesInCategory.add(doc.data().productName));
-
-                if (productNamesInCategory.size === 0) return new Set<string>();
-                
-                // Firestore 'in' query has a limit of 30 values.
-                // We'll process in chunks if necessary.
-                const productNamesArray = Array.from(productNamesInCategory);
-                const formIds = new Set<string>();
-                const CHUNK_SIZE = 30;
-
-                for (let i = 0; i < productNamesArray.length; i += CHUNK_SIZE) {
-                    const chunk = productNamesArray.slice(i, i + CHUNK_SIZE);
-                    const formProductQuery = query(
-                        collectionGroup(firestore, formCollectionGroup), 
-                        where('productName', 'in', chunk)
-                    );
-
-                    const formProductSnap = await getDocs(formProductQuery);
-                    formProductSnap.forEach(doc => {
-                        const pathParts = doc.ref.path.split('/');
-                        const formId = pathParts[pathParts.length - 3];
-                        formIds.add(formId);
-                    });
-                }
-                
-                return formIds;
-            };
-
-            // --- Get filtered form IDs ---
-            const [salesFormIds, purchaseFormIds] = await Promise.all([
-                getFormIdsForCategory('selling_form_products'),
-                getFormIdsForCategory('buying_form_products')
-            ]);
             
             // --- Build base queries ---
             let salesQuery = query(collection(firestore, 'selling_forms'), where('issueDate', '>=', dateRange.from), where('issueDate', '<=', dateRange.to));
@@ -211,14 +168,6 @@ function RecentActivityChart() {
             let sales = salesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as WithId<SellingForm>[];
             let purchases = purchasesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as WithId<BuyingForm>[];
             const expenses = expensesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as WithId<Expense>[];
-
-            // --- Apply category filtering ---
-            if (salesFormIds !== null) {
-                sales = sales.filter(s => salesFormIds.has(s.id));
-            }
-             if (purchaseFormIds !== null) {
-                purchases = purchases.filter(p => purchaseFormIds.has(p.id));
-            }
 
             // --- Aggregate Data ---
             let totalSales = 0, totalPurchases = 0, totalExpenses = 0;
@@ -274,7 +223,7 @@ function RecentActivityChart() {
         }
 
        calculateChartData();
-    }, [dateRange, firestore, viewMode, categoryFilter]);
+    }, [dateRange, firestore, viewMode]);
     
     const currencyFormatter = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', compactDisplay: 'short' }).format(value);
 
@@ -303,13 +252,6 @@ function RecentActivityChart() {
                     </div>
                 </div>
                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4" dir="rtl">
-                     <Select dir="rtl" value={categoryFilter} onValueChange={setCategoryFilter}>
-                        <SelectTrigger className="bg-white/10 text-white border-white/20"><SelectValue placeholder="فلتەری پۆلی کاڵا" /></SelectTrigger>
-                        <SelectContent dir="rtl">
-                            <SelectItem value="all">هەموو پۆلەکان</SelectItem>
-                            {productCategories.map(cat => <SelectItem key={cat} value={cat}>{categoryTranslations[cat] || cat}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
                     <Select dir="rtl" value={viewMode} onValueChange={(v) => setViewMode(v as any)}>
                         <SelectTrigger className="bg-white/10 text-white border-white/20"><SelectValue /></SelectTrigger>
                         <SelectContent dir="rtl">
@@ -381,7 +323,3 @@ export default function DashboardPage() {
         </div>
     );
 }
-
-    
-
-    
