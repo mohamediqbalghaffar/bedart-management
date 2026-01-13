@@ -60,9 +60,7 @@ type Supplier = {
     supplierName: string;
 }
 
-type ProductCategory = {
-    name: string;
-}
+const productCategories = ["Mattress", "Bed", "Pillow", "Cover"];
 
 
 function DashboardStats() {
@@ -147,11 +145,6 @@ function RecentActivityChart() {
     const [chartData, setChartData] = useState<any[]>([]);
     const [totalData, setTotalData] = useState<{ name: string; value: number; fill: string }[]>([]);
     const [isCalculating, setIsCalculating] = useState(false);
-
-    // Data for filters
-    const { data: productCategories } = useCollection<ProductCategory>(useMemoFirebase(() => firestore ? collection(firestore, 'product_categories') : null, [firestore]));
-    
-    
 
     useEffect(() => {
         async function calculateChartData() {
@@ -291,7 +284,7 @@ function RecentActivityChart() {
                         <SelectTrigger className="bg-white/10 text-white border-white/20"><SelectValue placeholder="فلتەری پۆلی کاڵا" /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">هەموو پۆلەکان</SelectItem>
-                            {productCategories?.map(cat => <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>)}
+                            {productCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                         </SelectContent>
                     </Select>
                 </div>
