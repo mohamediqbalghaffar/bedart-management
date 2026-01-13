@@ -15,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import * as XLSX from 'xlsx';
 import { useToast } from '@/hooks/use-toast';
 import { StockTransferDialog } from './components/stock-transfer-dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type Product = {
     productName: string;
@@ -155,70 +156,72 @@ function StockList() {
                 </div>
             </CardHeader>
             <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="text-right">کاڵا</TableHead>
-                            <TableHead className="text-right">پۆل</TableHead>
-                            <TableHead className="text-center">کۆگا</TableHead>
-                            <TableHead className="text-center">فرۆشگا</TableHead>
-                            <TableHead className="text-center">کۆی گشتی</TableHead>
-                            <TableHead className="text-right">
-                                <div className='flex items-center justify-end gap-1'>
-                                    <span>دابینکەر</span>
-                                    <TooltipProvider>
-                                        <Tooltip>
-                                            <TooltipTrigger>
-                                                <Info className="h-3 w-3 text-muted-foreground" />
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <p>کۆتا دابینکەر کە ئەم کاڵایەی لێ کڕاوە</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
-                                </div>
-                            </TableHead>
-                            <TableHead className="text-center">گواستنەوە</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoading ? (
+                <ScrollArea className="h-[60vh]">
+                    <Table>
+                        <TableHeader>
                             <TableRow>
-                                <TableCell colSpan={7} className="h-24 text-center">
-                                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-                                </TableCell>
+                                <TableHead className="text-right">کاڵا</TableHead>
+                                <TableHead className="text-right">پۆل</TableHead>
+                                <TableHead className="text-center">کۆگا</TableHead>
+                                <TableHead className="text-center">فرۆشگا</TableHead>
+                                <TableHead className="text-center">کۆی گشتی</TableHead>
+                                <TableHead className="text-right">
+                                    <div className='flex items-center justify-end gap-1'>
+                                        <span>دابینکەر</span>
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger>
+                                                    <Info className="h-3 w-3 text-muted-foreground" />
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>کۆتا دابینکەر کە ئەم کاڵایەی لێ کڕاوە</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    </div>
+                                </TableHead>
+                                <TableHead className="text-center">گواستنەوە</TableHead>
                             </TableRow>
-                        ) : groupedProducts.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
-                                    {searchTerm ? `هیچ کاڵایەک نەدۆزرایەوە بۆ "${searchTerm}"` : "هیچ کاڵایەک لە کۆگا نییە."}
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            groupedProducts.map((product) => (
-                                <TableRow key={`${product.productName}-${product.sizeModel}`}>
-                                    <TableCell className="font-medium text-right">{product.productName} {product.sizeModel && `(${product.sizeModel})`}</TableCell>
-                                    <TableCell className="text-right">{product.category}</TableCell>
-                                    <TableCell className="text-center">{product.locations.Warehouse?.currentQuantity || 0}</TableCell>
-                                    <TableCell className="text-center">{product.locations['Shop Showroom']?.currentQuantity || 0}</TableCell>
-                                    <TableCell className="text-center">
-                                        <Badge variant={product.totalQuantity < 5 ? "destructive" : "secondary"}>
-                                            {product.totalQuantity}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">{product.supplierName}</TableCell>
-                                    <TableCell className="text-center">
-                                       <StockTransferDialog product={product} onTransferSuccess={onTransferSuccess}>
-                                            <Button variant="ghost" size="icon" disabled={!product.locations.Warehouse && !product.locations['Shop Showroom']}>
-                                                <ArrowRightLeft className="h-4 w-4 text-blue-500" />
-                                            </Button>
-                                       </StockTransferDialog>
+                        </TableHeader>
+                        <TableBody>
+                            {isLoading ? (
+                                <TableRow>
+                                    <TableCell colSpan={7} className="h-24 text-center">
+                                        <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
+                            ) : groupedProducts.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
+                                        {searchTerm ? `هیچ کاڵایەک نەدۆزرایەوە بۆ "${searchTerm}"` : "هیچ کاڵایەک لە کۆگا نییە."}
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                groupedProducts.map((product) => (
+                                    <TableRow key={`${product.productName}-${product.sizeModel}`}>
+                                        <TableCell className="font-medium text-right">{product.productName} {product.sizeModel && `(${product.sizeModel})`}</TableCell>
+                                        <TableCell className="text-right">{product.category}</TableCell>
+                                        <TableCell className="text-center">{product.locations.Warehouse?.currentQuantity || 0}</TableCell>
+                                        <TableCell className="text-center">{product.locations['Shop Showroom']?.currentQuantity || 0}</TableCell>
+                                        <TableCell className="text-center">
+                                            <Badge variant={product.totalQuantity < 5 ? "destructive" : "secondary"}>
+                                                {product.totalQuantity}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">{product.supplierName}</TableCell>
+                                        <TableCell className="text-center">
+                                        <StockTransferDialog product={product} onTransferSuccess={onTransferSuccess}>
+                                                <Button variant="ghost" size="icon" disabled={!product.locations.Warehouse && !product.locations['Shop Showroom']}>
+                                                    <ArrowRightLeft className="h-4 w-4 text-blue-500" />
+                                                </Button>
+                                        </StockTransferDialog>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </ScrollArea>
             </CardContent>
         </Card>
     );
@@ -232,3 +235,4 @@ export default function StockPage() {
         </div>
     );
 }
+
