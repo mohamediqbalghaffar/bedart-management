@@ -3,22 +3,25 @@
 
 import React, { useState, useEffect } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
-import { useFirestore, useCollection, useMemoFirebase, collection, getDocs as getDocsClient, collection as getCollectionClient } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, collection, getDocs as getDocsClient, collection as getCollectionClient, where, query } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, DollarSign, Users, Archive, ShoppingCart, TrendingUp, TrendingDown, Package, LineChart } from 'lucide-react';
 import { StatCard } from '@/components/shared/stat-card';
-import { subDays, parseISO, isValid, startOfDay, endOfDay } from 'date-fns';
+import { subDays, parseISO, isValid, startOfDay, endOfDay, differenceInDays } from 'date-fns';
 import { format } from 'date-fns';
-import { AreaChart, Area, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from 'recharts';
+import { AreaChart, Area, CartesianGrid, ResponsiveContainer, XAxis, YAxis, BarChart, Bar } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { WithId } from '@/firebase/firestore/use-collection';
 
 type SellingForm = {
     totalPrice: number;
     customerName: string;
     issueDate: string;
+    creatorId: string;
 };
 
 type Expense = {
@@ -28,18 +31,37 @@ type Expense = {
 
 type Product = {
     currentQuantity: number;
+    category: string;
 };
 
 type BuyingForm = {
     id: string;
     issueDate: string;
+    supplierId: string;
     customsFee?: number;
 };
 
 type BuyingFormProduct = {
     quantity: number;
     unitPrice: number;
+    productId: string;
 };
+
+type SellingFormProduct = {
+    productId: string;
+}
+
+type User = {
+    username: string;
+}
+
+type Supplier = {
+    supplierName: string;
+}
+
+type ProductCategory = {
+    name: string;
+}
 
 
 function DashboardStats() {
@@ -105,59 +127,30 @@ function DashboardStats() {
 }
 
 const chartConfig = {
-  sales: {
-    label: "فرۆش",
-    color: "hsl(var(--chart-2))",
-    icon: TrendingUp,
-  },
-   purchases: {
-    label: "کڕین",
-    color: "hsl(var(--chart-3))",
-    icon: Package,
-  },
-  expenses: {
-    label: "خەرجی",
-    color: "hsl(var(--chart-5))",
-    icon: TrendingDown,
-  },
-  netProfit: {
-    label: "قازانجی پوخت",
-    color: "hsl(var(--chart-1))",
-    icon: LineChart,
-  }
+  sales: { label: "فرۆش", color: "hsl(var(--chart-2))", icon: TrendingUp },
+  purchases: { label: "کڕین", color: "hsl(var(--chart-3))", icon: Package },
+  expenses: { label: "خەرجی", color: "hsl(var(--chart-5))", icon: TrendingDown },
+  netProfit: { label: "قازانجی پوخت", color: "hsl(var(--chart-1))", icon: LineChart }
 } satisfies ChartConfig
 
 function RecentActivityChart() {
     const firestore = useFirestore();
-    const salesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'selling_forms') : null, [firestore]);
-    const expensesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'expenses') : null, [firestore]);
-    const purchasesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'buying_forms') : null, [firestore]);
-
-    const { data: sales, isLoading: salesLoading } = useCollection<SellingForm>(salesQuery);
-    const { data: expenses, isLoading: expensesLoading } = useCollection<Expense>(expensesQuery);
-    const { data: purchases, isLoading: purchasesLoading } = useCollection<BuyingForm>(purchasesQuery);
-
-    const [dateRange, setDateRange] = useState({
-        from: format(subDays(new Date(), 29), 'yyyy-MM-dd'),
-        to: format(new Date(), 'yyyy-MM-dd'),
-    });
-
-    const [activeSubjects, setActiveSubjects] = useState({
-        sales: true,
-        expenses: true,
-        purchases: false,
-        netProfit: false,
-    });
+    const [dateRange, setDateRange] = useState({ from: format(subDays(new Date(), 29), 'yyyy-MM-dd'), to: format(new Date(), 'yyyy-MM-dd') });
+    const [activeSubjects, setActiveSubjects] = useState({ sales: true, expenses: true, purchases: false, netProfit: false });
+    const [viewMode, setViewMode] = useState<'daily' | 'total'>('daily');
+    
+    const [categoryFilter, setCategoryFilter] = useState<string>('all');
+    const [supplierFilter, setSupplierFilter] = useState<string>('all');
+    const [userFilter, setUserFilter] = useState<string>('all');
 
     const [chartData, setChartData] = useState<any[]>([]);
+    const [totalData, setTotalData] = useState<{ name: string; value: number; fill: string }[]>([]);
     const [isCalculating, setIsCalculating] = useState(false);
-    
-    // Helper function to get the number of days in a given range
-    const differenceInDays = (dateLeft: Date, dateRight: Date): number => {
-        const diffTime = Math.abs(dateLeft.getTime() - dateRight.getTime());
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    }
 
+    // Data for filters
+    const { data: productCategories } = useCollection<ProductCategory>(useMemoFirebase(() => firestore ? collection(firestore, 'product_categories') : null, [firestore]));
+    const { data: suppliers } = useCollection<Supplier>(useMemoFirebase(() => firestore ? collection(firestore, 'suppliers') : null, [firestore]));
+    const { data: users } = useCollection<User>(useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]));
 
     useEffect(() => {
         async function calculateChartData() {
@@ -170,80 +163,106 @@ function RecentActivityChart() {
             const startDate = startOfDay(fromDate);
             const endDate = endOfDay(toDate);
 
+            // --- Build base queries ---
+            let salesQuery = query(collection(firestore, 'selling_forms'), where('issueDate', '>=', dateRange.from), where('issueDate', '<=', dateRange.to));
+            let purchasesQuery = query(collection(firestore, 'buying_forms'), where('issueDate', '>=', dateRange.from), where('issueDate', '<=', dateRange.to));
+            let expensesQuery = query(collection(firestore, 'expenses'), where('date', '>=', dateRange.from), where('date', '<=', dateRange.to));
+            
+            // --- Apply filters ---
+            if (userFilter !== 'all') {
+                salesQuery = query(salesQuery, where('creatorId', '==', userFilter));
+            }
+            if (supplierFilter !== 'all') {
+                purchasesQuery = query(purchasesQuery, where('supplierId', '==', supplierFilter));
+            }
+            
+            // --- Fetch initial data ---
+            const [salesSnap, purchasesSnap, expensesSnap] = await Promise.all([ getDocsClient(salesQuery), getDocsClient(purchasesQuery), getDocsClient(expensesQuery) ]);
+            let sales = salesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as WithId<SellingForm>[];
+            let purchases = purchasesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as WithId<BuyingForm>[];
+            const expenses = expensesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as WithId<Expense>[];
+
+            // --- Category Filter (most complex) ---
+            if (categoryFilter !== 'all') {
+                const productIdsInCategory = new Set<string>();
+                const productsInCategoryQuery = query(collection(firestore, 'products'), where('category', '==', categoryFilter));
+                const productsSnap = await getDocsClient(productsInCategoryQuery);
+                productsSnap.forEach(doc => productIdsInCategory.add(doc.id));
+
+                const filterFormsByProductCategory = async (formCollection: string, forms: WithId<any>[]) => {
+                    const filteredFormIds = new Set<string>();
+                    for (const form of forms) {
+                        const productsSnap = await getDocsClient(collection(firestore, `${formCollection}/${form.id}/products`));
+                        for (const productDoc of productsSnap.docs) {
+                            if (productIdsInCategory.has(productDoc.data().productId)) {
+                                filteredFormIds.add(form.id);
+                                break; 
+                            }
+                        }
+                    }
+                    return forms.filter(form => filteredFormIds.has(form.id));
+                }
+                sales = await filterFormsByProductCategory('selling_forms', sales);
+                purchases = await filterFormsByProductCategory('buying_forms', purchases);
+            }
+
+            // --- Aggregate Data ---
+            let totalSales = 0, totalPurchases = 0, totalExpenses = 0;
             const dateMap = new Map<string, { sales: number; expenses: number; purchases: number; netProfit: number }>();
-            const days = differenceInDays(endDate, startDate);
-
-            for (let i = days; i >= 0; i--) {
-                const date = subDays(endDate, i);
-                dateMap.set(format(date, 'yyyy-MM-dd'), { sales: 0, expenses: 0, purchases: 0, netProfit: 0 });
-            }
-
-            if (sales) {
-                sales.forEach(sale => {
-                    try {
-                        const saleDate = sale.issueDate;
-                        if (dateMap.has(saleDate)) {
-                            dateMap.get(saleDate)!.sales += sale.totalPrice;
-                        }
-                    } catch (e) { console.warn("Invalid sale date format:", sale.issueDate); }
-                });
-            }
             
-            if (expenses) {
-                expenses.forEach(expense => {
-                    try {
-                        const expenseDate = expense.date;
-                        if (dateMap.has(expenseDate)) {
-                            dateMap.get(expenseDate)!.expenses += expense.amount;
-                        }
-                    } catch (e) { console.warn("Invalid expense date format:", expense.date); }
-                });
+            if (viewMode === 'daily') {
+                const days = differenceInDays(endDate, startDate);
+                for (let i = days; i >= 0; i--) {
+                    const date = subDays(endDate, i);
+                    dateMap.set(format(date, 'yyyy-MM-dd'), { sales: 0, expenses: 0, purchases: 0, netProfit: 0 });
+                }
             }
 
-            if(purchases) {
-                 for (const purchase of purchases) {
-                    try {
-                        const purchaseDate = purchase.issueDate;
-                        if (dateMap.has(purchaseDate)) {
-                            const productsColRef = getCollectionClient(firestore, `buying_forms/${purchase.id}/products`);
-                            const productsSnapshot = await getDocsClient(productsColRef);
-                            const subTotal = productsSnapshot.docs.reduce((acc, doc) => {
-                                const item = doc.data() as BuyingFormProduct;
-                                return acc + (item.quantity * item.unitPrice);
-                            }, 0);
-                            const totalAmount = subTotal + (purchase.customsFee || 0);
-                            dateMap.get(purchaseDate)!.purchases += totalAmount;
-                        }
-                    } catch(e) { console.warn("Invalid purchase date format:", purchase.issueDate); }
-                 }
-            }
-
-            dateMap.forEach((data, date) => {
-                data.netProfit = data.sales - data.expenses - data.purchases;
+            sales.forEach(sale => {
+                totalSales += sale.totalPrice;
+                if(viewMode === 'daily' && dateMap.has(sale.issueDate)) {
+                    dateMap.get(sale.issueDate)!.sales += sale.totalPrice;
+                }
             });
+            expenses.forEach(expense => {
+                totalExpenses += expense.amount;
+                if(viewMode === 'daily' && dateMap.has(expense.date)) {
+                    dateMap.get(expense.date)!.expenses += expense.amount;
+                }
+            });
+
+            for (const purchase of purchases) {
+                const productsSnap = await getDocsClient(getCollectionClient(firestore, `buying_forms/${purchase.id}/products`));
+                const subTotal = productsSnap.docs.reduce((acc, doc) => acc + (doc.data().quantity * doc.data().unitPrice), 0);
+                const totalAmount = subTotal + (purchase.customsFee || 0);
+                totalPurchases += totalAmount;
+                if(viewMode === 'daily' && dateMap.has(purchase.issueDate)) {
+                    dateMap.get(purchase.issueDate)!.purchases += totalAmount;
+                }
+            }
             
-            const finalData = Array.from(dateMap.entries()).map(([date, data]) => ({
-                date: format(parseISO(date), 'MMM d'),
-                ...data,
-            }));
-            
-            setChartData(finalData);
+            if (viewMode === 'daily') {
+                dateMap.forEach((data) => {
+                    data.netProfit = data.sales - data.expenses - data.purchases;
+                });
+                const finalData = Array.from(dateMap.entries()).map(([date, data]) => ({ date: format(parseISO(date), 'MMM d'), ...data }));
+                setChartData(finalData);
+            } else { // Total view
+                const totalNetProfit = totalSales - totalExpenses - totalPurchases;
+                setTotalData([
+                    { name: 'کۆی فرۆش', value: totalSales, fill: 'var(--color-sales)' },
+                    { name: 'کۆی خەرجی', value: totalExpenses, fill: 'var(--color-expenses)' },
+                    { name: 'کۆی کڕین', value: totalPurchases, fill: 'var(--color-purchases)' },
+                    { name: 'کۆی قازانج', value: totalNetProfit, fill: 'var(--color-netProfit)' },
+                ]);
+            }
             setIsCalculating(false);
         }
 
-       if(!salesLoading && !expensesLoading && !purchasesLoading) {
-         calculateChartData();
-       }
-    }, [sales, expenses, purchases, dateRange, firestore, salesLoading, expensesLoading, purchasesLoading]);
+       calculateChartData();
+    }, [dateRange, firestore, viewMode, categoryFilter, supplierFilter, userFilter]);
     
-    const isLoading = salesLoading || expensesLoading || purchasesLoading || isCalculating;
-    
-    const currencyFormatter = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        notation: 'compact',
-        compactDisplay: 'short'
-    });
+    const currencyFormatter = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', compactDisplay: 'short' }).format(value);
 
     return (
         <Card className="bg-gradient-to-br from-blue-900/50 via-purple-900/50 to-indigo-900/50 text-white border-blue-800/50">
@@ -255,98 +274,68 @@ function RecentActivityChart() {
                     </div>
                      <div className="flex flex-col sm:flex-row items-center gap-4">
                         <div className="flex items-center gap-2">
-                            <Input
-                                type="text"
-                                value={dateRange.from}
-                                onChange={(e) => setDateRange(prev => ({...prev, from: e.target.value }))}
-                                placeholder="YYYY-MM-DD"
-                                className="w-36 bg-white/10 text-white placeholder:text-white/50 border-white/20"
-                            />
+                            <Input type="text" value={dateRange.from} onChange={(e) => setDateRange(prev => ({...prev, from: e.target.value }))} placeholder="YYYY-MM-DD" className="w-36 bg-white/10 text-white placeholder:text-white/50 border-white/20"/>
                             <span className="text-white/80">-</span>
-                             <Input
-                                type="text"
-                                value={dateRange.to}
-                                onChange={(e) => setDateRange(prev => ({...prev, to: e.target.value }))}
-                                placeholder="YYYY-MM-DD"
-                                className="w-36 bg-white/10 text-white placeholder:text-white/50 border-white/20"
-                            />
+                            <Input type="text" value={dateRange.to} onChange={(e) => setDateRange(prev => ({...prev, to: e.target.value }))} placeholder="YYYY-MM-DD" className="w-36 bg-white/10 text-white placeholder:text-white/50 border-white/20"/>
                         </div>
                          <div className="grid grid-cols-2 sm:flex items-center gap-4">
                             {Object.entries(activeSubjects).map(([key, value]) => (
                                 <div key={key} className="flex items-center space-x-2 space-x-reverse">
-                                    <Checkbox
-                                        id={key}
-                                        checked={value}
-                                        onCheckedChange={(checked) => setActiveSubjects(prev => ({...prev, [key]: !!checked}))}
-                                        className="border-white/50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-                                    />
-                                    <label htmlFor={key} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                        {chartConfig[key as keyof typeof chartConfig].label}
-                                    </label>
+                                    <Checkbox id={key} checked={value} onCheckedChange={(checked) => setActiveSubjects(prev => ({...prev, [key]: !!checked}))} className="border-white/50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"/>
+                                    <label htmlFor={key} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{chartConfig[key as keyof typeof chartConfig].label}</label>
                                 </div>
                             ))}
                         </div>
                     </div>
                 </div>
+                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4" dir="rtl">
+                    <Select value={viewMode} onValueChange={(v) => setViewMode(v as any)}>
+                        <SelectTrigger className="bg-white/10 text-white border-white/20"><SelectValue /></SelectTrigger>
+                        <SelectContent><SelectItem value="daily">نمایشی ڕۆژانە</SelectItem><SelectItem value="total">نمایشی گشتی</SelectItem></SelectContent>
+                    </Select>
+                     <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                        <SelectTrigger className="bg-white/10 text-white border-white/20"><SelectValue placeholder="فلتەری پۆلی کاڵا" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">هەموو پۆلەکان</SelectItem>
+                            {productCategories?.map(cat => <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                    <Select value={supplierFilter} onValueChange={setSupplierFilter}>
+                        <SelectTrigger className="bg-white/10 text-white border-white/20"><SelectValue placeholder="فلتەری دابینکەر" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">هەموو دابینکەران</SelectItem>
+                            {suppliers?.map(sup => <SelectItem key={sup.id} value={sup.id}>{sup.supplierName}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                     <Select value={userFilter} onValueChange={setUserFilter}>
+                        <SelectTrigger className="bg-white/10 text-white border-white/20"><SelectValue placeholder="فلتەری فرۆشیار" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">هەموو فرۆشیاران</SelectItem>
+                            {users?.map(user => <SelectItem key={user.id} value={user.id}>{user.username}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
             </CardHeader>
             <CardContent>
-                 {isLoading ? (
-                    <div className="flex justify-center items-center h-80">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
-                ) : (
+                 {isCalculating ? (
+                    <div className="flex justify-center items-center h-80"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                ) : viewMode === 'daily' ? (
                 <ChartContainer config={chartConfig} className="h-80 w-full">
                     <AreaChart accessibilityLayer data={chartData}>
                         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)" />
-                        <XAxis
-                            dataKey="date"
-                            tickLine={false}
-                            axisLine={false}
-                            tickMargin={8}
-                            tickFormatter={(value) => value}
-                             tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}
-                        />
-                        <YAxis
-                            tickLine={false}
-                            axisLine={false}
-                            tickMargin={8}
-                            tickFormatter={(value) => currencyFormatter.format(value as number)}
-                            tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}
-                        />
-                        <ChartTooltip
-                            cursor={true}
-                            content={<ChartTooltipContent
-                                indicator="dot"
-                                labelClassName="text-white"
-                                className="bg-card/80 backdrop-blur-sm text-white border-border/50" 
-                                formatter={(value, name, item) => (
-                                    <div className="flex items-center gap-2">
-                                        <div style={{ backgroundColor: item.color }} className="w-2.5 h-2.5 rounded-full" />
-                                        <div className="flex justify-between w-full">
-                                            <span className="text-muted-foreground">{chartConfig[name as keyof typeof chartConfig].label}: </span>
-                                            <span className="font-bold ml-2">{currencyFormatter.format(value as number)}</span>
-                                        </div>
-                                    </div>
-                                )}
-                            />}
-                        />
+                        <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => value} tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}/>
+                        <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={currencyFormatter} tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}/>
+                        <ChartTooltip cursor={true} content={<ChartTooltipContent indicator="dot" labelClassName="text-white" className="bg-card/80 backdrop-blur-sm text-white border-border/50" formatter={(value, name, item) => (
+                            <div className="flex items-center gap-2">
+                                <div style={{ backgroundColor: item.color }} className="w-2.5 h-2.5 rounded-full" />
+                                <div className="flex justify-between w-full"><span className="text-muted-foreground">{chartConfig[name as keyof typeof chartConfig].label}: </span><span className="font-bold ml-2">{currencyFormatter(value as number)}</span></div>
+                            </div>
+                        )}/>}/>
                         <defs>
-                            <linearGradient id="fillSales" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="var(--color-sales)" stopOpacity={0.8} />
-                                <stop offset="95%" stopColor="var(--color-sales)" stopOpacity={0.1} />
-                            </linearGradient>
-                            <linearGradient id="fillPurchases" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="var(--color-purchases)" stopOpacity={0.8} />
-                                <stop offset="95%" stopColor="var(--color-purchases)" stopOpacity={0.1} />
-                            </linearGradient>
-                             <linearGradient id="fillExpenses" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="var(--color-expenses)" stopOpacity={0.8} />
-                                <stop offset="95%" stopColor="var(--color-expenses)" stopOpacity={0.1} />
-                            </linearGradient>
-                            <linearGradient id="fillNetProfit" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="var(--color-netProfit)" stopOpacity={0.8} />
-                                <stop offset="95%" stopColor="var(--color-netProfit)" stopOpacity={0.1} />
-                            </linearGradient>
+                            <linearGradient id="fillSales" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-sales)" stopOpacity={0.8} /><stop offset="95%" stopColor="var(--color-sales)" stopOpacity={0.1} /></linearGradient>
+                            <linearGradient id="fillPurchases" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-purchases)" stopOpacity={0.8} /><stop offset="95%" stopColor="var(--color-purchases)" stopOpacity={0.1} /></linearGradient>
+                            <linearGradient id="fillExpenses" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-expenses)" stopOpacity={0.8} /><stop offset="95%" stopColor="var(--color-expenses)" stopOpacity={0.1} /></linearGradient>
+                            <linearGradient id="fillNetProfit" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-netProfit)" stopOpacity={0.8} /><stop offset="95%" stopColor="var(--color-netProfit)" stopOpacity={0.1} /></linearGradient>
                         </defs>
                         {activeSubjects.sales && <Area dataKey="sales" type="natural" fill="url(#fillSales)" stroke="var(--color-sales)" stackId="a" />}
                         {activeSubjects.purchases && <Area dataKey="purchases" type="natural" fill="url(#fillPurchases)" stroke="var(--color-purchases)" stackId="b" />}
@@ -354,6 +343,15 @@ function RecentActivityChart() {
                         {activeSubjects.netProfit && <Area dataKey="netProfit" type="natural" fill="url(#fillNetProfit)" stroke="var(--color-netProfit)" stackId="d" />}
                     </AreaChart>
                 </ChartContainer>
+                ) : (
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center h-80 items-center">
+                    {totalData.filter(d => activeSubjects[d.name.includes('فرۆش') ? 'sales' : d.name.includes('خەرجی') ? 'expenses' : d.name.includes('کڕین') ? 'purchases' : 'netProfit']).map(d => (
+                         <div key={d.name} className="flex flex-col gap-2 p-4 rounded-lg" style={{backgroundColor: d.fill.replace('hsl', 'hsla').replace(')', ', 0.2)')}}>
+                            <h3 className="text-lg font-semibold text-white/90">{d.name}</h3>
+                            <p className="text-3xl font-bold" style={{color: d.fill}}>{currencyFormatter(d.value)}</p>
+                        </div>
+                    ))}
+                </div>
                 )}
             </CardContent>
         </Card>
