@@ -141,7 +141,7 @@ function RecentActivityChart() {
     const [viewMode, setViewMode] = useState<'daily' | 'total'>('daily');
     
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
-    const [supplierFilter, setSupplierFilter] = useState<string>('all');
+    
     
 
     const [chartData, setChartData] = useState<any[]>([]);
@@ -150,7 +150,7 @@ function RecentActivityChart() {
 
     // Data for filters
     const { data: productCategories } = useCollection<ProductCategory>(useMemoFirebase(() => firestore ? collection(firestore, 'product_categories') : null, [firestore]));
-    const { data: suppliers } = useCollection<Supplier>(useMemoFirebase(() => firestore ? collection(firestore, 'suppliers') : null, [firestore]));
+    
     
 
     useEffect(() => {
@@ -169,11 +169,6 @@ function RecentActivityChart() {
             let purchasesQuery = query(collection(firestore, 'buying_forms'), where('issueDate', '>=', dateRange.from), where('issueDate', '<=', dateRange.to));
             let expensesQuery = query(collection(firestore, 'expenses'), where('date', '>=', dateRange.from), where('date', '<=', dateRange.to));
             
-            // --- Apply filters ---
-            
-            if (supplierFilter !== 'all') {
-                purchasesQuery = query(purchasesQuery, where('supplierId', '==', supplierFilter));
-            }
             
             // --- Fetch initial data ---
             const [salesSnap, purchasesSnap, expensesSnap] = await Promise.all([ getDocsClient(salesQuery), getDocsClient(purchasesQuery), getDocsClient(expensesQuery) ]);
@@ -259,7 +254,7 @@ function RecentActivityChart() {
         }
 
        calculateChartData();
-    }, [dateRange, firestore, viewMode, categoryFilter, supplierFilter]);
+    }, [dateRange, firestore, viewMode, categoryFilter]);
     
     const currencyFormatter = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', compactDisplay: 'short' }).format(value);
 
@@ -287,7 +282,7 @@ function RecentActivityChart() {
                         </div>
                     </div>
                 </div>
-                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4" dir="rtl">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4" dir="rtl">
                     <Select value={viewMode} onValueChange={(v) => setViewMode(v as any)}>
                         <SelectTrigger className="bg-white/10 text-white border-white/20"><SelectValue /></SelectTrigger>
                         <SelectContent><SelectItem value="daily">نمایشی ڕۆژانە</SelectItem><SelectItem value="total">نمایشی گشتی</SelectItem></SelectContent>
@@ -297,13 +292,6 @@ function RecentActivityChart() {
                         <SelectContent>
                             <SelectItem value="all">هەموو پۆلەکان</SelectItem>
                             {productCategories?.map(cat => <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                    <Select value={supplierFilter} onValueChange={setSupplierFilter}>
-                        <SelectTrigger className="bg-white/10 text-white border-white/20"><SelectValue placeholder="فلتەری دابینکەر" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">هەموو دابینکەران</SelectItem>
-                            {suppliers?.map(sup => <SelectItem key={sup.id} value={sup.id}>{sup.supplierName}</SelectItem>)}
                         </SelectContent>
                     </Select>
                 </div>
@@ -370,7 +358,3 @@ export default function DashboardPage() {
         </div>
     );
 }
-
-    
-
-    
