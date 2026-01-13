@@ -276,16 +276,16 @@ function RecentActivityChart() {
                     </div>
                 </div>
                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4" dir="rtl">
-                    <Select value={viewMode} onValueChange={(v) => setViewMode(v as any)}>
-                        <SelectTrigger className="bg-white/10 text-white border-white/20"><SelectValue /></SelectTrigger>
-                        <SelectContent><SelectItem value="daily">نمایشی ڕۆژانە</SelectItem><SelectItem value="total">نمایشی گشتی</SelectItem></SelectContent>
-                    </Select>
-                     <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                         <SelectTrigger className="bg-white/10 text-white border-white/20"><SelectValue placeholder="فلتەری پۆلی کاڵا" /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">هەموو پۆلەکان</SelectItem>
                             {productCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                         </SelectContent>
+                    </Select>
+                    <Select value={viewMode} onValueChange={(v) => setViewMode(v as any)}>
+                        <SelectTrigger className="bg-white/10 text-white border-white/20"><SelectValue /></SelectTrigger>
+                        <SelectContent><SelectItem value="daily">نمایشی ڕۆژانە</SelectItem><SelectItem value="total">نمایشی گشتی</SelectItem></SelectContent>
                     </Select>
                 </div>
             </CardHeader>
