@@ -20,10 +20,23 @@ type Product = {
     productName: string;
     category: string;
     sizeModel?: string;
-    stockLocation: string;
+    stockLocation: 'Warehouse' | 'Shop Showroom';
     currentQuantity: number;
     supplierId?: string;
 };
+
+type GroupedProduct = {
+    productName: string;
+    category: string;
+    sizeModel?: string;
+    supplierName: string;
+    supplierId?: string;
+    locations: {
+        Warehouse?: WithId<Product>;
+        'Shop Showroom'?: WithId<Product>;
+    };
+    totalQuantity: number;
+}
 
 type Supplier = {
     supplierName: string;
@@ -52,18 +65,41 @@ function StockList() {
         return new Map(suppliers.map(s => [s.id, s.supplierName]));
     }, [suppliers]);
 
-    const filteredProducts = useMemo(() => {
+    const groupedProducts = useMemo(() => {
         if (!products) return [];
-        const enriched = products
+        
+        const productMap = new Map<string, GroupedProduct>();
+
+        products
             .filter(p => p.currentQuantity > 0)
-            .map(p => ({
-                ...p,
-                supplierName: p.supplierId ? supplierMap.get(p.supplierId) : 'N/A',
-            }));
+            .forEach(p => {
+                const key = `${p.productName}-${p.sizeModel || ''}`;
+                if (!productMap.has(key)) {
+                    productMap.set(key, {
+                        productName: p.productName,
+                        category: p.category,
+                        sizeModel: p.sizeModel,
+                        supplierName: p.supplierId ? supplierMap.get(p.supplierId) || 'N/A' : 'N/A',
+                        supplierId: p.supplierId,
+                        locations: {},
+                        totalQuantity: 0,
+                    });
+                }
 
-        if (!searchTerm) return enriched;
+                const grouped = productMap.get(key)!;
+                grouped.locations[p.stockLocation] = p;
+                grouped.totalQuantity += p.currentQuantity;
+                if(p.supplierId) {
+                    grouped.supplierId = p.supplierId;
+                    grouped.supplierName = supplierMap.get(p.supplierId) || 'N/A';
+                }
+            });
+        
+        const groupedArray = Array.from(productMap.values());
 
-        return enriched.filter(p =>
+        if (!searchTerm) return groupedArray;
+
+        return groupedArray.filter(p =>
             p.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
             p.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (p.sizeModel && p.sizeModel.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -73,15 +109,16 @@ function StockList() {
     const isLoading = isLoadingProducts || isLoadingSuppliers;
     
     const exportToExcel = () => {
-        if (!filteredProducts) return;
+        if (!groupedProducts) return;
         toast({title: "...چاوەڕوانبە", description: `هەناردەکردنی ڕاپۆرتی کۆگا`})
 
-        const dataToExport = filteredProducts.map(p => ({
+        const dataToExport = groupedProducts.map(p => ({
             "ناوی کاڵا": p.productName,
             "پۆل": p.category,
             "قەبارە/مۆدێل": p.sizeModel || 'N/A',
-            "دانە": p.currentQuantity,
-            "شوێن": p.stockLocation === 'Warehouse' ? 'کۆگا' : 'فرۆشگا',
+            "کۆگا": p.locations.Warehouse?.currentQuantity || 0,
+            "فرۆشگا": p.locations['Shop Showroom']?.currentQuantity || 0,
+            "کۆی گشتی": p.totalQuantity,
             "دابینکەر": p.supplierName,
         }));
 
@@ -123,9 +160,10 @@ function StockList() {
                         <TableRow>
                             <TableHead className="text-right">کاڵا</TableHead>
                             <TableHead className="text-right">پۆل</TableHead>
-                            <TableHead className="text-right">دانە</TableHead>
-                            <TableHead className="text-right">شوێن</TableHead>
-                             <TableHead className="text-right">
+                            <TableHead className="text-center">کۆگا</TableHead>
+                            <TableHead className="text-center">فرۆشگا</TableHead>
+                            <TableHead className="text-center">کۆی گشتی</TableHead>
+                            <TableHead className="text-right">
                                 <div className='flex items-center justify-end gap-1'>
                                     <span>دابینکەر</span>
                                     <TooltipProvider>
@@ -146,31 +184,32 @@ function StockList() {
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center">
+                                <TableCell colSpan={7} className="h-24 text-center">
                                     <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                                 </TableCell>
                             </TableRow>
-                        ) : filteredProducts.length === 0 ? (
+                        ) : groupedProducts.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                                <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                                     {searchTerm ? `هیچ کاڵایەک نەدۆزرایەوە بۆ "${searchTerm}"` : "هیچ کاڵایەک لە کۆگا نییە."}
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            filteredProducts.map((product) => (
-                                <TableRow key={product.id}>
+                            groupedProducts.map((product) => (
+                                <TableRow key={`${product.productName}-${product.sizeModel}`}>
                                     <TableCell className="font-medium text-right">{product.productName} {product.sizeModel && `(${product.sizeModel})`}</TableCell>
                                     <TableCell className="text-right">{product.category}</TableCell>
-                                    <TableCell className="text-right">
-                                        <Badge variant={product.currentQuantity < 5 ? "destructive" : "secondary"}>
-                                            {product.currentQuantity}
+                                    <TableCell className="text-center">{product.locations.Warehouse?.currentQuantity || 0}</TableCell>
+                                    <TableCell className="text-center">{product.locations['Shop Showroom']?.currentQuantity || 0}</TableCell>
+                                    <TableCell className="text-center">
+                                        <Badge variant={product.totalQuantity < 5 ? "destructive" : "secondary"}>
+                                            {product.totalQuantity}
                                         </Badge>
                                     </TableCell>
-                                    <TableCell className="text-right">{product.stockLocation === 'Warehouse' ? 'کۆگا' : 'فرۆشگا'}</TableCell>
                                     <TableCell className="text-right">{product.supplierName}</TableCell>
                                     <TableCell className="text-center">
                                        <StockTransferDialog product={product} onTransferSuccess={onTransferSuccess}>
-                                            <Button variant="ghost" size="icon">
+                                            <Button variant="ghost" size="icon" disabled={!product.locations.Warehouse && !product.locations['Shop Showroom']}>
                                                 <ArrowRightLeft className="h-4 w-4 text-blue-500" />
                                             </Button>
                                        </StockTransferDialog>

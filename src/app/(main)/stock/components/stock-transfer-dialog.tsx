@@ -9,15 +9,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useFirestore, runTransaction, doc, getDoc, collection, addDoc, serverTimestamp, setDoc } from '@/firebase';
+import { useFirestore, runTransaction, doc, getDoc, setDoc } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { WithId } from '@/firebase/firestore/use-collection';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 type Product = {
     productName: string;
     category: string;
-    stockLocation: string;
+    stockLocation: 'Warehouse' | 'Shop Showroom';
     currentQuantity: number;
     supplierId?: string;
     sizeModel?: string;
@@ -25,14 +26,28 @@ type Product = {
     sellingPrice?: number;
 };
 
+type GroupedProduct = {
+    productName: string;
+    category: string;
+    sizeModel?: string;
+    supplierName: string;
+    supplierId?: string;
+    locations: {
+        Warehouse?: WithId<Product>;
+        'Shop Showroom'?: WithId<Product>;
+    };
+    totalQuantity: number;
+}
+
 const transferSchema = z.object({
   quantity: z.coerce.number().min(1, "بڕی گواستنەوە دەبێت لانیکەم 1 بێت."),
+  source: z.enum(['Warehouse', 'Shop Showroom'], { required_error: 'دەبێت شوێنێکی سەرچاوە هەڵبژێریت.' }),
 });
 
 type TransferFormValues = z.infer<typeof transferSchema>;
 
 type StockTransferDialogProps = {
-  product: WithId<Product>;
+  product: GroupedProduct;
   children: React.ReactNode;
   onTransferSuccess: () => void;
 };
@@ -44,28 +59,39 @@ export function StockTransferDialog({ product, children, onTransferSuccess }: St
 
   const form = useForm<TransferFormValues>({
     resolver: zodResolver(transferSchema),
-    defaultValues: { quantity: 1 },
+    defaultValues: { 
+        quantity: 1,
+        source: product.locations.Warehouse ? 'Warehouse' : 'Shop Showroom'
+    },
   });
+
+  const watchedSource = form.watch('source');
+  const maxQuantity = product.locations[watchedSource]?.currentQuantity || 0;
+
 
   const onSubmit = async (data: TransferFormValues) => {
     if (!firestore) {
       toast({ variant: 'destructive', title: 'هەڵە', description: 'پەیوەندی لەگەڵ بنکەی داتاکەدا نییە.' });
       return;
     }
+    
+    const sourceProduct = product.locations[data.source];
+    if (!sourceProduct) {
+        toast({ variant: 'destructive', title: 'هەڵە', description: 'کاڵای سەرچاوە بوونی نییە.' });
+        return;
+    }
 
-    if (data.quantity > product.currentQuantity) {
+    if (data.quantity > sourceProduct.currentQuantity) {
       form.setError('quantity', { message: 'بڕی داواکراو لە بڕی بەردەست زیاترە.' });
       return;
     }
 
-    const fromLocation = product.stockLocation;
-    const toLocation = fromLocation === 'Warehouse' ? 'Shop Showroom' : 'Warehouse';
-    const destinationProductId = product.id.replace(fromLocation.toLowerCase().replace(/\s/g, ''), toLocation.toLowerCase().replace(/\s/g, ''));
-
+    const toLocation = data.source === 'Warehouse' ? 'Shop Showroom' : 'Warehouse';
+    const destinationProductId = sourceProduct.id.replace(data.source.toLowerCase().replace(/\s/g, ''), toLocation.toLowerCase().replace(/\s/g, ''));
 
     try {
       await runTransaction(firestore, async (transaction) => {
-        const sourceRef = doc(firestore, 'products', product.id);
+        const sourceRef = doc(firestore, 'products', sourceProduct.id);
         const destinationRef = doc(firestore, 'products', destinationProductId);
         
         const [sourceSnap, destinationSnap] = await Promise.all([
@@ -86,28 +112,26 @@ export function StockTransferDialog({ product, children, onTransferSuccess }: St
           const newDestQuantity = destinationSnap.data().currentQuantity + data.quantity;
           transaction.update(destinationRef, { currentQuantity: newDestQuantity });
         } else {
-            // Create a new product document for the destination
             const newProductData = {
-                ...product, // copy all data
+                ...sourceProduct, 
                 id: destinationProductId,
                 stockLocation: toLocation,
                 currentQuantity: data.quantity,
             };
-            delete (newProductData as any).supplierName;
             transaction.set(destinationRef, newProductData);
         }
 
         // 3. Log the movement
-        const movementRef = doc(collection(firestore, 'stock_movements'));
+        const movementRef = doc(firestore, 'stock_movements', `mov-${Date.now()}`);
         transaction.set(movementRef, {
             id: movementRef.id,
-            productId: product.id,
-            productName: product.productName,
+            productId: sourceProduct.id,
+            productName: sourceProduct.productName,
             quantity: data.quantity,
-            fromLocation: fromLocation,
+            fromLocation: data.source,
             toLocation: toLocation,
             date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
-            note: `Transfer from ${fromLocation} to ${toLocation}`,
+            note: `Transfer from ${data.source} to ${toLocation}`,
         });
       });
 
@@ -138,12 +162,47 @@ export function StockTransferDialog({ product, children, onTransferSuccess }: St
         </DialogHeader>
         <div className="py-4 space-y-2">
             <p><span className='font-semibold'>کاڵا:</span> {product.productName}</p>
-            <p><span className='font-semibold'>بڕی ئێستا:</span> {product.currentQuantity}</p>
-            <p><span className='font-semibold'>شوێنی ئێستا:</span> {product.stockLocation === 'Warehouse' ? 'کۆگا' : 'فرۆشگا'}</p>
-            <p><span className='font-semibold'>گواستنەوە بۆ:</span> {product.stockLocation === 'Warehouse' ? 'فرۆشگا' : 'کۆگا'}</p>
         </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+             <FormField
+                control={form.control}
+                name="source"
+                render={({ field }) => (
+                    <FormItem className="space-y-3">
+                    <FormLabel>گواستنەوە لە</FormLabel>
+                    <FormControl>
+                        <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex gap-4"
+                        >
+                        {product.locations.Warehouse && (
+                             <FormItem className="flex items-center space-x-2 space-x-reverse">
+                                <FormControl>
+                                    <RadioGroupItem value="Warehouse" id="warehouse" />
+                                </FormControl>
+                                <FormLabel htmlFor="warehouse">
+                                    کۆگا (بەردەست: {product.locations.Warehouse.currentQuantity})
+                                </FormLabel>
+                            </FormItem>
+                        )}
+                        {product.locations['Shop Showroom'] && (
+                             <FormItem className="flex items-center space-x-2 space-x-reverse">
+                                <FormControl>
+                                    <RadioGroupItem value="Shop Showroom" id="shop" />
+                                </FormControl>
+                                <FormLabel htmlFor="shop">
+                                    فرۆشگا (بەردەست: {product.locations['Shop Showroom'].currentQuantity})
+                                </FormLabel>
+                            </FormItem>
+                        )}
+                        </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
             <FormField
               control={form.control}
               name="quantity"
@@ -151,14 +210,14 @@ export function StockTransferDialog({ product, children, onTransferSuccess }: St
                 <FormItem>
                   <FormLabel>بڕی گواستنەوە</FormLabel>
                   <FormControl>
-                    <Input type="number" min="1" max={product.currentQuantity} {...field} />
+                    <Input type="number" min="1" max={maxQuantity} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
             <DialogFooter>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
+              <Button type="submit" disabled={form.formState.isSubmitting || maxQuantity === 0}>
                 {form.formState.isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
                 گواستنەوە
               </Button>
