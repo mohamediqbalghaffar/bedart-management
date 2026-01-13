@@ -27,6 +27,20 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "selling_forms_products",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "productName", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "buying_forms_products",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "productName", "order": "ASCENDING" }
+      ]
     }
   ]
 }

@@ -3,8 +3,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
-import { useFirestore, useCollection, useMemoFirebase, collection, getDocs as getDocsClient, collection as getCollectionClient } from '@/firebase';
-import { where, query } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, collection, getDocs, doc } from '@/firebase';
+import { where, query, collectionGroup } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, DollarSign, Users, Archive, ShoppingCart, TrendingUp, TrendingDown, Package, LineChart } from 'lucide-react';
 import { StatCard } from '@/components/shared/stat-card';
@@ -160,40 +160,56 @@ function RecentActivityChart() {
             const startDate = startOfDay(fromDate);
             const endDate = endOfDay(toDate);
 
+            // --- Define helper to get forms by category ---
+            const getFormIdsForCategory = async (formCollectionGroup: 'selling_forms' | 'buying_forms') => {
+                if (categoryFilter === 'all') return null;
+
+                const productNamesInCategory = new Set<string>();
+                const productsInCategoryQuery = query(collection(firestore, 'products'), where('category', '==', categoryFilter));
+                const productsSnap = await getDocs(productsInCategoryQuery);
+                productsSnap.forEach(doc => productNamesInCategory.add(doc.data().productName));
+
+                if (productNamesInCategory.size === 0) return new Set<string>();
+
+                const formProductQuery = query(
+                    collectionGroup(firestore, `${formCollectionGroup}_products`), 
+                    where('productName', 'in', Array.from(productNamesInCategory))
+                );
+
+                const formProductSnap = await getDocs(formProductQuery);
+                const formIds = new Set<string>();
+                formProductSnap.forEach(doc => {
+                    const pathParts = doc.ref.path.split('/');
+                    const formId = pathParts[pathParts.length - 3];
+                    formIds.add(formId);
+                });
+                
+                return formIds;
+            };
+
+            // --- Get filtered form IDs ---
+            const [salesFormIds, purchaseFormIds] = await Promise.all([
+                getFormIdsForCategory('selling_forms'),
+                getFormIdsForCategory('buying_forms')
+            ]);
+            
             // --- Build base queries ---
             let salesQuery = query(collection(firestore, 'selling_forms'), where('issueDate', '>=', dateRange.from), where('issueDate', '<=', dateRange.to));
             let purchasesQuery = query(collection(firestore, 'buying_forms'), where('issueDate', '>=', dateRange.from), where('issueDate', '<=', dateRange.to));
             let expensesQuery = query(collection(firestore, 'expenses'), where('date', '>=', dateRange.from), where('date', '<=', dateRange.to));
             
-            
             // --- Fetch initial data ---
-            const [salesSnap, purchasesSnap, expensesSnap] = await Promise.all([ getDocsClient(salesQuery), getDocsClient(purchasesQuery), getDocsClient(expensesQuery) ]);
+            const [salesSnap, purchasesSnap, expensesSnap] = await Promise.all([ getDocs(salesQuery), getDocs(purchasesQuery), getDocs(expensesQuery) ]);
             let sales = salesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as WithId<SellingForm>[];
             let purchases = purchasesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as WithId<BuyingForm>[];
             const expenses = expensesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as WithId<Expense>[];
 
-            // --- Category Filter (most complex) ---
-            if (categoryFilter !== 'all') {
-                const productNamesInCategory = new Set<string>();
-                const productsInCategoryQuery = query(collection(firestore, 'products'), where('category', '==', categoryFilter));
-                const productsSnap = await getDocsClient(productsInCategoryQuery);
-                productsSnap.forEach(doc => productNamesInCategory.add(doc.data().productName));
-
-                const filterFormsByProductCategory = async (formCollection: string, forms: WithId<any>[]) => {
-                    const filteredFormIds = new Set<string>();
-                    for (const form of forms) {
-                        const productsSnap = await getDocsClient(collection(firestore, `${formCollection}/${form.id}/products`));
-                        for (const productDoc of productsSnap.docs) {
-                            if (productNamesInCategory.has(productDoc.data().productName)) {
-                                filteredFormIds.add(form.id);
-                                break; 
-                            }
-                        }
-                    }
-                    return forms.filter(form => filteredFormIds.has(form.id));
-                }
-                sales = await filterFormsByProductCategory('selling_forms', sales);
-                purchases = await filterFormsByProductCategory('buying_forms', purchases);
+            // --- Apply category filtering ---
+            if (salesFormIds !== null) {
+                sales = sales.filter(s => salesFormIds.has(s.id));
+            }
+             if (purchaseFormIds !== null) {
+                purchases = purchases.filter(p => purchaseFormIds.has(p.id));
             }
 
             // --- Aggregate Data ---
@@ -222,7 +238,7 @@ function RecentActivityChart() {
             });
 
             for (const purchase of purchases) {
-                const productsSnap = await getDocsClient(getCollectionClient(firestore, `buying_forms/${purchase.id}/products`));
+                const productsSnap = await getDocs(collection(firestore, `buying_forms/${purchase.id}/products`));
                 const subTotal = productsSnap.docs.reduce((acc, doc) => acc + (doc.data().quantity * doc.data().unitPrice), 0);
                 const totalAmount = subTotal + (purchase.customsFee || 0);
                 totalPurchases += totalAmount;
@@ -279,7 +295,7 @@ function RecentActivityChart() {
                     </div>
                 </div>
                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4" dir="rtl">
-                    <Select dir="rtl" value={categoryFilter} onValueChange={setCategoryFilter}>
+                     <Select dir="rtl" value={categoryFilter} onValueChange={setCategoryFilter}>
                         <SelectTrigger className="bg-white/10 text-white border-white/20"><SelectValue placeholder="فلتەری پۆلی کاڵا" /></SelectTrigger>
                         <SelectContent dir="rtl">
                             <SelectItem value="all">هەموو پۆلەکان</SelectItem>
