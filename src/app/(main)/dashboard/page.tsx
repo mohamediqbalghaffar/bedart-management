@@ -16,6 +16,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { WithId } from '@/firebase/firestore/use-collection';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 type SellingForm = {
     totalPrice: number;
@@ -27,6 +29,7 @@ type SellingForm = {
 type Expense = {
     amount: number;
     date: string;
+    name: string;
 };
 
 type Product = {
@@ -59,6 +62,103 @@ type Supplier = {
     supplierName: string;
 }
 
+// --- Detail Dialog Components ---
+
+function SalesDetailDialog({ sales }: { sales: WithId<SellingForm>[] | null }) {
+    return (
+        <div className="max-h-[60vh] overflow-y-auto">
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead className="text-right">کڕیار</TableHead>
+                        <TableHead className="text-right">بەروار</TableHead>
+                        <TableHead className="text-right">کۆی گشتی</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {sales?.map(sale => (
+                        <TableRow key={sale.id}>
+                            <TableCell>{sale.customerName}</TableCell>
+                            <TableCell>{sale.issueDate}</TableCell>
+                            <TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(sale.totalPrice)}</TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </div>
+    );
+}
+
+function ExpensesDetailDialog({ expenses }: { expenses: WithId<Expense>[] | null }) {
+    return (
+        <div className="max-h-[60vh] overflow-y-auto">
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead className="text-right">خەرجی</TableHead>
+                        <TableHead className="text-right">بەروار</TableHead>
+                        <TableHead className="text-right">بڕ</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {expenses?.map(expense => (
+                        <TableRow key={expense.id}>
+                            <TableCell>{expense.name}</TableCell>
+                            <TableCell>{expense.date}</TableCell>
+                            <TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(expense.amount)}</TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </div>
+    );
+}
+
+function CustomersDetailDialog({ customers }: { customers: string[] }) {
+    return (
+        <div className="max-h-[60vh] overflow-y-auto">
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead className="text-right">ناوی کڕیار</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {customers.map((name, index) => (
+                        <TableRow key={index}>
+                            <TableCell>{name}</TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </div>
+    );
+}
+
+function LowStockDetailDialog({ products }: { products: WithId<Product>[] | null }) {
+     const lowStockProducts = products?.filter(p => p.currentQuantity < 5);
+    return (
+        <div className="max-h-[60vh] overflow-y-auto">
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead className="text-right">ناوی کاڵا</TableHead>
+                        <TableHead className="text-right">بڕی ماوە</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {lowStockProducts?.map(product => (
+                        <TableRow key={product.id}>
+                            <TableCell>{product.productName}</TableCell>
+                            <TableCell>{product.currentQuantity}</TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </div>
+    );
+}
+
 
 function DashboardStats() {
     const firestore = useFirestore();
@@ -79,12 +179,11 @@ function DashboardStats() {
     }, [expenses]);
     
     const uniqueCustomers = React.useMemo(() => {
-        if (!sales) return 0;
-        const customerNames = new Set(sales.map(s => s.customerName));
-        return customerNames.size;
+        if (!sales) return [];
+        return Array.from(new Set(sales.map(s => s.customerName)));
     }, [sales]);
 
-    const lowStockProducts = React.useMemo(() => {
+    const lowStockProductsCount = React.useMemo(() => {
         if (!products) return 0;
         return products.filter(p => p.currentQuantity < 5).length;
     }, [products]);
@@ -111,13 +210,67 @@ function DashboardStats() {
     
     const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 });
 
-
     return (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Link href="/sales"><StatCard title="کۆی گشتی فرۆش" value={currencyFormatter.format(totalRevenue)} icon={ShoppingCart} description="هەموو فرۆشە تۆمارکراوەکان" /></Link>
-            <Link href="/expenses"><StatCard title="کۆی گشتی خەرجی" value={currencyFormatter.format(totalExpenses)} icon={DollarSign} description="هەموو خەرجییە تۆمارکراوەکان" /></Link>
-            <Link href="/customers"><StatCard title="کڕیارەکان" value={uniqueCustomers.toString()} icon={Users} description="کۆی ژمارەی کڕیارەکان" /></Link>
-            <Link href="/stock"><StatCard title="کاڵای کەم لە کۆگا" value={lowStockProducts.toString()} icon={Archive} description="کاڵاکان کە لە 5 دانە کەمتریان ماوە" isNegative={lowStockProducts > 0} /></Link>
+             <Dialog>
+                <DialogTrigger asChild>
+                    <div className="cursor-pointer">
+                        <StatCard title="کۆی گشتی فرۆش" value={currencyFormatter.format(totalRevenue)} icon={ShoppingCart} description="هەموو فرۆشە تۆمارکراوەکان" />
+                    </div>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-2xl" dir="rtl">
+                    <DialogHeader>
+                        <DialogTitle>وردەکارییەکانی فرۆش</DialogTitle>
+                        <DialogDescription>لیستی فرۆشەکانی ئەم دواییە.</DialogDescription>
+                    </DialogHeader>
+                    <SalesDetailDialog sales={sales} />
+                </DialogContent>
+            </Dialog>
+
+            <Dialog>
+                <DialogTrigger asChild>
+                     <div className="cursor-pointer">
+                        <StatCard title="کۆی گشتی خەرجی" value={currencyFormatter.format(totalExpenses)} icon={DollarSign} description="هەموو خەرجییە تۆمارکراوەکان" />
+                    </div>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-2xl" dir="rtl">
+                    <DialogHeader>
+                        <DialogTitle>وردەکارییەکانی خەرجی</DialogTitle>
+                        <DialogDescription>لیستی خەرجییەکانی ئەم دواییە.</DialogDescription>
+                    </DialogHeader>
+                    <ExpensesDetailDialog expenses={expenses} />
+                </DialogContent>
+            </Dialog>
+
+            <Dialog>
+                <DialogTrigger asChild>
+                     <div className="cursor-pointer">
+                        <StatCard title="کڕیارەکان" value={uniqueCustomers.length.toString()} icon={Users} description="کۆی ژمارەی کڕیارەکان" />
+                    </div>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-lg" dir="rtl">
+                    <DialogHeader>
+                        <DialogTitle>لیستی کڕیارەکان</DialogTitle>
+                        <DialogDescription>لیستی هەموو کڕیارە ناوازەکان.</DialogDescription>
+                    </DialogHeader>
+                    <CustomersDetailDialog customers={uniqueCustomers} />
+                </DialogContent>
+            </Dialog>
+            
+            <Dialog>
+                <DialogTrigger asChild>
+                     <div className="cursor-pointer">
+                        <StatCard title="کاڵای کەم لە کۆگا" value={lowStockProductsCount.toString()} icon={Archive} description="کاڵاکان کە لە 5 دانە کەمتریان ماوە" isNegative={lowStockProductsCount > 0} />
+                    </div>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-lg" dir="rtl">
+                    <DialogHeader>
+                        <DialogTitle>کاڵا کەمەکان</DialogTitle>
+                        <DialogDescription>لیستی ئەو کاڵایانەی کە بڕیان لە 5 دانە کەمترە.</DialogDescription>
+                    </DialogHeader>
+                    <LowStockDetailDialog products={products} />
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
