@@ -37,7 +37,7 @@ const salesFormSchema = z.object({
   discountType: z.enum(["percentage", "cash"]).optional(),
   discountValue: z.coerce.number().optional().default(0),
   paymentStatus: z.enum(["Unpaid", "Partially Paid", "Fully Paid"]),
-  paymentType: z.enum(["After Delivery", "Installments", "Pre-order"]),
+  paymentType: z.enum(["After Delivery", "Installments", "Pre-order", "Direct Payment"]),
   payments: z.array(z.object({
       date: z.string().refine((val) => /^\d{4}-\d{2}-\d{2}$/.test(val), { message: "فۆرماتی بەروار هەڵەیە (YYYY-MM-DD)." }),
       amount: z.coerce.number().min(0.01, "بڕ دەبێت موجەب بێت."),
@@ -137,8 +137,8 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
       items: [{ product: "", quantity: 1, unitPrice: 0 }],
       deliveryCost: 0,
       discountValue: 0,
-      paymentStatus: "Unpaid",
-      paymentType: "After Delivery",
+      paymentStatus: "Fully Paid",
+      paymentType: "Direct Payment",
       payments: [],
     },
   });
@@ -207,6 +207,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
   const watchedPayments = form.watch('payments');
   const discountType = form.watch('discountType');
   const discountValue = form.watch('discountValue');
+  const paymentStatus = form.watch('paymentStatus');
   
   const subTotal = watchedItems.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
 
@@ -221,21 +222,12 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
   const totalAfterDiscount = subTotal - discountAmount;
   const totalAmount = totalAfterDiscount + (deliveryCost || 0);
   const totalPaid = watchedPayments?.reduce((acc, p) => acc + p.amount, 0) || 0;
-  const remainingBalance = totalAmount - totalPaid;
-
-  useEffect(() => {
-    if (totalAmount > 0) {
-      if (totalPaid <= 0) {
-          form.setValue("paymentStatus", "Unpaid");
-      } else if (remainingBalance <= 0) {
-          form.setValue("paymentStatus", "Fully Paid");
-      } else {
-          form.setValue("paymentStatus", "Partially Paid");
-      }
-    } else {
-       form.setValue("paymentStatus", "Unpaid");
-    }
-  }, [totalPaid, totalAmount, remainingBalance, form]);
+  
+  const remainingBalance = React.useMemo(() => {
+    if (paymentStatus === 'Fully Paid') return 0;
+    if (paymentStatus === 'Unpaid') return totalAmount;
+    return totalAmount - totalPaid;
+  }, [paymentStatus, totalAmount, totalPaid]);
 
 
   async function onSubmit(data: SalesFormValues) {
@@ -287,13 +279,21 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
 
             // 3. Create/Update the main selling_form document
             const { items, payments, ...mainData } = data;
+            
+            const finalRemainingBalance = (() => {
+                if (mainData.paymentStatus === 'Fully Paid') return 0;
+                if (mainData.paymentStatus === 'Unpaid') return totalAmount;
+                 const paidAmount = payments?.reduce((acc, p) => acc + p.amount, 0) || 0;
+                return totalAmount - paidAmount;
+            })();
+            
             const sellingFormData: any = {
                 ...mainData,
                 id: sellingFormId,
                 creatorId: "system", // Replace with actual user ID if auth is used
                 issueDate: data.issueDate,
                 totalPrice: totalAmount,
-                remainingBalance: remainingBalance,
+                remainingBalance: finalRemainingBalance,
             };
             if (sellingFormData.discountValue === undefined || sellingFormData.discountValue === null) {
                 sellingFormData.discountValue = 0;
@@ -328,18 +328,20 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
             });
         });
         
-        // Handle payments outside the main transaction, as they don't affect stock
-        const paymentPromises = (data.payments || []).map(payment => {
-            const paymentRef = doc(collection(firestore, `selling_forms/${sellingFormId}/payments`));
-            const paymentData = {
-                ...payment,
-                id: paymentRef.id,
-                paymentDate: payment.date,
-                sellingFormId: sellingFormId,
-            };
-            return setDocumentNonBlocking(paymentRef, paymentData, { merge: true });
-        });
-        await Promise.all(paymentPromises);
+        if (data.paymentType === 'Installments') {
+            const paymentPromises = (data.payments || []).map(payment => {
+                const paymentRef = doc(collection(firestore, `selling_forms/${sellingFormId}/payments`));
+                const paymentData = {
+                    ...payment,
+                    id: paymentRef.id,
+                    paymentDate: payment.date,
+                    sellingFormId: sellingFormId,
+                };
+                return setDocumentNonBlocking(paymentRef, paymentData, { merge: true });
+            });
+            await Promise.all(paymentPromises);
+        }
+
 
         toast({
             title: "سەرکەوتوو بوو!",
@@ -518,13 +520,14 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>جۆری پارەدان</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
+                        <Select onValueChange={field.onChange} value={field.value} dir="rtl">
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="جۆرێک هەڵبژێرە" />
+                              <SelectValue />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
+                            <SelectItem value="Direct Payment">پارەی ڕاستەوخۆ</SelectItem>
                             <SelectItem value="After Delivery">دوای گەیاندن</SelectItem>
                             <SelectItem value="Installments">قیست</SelectItem>
                             <SelectItem value="Pre-order">داواکاری پێشوەختە</SelectItem>
@@ -534,7 +537,28 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                       </FormItem>
                     )}
                   />
-                  <FormField control={form.control} name="paymentStatus" render={({ field }) => ( <FormItem> <FormLabel>دۆخی پارەدان</FormLabel> <FormControl><Input {...field} readOnly className="font-semibold bg-secondary/70 border-none" /></FormControl> <FormMessage /> </FormItem> )} />
+                    <FormField
+                        control={form.control}
+                        name="paymentStatus"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>دۆخی پارەدان</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value} dir="rtl">
+                            <FormControl>
+                                <SelectTrigger>
+                                <SelectValue/>
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectItem value="Fully Paid">هەمووی دراوە</SelectItem>
+                                <SelectItem value="Partially Paid">بەشێکی دراوە</SelectItem>
+                                <SelectItem value="Unpaid">نەدراوە</SelectItem>
+                            </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
                 </div>
                 <div className="space-y-2">
                     <FormLabel>واژۆ</FormLabel>
@@ -585,7 +609,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                                   name={`payments.${index}.method`}
                                   render={({ field }) => (
                                     <FormItem>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value} dir="rtl">
+                                        <Select onValueChange={field.onChange} value={field.value} dir="rtl">
                                             <FormControl>
                                                 <SelectTrigger><SelectValue/></SelectTrigger>
                                             </FormControl>
