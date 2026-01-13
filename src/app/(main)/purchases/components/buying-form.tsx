@@ -12,7 +12,7 @@ import { Download, Loader2, PlusCircle, Trash2, List, FileUp } from "lucide-reac
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useFirestore, useCollection, useMemoFirebase, collection, doc, setDoc, getDoc, runTransaction, getDocs, deleteDoc } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase, collection, doc, setDoc, getDoc, runTransaction, getDocs, deleteDoc, DocumentSnapshot } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { WithId } from "@/firebase/firestore/use-collection";
 import { analyzePurchaseExcel } from "@/ai/flows/analyze-purchase-excel";
@@ -395,56 +395,94 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
     const buyingFormId = buyingFormRef.id;
 
     try {
-         await runTransaction(firestore, async (transaction) => {
-            // 1. Restore original stock for existing items (if editing)
+        await runTransaction(firestore, async (transaction) => {
+            const productRefsToUpdate: { ref: any; newQty: number, data: any }[] = [];
+            const productRefsToCreate: { ref: any; data: any }[] = [];
+            const productDocs = new Map<string, DocumentSnapshot>();
+
+            // --- READ PHASE ---
+            const allProductReads: Promise<DocumentSnapshot>[] = [];
+            const productIds: string[] = [];
+
             if (formId) {
                 for (const item of originalItems) {
-                    const productDocId = item.productId;
-                    const productRef = doc(firestore, 'products', productDocId);
-                    const productDoc = await transaction.get(productRef);
-                    if (productDoc.exists()) {
-                        const newQuantity = (productDoc.data().currentQuantity || 0) - item.quantity;
-                        transaction.update(productRef, { currentQuantity: newQuantity });
+                    const productRef = doc(firestore, 'products', item.productId);
+                    if (!productIds.includes(item.productId)) {
+                        allProductReads.push(transaction.get(productRef));
+                        productIds.push(item.productId);
                     }
                 }
             }
 
-            // 2. Add new stock
             for (const item of data.items) {
                 const productDocId = item.product.toLowerCase().replace(/[^a-z0-9]/g, '-');
                 const productRef = doc(firestore, 'products', productDocId);
-                const productDoc = await transaction.get(productRef);
-                
-                 if (!productDoc.exists()) {
-                    transaction.set(productRef, {
-                        id: productDocId,
-                        productName: item.product,
-                        category: item.category,
-                        sizeModel: item.sizeModel || "",
-                        stockLocation: data.stockLocation,
-                        currentQuantity: item.quantity,
-                        supplierId: data.supplierId,
-                        unitPrice: item.unitPrice,
-                        sellingPrice: item.sellingPrice,
-                    });
-                } else {
-                    const newQuantity = (productDoc.data().currentQuantity || 0) + item.quantity;
-                    transaction.update(productRef, { 
-                        currentQuantity: newQuantity,
-                        supplierId: data.supplierId, 
-                        stockLocation: data.stockLocation, 
-                        unitPrice: item.unitPrice,
-                        sellingPrice: item.sellingPrice,
-                    });
+                 if (!productIds.includes(productDocId)) {
+                    allProductReads.push(transaction.get(productRef));
+                    productIds.push(productDocId);
+                }
+            }
+            
+            const readSnapshots = await Promise.all(allProductReads);
+            readSnapshots.forEach(snap => productDocs.set(snap.id, snap));
+
+            // --- CALCULATION PHASE (no reads/writes) ---
+            const stockAdjustments = new Map<string, number>();
+
+            if (formId) {
+                for (const item of originalItems) {
+                    const currentAdjustment = stockAdjustments.get(item.productId) || 0;
+                    stockAdjustments.set(item.productId, currentAdjustment - item.quantity);
                 }
             }
 
-            // 3. Create/Update the main buying_form document
+            for (const item of data.items) {
+                const productDocId = item.product.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                const currentAdjustment = stockAdjustments.get(productDocId) || 0;
+                stockAdjustments.set(productDocId, currentAdjustment + item.quantity);
+            }
+
+            // --- WRITE PHASE ---
+            
+            // 1. Update stock quantities
+            for (const [productId, quantityChange] of stockAdjustments.entries()) {
+                 const productRef = doc(firestore, 'products', productId);
+                 const productDoc = productDocs.get(productId);
+                 const formItemData = data.items.find(i => i.product.toLowerCase().replace(/[^a-z0-9]/g, '-') === productId);
+
+                 if (productDoc && productDoc.exists()) {
+                     const currentQuantity = productDoc.data()?.currentQuantity || 0;
+                     const newQuantity = currentQuantity + quantityChange;
+                     transaction.update(productRef, { 
+                         currentQuantity: newQuantity,
+                         ...(formItemData && { // Only update these if the product is in the current form
+                            supplierId: data.supplierId, 
+                            stockLocation: data.stockLocation, 
+                            unitPrice: formItemData.unitPrice,
+                            sellingPrice: formItemData.sellingPrice,
+                         })
+                     });
+                 } else if (formItemData) { // This is a new product
+                     transaction.set(productRef, {
+                        id: productId,
+                        productName: formItemData.product,
+                        category: formItemData.category,
+                        sizeModel: formItemData.sizeModel || "",
+                        stockLocation: data.stockLocation,
+                        currentQuantity: formItemData.quantity,
+                        supplierId: data.supplierId,
+                        unitPrice: formItemData.unitPrice,
+                        sellingPrice: formItemData.sellingPrice,
+                    });
+                 }
+            }
+
+            // 2. Create/Update the main buying_form document
             const { items, ...mainData } = data;
             const buyingFormData = { ...mainData, id: buyingFormId };
             transaction.set(buyingFormRef, buyingFormData, { merge: true });
 
-            // 4. Clear and create new sub-collection documents
+            // 3. Clear and create new sub-collection documents
             if (formId) {
                 const existingItemsSnap = await getDocs(collection(firestore, `buying_forms/${formId}/products`));
                 existingItemsSnap.docs.forEach(d => transaction.delete(d.ref));
@@ -468,6 +506,7 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
                 transaction.set(productSubCollectionRef, productData);
             });
         });
+
 
         toast({
             title: "سەرکەوتوو بوو!",
@@ -631,4 +670,3 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
     </Form>
   );
 }
-
