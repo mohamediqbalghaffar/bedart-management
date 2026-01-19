@@ -3,9 +3,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { PageHeader } from "@/components/shared/page-header";
-import { useFirestore, useCollection, useMemoFirebase, collection, getDocs, query, where } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, collection, getDocs, query, where, collectionGroup } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, DollarSign, Archive, ShoppingCart, TrendingUp, TrendingDown, Package, LineChart } from 'lucide-react';
+import { Loader2, DollarSign, Users, Archive, ShoppingCart, TrendingUp, TrendingDown, Package, LineChart } from 'lucide-react';
 import { StatCard } from '@/components/shared/stat-card';
 import { subDays, parseISO, isValid, startOfDay, endOfDay, differenceInDays } from 'date-fns';
 import { format } from 'date-fns';
@@ -19,6 +19,8 @@ import { WithId } from '@/firebase/firestore/use-collection';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useRouter } from 'next/navigation';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+
 
 type SellingForm = {
     totalPrice: number;
@@ -200,68 +202,76 @@ function PurchasesDetailDialog({ purchases }: { purchases: WithId<BuyingForm>[] 
     }
 
     return (
-        <div className="max-h-[70vh] overflow-y-auto space-y-6 p-1">
-             <Card>
-                <CardHeader><CardTitle>پوختەی گشتی</CardTitle></CardHeader>
-                <CardContent className="grid grid-cols-2 gap-4">
-                    <div>
-                        <p className="text-sm text-muted-foreground">کۆی ژمارەی کاڵا کڕاوەکان</p>
-                        <p className="text-2xl font-bold">{totalOverallQuantity}</p>
-                    </div>
-                     <div>
-                        <p className="text-sm text-muted-foreground">کۆی نرخی کاڵا کڕاوەکان</p>
-                        <p className="text-2xl font-bold">{currencyFormatter.format(totalOverallCost)}</p>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader><CardTitle>پوختەی هەر کاڵایەک</CardTitle></CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="text-right">ناوی کاڵا</TableHead>
-                                <TableHead className="text-right">کۆی دانە</TableHead>
-                                <TableHead className="text-right">کۆی نرخ</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {perProductSummary.map(item => (
-                                <TableRow key={item.productName}>
-                                    <TableCell>{item.productName}</TableCell>
-                                    <TableCell>{item.totalQuantity}</TableCell>
-                                    <TableCell>{currencyFormatter.format(item.totalCost)}</TableCell>
+        <div className="max-h-[80vh] overflow-y-auto p-1">
+             <Accordion type="multiple" defaultValue={['item-1']} className="w-full space-y-2">
+                <AccordionItem value="item-1" className="border rounded-lg bg-card text-card-foreground">
+                    <AccordionTrigger className="p-6 text-lg font-semibold">
+                        پوختەی گشتی
+                    </AccordionTrigger>
+                    <AccordionContent className="p-6 pt-0">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <p className="text-sm text-muted-foreground">کۆی ژمارەی کاڵا کڕاوەکان</p>
+                                <p className="text-2xl font-bold">{totalOverallQuantity}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">کۆی نرخی کاڵا کڕاوەکان</p>
+                                <p className="text-2xl font-bold">{currencyFormatter.format(totalOverallCost)}</p>
+                            </div>
+                        </div>
+                    </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="item-2" className="border rounded-lg bg-card text-card-foreground">
+                     <AccordionTrigger className="p-6 text-lg font-semibold">
+                        پوختەی هەر کاڵایەک
+                    </AccordionTrigger>
+                    <AccordionContent className="px-6 pb-6">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="text-right">ناوی کاڵا</TableHead>
+                                    <TableHead className="text-right">کۆی دانە</TableHead>
+                                    <TableHead className="text-right">کۆی نرخ</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-            
-            <Card>
-                <CardHeader><CardTitle>لیستی کڕینەکان</CardTitle></CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="text-right">دابینکەر</TableHead>
-                                <TableHead className="text-right">بەروار</TableHead>
-                                <TableHead className="text-right">کۆی گشتی پسوولە</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {enrichedData?.map(purchase => (
-                                <TableRow key={purchase.id}>
-                                    <TableCell>{purchase.supplierName}</TableCell>
-                                    <TableCell>{purchase.issueDate}</TableCell>
-                                    <TableCell>{currencyFormatter.format(purchase.totalAmount)}</TableCell>
+                            </TableHeader>
+                            <TableBody>
+                                {perProductSummary.map(item => (
+                                    <TableRow key={item.productName}>
+                                        <TableCell>{item.productName}</TableCell>
+                                        <TableCell>{item.totalQuantity}</TableCell>
+                                        <TableCell>{currencyFormatter.format(item.totalCost)}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </AccordionContent>
+                </AccordionItem>
+                 <AccordionItem value="item-3" className="border rounded-lg bg-card text-card-foreground">
+                     <AccordionTrigger className="p-6 text-lg font-semibold">
+                        لیستی کڕینەکان
+                    </AccordionTrigger>
+                    <AccordionContent className="px-6 pb-6">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="text-right">دابینکەر</TableHead>
+                                    <TableHead className="text-right">بەروار</TableHead>
+                                    <TableHead className="text-right">کۆی گشتی پسوولە</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+                            </TableHeader>
+                            <TableBody>
+                                {enrichedData?.map(purchase => (
+                                    <TableRow key={purchase.id}>
+                                        <TableCell>{purchase.supplierName}</TableCell>
+                                        <TableCell>{purchase.issueDate}</TableCell>
+                                        <TableCell>{currencyFormatter.format(purchase.totalAmount)}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </AccordionContent>
+                </AccordionItem>
+            </Accordion>
         </div>
     );
 }
@@ -429,7 +439,7 @@ function DashboardStats() {
                         <StatCard title="کۆی گشتیی کڕین" value={currencyFormatter.format(totalPurchases)} icon={Package} description="هەموو کڕینە تۆمارکراوەکان" />
                     </div>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-2xl" dir="rtl">
+                <DialogContent className="sm:max-w-4xl" dir="rtl">
                     <DialogHeader>
                         <DialogTitle>وردەکارییەکانی کڕین</DialogTitle>
                         <DialogDescription>لیستی کڕینەکانی ئەم دواییە.</DialogDescription>
