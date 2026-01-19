@@ -13,7 +13,7 @@ import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useFirestore, setDocumentNonBlocking, doc, runTransaction, getDoc, collection, getDocs, deleteDoc, useMemoFirebase } from "@/firebase";
+import { useFirestore, doc, runTransaction, getDoc, collection, getDocs, DocumentReference } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ProductSelectorDialog } from "../../components/product-selector-dialog";
@@ -263,147 +263,160 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
 
   async function onSubmit(data: SalesFormValues) {
     if (!firestore) {
-        toast({
-            variant: "destructive",
-            title: "هەڵەیەک ڕوویدا",
-            description: "پەیوەندی لەگەڵ بنکەی داتاکەدا نییە.",
-        });
+        toast({ variant: "destructive", title: "هەڵەیەک ڕوویدا", description: "پەیوەندی لەگەڵ بنکەی داتاکەدا نییە." });
         return;
     }
     
     const sellingFormRef = formId ? doc(firestore, "selling_forms", formId) : doc(collection(firestore, "selling_forms"));
     const sellingFormId = sellingFormRef.id;
 
+    // --- Pre-Transaction: Fetch IDs for deletion ---
+    let oldItemRefsToDelete: DocumentReference[] = [];
+    let oldPaymentRefsToDelete: DocumentReference[] = [];
+    if (formId) {
+        try {
+            const existingItemsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/selling_form_products`));
+            oldItemRefsToDelete = existingItemsSnap.docs.map(d => d.ref);
+            if (data.paymentType === 'Installments') {
+                const existingPaymentsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/payments`));
+                oldPaymentRefsToDelete = existingPaymentsSnap.docs.map(p => p.ref);
+            }
+        } catch (e) {
+             toast({ variant: "destructive", title: "هەڵە", description: "Failed to prepare form for update." });
+             return;
+        }
+    }
+
+
     try {
         await runTransaction(firestore, async (transaction) => {
-            // 1. Restore original stock for existing items (if editing)
+            // --- 1. READ PHASE ---
+            const productRefsToRead = new Map<string, DocumentReference>();
+
             if (formId) {
-                for (const item of originalItems) {
-                    const productDocId = item.productId
-                    const productRef = doc(firestore, 'products', productDocId);
-                    const productDoc = await transaction.get(productRef);
-                    if (productDoc.exists()) {
-                        const newQuantity = (productDoc.data().currentQuantity || 0) + item.quantity;
-                        transaction.update(productRef, { currentQuantity: newQuantity });
-                    }
-                }
+                originalItems.forEach(item => {
+                    if (item.productId) productRefsToRead.set(item.productId, doc(firestore, 'products', item.productId));
+                });
             }
-
-            // 2. Validate and deduct new stock
-            for (const item of data.items) {
-                // This assumes a product sold from the shop showroom by default
-                const productDocId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-shopshowroom`;
-                const productRef = doc(firestore, 'products', productDocId);
-                const productDoc = await transaction.get(productRef);
-
-                if (!productDoc.exists() || productDoc.data().currentQuantity < item.quantity) {
-                     // If not enough in showroom, try warehouse
-                    const warehouseProductId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-warehouse`;
-                    const warehouseProductRef = doc(firestore, 'products', warehouseProductId);
-                    const warehouseProductDoc = await transaction.get(warehouseProductRef);
-                    
-                    if (!warehouseProductDoc.exists() || warehouseProductDoc.data().currentQuantity < item.quantity) {
-                         throw new Error(`بڕی کاڵا بەشی ناکات. "${item.product}" لە کۆگا و فرۆشگا بەردەست نییە.`);
-                    }
-
-                    // Deduct from warehouse if sufficient
-                    const newQuantity = warehouseProductDoc.data().currentQuantity - item.quantity;
-                    transaction.update(warehouseProductRef, { currentQuantity: newQuantity });
-
-                } else {
-                     // Deduct from showroom
-                    const newQuantity = productDoc.data().currentQuantity - item.quantity;
-                    transaction.update(productRef, { currentQuantity: newQuantity });
-                }
-            }
-
-            // 3. Create/Update the main selling_form document
-            const { items, payments, ...mainData } = data;
             
+            data.items.forEach(item => {
+                const showroomId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-shopshowroom`;
+                const warehouseId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-warehouse`;
+                productRefsToRead.set(showroomId, doc(firestore, 'products', showroomId));
+                productRefsToRead.set(warehouseId, doc(firestore, 'products', warehouseId));
+            });
+
+            const productSnapshots = await Promise.all(
+                Array.from(productRefsToRead.values()).map(ref => transaction.get(ref))
+            );
+            const productDocs = new Map(productSnapshots.map(snap => [snap.id, snap]));
+
+            // --- 2. LOGIC / VALIDATION PHASE ---
+            const stockChanges = new Map<string, { change: number, docExists: boolean }>();
+
+            if (formId) {
+                originalItems.forEach(item => {
+                    if (item.productId) {
+                        const existing = stockChanges.get(item.productId) || { change: 0, docExists: !!productDocs.get(item.productId)?.exists() };
+                        existing.change += item.quantity;
+                        stockChanges.set(item.productId, existing);
+                    }
+                });
+            }
+
+            for (const item of data.items) {
+                const showroomId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-shopshowroom`;
+                const warehouseId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-warehouse`;
+                
+                const showroomDoc = productDocs.get(showroomId);
+                const warehouseDoc = productDocs.get(warehouseId);
+
+                const showroomCurrentStock = showroomDoc?.data()?.currentQuantity || 0;
+                const warehouseCurrentStock = warehouseDoc?.data()?.currentQuantity || 0;
+
+                const showroomStockAfterRestore = showroomCurrentStock + (stockChanges.get(showroomId)?.change || 0);
+                const warehouseStockAfterRestore = warehouseCurrentStock + (stockChanges.get(warehouseId)?.change || 0);
+                
+                let deductedFrom: string | null = null;
+                if (showroomStockAfterRestore >= item.quantity) {
+                    deductedFrom = showroomId;
+                } else if (warehouseStockAfterRestore >= item.quantity) {
+                    deductedFrom = warehouseId;
+                }
+
+                if (!deductedFrom) {
+                    throw new Error(`بڕی کاڵا بەشی ناکات: "${item.product}"`);
+                }
+                
+                const existing = stockChanges.get(deductedFrom) || { change: 0, docExists: !!productDocs.get(deductedFrom)?.exists() };
+                existing.change -= item.quantity;
+                stockChanges.set(deductedFrom, existing);
+                (item as any).resolvedProductId = deductedFrom;
+            }
+
+            // --- 3. WRITE PHASE ---
+            
+            for (const [productId, { change, docExists }] of stockChanges.entries()) {
+                const productRef = productRefsToRead.get(productId)!;
+                if (docExists) {
+                    const currentQuantity = productDocs.get(productId)!.data()!.currentQuantity;
+                    transaction.update(productRef, { currentQuantity: currentQuantity + change });
+                }
+            }
+
+            const { items, payments, ...mainData } = data;
             const finalRemainingBalance = (() => {
                 if (mainData.paymentStatus === 'Fully Paid') return 0;
                 if (mainData.paymentStatus === 'Unpaid') return totalAmount;
-                 const paidAmount = payments?.reduce((acc, p) => acc + p.amount, 0) || 0;
+                const paidAmount = payments?.reduce((acc, p) => acc + p.amount, 0) || 0;
                 return totalAmount - paidAmount;
             })();
             
-            const sellingFormData: any = {
-                ...mainData,
-                id: sellingFormId,
-                creatorId: "system", // Replace with actual user ID if auth is used
-                issueDate: data.issueDate,
-                totalPrice: totalAmount,
-                remainingBalance: finalRemainingBalance,
-            };
-            if (sellingFormData.discountValue === undefined || sellingFormData.discountValue === null) {
-                sellingFormData.discountValue = 0;
-            }
-            if (sellingFormData.discountType === undefined || sellingFormData.discountType === null) {
-                 delete sellingFormData.discountType;
-            }
-
+            const sellingFormData: any = { ...mainData, id: sellingFormId, creatorId: "system", issueDate: data.issueDate, totalPrice: totalAmount, remainingBalance: finalRemainingBalance };
+            if (!sellingFormData.discountValue) sellingFormData.discountValue = 0;
+            if (!sellingFormData.discountType) delete sellingFormData.discountType;
             transaction.set(sellingFormRef, sellingFormData, { merge: true });
 
-            // 4. Clear and create new sub-collection documents
-            if (formId) {
-                const existingItemsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/selling_form_products`));
-                existingItemsSnap.docs.forEach(d => transaction.delete(d.ref));
-                const existingPaymentsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/payments`));
-                existingPaymentsSnap.docs.forEach(p => transaction.delete(p.ref));
-            }
-            
+            oldItemRefsToDelete.forEach(ref => transaction.delete(ref));
+            oldPaymentRefsToDelete.forEach(ref => transaction.delete(ref));
+
             items.forEach(item => {
                 const productSubCollectionRef = doc(collection(firestore, `selling_forms/${sellingFormId}/selling_form_products`));
-                const productDocId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-shopshowroom`; // Assume sale from showroom
-
-                const productData = {
+                transaction.set(productSubCollectionRef, {
                     id: productSubCollectionRef.id,
                     sellingFormId: sellingFormId,
-                    productId: productDocId, // Store reference to specific stock item
+                    productId: (item as any).resolvedProductId,
                     productName: item.product,
                     quantity: item.quantity,
                     unitPrice: item.unitPrice,
                     lineTotal: item.quantity * item.unitPrice,
                     category: item.category,
-                };
-                transaction.set(productSubCollectionRef, productData);
+                });
             });
-        });
-        
-        if (data.paymentType === 'Installments') {
-            const paymentPromises = (data.payments || []).map(payment => {
-                const paymentRef = doc(collection(firestore, `selling_forms/${sellingFormId}/payments`));
-                const paymentData = {
-                    ...payment,
-                    id: paymentRef.id,
-                    paymentDate: payment.date,
-                    sellingFormId: sellingFormId,
-                };
-                return setDocumentNonBlocking(paymentRef, paymentData, { merge: true });
-            });
-            await Promise.all(paymentPromises);
-        }
 
-
-        toast({
-            title: "سەرکەوتوو بوو!",
-            description: `فۆڕمی فرۆشتن بە سەرکەوتوویی ${formId ? 'نوێکرایەوە' : 'پاشەکەوت کرا'}.`,
-            className: "bg-accent text-accent-foreground",
+            if(data.paymentType === 'Installments') {
+                (payments || []).forEach(payment => {
+                    const paymentRef = doc(collection(firestore, `selling_forms/${sellingFormId}/payments`));
+                    transaction.set(paymentRef, {
+                        ...payment,
+                        id: paymentRef.id,
+                        paymentDate: payment.date,
+                        sellingFormId: sellingFormId,
+                    });
+                });
+            }
         });
-        
+
+        toast({ title: "سەرکەوتوو بوو!", description: `فۆڕمی فرۆشتن بە سەرکەوتوویی ${formId ? 'نوێکرایەوە' : 'پاشەکەوت کرا'}.`, className: "bg-accent text-accent-foreground", });
         if (onSave) onSave();
-        if(!formId) form.reset();
-
+        if (!formId) form.reset();
 
     } catch (error: any) {
         console.error("Error saving sales form:", error);
-        toast({
-            variant: "destructive",
-            title: "هەڵەیەک ڕوویدا",
-            description: error.message || "پاشەکەوتکردنی فۆڕمی فرۆشتن سەرکەوتوو نەبوو. گۆڕانکارییەکان پاشگەزکرانەوە.",
-        });
+        toast({ variant: "destructive", title: "هەڵەیەک ڕوویدا", description: error.message || "پاشەکەوتکردنی فۆڕمی فرۆشتن سەرکەوتوو نەبوو.", });
     }
   }
+
 
   if (isLoading) {
     return <div className="flex h-96 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
