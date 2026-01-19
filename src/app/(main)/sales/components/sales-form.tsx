@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -13,14 +14,13 @@ import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useFirestore, doc, runTransaction, getDoc, collection, getDocs, DocumentReference } from "@/firebase";
+import { useFirestore, doc, runTransaction, getDoc, collection, getDocs, DocumentReference, useMemoFirebase, useCollection } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ProductSelectorDialog } from "../../components/product-selector-dialog";
 import { CustomerSelectorDialog } from "../../components/customer-selector-dialog";
 import { Loader2 } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
-import { useCollection } from "@/firebase";
 import { WithId } from "@/firebase/firestore/use-collection";
 
 type Customer = {
@@ -277,7 +277,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
         try {
             const existingItemsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/selling_form_products`));
             oldItemRefsToDelete = existingItemsSnap.docs.map(d => d.ref);
-            if (data.paymentType === 'Installments') {
+            if (data.paymentType === 'Installments' || data.paymentType !== 'Direct Payment') { //Also check if old type was installments
                 const existingPaymentsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/payments`));
                 oldPaymentRefsToDelete = existingPaymentsSnap.docs.map(p => p.ref);
             }
@@ -699,3 +699,5 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
     </Form>
   );
 }
+
+    
