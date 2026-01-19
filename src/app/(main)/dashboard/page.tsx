@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -71,7 +72,9 @@ type BuyingFormProduct = {
 type SellingFormProduct = {
     productId: string;
     productName: string;
-    sellingFormId: string;
+    quantity: number;
+    unitPrice: number;
+    lineTotal: number;
 }
 
 type Supplier = {
@@ -90,26 +93,139 @@ const categoryTranslations: Record<string, string> = {
 // --- Detail Dialog Components ---
 
 function SalesDetailDialog({ sales }: { sales: WithId<SellingForm>[] | null }) {
+    const firestore = useFirestore();
+    const [perProductSummary, setPerProductSummary] = useState<{ productName: string, totalQuantity: number, totalRevenue: number }[]>([]);
+    const [totalOverallQuantity, setTotalOverallQuantity] = useState(0);
+    const [totalOverallRevenue, setTotalOverallRevenue] = useState(0);
+    const [isCalculating, setIsCalculating] = useState(true);
+    const [allProducts, setAllProducts] = useState<(WithId<SellingFormProduct> & {formId: string})[]>([]);
+
+    useEffect(() => {
+        const fetchAllProducts = async () => {
+            if (!sales || !firestore) {
+                setAllProducts([]);
+                setIsCalculating(false);
+                return;
+            }
+            setIsCalculating(true);
+            const productsFromForms: (WithId<SellingFormProduct> & {formId: string})[] = [];
+            await Promise.all(sales.map(async s => {
+                const productsSnap = await getDocs(collection(firestore, `selling_forms/${s.id}/selling_form_products`));
+                productsSnap.docs.forEach(doc => {
+                    productsFromForms.push({formId: s.id, ...doc.data(), id: doc.id} as (WithId<SellingFormProduct> & {formId: string}));
+                });
+            }));
+            setAllProducts(productsFromForms);
+            setIsCalculating(false);
+        };
+        fetchAllProducts();
+    }, [sales, firestore]);
+
+    useEffect(() => {
+        if (allProducts.length === 0 && (!sales || sales.length === 0)) {
+            setPerProductSummary([]);
+            setTotalOverallQuantity(0);
+            setTotalOverallRevenue(0);
+            return;
+        }
+
+        let grandTotalQuantity = 0;
+        let grandTotalRevenue = 0;
+        const productSummaryMap = new Map<string, { totalQuantity: number; totalRevenue: number }>();
+
+        allProducts.forEach(p => {
+            const lineRevenue = p.lineTotal;
+            grandTotalQuantity += p.quantity;
+            grandTotalRevenue += lineRevenue;
+
+            const summary = productSummaryMap.get(p.productName) || { totalQuantity: 0, totalRevenue: 0 };
+            summary.totalQuantity += p.quantity;
+            summary.totalRevenue += lineRevenue;
+            productSummaryMap.set(p.productName, summary);
+        });
+        
+        setTotalOverallQuantity(grandTotalQuantity);
+        setTotalOverallRevenue(grandTotalRevenue);
+        setPerProductSummary(Array.from(productSummaryMap.entries()).map(([productName, data]) => ({ productName, ...data })));
+    }, [allProducts, sales]);
+
+    const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+
+    if (isCalculating) {
+         return <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    }
+
     return (
-        <div className="max-h-[60vh] overflow-y-auto">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead className="text-right">کڕیار</TableHead>
-                        <TableHead className="text-right">بەروار</TableHead>
-                        <TableHead className="text-right">کۆی گشتی</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {sales?.map(sale => (
-                        <TableRow key={sale.id}>
-                            <TableCell>{sale.customerName}</TableCell>
-                            <TableCell>{format(parseISO(sale.issueDate), 'yyyy-MM-dd')}</TableCell>
-                            <TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(sale.totalPrice)}</TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+        <div className="max-h-[80vh] overflow-y-auto p-1">
+             <Accordion type="multiple" defaultValue={['item-1']} className="w-full space-y-2">
+                <AccordionItem value="item-1" className="border rounded-lg bg-card text-card-foreground">
+                    <AccordionTrigger className="p-6 text-lg font-semibold">
+                        پوختەی گشتی
+                    </AccordionTrigger>
+                    <AccordionContent className="p-6 pt-0 space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <p className="text-sm text-muted-foreground">کۆی ژمارەی کاڵا فرۆشراوەکان</p>
+                                <p className="text-2xl font-bold">{totalOverallQuantity}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">کۆی داهاتی کاڵا فرۆشراوەکان</p>
+                                <p className="text-2xl font-bold">{currencyFormatter.format(totalOverallRevenue)}</p>
+                            </div>
+                        </div>
+                    </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="item-2" className="border rounded-lg bg-card text-card-foreground">
+                     <AccordionTrigger className="p-6 text-lg font-semibold">
+                        پوختەی هەر کاڵایەک
+                    </AccordionTrigger>
+                    <AccordionContent className="px-6 pb-6">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="text-right">ناوی کاڵا</TableHead>
+                                    <TableHead className="text-right">کۆی دانە</TableHead>
+                                    <TableHead className="text-right">کۆی داهات</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {perProductSummary.map(item => (
+                                    <TableRow key={item.productName}>
+                                        <TableCell>{item.productName}</TableCell>
+                                        <TableCell>{item.totalQuantity}</TableCell>
+                                        <TableCell>{currencyFormatter.format(item.totalRevenue)}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </AccordionContent>
+                </AccordionItem>
+                 <AccordionItem value="item-3" className="border rounded-lg bg-card text-card-foreground">
+                     <AccordionTrigger className="p-6 text-lg font-semibold">
+                        لیستی فرۆشتنەکان
+                    </AccordionTrigger>
+                    <AccordionContent className="px-6 pb-6">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="text-right">کڕیار</TableHead>
+                                    <TableHead className="text-right">بەروار</TableHead>
+                                    <TableHead className="text-right">کۆی گشتی</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {sales?.map(sale => (
+                                    <TableRow key={sale.id}>
+                                        <TableCell>{sale.customerName}</TableCell>
+                                        <TableCell>{format(parseISO(sale.issueDate), 'yyyy-MM-dd')}</TableCell>
+                                        <TableCell>{currencyFormatter.format(sale.totalPrice)}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </AccordionContent>
+                </AccordionItem>
+            </Accordion>
         </div>
     );
 }
@@ -469,7 +585,7 @@ function DashboardStats({ dateRange }: { dateRange: { from: string, to: string }
                         <StatCard title="کۆی گشتی فرۆش" value={currencyFormatter.format(totalRevenue)} icon={ShoppingCart} description="هەموو فرۆشە تۆمارکراوەکان" />
                     </div>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-2xl" dir="rtl">
+                <DialogContent className="sm:max-w-4xl" dir="rtl">
                     <DialogHeader>
                         <DialogTitle>وردەکارییەکانی فرۆش</DialogTitle>
                         <DialogDescription>لیستی فرۆشەکانی ئەم دواییە.</DialogDescription>
