@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { PageHeader } from "@/components/shared/page-header";
-import { useFirestore, useCollection, useMemoFirebase, collection, getDocs, query, where, collectionGroup } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, collection, getDocs, query, where } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, DollarSign, Users, Archive, ShoppingCart, TrendingUp, TrendingDown, Package, LineChart } from 'lucide-react';
 import { StatCard } from '@/components/shared/stat-card';
@@ -307,13 +307,37 @@ function LowStockDetailDialog({ groupedProducts }: { groupedProducts: GroupedPro
 }
 
 
-function DashboardStats() {
+function DashboardStats({ dateRange }: { dateRange: { from: string, to: string } }) {
     const firestore = useFirestore();
 
-    const salesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'selling_forms') : null, [firestore]);
-    const expensesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'expenses') : null, [firestore]);
+    const salesQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(
+            collection(firestore, 'selling_forms'),
+            where('issueDate', '>=', dateRange.from),
+            where('issueDate', '<=', dateRange.to)
+        );
+    }, [firestore, dateRange]);
+
+    const expensesQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(
+            collection(firestore, 'expenses'),
+            where('date', '>=', dateRange.from),
+            where('date', '<=', dateRange.to)
+        );
+    }, [firestore, dateRange]);
+
     const productsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'products') : null, [firestore]);
-    const buyingFormsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'buying_forms') : null, [firestore]);
+    
+    const buyingFormsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(
+            collection(firestore, 'buying_forms'),
+            where('issueDate', '>=', dateRange.from),
+            where('issueDate', '<=', dateRange.to)
+        );
+    }, [firestore, dateRange]);
 
     const { data: sales, isLoading: loadingSales } = useCollection<SellingForm>(salesQuery);
     const { data: expenses, isLoading: loadingExpenses } = useCollection<Expense>(expensesQuery);
@@ -473,9 +497,8 @@ const chartConfig = {
   netProfit: { label: "قازانجی پوخت", color: "hsl(var(--chart-1))", icon: LineChart }
 } satisfies ChartConfig
 
-function RecentActivityChart() {
+function RecentActivityChart({ dateRange }: { dateRange: { from: string, to: string } }) {
     const firestore = useFirestore();
-    const [dateRange, setDateRange] = useState({ from: format(subDays(new Date(), 29), 'yyyy-MM-dd'), to: format(new Date(), 'yyyy-MM-dd') });
     const [activeSubjects, setActiveSubjects] = useState({ sales: true, expenses: true, purchases: true, netProfit: true });
     const [viewMode, setViewMode] = useState<'daily' | 'total'>('daily');
     
@@ -568,30 +591,23 @@ function RecentActivityChart() {
                         <CardTitle className="text-white">چالاکییەکان</CardTitle>
                         <CardDescription className="text-white/80">فرۆشتن، کڕین، خەرجی، و قازانج بەپێی ماوەی دیاریکراو</CardDescription>
                     </div>
-                     <div className="flex flex-col sm:flex-row items-center gap-4">
-                        <div className="flex items-center gap-2">
-                            <Input type="text" value={dateRange.from} onChange={(e) => setDateRange(prev => ({...prev, from: e.target.value }))} placeholder="YYYY-MM-DD" className="w-36 bg-white/10 text-white placeholder:text-white/50 border-white/20"/>
-                            <span className="text-white/80">-</span>
-                            <Input type="text" value={dateRange.to} onChange={(e) => setDateRange(prev => ({...prev, to: e.target.value }))} placeholder="YYYY-MM-DD" className="w-36 bg-white/10 text-white placeholder:text-white/50 border-white/20"/>
-                        </div>
-                         <div className="grid grid-cols-2 sm:flex items-center gap-4">
-                            {Object.entries(activeSubjects).map(([key, value]) => (
-                                <div key={key} className="flex items-center space-x-2 space-x-reverse">
-                                    <Checkbox id={key} checked={value} onCheckedChange={(checked) => setActiveSubjects(prev => ({...prev, [key]: !!checked}))} className="border-white/50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"/>
-                                    <label htmlFor={key} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{chartConfig[key as keyof typeof chartConfig].label}</label>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
                 </div>
-                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4" dir="rtl">
+                 <div className="flex flex-col sm:flex-row items-center justify-end gap-4 mt-4" dir="rtl">
                     <Select dir="rtl" value={viewMode} onValueChange={(v) => setViewMode(v as any)}>
-                        <SelectTrigger className="bg-white/10 text-white border-white/20"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="bg-white/10 text-white border-white/20 w-[180px]"><SelectValue /></SelectTrigger>
                         <SelectContent dir="rtl">
                             <SelectItem value="daily">نمایشی ڕۆژانە</SelectItem>
                             <SelectItem value="total">نمایشی گشتی</SelectItem>
                         </SelectContent>
                     </Select>
+                    <div className="grid grid-cols-2 sm:flex items-center gap-4">
+                        {Object.entries(activeSubjects).map(([key, value]) => (
+                            <div key={key} className="flex items-center space-x-2 space-x-reverse">
+                                <Checkbox id={key} checked={value} onCheckedChange={(checked) => setActiveSubjects(prev => ({...prev, [key]: !!checked}))} className="border-white/50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"/>
+                                <label htmlFor={key} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{chartConfig[key as keyof typeof chartConfig].label}</label>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </CardHeader>
             <CardContent>
@@ -648,11 +664,22 @@ function RecentActivityChart() {
 }
 
 export default function DashboardPage() {
+    const [dateRange, setDateRange] = useState({ 
+        from: format(subDays(new Date(), 29), 'yyyy-MM-dd'), 
+        to: format(new Date(), 'yyyy-MM-dd') 
+    });
+
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
-            <PageHeader title="داشبۆرد" description="بەخێربێیتەوە بۆ سیستەمی بەڕێوەبردنی کارەکەت." />
-            <DashboardStats />
-            <RecentActivityChart />
+            <PageHeader title="داشبۆرد" description="بەخێربێیتەوە بۆ سیستەمی بەڕێوەبردنی کارەکەت.">
+                <div className="flex items-center gap-2">
+                    <Input type="text" value={dateRange.from} onChange={(e) => setDateRange(prev => ({...prev, from: e.target.value }))} placeholder="YYYY-MM-DD" className="w-36"/>
+                    <span className="text-muted-foreground">-</span>
+                    <Input type="text" value={dateRange.to} onChange={(e) => setDateRange(prev => ({...prev, to: e.target.value }))} placeholder="YYYY-MM-DD" className="w-36"/>
+                </div>
+            </PageHeader>
+            <DashboardStats dateRange={dateRange} />
+            <RecentActivityChart dateRange={dateRange} />
         </div>
     );
 }
