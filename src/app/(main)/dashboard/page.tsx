@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { PageHeader } from "@/components/shared/page-header";
 import { useFirestore, useCollection, useMemoFirebase, collection, getDocs, query, where } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, DollarSign, Users, Archive, ShoppingCart, TrendingUp, TrendingDown, Package, LineChart } from 'lucide-react';
+import { Loader2, DollarSign, Archive, ShoppingCart, TrendingUp, TrendingDown, Package, LineChart } from 'lucide-react';
 import { StatCard } from '@/components/shared/stat-card';
 import { subDays, parseISO, isValid, startOfDay, endOfDay, differenceInDays } from 'date-fns';
 import { format } from 'date-fns';
@@ -127,19 +127,56 @@ function ExpensesDetailDialog({ expenses }: { expenses: WithId<Expense>[] | null
     );
 }
 
-function CustomersDetailDialog({ customers }: { customers: string[] }) {
+function PurchasesDetailDialog({ purchases }: { purchases: WithId<BuyingForm>[] | null }) {
+    const firestore = useFirestore();
+    const suppliersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'suppliers') : null, [firestore]);
+    const { data: suppliers, isLoading: loadingSuppliers } = useCollection<Supplier>(suppliersQuery);
+    const [enrichedData, setEnrichedData] = useState<(WithId<BuyingForm> & { totalAmount: number, supplierName: string })[]>([]);
+    const [isCalculating, setIsCalculating] = useState(true);
+
+    useEffect(() => {
+        const calculateAndEnrich = async () => {
+            if (!purchases || !firestore || loadingSuppliers) return;
+            setIsCalculating(true);
+            const supplierMap = new Map(suppliers?.map(s => [s.id, s.supplierName]));
+            const enriched = await Promise.all(purchases.map(async p => {
+                const productsSnap = await getDocs(collection(firestore, `buying_forms/${p.id}/buying_form_products`));
+                const subTotal = productsSnap.docs.reduce((acc, doc) => acc + (doc.data().quantity * doc.data().unitPrice), 0);
+                const totalAmount = subTotal + (p.customsFee || 0);
+                return {
+                    ...p,
+                    totalAmount,
+                    supplierName: supplierMap.get(p.supplierId) || 'N/A'
+                };
+            }));
+            setEnrichedData(enriched);
+            setIsCalculating(false);
+        };
+        if (!loadingSuppliers) {
+            calculateAndEnrich();
+        }
+    }, [purchases, firestore, suppliers, loadingSuppliers]);
+
+    if (isCalculating || loadingSuppliers) {
+         return <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    }
+
     return (
         <div className="max-h-[60vh] overflow-y-auto">
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead className="text-right">ناوی کڕیار</TableHead>
+                        <TableHead className="text-right">دابینکەر</TableHead>
+                        <TableHead className="text-right">بەروار</TableHead>
+                        <TableHead className="text-right">کۆی گشتی</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {customers.map((name, index) => (
-                        <TableRow key={index}>
-                            <TableCell>{name}</TableCell>
+                    {enrichedData?.map(purchase => (
+                        <TableRow key={purchase.id}>
+                            <TableCell>{purchase.supplierName}</TableCell>
+                            <TableCell>{purchase.issueDate}</TableCell>
+                            <TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(purchase.totalAmount)}</TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
@@ -185,10 +222,15 @@ function DashboardStats() {
     const salesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'selling_forms') : null, [firestore]);
     const expensesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'expenses') : null, [firestore]);
     const productsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'products') : null, [firestore]);
+    const buyingFormsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'buying_forms') : null, [firestore]);
 
     const { data: sales, isLoading: loadingSales } = useCollection<SellingForm>(salesQuery);
     const { data: expenses, isLoading: loadingExpenses } = useCollection<Expense>(expensesQuery);
     const { data: products, isLoading: loadingProducts } = useCollection<Product>(productsQuery);
+    const { data: buyingForms, isLoading: loadingBuyingForms } = useCollection<BuyingForm>(buyingFormsQuery);
+    
+    const [totalPurchases, setTotalPurchases] = React.useState(0);
+    const [isCalculatingPurchases, setIsCalculatingPurchases] = React.useState(false);
 
     const totalRevenue = React.useMemo(() => sales?.reduce((acc, sale) => acc + sale.totalPrice, 0) || 0, [sales]);
     
@@ -197,10 +239,30 @@ function DashboardStats() {
         return expenses.reduce((acc, expense) => acc + expense.amount, 0);
     }, [expenses]);
     
-    const uniqueCustomers = React.useMemo(() => {
-        if (!sales) return [];
-        return Array.from(new Set(sales.map(s => s.customerName)));
-    }, [sales]);
+     React.useEffect(() => {
+        async function calculateTotalPurchases() {
+            if (!buyingForms || !firestore) {
+                setTotalPurchases(0);
+                return;
+            };
+            setIsCalculatingPurchases(true);
+            let total = 0;
+            for (const form of buyingForms) {
+                try {
+                    const productsSnap = await getDocs(collection(firestore, `buying_forms/${form.id}/buying_form_products`));
+                    const subTotal = productsSnap.docs.reduce((acc, doc) => acc + (doc.data().quantity * doc.data().unitPrice), 0);
+                    total += subTotal + (form.customsFee || 0);
+                } catch (e) {
+                    console.error("Error fetching products for buying form:", form.id, e);
+                }
+            }
+            setTotalPurchases(total);
+            setIsCalculatingPurchases(false);
+        }
+
+        calculateTotalPurchases();
+    }, [buyingForms, firestore]);
+
 
     const groupedProducts = useMemo(() => {
         if (!products) return [];
@@ -226,7 +288,7 @@ function DashboardStats() {
         return groupedProducts.filter(p => p.totalQuantity < 5).length;
     }, [groupedProducts]);
 
-    const isLoading = loadingSales || loadingExpenses || loadingProducts;
+    const isLoading = loadingSales || loadingExpenses || loadingProducts || loadingBuyingForms || isCalculatingPurchases;
 
     if (isLoading) {
         return (
@@ -283,15 +345,15 @@ function DashboardStats() {
             <Dialog>
                 <DialogTrigger asChild>
                      <div className="cursor-pointer">
-                        <StatCard title="کڕیارەکان" value={uniqueCustomers.length.toString()} icon={Users} description="کۆی ژمارەی کڕیارەکان" />
+                        <StatCard title="کۆی گشتیی کڕین" value={currencyFormatter.format(totalPurchases)} icon={Package} description="هەموو کڕینە تۆمارکراوەکان" />
                     </div>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-lg" dir="rtl">
+                <DialogContent className="sm:max-w-2xl" dir="rtl">
                     <DialogHeader>
-                        <DialogTitle>لیستی کڕیارەکان</DialogTitle>
-                        <DialogDescription>لیستی هەموو کڕیارە ناوازەکان.</DialogDescription>
+                        <DialogTitle>وردەکارییەکانی کڕین</DialogTitle>
+                        <DialogDescription>لیستی کڕینەکانی ئەم دواییە.</DialogDescription>
                     </DialogHeader>
-                    <CustomersDetailDialog customers={uniqueCustomers} />
+                    <PurchasesDetailDialog purchases={buyingForms} />
                 </DialogContent>
             </Dialog>
             
