@@ -65,6 +65,7 @@ type BuyingFormProduct = {
     unitPrice: number;
     productId: string;
     productName: string;
+    category: string;
 };
 
 type SellingFormProduct = {
@@ -76,6 +77,15 @@ type SellingFormProduct = {
 type Supplier = {
     supplierName: string;
 }
+
+const productCategories = ["Mattress", "Bed", "Pillow", "Cover"];
+const categoryTranslations: Record<string, string> = {
+  Mattress: "دۆشەک",
+  Bed: "تەخت",
+  Pillow: "سەرین",
+  Cover: "بەرگ",
+};
+
 
 // --- Detail Dialog Components ---
 
@@ -94,7 +104,7 @@ function SalesDetailDialog({ sales }: { sales: WithId<SellingForm>[] | null }) {
                     {sales?.map(sale => (
                         <TableRow key={sale.id}>
                             <TableCell>{sale.customerName}</TableCell>
-                            <TableCell>{sale.issueDate}</TableCell>
+                            <TableCell>{format(parseISO(sale.issueDate), 'yyyy-MM-dd')}</TableCell>
                             <TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(sale.totalPrice)}</TableCell>
                         </TableRow>
                     ))}
@@ -119,7 +129,7 @@ function ExpensesDetailDialog({ expenses }: { expenses: WithId<Expense>[] | null
                     {expenses?.map(expense => (
                         <TableRow key={expense.id}>
                             <TableCell>{expense.name}</TableCell>
-                            <TableCell>{expense.date}</TableCell>
+                            <TableCell>{format(parseISO(expense.date), 'yyyy-MM-dd')}</TableCell>
                             <TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(expense.amount)}</TableCell>
                         </TableRow>
                     ))}
@@ -139,6 +149,8 @@ function PurchasesDetailDialog({ purchases }: { purchases: WithId<BuyingForm>[] 
     const [totalOverallQuantity, setTotalOverallQuantity] = useState(0);
     const [totalOverallCost, setTotalOverallCost] = useState(0);
     const [isCalculating, setIsCalculating] = useState(true);
+    const [categoryFilter, setCategoryFilter] = useState<string | 'all'>('all');
+
 
     useEffect(() => {
         const calculateAndEnrich = async () => {
@@ -153,35 +165,48 @@ function PurchasesDetailDialog({ purchases }: { purchases: WithId<BuyingForm>[] 
             let grandTotalQuantity = 0;
             let grandTotalCost = 0;
             const productSummaryMap = new Map<string, { totalQuantity: number; totalCost: number }>();
-            const enrichedFormsData: (WithId<BuyingForm> & { totalAmount: number, supplierName: string })[] = [];
+            
+            const allProductsFromForms: (BuyingFormProduct & {formId: string})[] = [];
 
-            for (const p of purchases) {
+            await Promise.all(purchases.map(async p => {
                 const productsSnap = await getDocs(collection(firestore, `buying_forms/${p.id}/buying_form_products`));
-                let formSubTotal = 0;
-                
                 productsSnap.docs.forEach(doc => {
-                    const productData = doc.data() as BuyingFormProduct;
-                    const lineCost = productData.quantity * productData.unitPrice;
-                    formSubTotal += lineCost;
-
-                    // Aggregate totals
-                    grandTotalQuantity += productData.quantity;
-                    grandTotalCost += lineCost;
-
-                    // Aggregate per-product summary
-                    const summary = productSummaryMap.get(productData.productName) || { totalQuantity: 0, totalCost: 0 };
-                    summary.totalQuantity += productData.quantity;
-                    summary.totalCost += lineCost;
-                    productSummaryMap.set(productData.productName, summary);
+                    allProductsFromForms.push({formId: p.id, ...doc.data() as BuyingFormProduct});
                 });
-                
-                const totalAmount = formSubTotal + (p.customsFee || 0);
-                enrichedFormsData.push({
-                    ...p,
-                    totalAmount,
-                    supplierName: supplierMap.get(p.supplierId) || 'N/A'
-                });
-            }
+            }));
+
+            const filteredProducts = categoryFilter === 'all' ? allProductsFromForms : allProductsFromForms.filter(p => p.category === categoryFilter);
+            const relevantFormIds = new Set(filteredProducts.map(p => p.formId));
+
+            filteredProducts.forEach(p => {
+                const lineCost = p.quantity * p.unitPrice;
+                grandTotalQuantity += p.quantity;
+                grandTotalCost += lineCost;
+
+                const summary = productSummaryMap.get(p.productName) || { totalQuantity: 0, totalCost: 0 };
+                summary.totalQuantity += p.quantity;
+                summary.totalCost += lineCost;
+                productSummaryMap.set(p.productName, summary);
+            });
+
+            const enrichedFormsData = await Promise.all(
+                purchases
+                .filter(p => relevantFormIds.has(p.id))
+                .map(async (p) => {
+                    const productsSnap = await getDocs(collection(firestore, `buying_forms/${p.id}/buying_form_products`));
+                    let formSubTotal = 0;
+                    productsSnap.docs.forEach(doc => {
+                        const productData = doc.data() as BuyingFormProduct;
+                        formSubTotal += productData.quantity * productData.unitPrice;
+                    });
+                    const totalAmount = formSubTotal + (p.customsFee || 0);
+                    return {
+                        ...p,
+                        totalAmount,
+                        supplierName: supplierMap.get(p.supplierId) || 'N/A'
+                    };
+                })
+            );
             
             setTotalOverallQuantity(grandTotalQuantity);
             setTotalOverallCost(grandTotalCost);
@@ -193,7 +218,7 @@ function PurchasesDetailDialog({ purchases }: { purchases: WithId<BuyingForm>[] 
         if (!loadingSuppliers) {
             calculateAndEnrich();
         }
-    }, [purchases, firestore, suppliers, loadingSuppliers]);
+    }, [purchases, firestore, suppliers, loadingSuppliers, categoryFilter]);
 
     const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
@@ -208,7 +233,18 @@ function PurchasesDetailDialog({ purchases }: { purchases: WithId<BuyingForm>[] 
                     <AccordionTrigger className="p-6 text-lg font-semibold">
                         پوختەی گشتی
                     </AccordionTrigger>
-                    <AccordionContent className="p-6 pt-0">
+                    <AccordionContent className="p-6 pt-0 space-y-4">
+                         <div className="w-full sm:w-1/2 md:w-1/3">
+                            <Select dir="rtl" value={categoryFilter} onValueChange={(value) => setCategoryFilter(value as any)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="فلتەر بەپێی پۆل" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">هەموو پۆلەکان</SelectItem>
+                                    {productCategories.map(cat => <SelectItem key={cat} value={cat}>{categoryTranslations[cat]}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <p className="text-sm text-muted-foreground">کۆی ژمارەی کاڵا کڕاوەکان</p>
@@ -263,7 +299,7 @@ function PurchasesDetailDialog({ purchases }: { purchases: WithId<BuyingForm>[] 
                                 {enrichedData?.map(purchase => (
                                     <TableRow key={purchase.id}>
                                         <TableCell>{purchase.supplierName}</TableCell>
-                                        <TableCell>{purchase.issueDate}</TableCell>
+                                        <TableCell>{format(parseISO(purchase.issueDate), 'yyyy-MM-dd')}</TableCell>
                                         <TableCell>{currencyFormatter.format(purchase.totalAmount)}</TableCell>
                                     </TableRow>
                                 ))}
@@ -539,14 +575,16 @@ function RecentActivityChart({ dateRange }: { dateRange: { from: string, to: str
 
             sales.forEach(sale => {
                 totalSales += sale.totalPrice;
-                if(viewMode === 'daily' && dateMap.has(sale.issueDate)) {
-                    dateMap.get(sale.issueDate)!.sales += sale.totalPrice;
+                const saleDate = format(parseISO(sale.issueDate), 'yyyy-MM-dd');
+                if(viewMode === 'daily' && dateMap.has(saleDate)) {
+                    dateMap.get(saleDate)!.sales += sale.totalPrice;
                 }
             });
             expenses.forEach(expense => {
                 totalExpenses += expense.amount;
-                if(viewMode === 'daily' && dateMap.has(expense.date)) {
-                    dateMap.get(expense.date)!.expenses += expense.amount;
+                 const expenseDate = format(parseISO(expense.date), 'yyyy-MM-dd');
+                if(viewMode === 'daily' && dateMap.has(expenseDate)) {
+                    dateMap.get(expenseDate)!.expenses += expense.amount;
                 }
             });
 
@@ -555,8 +593,9 @@ function RecentActivityChart({ dateRange }: { dateRange: { from: string, to: str
                 const subTotal = productsSnap.docs.reduce((acc, doc) => acc + (doc.data().quantity * doc.data().unitPrice), 0);
                 const totalAmount = subTotal + (purchase.customsFee || 0);
                 totalPurchases += totalAmount;
-                if(viewMode === 'daily' && dateMap.has(purchase.issueDate)) {
-                    dateMap.get(purchase.issueDate)!.purchases += totalAmount;
+                const purchaseDate = format(parseISO(purchase.issueDate), 'yyyy-MM-dd');
+                if(viewMode === 'daily' && dateMap.has(purchaseDate)) {
+                    dateMap.get(purchaseDate)!.purchases += totalAmount;
                 }
             }
             
@@ -673,9 +712,9 @@ export default function DashboardPage() {
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <PageHeader title="داشبۆرد" description="بەخێربێیتەوە بۆ سیستەمی بەڕێوەبردنی کارەکەت.">
                 <div className="flex items-center gap-2">
-                    <Input type="text" value={dateRange.from} onChange={(e) => setDateRange(prev => ({...prev, from: e.target.value }))} placeholder="YYYY-MM-DD" className="w-36"/>
+                    <Input type="date" value={dateRange.from} onChange={(e) => setDateRange(prev => ({...prev, from: e.target.value }))} placeholder="YYYY-MM-DD" className="w-40"/>
                     <span className="text-muted-foreground">-</span>
-                    <Input type="text" value={dateRange.to} onChange={(e) => setDateRange(prev => ({...prev, to: e.target.value }))} placeholder="YYYY-MM-DD" className="w-36"/>
+                    <Input type="date" value={dateRange.to} onChange={(e) => setDateRange(prev => ({...prev, to: e.target.value }))} placeholder="YYYY-MM-DD" className="w-40"/>
                 </div>
             </PageHeader>
             <DashboardStats dateRange={dateRange} />
