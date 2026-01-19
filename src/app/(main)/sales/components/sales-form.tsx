@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -41,6 +40,7 @@ const salesFormSchema = z.object({
     product: z.string().min(1, "بابەت پێویستە."),
     quantity: z.coerce.number().min(1, "دانە دەبێت لانیکەم 1 بێت."),
     unitPrice: z.coerce.number().min(0, "نرخ پێویستە."),
+    category: z.string().min(1, "پۆل پێویستە."),
   })).min(1, { message: "لانیکەم یەک کاڵا پێویستە." }),
   deliveryCost: z.coerce.number().optional().default(0),
   discountType: z.enum(["percentage", "cash"]).optional(),
@@ -97,9 +97,10 @@ function SalesFormItemRow({
                               <DialogHeader>
                                   <DialogTitle>لیستی کاڵاکان</DialogTitle>
                               </DialogHeader>
-                              <ProductSelectorDialog onProductSelect={({name, price}) => {
+                              <ProductSelectorDialog onProductSelect={({name, price, category}) => {
                                   form.setValue(`items.${index}.product`, name);
                                   form.setValue(`items.${index}.unitPrice`, price);
+                                  form.setValue(`items.${index}.category`, category);
                                   setDialogOpen(false);
                               }} />
                           </DialogContent>
@@ -143,7 +144,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
       customerPhone: "",
       customerAddress: "",
       issueDate: format(new Date(), "yyyy-MM-dd"),
-      items: [{ product: "", quantity: 1, unitPrice: 0 }],
+      items: [{ product: "", quantity: 1, unitPrice: 0, category: 'Mattress' }],
       deliveryCost: 0,
       discountValue: 0,
       paymentStatus: "Fully Paid",
@@ -203,6 +204,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                   product: item.productName,
                   quantity: item.quantity,
                   unitPrice: item.unitPrice,
+                  category: item.category,
               })),
               payments: payments as any,
             });
@@ -362,6 +364,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                     quantity: item.quantity,
                     unitPrice: item.unitPrice,
                     lineTotal: item.quantity * item.unitPrice,
+                    category: item.category,
                 };
                 transaction.set(productSubCollectionRef, productData);
             });
@@ -497,7 +500,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                     ))}
                 </TableBody>
             </Table>
-            <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ product: "", quantity: 1, unitPrice: 0 })}>
+            <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ product: "", quantity: 1, unitPrice: 0, category: 'Mattress' })}>
                 <PlusCircle className="ml-2 h-4 w-4" />
                 زیادکردنی کاڵا
             </Button>
@@ -683,6 +686,3 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
     </Form>
   );
 }
-
-
-    

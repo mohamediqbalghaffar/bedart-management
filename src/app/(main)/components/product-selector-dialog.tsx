@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -22,7 +21,7 @@ type Product = {
 };
 
 type ProductSelectorDialogProps = {
-  onProductSelect: (product: { name: string; price: number, purchasePrice?: number }) => void;
+  onProductSelect: (product: { name: string; price: number, purchasePrice?: number, category: ProductCategory }) => void;
 };
 
 const productCategories: ProductCategory[] = ["Mattress", "Bed", "Pillow", "Cover"];
@@ -76,6 +75,7 @@ export function ProductSelectorDialog({ onProductSelect }: ProductSelectorDialog
       name: product.productName,
       price: product.sellingPrice || 0,
       purchasePrice: product.unitPrice || 0,
+      category: product.category,
     });
   };
 

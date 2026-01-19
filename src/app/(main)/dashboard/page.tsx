@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -75,6 +74,7 @@ type SellingFormProduct = {
     quantity: number;
     unitPrice: number;
     lineTotal: number;
+    category: string;
 }
 
 type Supplier = {
@@ -99,6 +99,9 @@ function SalesDetailDialog({ sales }: { sales: WithId<SellingForm>[] | null }) {
     const [totalOverallRevenue, setTotalOverallRevenue] = useState(0);
     const [isCalculating, setIsCalculating] = useState(true);
     const [allProducts, setAllProducts] = useState<(WithId<SellingFormProduct> & {formId: string})[]>([]);
+    const [categoryFilter, setCategoryFilter] = useState<string | 'all'>('all');
+    const [filteredSales, setFilteredSales] = useState(sales);
+
 
     useEffect(() => {
         const fetchAllProducts = async () => {
@@ -122,7 +125,19 @@ function SalesDetailDialog({ sales }: { sales: WithId<SellingForm>[] | null }) {
     }, [sales, firestore]);
 
     useEffect(() => {
-        if (allProducts.length === 0 && (!sales || sales.length === 0)) {
+        if (!sales) return;
+
+        const filteredProducts = categoryFilter === 'all' ? allProducts : allProducts.filter(p => p.category === categoryFilter);
+        const relevantFormIds = new Set(filteredProducts.map(p => p.formId));
+        
+        if (categoryFilter === 'all') {
+            setFilteredSales(sales);
+        } else {
+            setFilteredSales(sales.filter(s => relevantFormIds.has(s.id)));
+        }
+
+
+        if (filteredProducts.length === 0 && (!sales || sales.length === 0)) {
             setPerProductSummary([]);
             setTotalOverallQuantity(0);
             setTotalOverallRevenue(0);
@@ -133,7 +148,7 @@ function SalesDetailDialog({ sales }: { sales: WithId<SellingForm>[] | null }) {
         let grandTotalRevenue = 0;
         const productSummaryMap = new Map<string, { totalQuantity: number; totalRevenue: number }>();
 
-        allProducts.forEach(p => {
+        filteredProducts.forEach(p => {
             const lineRevenue = p.lineTotal;
             grandTotalQuantity += p.quantity;
             grandTotalRevenue += lineRevenue;
@@ -147,7 +162,7 @@ function SalesDetailDialog({ sales }: { sales: WithId<SellingForm>[] | null }) {
         setTotalOverallQuantity(grandTotalQuantity);
         setTotalOverallRevenue(grandTotalRevenue);
         setPerProductSummary(Array.from(productSummaryMap.entries()).map(([productName, data]) => ({ productName, ...data })));
-    }, [allProducts, sales]);
+    }, [allProducts, sales, categoryFilter]);
 
     const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
@@ -163,6 +178,17 @@ function SalesDetailDialog({ sales }: { sales: WithId<SellingForm>[] | null }) {
                         پوختەی گشتی
                     </AccordionTrigger>
                     <AccordionContent className="p-6 pt-0 space-y-4">
+                        <div className="w-full sm:w-1/2 md:w-1/3">
+                            <Select dir="rtl" value={categoryFilter} onValueChange={(value) => setCategoryFilter(value as any)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="فلتەر بەپێی پۆل" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">هەموو پۆلەکان</SelectItem>
+                                    {productCategories.map(cat => <SelectItem key={cat} value={cat}>{categoryTranslations[cat]}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <p className="text-sm text-muted-foreground">کۆی ژمارەی کاڵا فرۆشراوەکان</p>
@@ -214,7 +240,7 @@ function SalesDetailDialog({ sales }: { sales: WithId<SellingForm>[] | null }) {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {sales?.map(sale => (
+                                {filteredSales?.map(sale => (
                                     <TableRow key={sale.id}>
                                         <TableCell>{sale.customerName}</TableCell>
                                         <TableCell>{format(parseISO(sale.issueDate), 'yyyy-MM-dd')}</TableCell>
