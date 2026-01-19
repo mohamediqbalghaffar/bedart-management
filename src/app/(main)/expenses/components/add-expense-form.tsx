@@ -17,6 +17,7 @@ const expenseSchema = z.object({
   name: z.string().min(1, { message: "ناوی خەرجی پێویستە." }),
   note: z.string().optional(),
   amount: z.coerce.number().min(0.01, "بڕی خەرجی دەبێت لانیکەم 0.01 بێت."),
+  currency: z.enum(['USD', 'IQD']),
   category: z.enum(['Daily', 'Salary', 'Rent', 'Electricity', 'Transport', 'Other']),
   date: z.string().refine((val) => /^\d{4}-\d{2}-\d{2}$/.test(val), { message: "فۆرماتی بەروار هەڵەیە (YYYY-MM-DD)." }),
 });
@@ -33,6 +34,7 @@ export function AddExpenseForm({ onExpenseAdded }: { onExpenseAdded?: () => void
       name: "",
       note: "",
       amount: 0,
+      currency: 'USD',
       category: 'Daily',
       date: format(new Date(), "yyyy-MM-dd"),
     },
@@ -95,19 +97,42 @@ export function AddExpenseForm({ onExpenseAdded }: { onExpenseAdded?: () => void
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="amount"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>بڕی خەرجی (USD)</FormLabel>
-              <FormControl>
-                <Input type="number" placeholder="0.00" {...field} step="0.01" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-3 gap-4">
+            <FormField
+                control={form.control}
+                name="amount"
+                render={({ field }) => (
+                    <FormItem className="col-span-2">
+                        <FormLabel>بڕی خەرجی</FormLabel>
+                        <FormControl>
+                            <Input type="number" placeholder="0.00" {...field} step="0.01" />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+            <FormField
+                control={form.control}
+                name="currency"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>دراو</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value} dir="rtl">
+                            <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectItem value="USD">USD</SelectItem>
+                                <SelectItem value="IQD">IQD</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+        </div>
         <FormField
             control={form.control}
             name="category"
@@ -155,5 +180,3 @@ export function AddExpenseForm({ onExpenseAdded }: { onExpenseAdded?: () => void
     </Form>
   );
 }
-
-    

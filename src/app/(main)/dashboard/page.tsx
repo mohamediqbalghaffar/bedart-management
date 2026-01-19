@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -33,6 +34,7 @@ type Expense = {
     amount: number;
     date: string;
     name: string;
+    currency?: 'USD' | 'IQD';
 };
 
 type Product = {
@@ -272,7 +274,7 @@ function ExpensesDetailDialog({ expenses }: { expenses: WithId<Expense>[] | null
                         <TableRow key={expense.id}>
                             <TableCell>{expense.name}</TableCell>
                             <TableCell>{format(parseISO(expense.date), 'yyyy-MM-dd')}</TableCell>
-                            <TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(expense.amount)}</TableCell>
+                            <TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: expense.currency || 'USD' }).format(expense.amount)}</TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
@@ -333,7 +335,7 @@ function PurchasesDetailDialog({ purchases }: { purchases: WithId<BuyingForm>[] 
 
             const enrichedFormsData = await Promise.all(
                 purchases
-                .filter(p => relevantFormIds.has(p.id))
+                .filter(p => categoryFilter === 'all' || relevantFormIds.has(p.id))
                 .map(async (p) => {
                     const productsSnap = await getDocs(collection(firestore, `buying_forms/${p.id}/buying_form_products`));
                     let formSubTotal = 0;
@@ -527,9 +529,16 @@ function DashboardStats({ dateRange }: { dateRange: { from: string, to: string }
 
     const totalRevenue = React.useMemo(() => sales?.reduce((acc, sale) => acc + sale.totalPrice, 0) || 0, [sales]);
     
-    const totalExpenses = React.useMemo(() => {
-        if (!expenses) return 0;
-        return expenses.reduce((acc, expense) => acc + expense.amount, 0);
+    const { totalExpensesUSD, totalExpensesIQD } = React.useMemo(() => {
+        if (!expenses) return { totalExpensesUSD: 0, totalExpensesIQD: 0 };
+        return expenses.reduce((acc, expense) => {
+            if (expense.currency === 'IQD') {
+                acc.totalExpensesIQD += expense.amount;
+            } else {
+                acc.totalExpensesUSD += expense.amount;
+            }
+            return acc;
+        }, { totalExpensesUSD: 0, totalExpensesIQD: 0 });
     }, [expenses]);
     
      React.useEffect(() => {
@@ -602,6 +611,7 @@ function DashboardStats({ dateRange }: { dateRange: { from: string, to: string }
     }
     
     const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 });
+    const numberFormatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 0 });
 
     return (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -623,7 +633,12 @@ function DashboardStats({ dateRange }: { dateRange: { from: string, to: string }
             <Dialog>
                 <DialogTrigger asChild>
                      <div className="cursor-pointer">
-                        <StatCard title="کۆی گشتی خەرجی" value={currencyFormatter.format(totalExpenses)} icon={DollarSign} description="هەموو خەرجییە تۆمارکراوەکان" />
+                        <StatCard 
+                            title="کۆی گشتی خەرجی" 
+                            value={currencyFormatter.format(totalExpensesUSD)} 
+                            icon={DollarSign} 
+                            description={totalExpensesIQD > 0 ? `+ ${numberFormatter.format(totalExpensesIQD)} IQD` : "هەموو خەرجییە تۆمارکراوەکان"}
+                        />
                     </div>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-2xl" dir="rtl">
@@ -704,7 +719,7 @@ function RecentActivityChart({ dateRange }: { dateRange: { from: string, to: str
             let purchases = purchasesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as WithId<BuyingForm>[];
             const expenses = expensesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as WithId<Expense>[];
 
-            let totalSales = 0, totalPurchases = 0, totalExpenses = 0;
+            let totalSales = 0, totalPurchases = 0, totalExpensesUSD = 0;
             const dateMap = new Map<string, { sales: number; expenses: number; purchases: number; netProfit: number }>();
             
             if (viewMode === 'daily') {
@@ -723,10 +738,12 @@ function RecentActivityChart({ dateRange }: { dateRange: { from: string, to: str
                 }
             });
             expenses.forEach(expense => {
-                totalExpenses += expense.amount;
-                 const expenseDate = format(parseISO(expense.date), 'yyyy-MM-dd');
-                if(viewMode === 'daily' && dateMap.has(expenseDate)) {
-                    dateMap.get(expenseDate)!.expenses += expense.amount;
+                if(expense.currency !== 'IQD') {
+                    totalExpensesUSD += expense.amount;
+                    const expenseDate = format(parseISO(expense.date), 'yyyy-MM-dd');
+                    if(viewMode === 'daily' && dateMap.has(expenseDate)) {
+                        dateMap.get(expenseDate)!.expenses += expense.amount;
+                    }
                 }
             });
 
@@ -748,11 +765,11 @@ function RecentActivityChart({ dateRange }: { dateRange: { from: string, to: str
                 const finalData = Array.from(dateMap.entries()).map(([date, data]) => ({ date: format(parseISO(date), 'MMM d'), ...data }));
                 setChartData(finalData);
             } else { // Total view
-                const totalNetProfit = totalSales - totalExpenses - totalPurchases;
+                const totalNetProfit = totalSales - totalExpensesUSD - totalPurchases;
                 setTotalData([
                     { name: 'کۆی فرۆش', value: totalSales, fill: 'var(--color-sales)' },
                     { name: 'کۆی کڕین', value: totalPurchases, fill: 'var(--color-purchases)' },
-                    { name: 'کۆی خەرجی', value: totalExpenses, fill: 'var(--color-expenses)' },
+                    { name: 'کۆی خەرجی', value: totalExpensesUSD, fill: 'var(--color-expenses)' },
                     { name: 'کۆی قازانج', value: totalNetProfit, fill: 'var(--color-netProfit)' },
                 ]);
             }

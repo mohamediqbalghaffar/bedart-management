@@ -21,6 +21,7 @@ type Expense = {
     name: string;
     note?: string;
     amount: number;
+    currency?: 'USD' | 'IQD';
     category: 'Daily' | 'Salary' | 'Rent' | 'Electricity' | 'Transport' | 'Other';
     date: string;
 };
@@ -75,7 +76,7 @@ function EditableExpenseRow({ expense }: { expense: WithId<Expense> }) {
     };
 
     const handleSelectChange = (name: keyof Expense, value: string) => {
-        setEditedExpense(prev => ({ ...prev, [name]: value }));
+        setEditedExpense(prev => ({ ...prev, [name]: value as any }));
     };
     
     const handleSave = async () => {
@@ -109,7 +110,7 @@ function EditableExpenseRow({ expense }: { expense: WithId<Expense> }) {
         }
     };
     
-    const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+    const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: expense.currency || 'USD' });
 
 
     if (isEditing) {
@@ -117,7 +118,18 @@ function EditableExpenseRow({ expense }: { expense: WithId<Expense> }) {
             <TableRow className="bg-secondary/20">
                 <TableCell><Input name="name" value={editedExpense.name} onChange={handleInputChange} /></TableCell>
                 <TableCell><Input name="note" value={editedExpense.note || ''} onChange={handleInputChange} /></TableCell>
-                <TableCell><Input type="number" name="amount" value={editedExpense.amount} onChange={handleInputChange} /></TableCell>
+                <TableCell>
+                    <div className="flex gap-2">
+                        <Input type="number" name="amount" value={editedExpense.amount} onChange={handleInputChange} className="w-2/3"/>
+                        <Select value={editedExpense.currency || 'USD'} onValueChange={(value) => handleSelectChange('currency', value)}>
+                            <SelectTrigger className="w-1/3"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="USD">USD</SelectItem>
+                                <SelectItem value="IQD">IQD</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </TableCell>
                 <TableCell>
                     <Select value={editedExpense.category} onValueChange={(value) => handleSelectChange('category', value)}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
@@ -188,7 +200,7 @@ function ExpensesList() {
                         <TableRow>
                             <TableHead className="text-right">ناوی خەرجی</TableHead>
                             <TableHead className="text-right">تێبینی</TableHead>
-                            <TableHead className="text-right">بڕ (USD)</TableHead>
+                            <TableHead className="text-right">بڕ</TableHead>
                             <TableHead className="text-right">پۆل</TableHead>
                             <TableHead className="text-right">بەروار</TableHead>
                             <TableHead className="text-left">کردارەکان</TableHead>
@@ -226,5 +238,3 @@ export default function ExpensesPage() {
         </div>
     );
 }
-
-    

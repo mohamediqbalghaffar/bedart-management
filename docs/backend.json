@@ -146,7 +146,12 @@
         },
         "amount": {
           "type": "number",
-          "description": "Amount of the expense in USD."
+          "description": "Amount of the expense."
+        },
+        "currency": {
+            "type": "string",
+            "description": "The currency of the expense.",
+            "enum": ["USD", "IQD"]
         },
         "category": {
           "type": "string",
@@ -166,7 +171,8 @@
         "name",
         "date",
         "amount",
-        "category"
+        "category",
+        "currency"
       ]
     },
     "Product": {
