@@ -131,56 +131,137 @@ function PurchasesDetailDialog({ purchases }: { purchases: WithId<BuyingForm>[] 
     const firestore = useFirestore();
     const suppliersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'suppliers') : null, [firestore]);
     const { data: suppliers, isLoading: loadingSuppliers } = useCollection<Supplier>(suppliersQuery);
+    
     const [enrichedData, setEnrichedData] = useState<(WithId<BuyingForm> & { totalAmount: number, supplierName: string })[]>([]);
+    const [perProductSummary, setPerProductSummary] = useState<{ productName: string, totalQuantity: number, totalCost: number }[]>([]);
+    const [totalOverallQuantity, setTotalOverallQuantity] = useState(0);
+    const [totalOverallCost, setTotalOverallCost] = useState(0);
     const [isCalculating, setIsCalculating] = useState(true);
 
     useEffect(() => {
         const calculateAndEnrich = async () => {
-            if (!purchases || !firestore || loadingSuppliers) return;
+            if (!purchases || !firestore || loadingSuppliers || !suppliers) {
+                setIsCalculating(false);
+                return;
+            };
+
             setIsCalculating(true);
-            const supplierMap = new Map(suppliers?.map(s => [s.id, s.supplierName]));
-            const enriched = await Promise.all(purchases.map(async p => {
+            const supplierMap = new Map(suppliers.map(s => [s.id, s.supplierName]));
+            
+            let grandTotalQuantity = 0;
+            let grandTotalCost = 0;
+            const productSummaryMap = new Map<string, { totalQuantity: number; totalCost: number }>();
+            const enrichedFormsData: (WithId<BuyingForm> & { totalAmount: number, supplierName: string })[] = [];
+
+            for (const p of purchases) {
                 const productsSnap = await getDocs(collection(firestore, `buying_forms/${p.id}/buying_form_products`));
-                const subTotal = productsSnap.docs.reduce((acc, doc) => acc + (doc.data().quantity * doc.data().unitPrice), 0);
-                const totalAmount = subTotal + (p.customsFee || 0);
-                return {
+                let formSubTotal = 0;
+                
+                productsSnap.docs.forEach(doc => {
+                    const productData = doc.data() as BuyingFormProduct;
+                    const lineCost = productData.quantity * productData.unitPrice;
+                    formSubTotal += lineCost;
+
+                    // Aggregate totals
+                    grandTotalQuantity += productData.quantity;
+                    grandTotalCost += lineCost;
+
+                    // Aggregate per-product summary
+                    const summary = productSummaryMap.get(productData.productName) || { totalQuantity: 0, totalCost: 0 };
+                    summary.totalQuantity += productData.quantity;
+                    summary.totalCost += lineCost;
+                    productSummaryMap.set(productData.productName, summary);
+                });
+                
+                const totalAmount = formSubTotal + (p.customsFee || 0);
+                enrichedFormsData.push({
                     ...p,
                     totalAmount,
                     supplierName: supplierMap.get(p.supplierId) || 'N/A'
-                };
-            }));
-            setEnrichedData(enriched);
+                });
+            }
+            
+            setTotalOverallQuantity(grandTotalQuantity);
+            setTotalOverallCost(grandTotalCost);
+            setPerProductSummary(Array.from(productSummaryMap.entries()).map(([productName, data]) => ({ productName, ...data })));
+            setEnrichedData(enrichedFormsData);
             setIsCalculating(false);
         };
+
         if (!loadingSuppliers) {
             calculateAndEnrich();
         }
     }, [purchases, firestore, suppliers, loadingSuppliers]);
+
+    const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
     if (isCalculating || loadingSuppliers) {
          return <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
     }
 
     return (
-        <div className="max-h-[60vh] overflow-y-auto">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead className="text-right">دابینکەر</TableHead>
-                        <TableHead className="text-right">بەروار</TableHead>
-                        <TableHead className="text-right">کۆی گشتی</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {enrichedData?.map(purchase => (
-                        <TableRow key={purchase.id}>
-                            <TableCell>{purchase.supplierName}</TableCell>
-                            <TableCell>{purchase.issueDate}</TableCell>
-                            <TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(purchase.totalAmount)}</TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+        <div className="max-h-[70vh] overflow-y-auto space-y-6 p-1">
+             <Card>
+                <CardHeader><CardTitle>پوختەی گشتی</CardTitle></CardHeader>
+                <CardContent className="grid grid-cols-2 gap-4">
+                    <div>
+                        <p className="text-sm text-muted-foreground">کۆی ژمارەی کاڵا کڕاوەکان</p>
+                        <p className="text-2xl font-bold">{totalOverallQuantity}</p>
+                    </div>
+                     <div>
+                        <p className="text-sm text-muted-foreground">کۆی نرخی کاڵا کڕاوەکان</p>
+                        <p className="text-2xl font-bold">{currencyFormatter.format(totalOverallCost)}</p>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader><CardTitle>پوختەی هەر کاڵایەک</CardTitle></CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="text-right">ناوی کاڵا</TableHead>
+                                <TableHead className="text-right">کۆی دانە</TableHead>
+                                <TableHead className="text-right">کۆی نرخ</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {perProductSummary.map(item => (
+                                <TableRow key={item.productName}>
+                                    <TableCell>{item.productName}</TableCell>
+                                    <TableCell>{item.totalQuantity}</TableCell>
+                                    <TableCell>{currencyFormatter.format(item.totalCost)}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+            
+            <Card>
+                <CardHeader><CardTitle>لیستی کڕینەکان</CardTitle></CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="text-right">دابینکەر</TableHead>
+                                <TableHead className="text-right">بەروار</TableHead>
+                                <TableHead className="text-right">کۆی گشتی پسوولە</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {enrichedData?.map(purchase => (
+                                <TableRow key={purchase.id}>
+                                    <TableCell>{purchase.supplierName}</TableCell>
+                                    <TableCell>{purchase.issueDate}</TableCell>
+                                    <TableCell>{currencyFormatter.format(purchase.totalAmount)}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
         </div>
     );
 }
