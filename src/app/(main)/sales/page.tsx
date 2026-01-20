@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { SalesForm } from "./components/sales-form";
-import { useFirestore, useCollection, useMemoFirebase, collection, deleteDoc, doc, getDocs, runTransaction } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, collection, deleteDoc, doc, getDocs, runTransaction, useDoc } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { SalesDetails } from './components/sales-details';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -31,8 +31,44 @@ type SellingFormProduct = {
     unitPrice: number;
 };
 
+type CompanyInfo = {
+    name: string;
+    contact: string;
+}
+
 function SalesFormDialog({ formId, onSave, trigger }: { formId: string | null, onSave: () => void, trigger: React.ReactNode }) {
     const [open, setOpen] = useState(false);
+    const firestore = useFirestore();
+
+    const companyInfoRef = useMemoFirebase(() => (firestore ? doc(firestore, 'app_settings', 'companyInfo') : null), [firestore]);
+    const { data: companyInfo, isLoading: isLoadingInfo } = useDoc<CompanyInfo>(companyInfoRef);
+
+    const renderHeader = () => {
+        if (isLoadingInfo) {
+            return (
+                <div className="space-y-2">
+                    <div className="h-7 w-48 mx-auto bg-muted animate-pulse rounded-md" />
+                    <div className="h-4 w-64 mx-auto bg-muted animate-pulse rounded-md" />
+                    <div className="h-3 w-40 mx-auto bg-muted animate-pulse rounded-md" />
+                </div>
+            )
+        }
+
+        const title = companyInfo?.name || 'BedArt Group';
+        const contact = companyInfo?.contact || 'ته ختی نوستن . دوشک . پشتی\n07708171818 - 07700771818';
+        const contactParts = contact.split('\n');
+
+        return (
+            <>
+                <DialogTitle className="text-2xl font-bold">{title}</DialogTitle>
+                <DialogDescription className="text-sm">
+                    {contactParts[0]}
+                    {contactParts.length > 1 && <br />}
+                    {contactParts.length > 1 && <span className="text-xs text-muted-foreground">{contactParts.slice(1).join('\n')}</span>}
+                </DialogDescription>
+            </>
+        )
+    }
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -40,12 +76,7 @@ function SalesFormDialog({ formId, onSave, trigger }: { formId: string | null, o
             <DialogContent className="sm:max-w-4xl">
                 <DialogHeader>
                     <div className="text-center p-4">
-                        <DialogTitle className="text-2xl font-bold">BedArt Group</DialogTitle>
-                        <DialogDescription className="text-sm">
-                            ته ختی نوستن . دوشک . پشتی
-                            <br />
-                            <span className="text-xs text-muted-foreground">0770 817 1818 - 0770 077 1818</span>
-                        </DialogDescription>
+                        {renderHeader()}
                     </div>
                 </DialogHeader>
                 <div className="max-h-[80vh] overflow-y-auto p-2">
@@ -107,6 +138,7 @@ function SalesList() {
                 description: "فۆڕمی فرۆشتن بە سەرکەوتوویی سڕایەوە و کاڵاکان گەڕێنرانەوە بۆ کۆگا.",
                 className: "bg-accent text-accent-foreground",
             });
+            handleFormSave();
         } catch (error) {
             console.error("Error deleting sales form:", error);
             toast({
