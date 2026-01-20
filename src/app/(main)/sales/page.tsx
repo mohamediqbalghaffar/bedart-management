@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Loader2, FileSpreadsheet, Trash2, Edit } from "lucide-react";
+import { PlusCircle, Loader2, FileSpreadsheet, Trash2, Edit, ArrowUpDown } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -92,6 +92,7 @@ function SalesList() {
     const { toast } = useToast();
     const [editingFormId, setEditingFormId] = useState<string | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
+    const [sortConfig, setSortConfig] = useState<{ key: keyof SellingFormType; direction: 'ascending' | 'descending' } | null>(null);
 
     const sellingFormsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -100,6 +101,59 @@ function SalesList() {
     }, [firestore, refreshKey]);
 
     const { data: sales, isLoading: isLoadingSales } = useCollection<SellingFormType>(sellingFormsQuery);
+
+    const sortedSales = useMemo(() => {
+        if (!sales) return [];
+        let sortableItems = [...sales];
+        if (sortConfig !== null) {
+            sortableItems.sort((a, b) => {
+                const aValue = a[sortConfig.key];
+                const bValue = b[sortConfig.key];
+
+                if (aValue === null || aValue === undefined) return 1;
+                if (bValue === null || bValue === undefined) return -1;
+                
+                // Special handling for formNumber as it's a string that should be numeric
+                if (sortConfig.key === 'formNumber') {
+                    const numA = parseInt(String(aValue), 10);
+                    const numB = parseInt(String(bValue), 10);
+                    if (isNaN(numA) || isNaN(numB)) {
+                        // fallback to string compare if parsing fails
+                         if (String(aValue) < String(bValue)) return sortConfig.direction === 'ascending' ? -1 : 1;
+                         if (String(aValue) > String(bValue)) return sortConfig.direction === 'ascending' ? 1 : -1;
+                         return 0;
+                    }
+                     if (numA < numB) return sortConfig.direction === 'ascending' ? -1 : 1;
+                     if (numA > numB) return sortConfig.direction === 'ascending' ? 1 : -1;
+                     return 0;
+                }
+
+                if (aValue < bValue) {
+                    return sortConfig.direction === 'ascending' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'ascending' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        return sortableItems;
+    }, [sales, sortConfig]);
+
+    const requestSort = (key: keyof SellingFormType) => {
+        let direction: 'ascending' | 'descending' = 'ascending';
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+            direction = 'descending';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const getSortIcon = (key: keyof SellingFormType) => {
+        if (!sortConfig || sortConfig.key !== key) {
+            return <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />;
+        }
+        return <ArrowUpDown className="mr-2 h-4 w-4 text-primary" />;
+    };
 
     const handleFormSave = () => {
         setEditingFormId(null);
@@ -172,11 +226,31 @@ function SalesList() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="text-center">ژ. فۆڕم</TableHead>
-                                <TableHead className="text-center">کڕیار</TableHead>
-                                <TableHead className="text-center">بەروار</TableHead>
-                                <TableHead className="text-center">بڕی فرۆشراو</TableHead>
-                                <TableHead className="text-center">بارودۆخ</TableHead>
+                                <TableHead className="text-center">
+                                    <Button variant="ghost" onClick={() => requestSort('formNumber')}>
+                                        {getSortIcon('formNumber')} ژ. فۆڕم
+                                    </Button>
+                                </TableHead>
+                                <TableHead className="text-center">
+                                     <Button variant="ghost" onClick={() => requestSort('customerName')}>
+                                        {getSortIcon('customerName')} کڕیار
+                                    </Button>
+                                </TableHead>
+                                <TableHead className="text-center">
+                                     <Button variant="ghost" onClick={() => requestSort('issueDate')}>
+                                        {getSortIcon('issueDate')} بەروار
+                                    </Button>
+                                </TableHead>
+                                <TableHead className="text-center">
+                                     <Button variant="ghost" onClick={() => requestSort('totalPrice')}>
+                                        {getSortIcon('totalPrice')} بڕی فرۆشراو
+                                    </Button>
+                                </TableHead>
+                                <TableHead className="text-center">
+                                     <Button variant="ghost" onClick={() => requestSort('paymentStatus')}>
+                                        {getSortIcon('paymentStatus')} بارودۆخ
+                                    </Button>
+                                </TableHead>
                                 <TableHead className="text-center">کردارەکان</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -187,12 +261,12 @@ function SalesList() {
                                         <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                                     </TableCell>
                                 </TableRow>
-                            ) : !sales || sales.length === 0 ? (
+                            ) : !sortedSales || sortedSales.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">هیچ فرۆشێک تۆمار نەکراوە.</TableCell>
                                 </TableRow>
                             ) : (
-                                sales.map((sale) => (
+                                sortedSales.map((sale) => (
                                 <TableRow key={sale.id}>
                                     <TableCell className="font-medium text-center">{sale.formNumber}</TableCell>
                                     <TableCell className="text-center">{sale.customerName}</TableCell>
