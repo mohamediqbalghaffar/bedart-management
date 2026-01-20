@@ -264,142 +264,157 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
 
   async function onSubmit(data: SalesFormValues) {
     if (!firestore) {
-        toast({ variant: "destructive", title: "هەڵەیەک ڕوویدا", description: "پەیوەندی لەگەڵ بنکەی داتاکەدا نییە." });
-        return;
+      toast({ variant: "destructive", title: "هەڵەیەک ڕوویدا", description: "پەیوەندی لەگەڵ بنکەی داتاکەدا نییە." });
+      return;
     }
     
     const sellingFormRef = formId ? doc(firestore, "selling_forms", formId) : doc(collection(firestore, "selling_forms"));
     const sellingFormId = sellingFormRef.id;
 
+    // --- Pre-transaction reads for deletions ---
+    const productRefsToDelete: DocumentReference[] = [];
+    const paymentRefsToDelete: DocumentReference[] = [];
+
+    if (formId) {
+      try {
+        const existingProductsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/selling_form_products`));
+        existingProductsSnap.forEach(doc => productRefsToDelete.push(doc.ref));
+
+        const existingPaymentsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/payments`));
+        existingPaymentsSnap.forEach(doc => paymentRefsToDelete.push(doc.ref));
+      } catch (error) {
+        console.error("Error fetching old items for deletion:", error);
+        toast({ variant: 'destructive', title: 'هەڵە لە خوێندنەوەی داتای کۆن', description: "نەتوانرا داتای پێشوو بسڕدرێتەوە." });
+        return;
+      }
+    }
+    // --- End pre-transaction reads ---
+
     try {
-        await runTransaction(firestore, async (transaction) => {
-            const productRefsToRead = new Map<string, DocumentReference>();
+      await runTransaction(firestore, async (transaction) => {
+        const productRefsToRead = new Map<string, DocumentReference>();
 
-            // Phase 1: Read all relevant documents FIRST.
-            if (formId) { // If editing, read original items to revert stock
-                originalItems.forEach(item => {
-                    if (item.productId) productRefsToRead.set(item.productId, doc(firestore, 'products', item.productId));
-                });
-            }
-            
-            data.items.forEach(item => { // Read current items to check and decrement stock
-                const showroomId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-shopshowroom`;
-                const warehouseId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-warehouse`;
-                productRefsToRead.set(showroomId, doc(firestore, 'products', showroomId));
-                productRefsToRead.set(warehouseId, doc(firestore, 'products', warehouseId));
-            });
-
-             const productSnaps = await Promise.all(
-                Array.from(productRefsToRead.values()).map(ref => transaction.get(ref))
-            );
-            const productDocs = new Map(productSnaps.map(snap => [snap.id, snap]));
-
-            // Phase 2: Perform all calculations in memory.
-            const stockChanges = new Map<string, { change: number, resolvedId: string | null }>();
-
-            if (formId) { // Restore original stock
-                originalItems.forEach(item => {
-                    if (item.productId) {
-                        stockChanges.set(item.productId, { change: item.quantity, resolvedId: item.productId });
-                    }
-                });
-            }
-
-            for (const item of data.items) {
-                const showroomId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-shopshowroom`;
-                const warehouseId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-warehouse`;
-                
-                const showroomDoc = productDocs.get(showroomId);
-                const warehouseDoc = productDocs.get(warehouseId);
-
-                const showroomCurrentStock = showroomDoc?.exists() ? showroomDoc.data().currentQuantity : 0;
-                const warehouseCurrentStock = warehouseDoc?.exists() ? warehouseDoc.data().currentQuantity : 0;
-                
-                const showroomStockAfterRestore = showroomCurrentStock + (stockChanges.get(showroomId)?.change || 0);
-                const warehouseStockAfterRestore = warehouseCurrentStock + (stockChanges.get(warehouseId)?.change || 0);
-                
-                let deductedFrom: string | null = null;
-                if (showroomStockAfterRestore >= item.quantity) {
-                    deductedFrom = showroomId;
-                } else if (warehouseStockAfterRestore >= item.quantity) {
-                    deductedFrom = warehouseId;
-                }
-
-                if (!deductedFrom) {
-                    throw new Error(`بڕی کاڵا بەشی ناکات: "${item.product}"`);
-                }
-                
-                const currentChange = stockChanges.get(deductedFrom)?.change || 0;
-                stockChanges.set(deductedFrom, { change: currentChange - item.quantity, resolvedId: deductedFrom });
-                 (item as any).resolvedProductId = deductedFrom;
-            }
-
-            // Phase 3: Perform all writes.
-            for (const [productId, { change }] of stockChanges.entries()) {
-                const productRef = productRefsToRead.get(productId)!;
-                const productDoc = productDocs.get(productId);
-
-                if (productDoc?.exists()) {
-                    const currentQuantity = productDoc.data()!.currentQuantity;
-                    transaction.update(productRef, { currentQuantity: currentQuantity + change });
-                }
-            }
-            
-            const { items, payments, ...mainData } = data;
-            const finalRemainingBalance = (() => {
-                if (mainData.paymentStatus === 'Fully Paid') return 0;
-                if (mainData.paymentStatus === 'Unpaid') return totalAmount;
-                const paidAmount = payments?.reduce((acc, p) => acc + p.amount, 0) || 0;
-                return totalAmount - paidAmount;
-            })();
-            
-            const sellingFormData: any = { ...mainData, id: sellingFormId, creatorId: "system", issueDate: data.issueDate, totalPrice: totalAmount, remainingBalance: finalRemainingBalance };
-            if (!sellingFormData.discountValue) sellingFormData.discountValue = 0;
-            if (!sellingFormData.discountType) delete sellingFormData.discountType;
-            transaction.set(sellingFormRef, sellingFormData, { merge: true });
-
-            if (formId) {
-                const existingItemsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/selling_form_products`));
-                existingItemsSnap.forEach(doc => transaction.delete(doc.ref));
-                
-                const existingPaymentsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/payments`));
-                existingPaymentsSnap.forEach(p => transaction.delete(p.ref));
-            }
-
-            items.forEach(item => {
-                const productSubCollectionRef = doc(collection(firestore, `selling_forms/${sellingFormId}/selling_form_products`));
-                transaction.set(productSubCollectionRef, {
-                    id: productSubCollectionRef.id,
-                    sellingFormId: sellingFormId,
-                    productId: (item as any).resolvedProductId,
-                    productName: item.product,
-                    quantity: item.quantity,
-                    unitPrice: item.unitPrice,
-                    lineTotal: item.quantity * item.unitPrice,
-                    category: item.category,
-                });
-            });
-
-            if(data.paymentType === 'Installments' && payments) {
-                payments.forEach(payment => {
-                    const paymentRef = doc(collection(firestore, `selling_forms/${sellingFormId}/payments`));
-                    transaction.set(paymentRef, {
-                        ...payment,
-                        id: paymentRef.id,
-                        paymentDate: payment.date,
-                        sellingFormId: sellingFormId,
-                    });
-                });
-            }
+        // Phase 1: Read all relevant documents FIRST.
+        if (formId) {
+          originalItems.forEach((item) => {
+            if (item.productId) productRefsToRead.set(item.productId, doc(firestore, 'products', item.productId));
+          });
+        }
+        
+        data.items.forEach(item => {
+          const showroomId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-shopshowroom`;
+          const warehouseId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-warehouse`;
+          productRefsToRead.set(showroomId, doc(firestore, 'products', showroomId));
+          productRefsToRead.set(warehouseId, doc(firestore, 'products', warehouseId));
         });
 
-        toast({ title: "سەرکەوتوو بوو!", description: `فۆڕمی فرۆشتن بە سەرکەوتوویی ${formId ? 'نوێکرایەوە' : 'پاشەکەوت کرا'}.`, className: "bg-accent text-accent-foreground", });
-        if (onSave) onSave();
-        if (!formId) form.reset();
+        const productSnaps = await Promise.all(
+          Array.from(productRefsToRead.values()).map(ref => transaction.get(ref))
+        );
+        const productDocs = new Map(productSnaps.map(snap => [snap.id, snap]));
+
+        // Phase 2: Perform all calculations in memory.
+        const stockChanges = new Map<string, { change: number, resolvedId: string | null }>();
+
+        if (formId) {
+          originalItems.forEach(item => {
+            if (item.productId) {
+              stockChanges.set(item.productId, { change: item.quantity, resolvedId: item.productId });
+            }
+          });
+        }
+
+        for (const item of data.items) {
+          const showroomId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-shopshowroom`;
+          const warehouseId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-warehouse`;
+          
+          const showroomDoc = productDocs.get(showroomId);
+          const warehouseDoc = productDocs.get(warehouseId);
+
+          const showroomCurrentStock = showroomDoc?.exists() ? showroomDoc.data().currentQuantity : 0;
+          const warehouseCurrentStock = warehouseDoc?.exists() ? warehouseDoc.data().currentQuantity : 0;
+          
+          const showroomStockAfterRestore = showroomCurrentStock + (stockChanges.get(showroomId)?.change || 0);
+          const warehouseStockAfterRestore = warehouseCurrentStock + (stockChanges.get(warehouseId)?.change || 0);
+          
+          let deductedFrom: string | null = null;
+          if (showroomStockAfterRestore >= item.quantity) {
+            deductedFrom = showroomId;
+          } else if (warehouseStockAfterRestore >= item.quantity) {
+            deductedFrom = warehouseId;
+          }
+
+          if (!deductedFrom) {
+            throw new Error(`بڕی کاڵا بەشی ناکات: "${item.product}"`);
+          }
+          
+          const currentChange = stockChanges.get(deductedFrom)?.change || 0;
+          stockChanges.set(deductedFrom, { change: currentChange - item.quantity, resolvedId: deductedFrom });
+          (item as any).resolvedProductId = deductedFrom;
+        }
+
+        // Phase 3: Perform all writes.
+        for (const [productId, { change }] of stockChanges.entries()) {
+          const productRef = productRefsToRead.get(productId)!;
+          const productDoc = productDocs.get(productId);
+
+          if (productDoc?.exists()) {
+            const currentQuantity = productDoc.data()!.currentQuantity;
+            transaction.update(productRef, { currentQuantity: currentQuantity + change });
+          }
+        }
+        
+        const { items, payments, ...mainData } = data;
+        const finalRemainingBalance = (() => {
+          if (mainData.paymentStatus === 'Fully Paid') return 0;
+          if (mainData.paymentStatus === 'Unpaid') return totalAmount;
+          const paidAmount = payments?.reduce((acc, p) => acc + p.amount, 0) || 0;
+          return totalAmount - paidAmount;
+        })();
+        
+        const sellingFormData: any = { ...mainData, id: sellingFormId, creatorId: "system", issueDate: data.issueDate, totalPrice: totalAmount, remainingBalance: finalRemainingBalance };
+        if (!sellingFormData.discountValue) sellingFormData.discountValue = 0;
+        if (!sellingFormData.discountType) delete sellingFormData.discountType;
+        transaction.set(sellingFormRef, sellingFormData, { merge: true });
+
+        // Delete old items and payments using pre-fetched refs
+        productRefsToDelete.forEach(ref => transaction.delete(ref));
+        paymentRefsToDelete.forEach(ref => transaction.delete(ref));
+
+        items.forEach(item => {
+          const productSubCollectionRef = doc(collection(firestore, `selling_forms/${sellingFormId}/selling_form_products`));
+          transaction.set(productSubCollectionRef, {
+            id: productSubCollectionRef.id,
+            sellingFormId: sellingFormId,
+            productId: (item as any).resolvedProductId,
+            productName: item.product,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            lineTotal: item.quantity * item.unitPrice,
+            category: item.category,
+          });
+        });
+
+        if (data.paymentType === 'Installments' && payments) {
+          payments.forEach(payment => {
+            const paymentRef = doc(collection(firestore, `selling_forms/${sellingFormId}/payments`));
+            transaction.set(paymentRef, {
+              ...payment,
+              id: paymentRef.id,
+              paymentDate: payment.date,
+              sellingFormId: sellingFormId,
+            });
+          });
+        }
+      });
+
+      toast({ title: "سەرکەوتوو بوو!", description: `فۆڕمی فرۆشتن بە سەرکەوتوویی ${formId ? 'نوێکرایەوە' : 'پاشەکەوت کرا'}.`, className: "bg-accent text-accent-foreground", });
+      if (onSave) onSave();
+      if (!formId) form.reset();
 
     } catch (error: any) {
-        console.error("Error saving sales form:", error);
-        toast({ variant: "destructive", title: "هەڵەیەک ڕوویدا", description: error.message || "پاشەکەوتکردنی فۆڕمی فرۆشتن سەرکەوتوو نەبوو.", });
+      console.error("Error saving sales form:", error);
+      toast({ variant: "destructive", title: "هەڵەیەک ڕوویدا", description: error.message || "پاشەکەوتکردنی فۆڕمی فرۆشتن سەرکەوتوو نەبوو.", });
     }
   }
 
