@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -60,6 +59,7 @@ export function SalesDetails({ formId }: { formId: string }) {
         return <div className="text-center text-muted-foreground p-8">فۆڕمەکە نەدۆزرایەوە.</div>;
     }
     
+    const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
     const subTotal = products?.reduce((acc, item) => acc + item.lineTotal, 0) || 0;
     const discountAmount = (() => {
         if (!formData.discountType || !formData.discountValue) return 0;
@@ -106,8 +106,8 @@ export function SalesDetails({ formId }: { formId: string }) {
                                     <TableRow key={index}>
                                         <TableCell className="text-right">{item.productName}</TableCell>
                                         <TableCell className="text-right">{item.quantity}</TableCell>
-                                        <TableCell className="text-right">{new Intl.NumberFormat('en-US').format(item.unitPrice)}</TableCell>
-                                        <TableCell className="text-left font-semibold">{new Intl.NumberFormat('en-US').format(item.lineTotal)}</TableCell>
+                                        <TableCell className="text-right">{currencyFormatter.format(item.unitPrice)}</TableCell>
+                                        <TableCell className="text-left font-semibold">{currencyFormatter.format(item.lineTotal)}</TableCell>
                                     </TableRow>
                                 ))
                             ) : (
@@ -116,10 +116,10 @@ export function SalesDetails({ formId }: { formId: string }) {
                         </TableBody>
                     </Table>
                     <div className="mt-4 space-y-2 text-left p-4 border-t">
-                         <div className="flex justify-between"><span>کۆی کاڵاکان:</span><span className="font-medium">{new Intl.NumberFormat('en-US').format(subTotal)}</span></div>
-                         {discountAmount > 0 && <div className="flex justify-between text-destructive"><span>داشکاندن:</span><span className="font-medium">-{new Intl.NumberFormat('en-US').format(discountAmount)}</span></div>}
-                         <div className="flex justify-between"><span>تێچووی گەیاندن:</span><span className="font-medium">{new Intl.NumberFormat('en-US').format(formData.deliveryCost || 0)}</span></div>
-                        <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2"><span>کۆی گشتی:</span><span>{new Intl.NumberFormat('en-US').format(formData.totalPrice)}</span></div>
+                         <div className="flex justify-between"><span>کۆی کاڵاکان:</span><span className="font-medium">{currencyFormatter.format(subTotal)}</span></div>
+                         {discountAmount > 0 && <div className="flex justify-between text-destructive"><span>داشکاندن:</span><span className="font-medium">-{currencyFormatter.format(discountAmount)}</span></div>}
+                         <div className="flex justify-between"><span>تێچووی گەیاندن:</span><span className="font-medium">{currencyFormatter.format(formData.deliveryCost || 0)}</span></div>
+                        <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2"><span>کۆی گشتی:</span><span>{currencyFormatter.format(formData.totalPrice)}</span></div>
                     </div>
                 </CardContent>
             </Card>
@@ -135,7 +135,7 @@ export function SalesDetails({ formId }: { formId: string }) {
                                     payments.map((p) => (
                                         <TableRow key={p.id}>
                                             <TableCell className="text-right">{p.paymentDate}</TableCell>
-                                            <TableCell className="text-right font-semibold">{new Intl.NumberFormat('en-US').format(p.amountPaid)}</TableCell>
+                                            <TableCell className="text-right font-semibold">{currencyFormatter.format(p.amountPaid)}</TableCell>
                                             <TableCell className="text-right">{p.paymentMethod === 'Cash' ? 'کاش' : 'حەواڵە'}</TableCell>
                                             <TableCell className="text-right">{p.note || 'N/A'}</TableCell>
                                         </TableRow>
@@ -146,8 +146,8 @@ export function SalesDetails({ formId }: { formId: string }) {
                             </TableBody>
                         </Table>
                          <div className="mt-4 space-y-2 text-left p-4 border-t">
-                            <div className="flex justify-between"><span>کۆی دراوە:</span><span className="font-medium text-accent">{new Intl.NumberFormat('en-US').format(formData.totalPrice - formData.remainingBalance)}</span></div>
-                            <div className="flex justify-between font-bold text-lg text-destructive"><span>ماوە:</span><span>{new Intl.NumberFormat('en-US').format(formData.remainingBalance)}</span></div>
+                            <div className="flex justify-between"><span>کۆی دراوە:</span><span className="font-medium text-accent">{currencyFormatter.format(formData.totalPrice - formData.remainingBalance)}</span></div>
+                            <div className="flex justify-between font-bold text-lg text-destructive"><span>ماوە:</span><span>{currencyFormatter.format(formData.remainingBalance)}</span></div>
                         </div>
                     </CardContent>
                 </Card>
@@ -155,6 +155,3 @@ export function SalesDetails({ formId }: { formId: string }) {
         </div>
     );
 }
-
-
-    

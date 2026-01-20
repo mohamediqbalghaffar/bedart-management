@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -144,7 +143,7 @@ function SalesList() {
                                 <TableHead className="text-center">ژ. فۆڕم</TableHead>
                                 <TableHead className="text-center">کڕیار</TableHead>
                                 <TableHead className="text-center">بەروار</TableHead>
-                                <TableHead className="text-center">بڕ</TableHead>
+                                <TableHead className="text-center">بڕی فرۆشراو</TableHead>
                                 <TableHead className="text-center">بارودۆخ</TableHead>
                                 <TableHead className="text-center">کردارەکان</TableHead>
                             </TableRow>
@@ -166,7 +165,7 @@ function SalesList() {
                                     <TableCell className="font-medium text-center">{sale.formNumber}</TableCell>
                                     <TableCell className="text-center">{sale.customerName}</TableCell>
                                     <TableCell className="text-center">{sale.issueDate}</TableCell>
-                                    <TableCell className="text-center">{new Intl.NumberFormat('en-US').format(sale.totalPrice || 0)}</TableCell>
+                                    <TableCell className="text-center">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(sale.totalPrice || 0)}</TableCell>
                                     <TableCell className="text-center">
                                         <Badge 
                                             variant={sale.paymentStatus === 'Fully Paid' ? 'default' : sale.paymentStatus === 'Unpaid' ? 'destructive' : 'secondary'} 
@@ -239,6 +238,3 @@ export default function SalesPage() {
         </div>
     );
 }
-
-
-    

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -76,6 +75,7 @@ function SalesFormItemRow({
 }) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const watchedItem = form.watch(`items.${index}`);
+    const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
     
     return (
         <TableRow key={fieldId}>
@@ -118,7 +118,7 @@ function SalesFormItemRow({
                 <FormField control={form.control} name={`items.${index}.unitPrice`} render={({ field }) => (<FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
             </TableCell>
              <TableCell className="align-top pt-5 font-semibold">
-                {new Intl.NumberFormat('en-US').format(watchedItem?.quantity * watchedItem?.unitPrice || 0)}
+                {currencyFormatter.format(watchedItem?.quantity * watchedItem?.unitPrice || 0)}
             </TableCell>
             <TableCell className="align-top">
                 <Button variant="ghost" size="icon" onClick={() => remove(index)}>
@@ -240,6 +240,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
   const discountValue = form.watch('discountValue');
   const paymentStatus = form.watch('paymentStatus');
   
+  const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
   const subTotal = watchedItems.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
 
   const discountAmount = React.useMemo(() => {
@@ -270,17 +271,15 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
     const sellingFormRef = formId ? doc(firestore, "selling_forms", formId) : doc(collection(firestore, "selling_forms"));
     const sellingFormId = sellingFormRef.id;
 
-    // --- Pre-Transaction: Fetch IDs for deletion ---
     let oldItemRefsToDelete: DocumentReference[] = [];
     let oldPaymentRefsToDelete: DocumentReference[] = [];
     if (formId) {
         try {
             const existingItemsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/selling_form_products`));
             oldItemRefsToDelete = existingItemsSnap.docs.map(d => d.ref);
-            if (data.paymentType === 'Installments' || data.paymentType !== 'Direct Payment') { //Also check if old type was installments
-                const existingPaymentsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/payments`));
-                oldPaymentRefsToDelete = existingPaymentsSnap.docs.map(p => p.ref);
-            }
+            
+            const existingPaymentsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/payments`));
+            oldPaymentRefsToDelete = existingPaymentsSnap.docs.map(p => p.ref);
         } catch (e) {
              toast({ variant: "destructive", title: "هەڵە", description: "Failed to prepare form for update." });
              return;
@@ -290,7 +289,6 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
 
     try {
         await runTransaction(firestore, async (transaction) => {
-            // --- 1. READ PHASE ---
             const productRefsToRead = new Map<string, DocumentReference>();
 
             if (formId) {
@@ -305,21 +303,18 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                 productRefsToRead.set(showroomId, doc(firestore, 'products', showroomId));
                 productRefsToRead.set(warehouseId, doc(firestore, 'products', warehouseId));
             });
-
-            const productSnapshots = await Promise.all(
+            
+            const productDocsSnapshots = await Promise.all(
                 Array.from(productRefsToRead.values()).map(ref => transaction.get(ref))
             );
-            const productDocs = new Map(productSnapshots.map(snap => [snap.id, snap]));
+            const productDocs = new Map(productDocsSnapshots.map(snap => [snap.id, snap]));
 
-            // --- 2. LOGIC / VALIDATION PHASE ---
-            const stockChanges = new Map<string, { change: number, docExists: boolean }>();
+            const stockChanges = new Map<string, number>();
 
             if (formId) {
                 originalItems.forEach(item => {
                     if (item.productId) {
-                        const existing = stockChanges.get(item.productId) || { change: 0, docExists: !!productDocs.get(item.productId)?.exists() };
-                        existing.change += item.quantity;
-                        stockChanges.set(item.productId, existing);
+                        stockChanges.set(item.productId, (stockChanges.get(item.productId) || 0) + item.quantity);
                     }
                 });
             }
@@ -334,8 +329,8 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                 const showroomCurrentStock = showroomDoc?.data()?.currentQuantity || 0;
                 const warehouseCurrentStock = warehouseDoc?.data()?.currentQuantity || 0;
 
-                const showroomStockAfterRestore = showroomCurrentStock + (stockChanges.get(showroomId)?.change || 0);
-                const warehouseStockAfterRestore = warehouseCurrentStock + (stockChanges.get(warehouseId)?.change || 0);
+                const showroomStockAfterRestore = showroomCurrentStock + (stockChanges.get(showroomId) || 0);
+                const warehouseStockAfterRestore = warehouseCurrentStock + (stockChanges.get(warehouseId) || 0);
                 
                 let deductedFrom: string | null = null;
                 if (showroomStockAfterRestore >= item.quantity) {
@@ -348,22 +343,20 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                     throw new Error(`بڕی کاڵا بەشی ناکات: "${item.product}"`);
                 }
                 
-                const existing = stockChanges.get(deductedFrom) || { change: 0, docExists: !!productDocs.get(deductedFrom)?.exists() };
-                existing.change -= item.quantity;
-                stockChanges.set(deductedFrom, existing);
+                stockChanges.set(deductedFrom, (stockChanges.get(deductedFrom) || 0) - item.quantity);
                 (item as any).resolvedProductId = deductedFrom;
             }
 
-            // --- 3. WRITE PHASE ---
-            
-            for (const [productId, { change, docExists }] of stockChanges.entries()) {
+            for (const [productId, quantityChange] of stockChanges.entries()) {
                 const productRef = productRefsToRead.get(productId)!;
-                if (docExists) {
-                    const currentQuantity = productDocs.get(productId)!.data()!.currentQuantity;
-                    transaction.update(productRef, { currentQuantity: currentQuantity + change });
+                const productDoc = productDocs.get(productId);
+
+                if (productDoc?.exists()) {
+                    const currentQuantity = productDoc.data()!.currentQuantity;
+                    transaction.update(productRef, { currentQuantity: currentQuantity + quantityChange });
                 }
             }
-
+            
             const { items, payments, ...mainData } = data;
             const finalRemainingBalance = (() => {
                 if (mainData.paymentStatus === 'Fully Paid') return 0;
@@ -394,8 +387,8 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                 });
             });
 
-            if(data.paymentType === 'Installments') {
-                (payments || []).forEach(payment => {
+            if(data.paymentType === 'Installments' && payments) {
+                payments.forEach(payment => {
                     const paymentRef = doc(collection(firestore, `selling_forms/${sellingFormId}/payments`));
                     transaction.set(paymentRef, {
                         ...payment,
@@ -568,6 +561,19 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                         />
                     </div>
                 </div>
+                 <FormField
+                    control={form.control}
+                    name="deliveryCost"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>تێچووی گەیاندن</FormLabel>
+                            <FormControl>
+                                <Input type="number" step="0.01" {...field} className="w-32" />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                   <FormField
                     control={form.control}
@@ -623,25 +629,29 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
             <div className="space-y-2 text-left min-w-[280px]">
                 <div className="flex items-center justify-between gap-4 p-2 rounded-md">
                     <span className="text-muted-foreground">:کۆی کاڵاکان</span>
-                    <span className="font-semibold">{new Intl.NumberFormat('en-US').format(subTotal)}</span>
+                    <span className="font-semibold">{currencyFormatter.format(subTotal)}</span>
                 </div>
                 <div className="flex items-center justify-between gap-4 p-2 rounded-md">
                     <span className="text-muted-foreground">:داشکاندن</span>
-                    <span className="font-semibold text-destructive">-{new Intl.NumberFormat('en-US').format(discountAmount)}</span>
+                    <span className="font-semibold text-destructive">-{currencyFormatter.format(discountAmount)}</span>
                 </div>
                  <div className="flex items-center justify-between gap-4 p-2 rounded-md">
-                    <span className="text-muted-foreground">:کۆی گشتی</span>
-                    <span className="font-bold text-lg">{new Intl.NumberFormat('en-US').format(totalAmount)}</span>
+                    <span className="text-muted-foreground">:تێچووی گەیاندن</span>
+                    <span className="font-semibold">{currencyFormatter.format(deliveryCost || 0)}</span>
+                </div>
+                 <div className="flex items-center justify-between gap-4 p-2 rounded-md bg-secondary/80">
+                    <span className="font-bold">:کۆی گشتی</span>
+                    <span className="font-bold text-lg">{currencyFormatter.format(totalAmount)}</span>
                 </div>
                  {form.watch('paymentType') === 'Installments' && (
                     <>
                         <div className="flex items-center justify-between gap-4 p-2 rounded-md">
                             <span className="text-muted-foreground">:دراوە</span>
-                            <span className="font-semibold text-accent">{new Intl.NumberFormat('en-US').format(totalPaid)}</span>
+                            <span className="font-semibold text-accent">{currencyFormatter.format(totalPaid)}</span>
                         </div>
                         <div className="flex items-center justify-between gap-4 p-2 rounded-md bg-destructive/10 text-destructive">
                             <span className="">:ماوە</span>
-                            <span className="font-bold">{new Intl.NumberFormat('en-US').format(remainingBalance)}</span>
+                            <span className="font-bold">{currencyFormatter.format(remainingBalance)}</span>
                         </div>
                     </>
                  )}
@@ -699,5 +709,3 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
     </Form>
   );
 }
-
-    
