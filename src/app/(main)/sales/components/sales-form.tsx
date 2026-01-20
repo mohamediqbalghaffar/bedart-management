@@ -252,7 +252,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
   }, [subTotal, discountType, discountValue]);
 
   const totalAfterDiscount = subTotal - discountAmount;
-  const totalAmount = totalAfterDiscount + (deliveryCost || 0);
+  const totalAmount = totalAfterDiscount + Number(deliveryCost || 0);
   const totalPaid = watchedPayments?.reduce((acc, p) => acc + p.amount, 0) || 0;
   
   const remainingBalance = React.useMemo(() => {
@@ -271,50 +271,36 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
     const sellingFormRef = formId ? doc(firestore, "selling_forms", formId) : doc(collection(firestore, "selling_forms"));
     const sellingFormId = sellingFormRef.id;
 
-    let oldItemRefsToDelete: DocumentReference[] = [];
-    let oldPaymentRefsToDelete: DocumentReference[] = [];
-    if (formId) {
-        try {
-            const existingItemsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/selling_form_products`));
-            oldItemRefsToDelete = existingItemsSnap.docs.map(d => d.ref);
-            
-            const existingPaymentsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/payments`));
-            oldPaymentRefsToDelete = existingPaymentsSnap.docs.map(p => p.ref);
-        } catch (e) {
-             toast({ variant: "destructive", title: "هەڵە", description: "Failed to prepare form for update." });
-             return;
-        }
-    }
-
-
     try {
         await runTransaction(firestore, async (transaction) => {
             const productRefsToRead = new Map<string, DocumentReference>();
 
-            if (formId) {
+            // Phase 1: Read all relevant documents FIRST.
+            if (formId) { // If editing, read original items to revert stock
                 originalItems.forEach(item => {
                     if (item.productId) productRefsToRead.set(item.productId, doc(firestore, 'products', item.productId));
                 });
             }
             
-            data.items.forEach(item => {
+            data.items.forEach(item => { // Read current items to check and decrement stock
                 const showroomId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-shopshowroom`;
                 const warehouseId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-warehouse`;
                 productRefsToRead.set(showroomId, doc(firestore, 'products', showroomId));
                 productRefsToRead.set(warehouseId, doc(firestore, 'products', warehouseId));
             });
-            
-            const productDocsSnapshots = await Promise.all(
+
+             const productSnaps = await Promise.all(
                 Array.from(productRefsToRead.values()).map(ref => transaction.get(ref))
             );
-            const productDocs = new Map(productDocsSnapshots.map(snap => [snap.id, snap]));
+            const productDocs = new Map(productSnaps.map(snap => [snap.id, snap]));
 
-            const stockChanges = new Map<string, number>();
+            // Phase 2: Perform all calculations in memory.
+            const stockChanges = new Map<string, { change: number, resolvedId: string | null }>();
 
-            if (formId) {
+            if (formId) { // Restore original stock
                 originalItems.forEach(item => {
                     if (item.productId) {
-                        stockChanges.set(item.productId, (stockChanges.get(item.productId) || 0) + item.quantity);
+                        stockChanges.set(item.productId, { change: item.quantity, resolvedId: item.productId });
                     }
                 });
             }
@@ -326,11 +312,11 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                 const showroomDoc = productDocs.get(showroomId);
                 const warehouseDoc = productDocs.get(warehouseId);
 
-                const showroomCurrentStock = showroomDoc?.data()?.currentQuantity || 0;
-                const warehouseCurrentStock = warehouseDoc?.data()?.currentQuantity || 0;
-
-                const showroomStockAfterRestore = showroomCurrentStock + (stockChanges.get(showroomId) || 0);
-                const warehouseStockAfterRestore = warehouseCurrentStock + (stockChanges.get(warehouseId) || 0);
+                const showroomCurrentStock = showroomDoc?.exists() ? showroomDoc.data().currentQuantity : 0;
+                const warehouseCurrentStock = warehouseDoc?.exists() ? warehouseDoc.data().currentQuantity : 0;
+                
+                const showroomStockAfterRestore = showroomCurrentStock + (stockChanges.get(showroomId)?.change || 0);
+                const warehouseStockAfterRestore = warehouseCurrentStock + (stockChanges.get(warehouseId)?.change || 0);
                 
                 let deductedFrom: string | null = null;
                 if (showroomStockAfterRestore >= item.quantity) {
@@ -343,17 +329,19 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                     throw new Error(`بڕی کاڵا بەشی ناکات: "${item.product}"`);
                 }
                 
-                stockChanges.set(deductedFrom, (stockChanges.get(deductedFrom) || 0) - item.quantity);
-                (item as any).resolvedProductId = deductedFrom;
+                const currentChange = stockChanges.get(deductedFrom)?.change || 0;
+                stockChanges.set(deductedFrom, { change: currentChange - item.quantity, resolvedId: deductedFrom });
+                 (item as any).resolvedProductId = deductedFrom;
             }
 
-            for (const [productId, quantityChange] of stockChanges.entries()) {
+            // Phase 3: Perform all writes.
+            for (const [productId, { change }] of stockChanges.entries()) {
                 const productRef = productRefsToRead.get(productId)!;
                 const productDoc = productDocs.get(productId);
 
                 if (productDoc?.exists()) {
                     const currentQuantity = productDoc.data()!.currentQuantity;
-                    transaction.update(productRef, { currentQuantity: currentQuantity + quantityChange });
+                    transaction.update(productRef, { currentQuantity: currentQuantity + change });
                 }
             }
             
@@ -370,8 +358,13 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
             if (!sellingFormData.discountType) delete sellingFormData.discountType;
             transaction.set(sellingFormRef, sellingFormData, { merge: true });
 
-            oldItemRefsToDelete.forEach(ref => transaction.delete(ref));
-            oldPaymentRefsToDelete.forEach(ref => transaction.delete(ref));
+            if (formId) {
+                const existingItemsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/selling_form_products`));
+                existingItemsSnap.forEach(doc => transaction.delete(doc.ref));
+                
+                const existingPaymentsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/payments`));
+                existingPaymentsSnap.forEach(p => transaction.delete(p.ref));
+            }
 
             items.forEach(item => {
                 const productSubCollectionRef = doc(collection(firestore, `selling_forms/${sellingFormId}/selling_form_products`));
