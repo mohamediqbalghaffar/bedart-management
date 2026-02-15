@@ -31,7 +31,7 @@ type Customer = {
 
 const salesFormSchema = z.object({
   formNumber: z.string().min(1, "ژمارەی فۆڕم پێویستە."),
-  customerName: z.string().min(1, { message: "ناوی کڕیار پێویستە." }),
+  customerName: z.string().min(1, { message: "نووسینی ناوی کڕیار پێویستە." }),
   customerPhone: z.string().optional(),
   customerAddress: z.string().optional(),
   issueDate: z.string().refine((val) => /^\d{4}-\d{2}-\d{2}$/.test(val), { message: "فۆرماتی بەروار هەڵەیە (YYYY-MM-DD)." }),
@@ -345,7 +345,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
           }
 
           if (!deductedFrom) {
-            throw new Error(`بڕی کاڵا بەشی ناکات: "${item.product}"`);
+            throw new Error(`بڕی بەشی ناکات بۆ کاڵای: "${item.product}"`);
           }
           
           const currentChange = stockChanges.get(deductedFrom)?.change || 0;
@@ -668,7 +668,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
         
         {form.watch('paymentType') === 'Installments' && (
              <div className="space-y-4 border-t pt-6">
-                <h3 className="text-lg font-medium">پارە وەرگیراوەکان (قیست)</h3>
+                <h3 className="text-lg font-medium">تۆماری قیستەکان</h3>
                 <Table>
                     <TableHeader><TableRow><TableHead className="w-1/4 text-center">بەروار</TableHead><TableHead className="text-center">بڕ</TableHead><TableHead className="text-center">شێواز</TableHead><TableHead className="text-center">تێبینی</TableHead><TableHead></TableHead></TableRow></TableHeader>
                     <TableBody>
@@ -703,7 +703,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                     </TableBody>
                 </Table>
                 <Button type="button" variant="outline" size="sm" onClick={() => appendPayment({ date: format(new Date(), 'yyyy-MM-dd'), amount: 0, method: 'Cash', note:'' })}>
-                    <PlusCircle className="ml-2 h-4 w-4" /> زیادکردنی پارەدان
+                    <PlusCircle className="ml-2 h-4 w-4" /> زیادکردنی قیست
                 </Button>
             </div>
         )}

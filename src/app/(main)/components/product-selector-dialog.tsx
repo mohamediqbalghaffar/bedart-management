@@ -85,21 +85,21 @@ export function ProductSelectorDialog({ onProductSelect }: ProductSelectorDialog
             <div className="relative col-span-3 sm:col-span-1">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                placeholder="...گەڕان"
+                placeholder="...گەڕان بەدوای کاڵا"
                 className="pr-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 />
             </div>
              <Select dir="rtl" value={categoryFilter} onValueChange={(value) => setCategoryFilter(value as any)}>
-                <SelectTrigger><SelectValue placeholder="پۆل" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="فلتەر بەپێی پۆل" /></SelectTrigger>
                 <SelectContent>
                     <SelectItem value="all">هەموو پۆلەکان</SelectItem>
                     {productCategories.map(cat => <SelectItem key={cat} value={cat}>{categoryTranslations[cat]}</SelectItem>)}
                 </SelectContent>
             </Select>
              <Select dir="rtl" value={locationFilter} onValueChange={(value) => setLocationFilter(value as any)}>
-                <SelectTrigger><SelectValue placeholder="شوێن" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="فلتەر بەپێی شوێن" /></SelectTrigger>
                 <SelectContent>
                     <SelectItem value="all">هەموو شوێنەکان</SelectItem>
                     {stockLocations.map(loc => <SelectItem key={loc} value={loc}>{locationTranslations[loc]}</SelectItem>)}

@@ -56,11 +56,11 @@ function PurchaseFormDialog({ formId, onSave, trigger }: { formId: string | null
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>{trigger}</DialogTrigger>
-            <DialogContent className="sm:max-w-7xl">
+            <DialogContent className="sm:max-w-7xl" dir="rtl">
                 <DialogHeader>
-                    <DialogTitle>{formId ? 'دەستکاری کردنی پسوولەی کڕین' : 'تۆمارکردنی پسوولەی کڕین'}</DialogTitle>
+                    <DialogTitle>{formId ? 'دەستکاریکردنی پسوولەی کڕین' : 'دروستکردنی پسوولەی کڕین'}</DialogTitle>
                     <DialogDescription>
-                        {formId ? 'زانیارییەکانی پسوولەکە دەستکاری بکە.' : 'زانیارییەکانی پسوولەی کڕینی نوێ بنووسە.'}
+                        {formId ? 'زانیارییەکانی پسوولەکە نوێ بکەرەوە.' : 'زانیارییەکانی پسوولەیەکی نوێی کڕین بنووسە.'}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="max-h-[80vh] overflow-y-auto p-2">
@@ -188,7 +188,7 @@ function PurchasesList() {
     return (
          <Card>
             <CardHeader>
-                <CardTitle>کڕینەکانی ئەم دواییە</CardTitle>
+                <CardTitle>لیستی کڕینەکان</CardTitle>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -231,7 +231,7 @@ function PurchasesList() {
                                             </AlertDialogTrigger>
                                             <AlertDialogContent dir="rtl">
                                                 <AlertDialogHeader>
-                                                <AlertDialogTitle>دڵنیایت لە سڕینەوە؟</AlertDialogTitle>
+                                                <AlertDialogTitle>دڵنیایت لە سڕینەوەی ئەم پسوولەیە؟</AlertDialogTitle>
                                                 <AlertDialogDescription>
                                                     ئەم کردارە پاشگەزبوونەوەی نییە. کاڵاکان لە کۆگا کەم دەکرێنەوە و پسوولەکە بە هەمیشەیی دەسڕێتەوە.
                                                 </AlertDialogDescription>
@@ -286,7 +286,7 @@ export default function PurchasesPage() {
 
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
-            <PageHeader title="کڕینەکان" description="پسوولەکانی کڕین و دابینکەرەکانت بەڕێوەببە.">
+            <PageHeader title="بەڕێوەبردنی کڕینەکان" description="تۆماری پسوولەکانی کڕین لێرە ببینە و زیاد بکە.">
                 <PurchaseFormDialog formId={null} onSave={handleSave} trigger={
                      <Button>
                         <PlusCircle />

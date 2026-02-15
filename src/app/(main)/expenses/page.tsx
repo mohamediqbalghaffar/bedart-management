@@ -90,7 +90,7 @@ function EditableExpenseRow({ expense }: { expense: WithId<Expense> }) {
             setIsEditing(false);
         } catch (error) {
             console.error("Error updating expense:", error);
-            toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "نوێکردنەوە سەرکەوتوو نەبوو." });
+            toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "نوێکردنەوەکە سەرکەوتوو نەبوو." });
         } finally {
             setIsSaving(false);
         }
@@ -105,7 +105,7 @@ function EditableExpenseRow({ expense }: { expense: WithId<Expense> }) {
             // The component will be unmounted by the parent's re-render
         } catch (error) {
             console.error("Error deleting expense:", error);
-            toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "srinewe serkewtu nebu." });
+            toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "سڕینەوەکە سەرکەوتوو نەبوو." });
             setIsDeleting(false);
         }
     };
@@ -166,7 +166,7 @@ function EditableExpenseRow({ expense }: { expense: WithId<Expense> }) {
                            <Button size="icon" variant="ghost" disabled={isDeleting}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent dir="rtl">
-                            <AlertDialogHeader><AlertDialogTitle>دڵنیایت لە سڕینەوە؟</AlertDialogTitle><AlertDialogDescription>ئەم کردارە پاشگەزبوونەوەی نییە.</AlertDialogDescription></AlertDialogHeader>
+                            <AlertDialogHeader><AlertDialogTitle>ئایا دڵنیایت لە سڕینەوەی ئەم خەرجییە؟</AlertDialogTitle><AlertDialogDescription>ئەم کردارە پاشگەزبوونەوەی نییە و ناتوانیت بیگەڕێنیتەوە.</AlertDialogDescription></AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
                                 <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">بەڵێ، بسڕەوە</AlertDialogAction>
@@ -232,7 +232,7 @@ function ExpensesList() {
 export default function ExpensesPage() {
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
-            <PageHeader title="خەرجییەکان" description="بەدواداچوون بۆ هەموو خەرجییەکانی کارەکەت بکە، جێگیر و گۆڕاو." />
+            <PageHeader title="بەڕێوەبردنی خەرجییەکان" description="تۆماری خەرجییەکانت لێرە ببینە و زیاد بکە." />
             <AddExpenseCollapsible />
             <ExpensesList />
         </div>

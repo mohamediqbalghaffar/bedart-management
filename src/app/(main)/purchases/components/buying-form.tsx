@@ -36,7 +36,7 @@ type Product = {
 }
 
 const buyingFormSchema = z.object({
-  supplierId: z.string().min(1, "دابینکەر پێویستە."),
+  supplierId: z.string().min(1, "هەڵبژاردنی دابینکەر پێویستە."),
   issueDate: z.string().refine((val) => /^\d{4}-\d{2}-\d{2}$/.test(val), { message: "فۆرماتی بەروار هەڵەیە (YYYY-MM-DD)." }),
   items: z.array(z.object({
     product: z.string().min(1, "بابەت پێویستە."),
@@ -80,18 +80,18 @@ function TemplateDownloadButton() {
             
             XLSX.writeFile(workbook, "Purchase_Template.xlsx");
 
-            toast({ title: "سەرکەوتوو بوو", description: "داواکارییەکە بە سەرکەوتوویی دابەزێنرا." });
+            toast({ title: "سەرکەوتوو بوو", description: "نموونەکە بە سەرکەوتوویی دابەزێنرا." });
 
         } catch (error) {
              console.error("Template download error:", error);
-             toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "دابەزاندنی داواکارییەکە سەرکەوتوو نەبوو." });
+             toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "دابەزاندنی نموونەکە سەرکەوتوو نەبوو." });
         }
     }
 
     return (
         <Button type="button" variant="outline" size="sm" onClick={handleDownload}>
             <Download className="ml-2 h-4 w-4" />
-            دابەزاندنی داواکاری
+            دابەزاندنی نموونە
         </Button>
     )
 }
@@ -166,8 +166,7 @@ function ExcelImportButton({ form, allProducts }: { form: UseFormReturn<BuyingFo
 
         } catch (error) {
             console.error("File processing error:", error);
-            toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "شیکردنەوەی فایلەکە سەرکەوتوو نەبوو." });
-            setIsLoading(false);
+            toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "پرۆسێسی فایلەکە سەرکەوتوو نەبوو." });
         }
     };
 
@@ -245,7 +244,7 @@ function BuyingFormItemRow({
                                     <DialogTrigger asChild>
                                         <Button variant="outline" size="icon"><List className="h-4 w-4" /></Button>
                                     </DialogTrigger>
-                                    <DialogContent className="sm:max-w-3xl">
+                                    <DialogContent className="sm:max-w-3xl" dir="rtl">
                                         <DialogHeader>
                                             <DialogTitle>لیستی کاڵاکان</DialogTitle>
                                         </DialogHeader>
@@ -670,5 +669,3 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
   );
 }
 
-
-    

@@ -618,13 +618,13 @@ function DashboardStats({ dateRange }: { dateRange: { from: string, to: string }
              <Dialog>
                 <DialogTrigger asChild>
                     <div className="cursor-pointer">
-                        <StatCard title="کۆی گشتی فرۆش" value={currencyFormatter.format(totalRevenue)} icon={ShoppingCart} description="هەموو فرۆشە تۆمارکراوەکان" />
+                        <StatCard title="کۆی فرۆش" value={currencyFormatter.format(totalRevenue)} icon={ShoppingCart} description="کۆی گشتی فرۆشتن لە ماوەی دیاریکراودا." />
                     </div>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-4xl" dir="rtl">
                     <DialogHeader>
-                        <DialogTitle>وردەکارییەکانی فرۆش</DialogTitle>
-                        <DialogDescription>لیستی فرۆشەکانی ئەم دواییە.</DialogDescription>
+                        <DialogTitle>وردەکاریی فرۆشتن</DialogTitle>
+                        <DialogDescription>پوختەی فرۆشتنەکان لە ماوەی دیاریکراودا.</DialogDescription>
                     </DialogHeader>
                     <SalesDetailDialog sales={sales} />
                 </DialogContent>
@@ -634,17 +634,17 @@ function DashboardStats({ dateRange }: { dateRange: { from: string, to: string }
                 <DialogTrigger asChild>
                      <div className="cursor-pointer">
                         <StatCard 
-                            title="کۆی گشتی خەرجی" 
+                            title="کۆی خەرجی" 
                             value={currencyFormatter.format(totalExpensesUSD)} 
                             icon={DollarSign} 
-                            description={totalExpensesIQD > 0 ? `+ ${numberFormatter.format(totalExpensesIQD)} IQD` : "هەموو خەرجییە تۆمارکراوەکان"}
+                            description={totalExpensesIQD > 0 ? `+ ${numberFormatter.format(totalExpensesIQD)} IQD` : "کۆی گشتی خەرجی لە ماوەی دیاریکراودا."}
                         />
                     </div>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-2xl" dir="rtl">
                     <DialogHeader>
-                        <DialogTitle>وردەکارییەکانی خەرجی</DialogTitle>
-                        <DialogDescription>لیستی خەرجییەکانی ئەم دواییە.</DialogDescription>
+                        <DialogTitle>وردەکاریی خەرجییەکان</DialogTitle>
+                        <DialogDescription>لیستی خەرجییەکان لە ماوەی دیاریکراودا.</DialogDescription>
                     </DialogHeader>
                     <ExpensesDetailDialog expenses={expenses} />
                 </DialogContent>
@@ -653,13 +653,13 @@ function DashboardStats({ dateRange }: { dateRange: { from: string, to: string }
             <Dialog>
                 <DialogTrigger asChild>
                      <div className="cursor-pointer">
-                        <StatCard title="کۆی گشتیی کڕین" value={currencyFormatter.format(totalPurchases)} icon={Package} description="هەموو کڕینە تۆمارکراوەکان" />
+                        <StatCard title="کۆی کڕین" value={currencyFormatter.format(totalPurchases)} icon={Package} description="کۆی گشتی کڕین لە ماوەی دیاریکراودا." />
                     </div>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-4xl" dir="rtl">
                     <DialogHeader>
-                        <DialogTitle>وردەکارییەکانی کڕین</DialogTitle>
-                        <DialogDescription>لیستی کڕینەکانی ئەم دواییە.</DialogDescription>
+                        <DialogTitle>وردەکاریی کڕینەکان</DialogTitle>
+                        <DialogDescription>پوختەی کڕینەکان لە ماوەی دیاریکراودا.</DialogDescription>
                     </DialogHeader>
                     <PurchasesDetailDialog purchases={buyingForms} />
                 </DialogContent>
@@ -673,7 +673,7 @@ function DashboardStats({ dateRange }: { dateRange: { from: string, to: string }
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-lg" dir="rtl">
                     <DialogHeader>
-                        <DialogTitle>کاڵا کەمەکان</DialogTitle>
+                        <DialogTitle>کاڵا کەمبووەکان</DialogTitle>
                         <DialogDescription>لیستی ئەو کاڵایانەی کە بڕیان لە 5 دانە کەمترە.</DialogDescription>
                     </DialogHeader>
                     <LowStockDetailDialog groupedProducts={groupedProducts} />
@@ -786,8 +786,8 @@ function RecentActivityChart({ dateRange }: { dateRange: { from: string, to: str
             <CardHeader>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                        <CardTitle className="text-white">چالاکییەکان</CardTitle>
-                        <CardDescription className="text-white/80">فرۆشتن، کڕین، خەرجی، و قازانج بەپێی ماوەی دیاریکراو</CardDescription>
+                        <CardTitle className="text-white">نەخشەی چالاکییەکان</CardTitle>
+                        <CardDescription className="text-white/80">بینینی فرۆشتن، کڕین، خەرجی، و قازانج بەپێی ماوەی دیاریکراو.</CardDescription>
                     </div>
                 </div>
                  <div className="flex flex-col sm:flex-row items-center justify-end gap-4 mt-4" dir="rtl">
@@ -869,7 +869,7 @@ export default function DashboardPage() {
 
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
-            <PageHeader title="داشبۆرد" description="بەخێربێیتەوە بۆ سیستەمی بەڕێوەبردنی کارەکەت.">
+            <PageHeader title="داشبۆردی سەرەکی" description="پوختەی کارەکانت لێرە ببینە.">
                 <div className="flex items-center gap-2">
                     <Input type="date" value={dateRange.from} onChange={(e) => setDateRange(prev => ({...prev, from: e.target.value }))} placeholder="YYYY-MM-DD" className="w-40"/>
                     <span className="text-muted-foreground">-</span>

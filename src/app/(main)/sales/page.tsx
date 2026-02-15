@@ -73,7 +73,7 @@ function SalesFormDialog({ formId, onSave, trigger }: { formId: string | null, o
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>{trigger}</DialogTrigger>
-            <DialogContent className="sm:max-w-4xl">
+            <DialogContent className="sm:max-w-4xl" dir="rtl">
                 <DialogHeader>
                     <div className="text-center p-4">
                         {renderHeader()}
@@ -206,7 +206,7 @@ function SalesList() {
 
     return (
         <>
-            <PageHeader title="فرۆشەکان" description="بەڕێوەبردن و بەدواداچوونی هەموو کارەکانی فرۆشتنت.">
+            <PageHeader title="بەڕێوەبردنی فرۆشتن" description="تۆماری فۆڕمەکانی فرۆشتن لێرە ببینە و زیاد بکە.">
                  <SalesFormDialog
                     formId={null}
                     onSave={handleFormSave}
@@ -220,7 +220,7 @@ function SalesList() {
             </PageHeader>
             <Card>
                 <CardHeader>
-                    <CardTitle>فرۆشەکانی ئەم دواییە</CardTitle>
+                    <CardTitle>لیستی فرۆشتنەکان</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -299,7 +299,7 @@ function SalesList() {
                                                 </AlertDialogTrigger>
                                                 <AlertDialogContent dir="rtl">
                                                     <AlertDialogHeader>
-                                                        <AlertDialogTitle>دڵنیایت لە سڕینەوە؟</AlertDialogTitle>
+                                                        <AlertDialogTitle>دڵنیایت لە سڕینەوەی ئەم فۆڕمە؟</AlertDialogTitle>
                                                         <AlertDialogDescription>
                                                             ئەم کردارە پاشگەزبوونەوەی نییە. کاڵاکان دەگەڕێنرێنەوە بۆ کۆگا و فۆڕمەکە بە هەمیشەیی دەسڕێتەوە.
                                                         </AlertDialogDescription>

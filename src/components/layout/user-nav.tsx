@@ -26,6 +26,12 @@ type UserProfile = {
   username?: string;
 };
 
+const roleTranslations: Record<string, string> = {
+    'Admin': 'بەڕێوەبەر',
+    'Data Manager': 'داتا مانجەر',
+    'Salesman': 'فرۆشیار'
+}
+
 export function UserNav() {
   const auth = useAuth();
   const { user } = useUser();
@@ -58,7 +64,7 @@ export function UserNav() {
           <AvatarFallback>{user ? getInitials(user.email || '') : '...'}</AvatarFallback>
         </Avatar>
         <div className="grid gap-0.5">
-          <p className="text-sm font-medium leading-none">{userProfile?.role || 'بەکارهێنەر'}</p>
+          <p className="text-sm font-medium leading-none">{userProfile?.role ? roleTranslations[userProfile.role] : 'بەکارهێنەر'}</p>
           <p className="text-xs text-muted-foreground">{user?.email}</p>
         </div>
         <Button variant="ghost" size="icon" className="mr-auto" onClick={handleSignOut}>

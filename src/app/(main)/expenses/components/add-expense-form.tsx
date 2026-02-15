@@ -142,7 +142,7 @@ export function AddExpenseForm({ onExpenseAdded }: { onExpenseAdded?: () => void
                     <Select onValueChange={field.onChange} value={field.value} dir="rtl">
                         <FormControl>
                             <SelectTrigger>
-                                <SelectValue placeholder="پۆلێک هەڵبژێرە" />
+                                <SelectValue placeholder="پۆلێک هەڵبژێرە..." />
                             </SelectTrigger>
                         </FormControl>
                         <SelectContent>

@@ -9,7 +9,7 @@ import { Separator } from '../ui/separator';
 
 const navLinks = [
   { href: '/dashboard', label: 'داشبۆرد', icon: Home },
-  { href: '/sales', label: 'فرۆشەکان', icon: ShoppingCart },
+  { href: '/sales', label: 'فرۆشتنەکان', icon: ShoppingCart },
   { href: '/purchases', label: 'کڕینەکان', icon: Package },
   { href: '/stock', label: 'کۆگا', icon: Archive },
   { href: '/customers', label: 'کڕیارەکان', icon: Users },

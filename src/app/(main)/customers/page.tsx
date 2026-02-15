@@ -25,10 +25,10 @@ function AddCustomerDialog() {
             <DialogTrigger asChild>
                 <Button>
                     <PlusCircle />
-                    زیادکردنی کڕیar
+                    زیادکردنی کڕیار
                 </Button>
             </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-md" dir="rtl">
                 <DialogHeader>
                     <DialogTitle>کڕیاری نوێ زیاد بکە</DialogTitle>
                     <DialogDescription>
@@ -95,7 +95,7 @@ function CustomersList() {
 export default function CustomersPage() {
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
-            <PageHeader title="کڕیارەکان" description="لیستی کڕیارەکان و مێژوویان بەڕێوەببە.">
+            <PageHeader title="بەڕێوەبردنی کڕیارەکان" description="لیستی کڕیارەکانت لێرە ببینە و زیاد بکە.">
                 <AddCustomerDialog />
             </PageHeader>
             <CustomersList />

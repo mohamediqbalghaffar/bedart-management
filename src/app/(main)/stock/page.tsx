@@ -149,7 +149,7 @@ function StockList() {
                     <div className="relative w-full max-w-sm">
                         <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
-                            placeholder="گەڕان بۆ کاڵایەک..."
+                            placeholder="...گەڕان بەدوای کاڵا"
                             className="pr-10"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -236,7 +236,7 @@ function StockList() {
 const StockPageContent = () => {
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
-            <PageHeader title="بەڕێوەبردنی کۆگا" description="بەدواداچوون بۆ ئاستی کۆگا و نرخی کاڵاکان." />
+            <PageHeader title="بەڕێوەبردنی کۆگا" description="ئاستی کۆگا و زانیاری کاڵاکانت لێرە بەڕێوەببە." />
             <StockList />
         </div>
     );

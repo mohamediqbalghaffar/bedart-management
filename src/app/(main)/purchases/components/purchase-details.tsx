@@ -57,7 +57,7 @@ export function PurchaseDetails({ formId }: { formId: string }) {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" dir="rtl">
             <Card>
                 <CardHeader>
                     <CardTitle>زانیاری سەرەکی</CardTitle>
@@ -82,7 +82,7 @@ export function PurchaseDetails({ formId }: { formId: string }) {
 
             <Card>
                  <CardHeader>
-                    <CardTitle>کاڵا کڕاوەکان</CardTitle>
+                    <CardTitle>لیستی کاڵا کڕاوەکان</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Table>

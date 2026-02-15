@@ -65,7 +65,7 @@ function GeneralSettings() {
         <Card>
             <CardHeader>
                 <CardTitle>زانیاری گشتی کۆمپانیا</CardTitle>
-                <CardDescription>ئەم زانیاریانە لەوانەیە لەسەر پسوولە و ڕاپۆرتەکان بەکاربێن.</CardDescription>
+                <CardDescription>ئەم زانیاریانە لەسەر پسوولە و ڕاپۆرتەکان بەکاردەهێنرێن.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -221,7 +221,8 @@ const COLLECTIONS_TO_MANAGE = [
     'buying_forms', 
     'expenses', 
     'products', 
-    'suppliers', 
+    'suppliers',
+    'customers',
     'users',
     'product_categories',
     'expense_categories',
@@ -332,13 +333,13 @@ function DataManagement() {
         <div className="space-y-8">
             <Card>
                 <CardHeader>
-                    <CardTitle>پاشەکەوتکردن و هەناردەکردن</CardTitle>
-                    <CardDescription>هەموو داتاکانی سیستەم وەک یەک فایل پاشەکەوت بکە.</CardDescription>
+                    <CardTitle>بەڕێوەبردنی داتا</CardTitle>
+                    <CardDescription>هەناردەکردنی هەموو داتاکان وەک یەک فایل.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Button variant="outline" onClick={exportAllData} disabled={isExporting}>
                         {isExporting ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <FileDown className="ml-2 h-4 w-4" />}
-                        هەناردەکردنی هەموو داتا
+                        هەناردەکردنی هەموو داتاکان
                     </Button>
                 </CardContent>
             </Card>
@@ -393,7 +394,7 @@ function DataManagement() {
 export default function SettingsPage() {
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
-            <PageHeader title="ڕێکخستنەکان" description="بەڕێوەبردنی بەکارهێنەران، پۆلەکان، و داتاکانی سیستەم." />
+            <PageHeader title="ڕێکخستنەکانی سیستەم" description="بەڕێوەبردنی بەکارهێنەران، پۆلەکان، و داتاکان." />
             
             <Tabs defaultValue="general" className="w-full">
                 <TabsList className="grid w-full grid-cols-4">

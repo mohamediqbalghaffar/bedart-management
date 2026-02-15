@@ -91,11 +91,11 @@ export default function LoginPage() {
                 </div>
             </div>
           <CardTitle>BedArt Group</CardTitle>
-          <CardDescription>زانیارییەکانت بنووسە بۆ چوونەژوورەوە یان خۆتۆمارکردن</CardDescription>
+          <CardDescription>بۆ چوونەژوورەوە یان دروستکردنی هەژمار، زانیارییەکانت بنووسە.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" dir="rtl">
               <FormField
                 control={form.control}
                 name="email"
@@ -149,7 +149,7 @@ export default function LoginPage() {
           </Form>
         </CardContent>
         <CardFooter className="text-center text-xs text-muted-foreground">
-            <p>ئەم سیستەمە سنووردارە.</p>
+            <p>بەکارهێنان تەنها بۆ کارمەندانە.</p>
         </CardFooter>
       </Card>
     </div>

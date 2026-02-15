@@ -28,7 +28,7 @@ function AddSupplierDialog() {
                     زیادکردنی دابینکەر
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md" dir="rtl">
                 <DialogHeader>
                     <DialogTitle>دابینکەری نوێ زیاد بکە</DialogTitle>
                     <DialogDescription>
@@ -92,7 +92,7 @@ function SuppliersList() {
 export default function SuppliersPage() {
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
-            <PageHeader title="دابینکەران" description="لیستی دابینکەران و داتاکانیان بەڕێوەببە.">
+            <PageHeader title="بەڕێوەبردنی دابینکەران" description="لیستی دابینکەرەکانت لێرە ببینە و زیاد بکە.">
                 <AddSupplierDialog />
             </PageHeader>
             <SuppliersList />

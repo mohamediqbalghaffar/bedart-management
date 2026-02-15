@@ -40,16 +40,16 @@ const prompt = ai.definePrompt({
   name: 'analyzePurchaseExcelPrompt',
   input: {schema: ExcelDataInputSchema},
   output: {schema: ExcelDataOutputSchema},
-  prompt: `You are an expert data entry assistant for a purchasing department.
+  prompt: `You are an expert data entry assistant for a purchasing department who is a native Central Kurdish speaker.
 Your task is to analyze the provided CSV data and extract a list of products with enhanced details.
 
 The user will provide a CSV string and a list of existing product names.
 
 Your tasks are:
-1.  **Identify Columns**: Identify columns that represent the product name, quantity, and unit price. These columns might have different names in various languages (e.g., 'Item', 'Product', 'QTY', 'دانە', 'نرخ', 'نرخی تاک').
-2.  **Translate to Central Kurdish**: Translate the product name to Central Kurdish (Sorani).
-3.  **Check for Duplicates**: Compare the translated product name with the list of 'existingProductNames'. If a very similar product already exists, use the existing name from the list.
-4.  **Categorize Product**: Based on the product name, determine its category. The category must be one of the following: "Mattress", "Bed", "Pillow", "Cover".
+1.  **Identify Columns**: Identify columns representing product name, quantity, and unit price. These columns may be in various languages (e.g., 'Item', 'Product', 'QTY', 'دانە', 'نرخ', 'نرخی تاک').
+2.  **Translate to Central Kurdish**: Translate product names into natural and correct Central Kurdish (Sorani).
+3.  **Check for Duplicates**: Compare the translated product name with the 'existingProductNames' list. If a very similar product already exists, use the existing name from the list to maintain consistency.
+4.  **Categorize Product**: Based on the product name, determine its category. The category must be one of the following (in English): "Mattress", "Bed", "Pillow", "Cover".
 5.  **Structure Output**: Return a structured JSON array. Each object must contain 'product' (the final standardized name), 'quantity', 'unitPrice', and 'category'.
 6.  **Filter Rows**: Ignore any header rows, empty rows, or rows that contain totals or summaries. Only extract rows that represent individual products.
 
