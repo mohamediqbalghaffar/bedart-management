@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Loader2, FileSpreadsheet, Trash2, Edit, ArrowUpDown } from "lucide-react";
+import { PlusCircle, Loader2, FileSpreadsheet, Trash2, Edit, ArrowUpDown, Search } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -14,13 +14,18 @@ import { WithId } from '@/firebase/firestore/use-collection';
 import { SalesDetails } from './components/sales-details';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PaymentStatus, PaymentType } from '@/lib/types';
+
 
 // Matches the structure in backend.json for SellingForm
 type SellingFormType = {
     customerName: string;
     issueDate: string;
     totalPrice: number;
-    paymentStatus: 'Unpaid' | 'Partially Paid' | 'Fully Paid';
+    paymentStatus: PaymentStatus;
+    paymentType: PaymentType;
     formNumber: string;
 };
 
@@ -35,6 +40,21 @@ type CompanyInfo = {
     name: string;
     contact: string;
 }
+
+const paymentStatusOptions: { value: PaymentStatus | 'all', label: string }[] = [
+    { value: 'all', label: 'هەموو دۆخەکان'},
+    { value: 'Fully Paid', label: 'هەمووی دراوە'},
+    { value: 'Partially Paid', label: 'بەشێکی دراوە'},
+    { value: 'Unpaid', label: 'نەدراوە'},
+];
+
+const paymentTypeOptions: { value: PaymentType | 'all', label: string }[] = [
+    { value: 'all', label: 'هەموو جۆرەکان'},
+    { value: 'Direct Payment', label: 'پارەی ڕاستەوخۆ'},
+    { value: 'After Delivery', label: 'دوای گەیاندن'},
+    { value: 'Installments', label: 'قیست'},
+    { value: 'Pre-order', label: 'داواکاری پێشوەختە'},
+];
 
 function SalesFormDialog({ formId, onSave, trigger }: { formId: string | null, onSave: () => void, trigger: React.ReactNode }) {
     const [open, setOpen] = useState(false);
@@ -55,7 +75,7 @@ function SalesFormDialog({ formId, onSave, trigger }: { formId: string | null, o
         }
 
         const title = companyInfo?.name || 'BedArt Group';
-        const contact = companyInfo?.contact || 'ته ختی نوستن . دوشک . پشتی\n07708171818 - 07700771818';
+        const contact = (companyInfo?.contact || 'ته ختی نوستن . دوشک . پشتی\n07708171818 - 07700771818').replace(/\s/g, '');
         const contactParts = contact.split('\n');
 
         return (
@@ -93,10 +113,12 @@ function SalesList() {
     const [editingFormId, setEditingFormId] = useState<string | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
     const [sortConfig, setSortConfig] = useState<{ key: keyof SellingFormType; direction: 'ascending' | 'descending' } | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState<PaymentStatus | 'all'>('all');
+    const [typeFilter, setTypeFilter] = useState<PaymentType | 'all'>('all');
 
     const sellingFormsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        // The refreshKey is added to re-trigger the query when a sale is added/edited
         return collection(firestore, 'selling_forms');
     }, [firestore, refreshKey]);
 
@@ -105,6 +127,18 @@ function SalesList() {
     const sortedSales = useMemo(() => {
         if (!sales) return [];
         let sortableItems = [...sales];
+
+        // Filtering
+        sortableItems = sortableItems.filter(sale => {
+            const searchMatch = searchTerm ? 
+                sale.customerName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                sale.formNumber.includes(searchTerm) : true;
+            const statusMatch = statusFilter !== 'all' ? sale.paymentStatus === statusFilter : true;
+            const typeMatch = typeFilter !== 'all' ? sale.paymentType === typeFilter : true;
+            return searchMatch && statusMatch && typeMatch;
+        });
+
+        // Sorting
         if (sortConfig !== null) {
             sortableItems.sort((a, b) => {
                 const aValue = a[sortConfig.key];
@@ -113,12 +147,10 @@ function SalesList() {
                 if (aValue === null || aValue === undefined) return 1;
                 if (bValue === null || bValue === undefined) return -1;
                 
-                // Special handling for formNumber as it's a string that should be numeric
                 if (sortConfig.key === 'formNumber') {
                     const numA = parseInt(String(aValue), 10);
                     const numB = parseInt(String(bValue), 10);
                     if (isNaN(numA) || isNaN(numB)) {
-                        // fallback to string compare if parsing fails
                          if (String(aValue) < String(bValue)) return sortConfig.direction === 'ascending' ? -1 : 1;
                          if (String(aValue) > String(bValue)) return sortConfig.direction === 'ascending' ? 1 : -1;
                          return 0;
@@ -138,7 +170,7 @@ function SalesList() {
             });
         }
         return sortableItems;
-    }, [sales, sortConfig]);
+    }, [sales, sortConfig, searchTerm, statusFilter, typeFilter]);
 
     const requestSort = (key: keyof SellingFormType) => {
         let direction: 'ascending' | 'descending' = 'ascending';
@@ -157,7 +189,7 @@ function SalesList() {
 
     const handleFormSave = () => {
         setEditingFormId(null);
-        setRefreshKey(prev => prev + 1); // Trigger a re-fetch
+        setRefreshKey(prev => prev + 1);
     };
 
     const handleDelete = async (formId: string) => {
@@ -221,6 +253,31 @@ function SalesList() {
             <Card>
                 <CardHeader>
                     <CardTitle>لیستی فرۆشتنەکان</CardTitle>
+                    <div className="flex items-center justify-between gap-4 mt-4">
+                        <div className="relative w-full max-w-sm">
+                            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="گەڕان بەپێی ناوی کڕیار یان ژمارەی فۆڕم..."
+                                className="pr-10"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex gap-2">
+                             <Select dir="rtl" value={statusFilter} onValueChange={(value) => setStatusFilter(value as any)}>
+                                <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    {paymentStatusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                            <Select dir="rtl" value={typeFilter} onValueChange={(value) => setTypeFilter(value as any)}>
+                                <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    {paymentTypeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -263,7 +320,7 @@ function SalesList() {
                                 </TableRow>
                             ) : !sortedSales || sortedSales.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">هیچ فرۆشێک تۆمار نەکراوە.</TableCell>
+                                    <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">هیچ فرۆشێک بەم پێوەرانە نەدۆزرایەوە.</TableCell>
                                 </TableRow>
                             ) : (
                                 sortedSales.map((sale) => (
@@ -275,9 +332,9 @@ function SalesList() {
                                     <TableCell className="text-center">
                                         <Badge 
                                             variant={sale.paymentStatus === 'Fully Paid' ? 'default' : sale.paymentStatus === 'Unpaid' ? 'destructive' : 'secondary'} 
-                                            className={sale.paymentStatus === 'Fully Paid' ? 'bg-accent text-accent-foreground' : ''}
+                                            className={sale.paymentStatus === 'Fully Paid' ? 'bg-green-600 text-white' : ''}
                                         >
-                                            {sale.paymentStatus === 'Fully Paid' ? 'هەمووی دراوە' : sale.paymentStatus === 'Partially Paid' ? 'بەشێکی دراوە' : 'نەدراوە'}
+                                            {paymentStatusOptions.find(o => o.value === sale.paymentStatus)?.label || sale.paymentStatus}
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-center">
@@ -307,7 +364,7 @@ function SalesList() {
                                                     <AlertDialogFooter>
                                                         <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
                                                         <AlertDialogAction onClick={() => handleDelete(sale.id)} className="bg-destructive hover:bg-destructive/90">
-                                                            بەڵێ، بسڕەوە
+                                                            بەڵێ، بیسڕەوە
                                                         </AlertDialogAction>
                                                     </AlertDialogFooter>
                                                 </AlertDialogContent>

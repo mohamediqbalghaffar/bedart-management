@@ -21,6 +21,7 @@ import { CustomerSelectorDialog } from "../../components/customer-selector-dialo
 import { Loader2 } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { WithId } from "@/firebase/firestore/use-collection";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 type Customer = {
   customerName: string;
@@ -117,7 +118,7 @@ function SalesFormItemRow({
             <TableCell className="align-top">
                 <FormField control={form.control} name={`items.${index}.unitPrice`} render={({ field }) => (<FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
             </TableCell>
-             <TableCell className="align-top pt-5 font-semibold">
+             <TableCell className="align-top pt-5 font-semibold text-left">
                 {currencyFormatter.format(watchedItem?.quantity * watchedItem?.unitPrice || 0)}
             </TableCell>
             <TableCell className="align-top">
@@ -171,6 +172,23 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
           }
       }
   }, [debouncedCustomerName, customers, form]);
+
+  const paymentType = form.watch('paymentType');
+  const discountType = form.watch('discountType');
+
+   useEffect(() => {
+        if (paymentType === 'Direct Payment') {
+            form.setValue('paymentStatus', 'Fully Paid');
+        } else if (paymentType === 'After Delivery') {
+            form.setValue('paymentStatus', 'Unpaid');
+        }
+    }, [paymentType, form]);
+
+    useEffect(() => {
+        if (!discountType) {
+            form.setValue('discountValue', 0);
+        }
+    }, [discountType, form]);
 
 
   useEffect(() => {
@@ -236,7 +254,6 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
   const watchedItems = form.watch('items');
   const deliveryCost = form.watch('deliveryCost');
   const watchedPayments = form.watch('payments');
-  const discountType = form.watch('discountType');
   const discountValue = form.watch('discountValue');
   const paymentStatus = form.watch('paymentStatus');
   
@@ -271,30 +288,27 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
     const sellingFormRef = formId ? doc(firestore, "selling_forms", formId) : doc(collection(firestore, "selling_forms"));
     const sellingFormId = sellingFormRef.id;
 
-    // --- Pre-transaction reads for deletions ---
     const productRefsToDelete: DocumentReference[] = [];
     const paymentRefsToDelete: DocumentReference[] = [];
 
     if (formId) {
-      try {
-        const existingProductsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/selling_form_products`));
-        existingProductsSnap.forEach(doc => productRefsToDelete.push(doc.ref));
+        try {
+            const existingProductsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/selling_form_products`));
+            existingProductsSnap.forEach(doc => productRefsToDelete.push(doc.ref));
 
-        const existingPaymentsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/payments`));
-        existingPaymentsSnap.forEach(doc => paymentRefsToDelete.push(doc.ref));
-      } catch (error) {
-        console.error("Error fetching old items for deletion:", error);
-        toast({ variant: 'destructive', title: 'هەڵە لە خوێندنەوەی داتای کۆن', description: "نەتوانرا داتای پێشوو بسڕدرێتەوە." });
-        return;
-      }
+            const existingPaymentsSnap = await getDocs(collection(firestore, `selling_forms/${formId}/payments`));
+            existingPaymentsSnap.forEach(doc => paymentRefsToDelete.push(doc.ref));
+        } catch (error) {
+            console.error("Error fetching old items for deletion:", error);
+            toast({ variant: 'destructive', title: 'هەڵە لە خوێندنەوەی داتای کۆن', description: "نەتوانرا داتای پێشوو بسڕدرێتەوە." });
+            return;
+        }
     }
-    // --- End pre-transaction reads ---
-
+    
     try {
       await runTransaction(firestore, async (transaction) => {
         const productRefsToRead = new Map<string, DocumentReference>();
 
-        // Phase 1: Read all relevant documents FIRST.
         if (formId) {
           originalItems.forEach((item) => {
             if (item.productId) productRefsToRead.set(item.productId, doc(firestore, 'products', item.productId));
@@ -313,7 +327,6 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
         );
         const productDocs = new Map(productSnaps.map(snap => [snap.id, snap]));
 
-        // Phase 2: Perform all calculations in memory.
         const stockChanges = new Map<string, { change: number, resolvedId: string | null }>();
 
         if (formId) {
@@ -353,7 +366,6 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
           (item as any).resolvedProductId = deductedFrom;
         }
 
-        // Phase 3: Perform all writes.
         for (const [productId, { change }] of stockChanges.entries()) {
           const productRef = productRefsToRead.get(productId)!;
           const productDoc = productDocs.get(productId);
@@ -377,7 +389,6 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
         if (!sellingFormData.discountType) delete sellingFormData.discountType;
         transaction.set(sellingFormRef, sellingFormData, { merge: true });
 
-        // Delete old items and payments using pre-fetched refs
         productRefsToDelete.forEach(ref => transaction.delete(ref));
         paymentRefsToDelete.forEach(ref => transaction.delete(ref));
 
@@ -426,286 +437,286 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" dir="rtl">
-        <div className="flex justify-between items-start p-1">
-            <FormField
-              control={form.control}
-              name="formNumber"
-              render={({ field }) => (
-                <FormItem className="flex items-center gap-2">
-                  <FormLabel className="font-bold text-lg mt-2">No.</FormLabel>
-                  <FormControl><Input className="w-24 font-bold text-lg" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
-                control={form.control}
-                name="issueDate"
-                render={({ field }) => (
-                    <FormItem className="flex items-center gap-2">
-                        <FormLabel className="mt-2">بەروار:</FormLabel>
-                        <FormControl>
-                            <Input placeholder="YYYY-MM-DD" {...field} className="w-[180px]" />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-        </div>
-
-        <div className="space-y-2 p-1 border-t pt-4">
-          <div className="flex items-center gap-4">
-            <FormField
-              control={form.control}
-              name="customerName"
-              render={({ field }) => (
-                <FormItem className="flex-1">
-                  <FormLabel>بەڕێز:</FormLabel>
-                    <div className="flex gap-2">
-                        <FormControl>
-                            <Input {...field} />
-                        </FormControl>
-                        <Dialog open={isCustomerDialogOpen} onOpenChange={setIsCustomerDialogOpen}>
-                            <DialogTrigger asChild>
-                                <Button variant="outline" size="icon"><List className="h-4 w-4" /></Button>
-                            </DialogTrigger>
-                            <DialogContent dir="rtl" className="sm:max-w-3xl">
-                                <DialogHeader>
-                                    <DialogTitle>لیستی کڕیارەکان</DialogTitle>
-                                </DialogHeader>
-                                <CustomerSelectorDialog onCustomerSelect={(customer) => {
-                                    form.setValue('customerName', customer.customerName);
-                                    form.setValue('customerPhone', customer.customerPhoneNumber);
-                                    form.setValue('customerAddress', customer.customerAddress);
-                                    setIsCustomerDialogOpen(false);
-                                }} />
-                            </DialogContent>
-                        </Dialog>
-                    </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField control={form.control} name="customerPhone" render={({ field }) => ( <FormItem className="flex-1 flex items-center gap-2"> <FormLabel>ژ. مۆبایل:</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-          </div>
-          <FormField control={form.control} name="customerAddress" render={({ field }) => ( <FormItem className="flex items-center gap-2"> <FormLabel>ناونیشان:</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
-        </div>
-        
-        <div className="relative border-t pt-6">
-            <Table>
-                <TableHeader>
-                    <TableRow className="bg-primary/90 hover:bg-primary">
-                        <TableHead className="w-[30%] text-primary-foreground text-center">بابەت</TableHead>
-                        <TableHead className="text-primary-foreground text-center">دانە</TableHead>
-                        <TableHead className="text-primary-foreground text-center">نرخی تاک</TableHead>
-                        <TableHead className="text-primary-foreground text-center">نرخی کۆ</TableHead>
-                        <TableHead></TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                     {fields.map((field, index) => (
-                        <SalesFormItemRow
-                            key={field.id}
-                            fieldId={field.id}
-                            form={form}
-                            index={index}
-                            remove={() => fields.length > 1 && remove(index)}
-                        />
-                    ))}
-                </TableBody>
-            </Table>
-            <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ product: "", quantity: 1, unitPrice: 0, category: 'Mattress' })}>
-                <PlusCircle className="ml-2 h-4 w-4" />
-                زیادکردنی کاڵا
-            </Button>
-        </div>
-
-        <div className="flex justify-between items-start gap-8 pt-6 border-t">
-            <div className="space-y-4 flex-1">
-                 <div className="space-y-2">
-                    <FormLabel>داشکاندن</FormLabel>
-                     <div className="flex gap-4 items-center">
-                        <FormField
-                            control={form.control}
-                            name="discountType"
-                            render={({ field }) => (
-                                <FormItem className="space-y-3">
-                                <FormControl>
-                                    <RadioGroup
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                    className="flex items-center space-x-2 space-x-reverse"
-                                    dir="rtl"
-                                    >
-                                    <FormItem className="flex items-center space-x-1 space-x-reverse">
-                                        <FormControl>
-                                            <RadioGroupItem value="percentage" />
-                                        </FormControl>
-                                        <FormLabel className="font-normal">%</FormLabel>
-                                    </FormItem>
-                                    <FormItem className="flex items-center space-x-1 space-x-reverse">
-                                        <FormControl>
-                                            <RadioGroupItem value="cash" />
-                                        </FormControl>
-                                        <FormLabel className="font-normal">بڕی دیاریکراو</FormLabel>
-                                    </FormItem>
-                                    </RadioGroup>
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                         <FormField
-                            control={form.control}
-                            name="discountValue"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormControl>
-                                        <Input type="number" step="0.01" {...field} disabled={!discountType} className="w-32" />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </div>
-                </div>
+        <Card>
+            <CardHeader className="flex flex-row justify-between items-start p-4">
                  <FormField
                     control={form.control}
-                    name="deliveryCost"
+                    name="formNumber"
                     render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>تێچووی گەیاندن</FormLabel>
+                        <FormItem className="flex items-center gap-2">
+                        <FormLabel className="font-bold text-lg mt-2">No.</FormLabel>
+                        <FormControl><Input className="w-24 font-bold text-lg" {...field} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                 />
+                 <FormField
+                    control={form.control}
+                    name="issueDate"
+                    render={({ field }) => (
+                        <FormItem className="flex items-center gap-2">
+                            <FormLabel className="mt-2">بەروار:</FormLabel>
                             <FormControl>
-                                <Input type="number" step="0.01" {...field} className="w-32" />
+                                <Input placeholder="YYYY-MM-DD" {...field} className="w-[180px]" />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
                 />
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                  <FormField
+            </CardHeader>
+        </Card>
+
+        <Card>
+            <CardHeader><CardTitle>زانیاری کڕیار</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+                 <div className="flex items-start gap-4">
+                    <FormField
                     control={form.control}
-                    name="paymentType"
+                    name="customerName"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>جۆری پارەدان</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value} dir="rtl">
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Direct Payment">پارەی ڕاستەوخۆ</SelectItem>
-                            <SelectItem value="After Delivery">دوای گەیاندن</SelectItem>
-                            <SelectItem value="Installments">قیست</SelectItem>
-                            <SelectItem value="Pre-order">داواکاری پێشوەختە</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormItem className="flex-1">
+                        <FormLabel>بەڕێز</FormLabel>
+                            <div className="flex gap-2">
+                                <FormControl>
+                                    <Input {...field} />
+                                </FormControl>
+                                <Dialog open={isCustomerDialogOpen} onOpenChange={setIsCustomerDialogOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button variant="outline" size="icon"><List className="h-4 w-4" /></Button>
+                                    </DialogTrigger>
+                                    <DialogContent dir="rtl" className="sm:max-w-3xl">
+                                        <DialogHeader>
+                                            <DialogTitle>لیستی کڕیارەکان</DialogTitle>
+                                        </DialogHeader>
+                                        <CustomerSelectorDialog onCustomerSelect={(customer) => {
+                                            form.setValue('customerName', customer.customerName);
+                                            form.setValue('customerPhone', customer.customerPhoneNumber);
+                                            form.setValue('customerAddress', customer.customerAddress);
+                                            setIsCustomerDialogOpen(false);
+                                        }} />
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
                         <FormMessage />
-                      </FormItem>
+                        </FormItem>
                     )}
-                  />
+                    />
+                    <FormField control={form.control} name="customerPhone" render={({ field }) => ( <FormItem className="flex-1"> <FormLabel>ژ. مۆبایل</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                </div>
+                <FormField control={form.control} name="customerAddress" render={({ field }) => ( <FormItem> <FormLabel>ناونیشان</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+            </CardContent>
+        </Card>
+        
+        <Card>
+            <CardHeader><CardTitle>کاڵا فرۆشراوەکان</CardTitle></CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-[30%] text-right">بابەت</TableHead>
+                            <TableHead className="text-center">دانە</TableHead>
+                            <TableHead className="text-center">نرخی تاک</TableHead>
+                            <TableHead className="text-left">نرخی کۆ</TableHead>
+                            <TableHead></TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {fields.map((field, index) => (
+                            <SalesFormItemRow
+                                key={field.id}
+                                fieldId={field.id}
+                                form={form}
+                                index={index}
+                                remove={() => fields.length > 1 && remove(index)}
+                            />
+                        ))}
+                    </TableBody>
+                </Table>
+                <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ product: "", quantity: 1, unitPrice: 0, category: 'Mattress' })}>
+                    <PlusCircle className="ml-2 h-4 w-4" />
+                    زیادکردنی کاڵا
+                </Button>
+            </CardContent>
+        </Card>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+                <CardHeader><CardTitle>دارایی</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                     <div className="space-y-2">
+                        <FormLabel>داشکاندن</FormLabel>
+                        <div className="flex gap-4 items-center">
+                            <FormField
+                                control={form.control}
+                                name="discountType"
+                                render={({ field }) => (
+                                    <FormItem className="space-y-3">
+                                    <FormControl>
+                                        <RadioGroup
+                                        onValueChange={field.onChange}
+                                        value={field.value}
+                                        className="flex items-center space-x-2 space-x-reverse"
+                                        dir="rtl"
+                                        >
+                                        <FormItem className="flex items-center space-x-1 space-x-reverse">
+                                            <FormControl><RadioGroupItem value="percentage" /></FormControl>
+                                            <FormLabel className="font-normal">%</FormLabel>
+                                        </FormItem>
+                                        <FormItem className="flex items-center space-x-1 space-x-reverse">
+                                            <FormControl><RadioGroupItem value="cash" /></FormControl>
+                                            <FormLabel className="font-normal">بڕی دیاریکراو</FormLabel>
+                                        </FormItem>
+                                        </RadioGroup>
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="discountValue"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormControl>
+                                            <Input type="number" step="0.01" {...field} disabled={!discountType} className="w-32" />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                    </div>
+                     <FormField
+                        control={form.control}
+                        name="deliveryCost"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>تێچووی گەیاندن</FormLabel>
+                                <FormControl>
+                                    <Input type="number" step="0.01" {...field} className="w-32" />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <div className="grid grid-cols-2 gap-4 items-end">
                     <FormField
                         control={form.control}
-                        name="paymentStatus"
+                        name="paymentType"
                         render={({ field }) => (
                         <FormItem>
-                            <FormLabel>دۆخی پارەدان</FormLabel>
+                            <FormLabel>جۆری پارەدان</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value} dir="rtl">
-                            <FormControl>
-                                <SelectTrigger>
-                                <SelectValue/>
-                                </SelectTrigger>
-                            </FormControl>
+                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                             <SelectContent>
-                                <SelectItem value="Fully Paid">هەمووی دراوە</SelectItem>
-                                <SelectItem value="Partially Paid">بەشێکی دراوە</SelectItem>
-                                <SelectItem value="Unpaid">نەدراوە</SelectItem>
+                                <SelectItem value="Direct Payment">پارەی ڕاستەوخۆ</SelectItem>
+                                <SelectItem value="After Delivery">دوای گەیاندن</SelectItem>
+                                <SelectItem value="Installments">قیست</SelectItem>
+                                <SelectItem value="Pre-order">داواکاری پێشوەختە</SelectItem>
                             </SelectContent>
                             </Select>
                             <FormMessage />
                         </FormItem>
                         )}
                     />
-                </div>
-                <div className="space-y-2">
-                    <FormLabel>واژۆ</FormLabel>
-                    <div className="w-48 h-16 border-b-2 border-dashed"></div>
-                </div>
-            </div>
-            <div className="space-y-2 text-left min-w-[280px]">
-                <div className="flex items-center justify-between gap-4 p-2 rounded-md">
-                    <span className="text-muted-foreground">:کۆی کاڵاکان</span>
-                    <span className="font-semibold">{currencyFormatter.format(subTotal)}</span>
-                </div>
-                <div className="flex items-center justify-between gap-4 p-2 rounded-md">
-                    <span className="text-muted-foreground">:داشکاندن</span>
-                    <span className="font-semibold text-destructive">-{currencyFormatter.format(discountAmount)}</span>
-                </div>
-                 <div className="flex items-center justify-between gap-4 p-2 rounded-md">
-                    <span className="text-muted-foreground">:تێچووی گەیاندن</span>
-                    <span className="font-semibold">{currencyFormatter.format(deliveryCost || 0)}</span>
-                </div>
-                 <div className="flex items-center justify-between gap-4 p-2 rounded-md bg-secondary/80">
-                    <span className="font-bold">:کۆی گشتی</span>
-                    <span className="font-bold text-lg">{currencyFormatter.format(totalAmount)}</span>
-                </div>
-                 {form.watch('paymentType') === 'Installments' && (
-                    <>
-                        <div className="flex items-center justify-between gap-4 p-2 rounded-md">
-                            <span className="text-muted-foreground">:دراوە</span>
-                            <span className="font-semibold text-accent">{currencyFormatter.format(totalPaid)}</span>
-                        </div>
-                        <div className="flex items-center justify-between gap-4 p-2 rounded-md bg-destructive/10 text-destructive">
-                            <span className="">:ماوە</span>
-                            <span className="font-bold">{currencyFormatter.format(remainingBalance)}</span>
-                        </div>
-                    </>
-                 )}
-            </div>
+                        <FormField
+                            control={form.control}
+                            name="paymentStatus"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>دۆخی پارەدان</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value} dir="rtl" disabled={paymentType === 'Direct Payment' || paymentType === 'After Delivery'}>
+                                <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    <SelectItem value="Fully Paid">هەمووی دراوە</SelectItem>
+                                    <SelectItem value="Partially Paid">بەشێکی دراوە</SelectItem>
+                                    <SelectItem value="Unpaid">نەدراوە</SelectItem>
+                                </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                    </div>
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader><CardTitle>پوختە</CardTitle></CardHeader>
+                <CardContent className="space-y-2 text-left">
+                    <div className="flex items-center justify-between gap-4 p-2 rounded-md">
+                        <span className="text-muted-foreground">کۆی کاڵاکان:</span>
+                        <span className="font-semibold">{currencyFormatter.format(subTotal)}</span>
+                    </div>
+                     <div className="flex items-center justify-between gap-4 p-2 rounded-md">
+                        <span className="text-muted-foreground">داشکاندن:</span>
+                        <span className="font-semibold text-destructive">-{currencyFormatter.format(discountAmount)}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4 p-2 rounded-md">
+                        <span className="text-muted-foreground">تێچووی گەیاندن:</span>
+                        <span className="font-semibold">{currencyFormatter.format(Number(deliveryCost) || 0)}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4 p-2 rounded-md bg-secondary/80 text-lg">
+                        <span className="font-bold">کۆی گشتی:</span>
+                        <span className="font-bold">{currencyFormatter.format(totalAmount)}</span>
+                    </div>
+                    {paymentType === 'Installments' && (
+                        <>
+                            <div className="flex items-center justify-between gap-4 p-2 rounded-md">
+                                <span className="text-muted-foreground">دراوە:</span>
+                                <span className="font-semibold text-green-500">{currencyFormatter.format(totalPaid)}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-4 p-2 rounded-md bg-destructive/10 text-destructive text-lg">
+                                <span className="font-bold">ماوە:</span>
+                                <span className="font-bold">{currencyFormatter.format(remainingBalance)}</span>
+                            </div>
+                        </>
+                    )}
+                </CardContent>
+            </Card>
         </div>
         
-        {form.watch('paymentType') === 'Installments' && (
-             <div className="space-y-4 border-t pt-6">
-                <h3 className="text-lg font-medium">تۆماری قیستەکان</h3>
-                <Table>
-                    <TableHeader><TableRow><TableHead className="w-1/4 text-center">بەروار</TableHead><TableHead className="text-center">بڕ</TableHead><TableHead className="text-center">شێواز</TableHead><TableHead className="text-center">تێبینی</TableHead><TableHead></TableHead></TableRow></TableHeader>
-                    <TableBody>
-                        {paymentFields.map((field, index) => (
-                           <TableRow key={field.id}>
-                               <TableCell><FormField control={form.control} name={`payments.${index}.date`} render={({ field }) => ( <FormItem><FormControl><Input placeholder="YYYY-MM-DD" {...field} /></FormControl><FormMessage/></FormItem>)}/></TableCell>
-                               <TableCell><FormField control={form.control} name={`payments.${index}.amount`} render={({ field }) => ( <FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage/></FormItem>)}/></TableCell>
-                               <TableCell>
-                                <FormField
-                                  control={form.control}
-                                  name={`payments.${index}.method`}
-                                  render={({ field }) => (
-                                    <FormItem>
-                                        <Select onValueChange={field.onChange} value={field.value} dir="rtl">
-                                            <FormControl>
-                                                <SelectTrigger><SelectValue/></SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                            <SelectItem value="Cash">کاش</SelectItem>
-                                            <SelectItem value="Transfer">حەواڵە</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                      <FormMessage/>
-                                    </FormItem>
-                                  )}
-                                />
-                              </TableCell>
-                               <TableCell><FormField control={form.control} name={`payments.${index}.note`} render={({ field }) => ( <FormItem><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem>)}/></TableCell>
-                               <TableCell><Button variant="ghost" size="icon" onClick={() => removePayment(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
-                           </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-                <Button type="button" variant="outline" size="sm" onClick={() => appendPayment({ date: format(new Date(), 'yyyy-MM-dd'), amount: 0, method: 'Cash', note:'' })}>
-                    <PlusCircle className="ml-2 h-4 w-4" /> زیادکردنی قیست
-                </Button>
-            </div>
+        {paymentType === 'Installments' && (
+             <Card>
+                <CardHeader><CardTitle>تۆماری قیستەکان</CardTitle></CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader><TableRow><TableHead className="w-1/4 text-center">بەروار</TableHead><TableHead className="text-center">بڕ</TableHead><TableHead className="text-center">شێواز</TableHead><TableHead className="text-center">تێبینی</TableHead><TableHead></TableHead></TableRow></TableHeader>
+                        <TableBody>
+                            {paymentFields.map((field, index) => (
+                            <TableRow key={field.id}>
+                                <TableCell><FormField control={form.control} name={`payments.${index}.date`} render={({ field }) => ( <FormItem><FormControl><Input placeholder="YYYY-MM-DD" {...field} /></FormControl><FormMessage/></FormItem>)}/></TableCell>
+                                <TableCell><FormField control={form.control} name={`payments.${index}.amount`} render={({ field }) => ( <FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage/></FormItem>)}/></TableCell>
+                                <TableCell>
+                                    <FormField
+                                    control={form.control}
+                                    name={`payments.${index}.method`}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <Select onValueChange={field.onChange} value={field.value} dir="rtl">
+                                                <FormControl>
+                                                    <SelectTrigger><SelectValue/></SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                <SelectItem value="Cash">کاش</SelectItem>
+                                                <SelectItem value="Transfer">حەواڵە</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        <FormMessage/>
+                                        </FormItem>
+                                    )}
+                                    />
+                                </TableCell>
+                                <TableCell><FormField control={form.control} name={`payments.${index}.note`} render={({ field }) => ( <FormItem><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem>)}/></TableCell>
+                                <TableCell><Button variant="ghost" size="icon" onClick={() => removePayment(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
+                            </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                    <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => appendPayment({ date: format(new Date(), 'yyyy-MM-dd'), amount: 0, method: 'Cash', note:'' })}>
+                        <PlusCircle className="ml-2 h-4 w-4" /> زیادکردنی قیست
+                    </Button>
+                </CardContent>
+             </Card>
         )}
 
         <div className="flex justify-end pt-6 border-t">
