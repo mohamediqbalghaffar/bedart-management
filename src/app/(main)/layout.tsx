@@ -33,7 +33,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       }
   }, [userProfile, pathname, router]);
 
-  const isLoading = isUserLoading || isProfileLoading;
+  // The primary loading state should be the initial user auth check.
+  // Profile loading is secondary and the UI can handle a null profile.
+  const isLoading = isUserLoading || (user && isProfileLoading);
 
   if (isLoading) {
     return (
@@ -43,7 +45,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     );
   }
   
-  if (!user || !userProfile) {
+  // If after loading, there is still no user, something is wrong.
+  // The useEffect above should handle redirection, but this is a fallback.
+  if (!user) {
      return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
