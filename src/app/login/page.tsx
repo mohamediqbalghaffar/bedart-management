@@ -47,6 +47,8 @@ export default function LoginPage() {
     const email = data.role === 'admin' ? 'admin@bedart.group' : 'salesman@bedart.group';
     const password = data.password;
 
+    form.clearErrors('root');
+
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const loggedInUser = userCredential.user;
@@ -61,23 +63,20 @@ export default function LoginPage() {
           username: loggedInUser.email,
           role: userRole,
         });
-
-        // If the user is an admin, also create a record in the 'admins' collection
-        if (userRole === 'Admin') {
-            const adminDocRef = doc(firestore, 'admins', loggedInUser.uid);
-            await setDoc(adminDocRef, { uid: loggedInUser.uid, isAdmin: true });
-        }
+        
+        // IMPORTANT: For a new admin to get privileges, their document MUST be created
+        // in the 'admins' collection. This is a one-time manual step for the first admin,
+        // or can be done by another admin via the Settings page.
       }
 
       router.push('/dashboard');
     } catch (error) {
       const authError = error as AuthError;
-
       if (authError.code === 'auth/invalid-credential') {
         const detailedErrorMessage = `وشەی نهێنی یان ڕۆڵی هەڵبژێردراو هەڵەیە.\n\nبۆ چوونەژوورەوە، دڵنیابە ئەم هەژمارانە لە بەشی Authenticationی Firebase دروستکراون:\n\nبۆ ئەدمین:\nئیمەیڵ: admin@bedart.group\nوشەی نهێنی: Rawezh1818\n\nبۆ فرۆشیار:\nئیمەیڵ: salesman@bedart.group\nوشەی نهێنی: 123456`;
         form.setError('root', { message: detailedErrorMessage });
       } else {
-        form.setError('root', { message: 'هەڵەیەکی چاوەڕواننەکراو ڕوویدا. تکایە دووبارە هەوڵبدەرەوە.' });
+         form.setError('root', { message: 'هەڵەیەکی چاوەڕواننەکراو ڕوویدا. تکایە دووبارە هەوڵبدەرەوە.' });
       }
     }
   };
@@ -199,5 +198,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
