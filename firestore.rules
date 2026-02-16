@@ -3,77 +3,106 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
+    function isAuth() {
+      return request.auth.uid != null;
     }
 
-    // Users can read/write their own user document
-    match /users/{userId} {
-      allow read, update: if request.auth.uid == userId || isAdmin();
-      allow create: if request.auth.uid != null;
-      allow delete: if isAdmin();
-      allow list: if request.auth.uid != null;
+    function getUserRole() {
+      // Safely access role data. Defaults to a non-privileged role if data is missing.
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isAdmin() {
+      return isAuth() && getUserRole() == 'Admin';
     }
     
-    // Allow logged-in users to read from collections, but only admins can write/delete widely.
-    match /customers/{customerId} {
-      allow read, write: if request.auth.uid != null || isAdmin();
+    function isOwner(userId) {
+      return request.auth.uid == userId;
     }
-    match /suppliers/{supplierId} {
-      allow read, write: if request.auth.uid != null || isAdmin();
+
+    // Users can read/write their own user document. Admins can manage all.
+    match /users/{userId} {
+      allow read, update: if isOwner(userId) || isAdmin();
+      allow create: if isAuth();
+      allow delete: if isAdmin();
+      allow list: if isAuth();
     }
-    match /products/{productId} {
-      allow read, write: if request.auth.uid != null || isAdmin();
+    
+    // Settings collections are admin-only for writes.
+    match /app_settings/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
     }
      match /product_categories/{categoryId} {
-      allow read, write: if request.auth.uid != null || isAdmin();
+      allow read: if isAuth();
+      allow write: if isAdmin();
     }
     match /expense_categories/{categoryId} {
-       allow read, write: if request.auth.uid != null || isAdmin();
-    }
-     match /app_settings/{docId} {
-      allow read, write: if request.auth.uid != null || isAdmin();
+       allow read: if isAuth();
+       allow write: if isAdmin();
     }
 
-    // Selling forms and their subcollections
+    // Customers can be managed by any authenticated user.
+    match /customers/{customerId} {
+      allow read, write: if isAuth();
+    }
+    
+    // Suppliers can only be created/edited by Admins.
+    match /suppliers/{supplierId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+    
+    // Products can be read by anyone, but stock updates are allowed for sales/purchases,
+    // while creation/deletion is admin-only.
+    match /products/{productId} {
+      allow read: if isAuth();
+      allow create, delete: if isAdmin();
+      allow update: if isAuth(); // Allows for stock updates from sales, purchases, and transfers
+    }
+
+    // Selling forms can be created/updated by any user, but only deleted by Admins.
     match /selling_forms/{sellingFormId} {
-      allow read, write: if request.auth.uid != null || isAdmin();
+      allow read, create, update: if isAuth();
+      allow delete: if isAdmin();
       
+      // Subcollections follow the parent's delete logic.
       match /selling_form_products/{productId} {
-        allow read, write: if request.auth.uid != null || isAdmin();
+        allow read, create, update: if isAuth();
+        allow delete: if isAdmin();
       }
       match /payments/{paymentId} {
-        allow read, write: if request.auth.uid != null || isAdmin();
+        allow read, create, update: if isAuth();
+        allow delete: if isAdmin();
       }
     }
     
+    // Collection group reads are allowed for all authenticated users.
     match /selling_form_products/{docId} {
-        allow get, list: if request.auth.uid != null;
+        allow get, list: if isAuth();
     }
 
-    // Buying forms and their subcollections
+    // Buying forms are entirely admin-only.
     match /buying_forms/{buyingFormId} {
-      allow read, write: if request.auth.uid != null || isAdmin();
+      allow read, write: if isAdmin();
 
       match /buying_form_products/{productId} {
-        allow read, write: if request.auth.uid != null || isAdmin();
+        allow read, write: if isAdmin();
       }
     }
     
     match /buying_form_products/{docId} {
-        allow get, list: if request.auth.uid != null;
+        allow get, list: if isAuth();
     }
     
-    // Expenses
+    // Expenses are admin-only.
     match /expenses/{expenseId} {
-      allow read, write: if request.auth.uid != null || isAdmin();
+      allow read, write: if isAdmin();
     }
 
-    // Stock Movements
+    // Stock movements can be initiated by any authenticated user (e.g., during a sale or transfer).
     match /stock_movements/{movementId} {
-      allow read, write: if request.auth.uid != null || isAdmin();
+      allow read, write: if isAuth();
     }
   }
 }
-
-    
