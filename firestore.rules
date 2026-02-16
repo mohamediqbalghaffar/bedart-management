@@ -21,9 +21,9 @@ service cloud.firestore {
     // An admin can read/update any user's profile.
     match /users/{userId} {
       allow create: if isAuth();
-      allow read, update: if isOwner(userId) || isAdmin();
+      allow get, update: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
       allow delete: if isAdmin();
-      allow list: if isAuth();
     }
     
     // Admins collection is read-only for clients. Writes are handled by server-side logic (or trusted admin client).
@@ -111,5 +111,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
