@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, useFirestore, doc, getDoc, setDoc } from '@/firebase';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { signInWithEmailAndPassword, AuthError } from 'firebase/auth';
 import { BedDouble, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react';
@@ -25,6 +25,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
   const { user, isUserLoading } = useUser();
   const [showPassword, setShowPassword] = useState(false);
@@ -38,7 +39,7 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
-    if (!auth) {
+    if (!auth || !firestore) {
         form.setError('root', { message: 'خزمەتگوزاری چوونەژوورەوە ئامادە نییە. تکایە دووبارە هەوڵبدەرەوە.' });
         return;
     };
@@ -47,7 +48,20 @@ export default function LoginPage() {
     const password = data.password;
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const loggedInUser = userCredential.user;
+
+      // Ensure user profile document exists
+      const userDocRef = doc(firestore, 'users', loggedInUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (!userDocSnap.exists()) {
+        await setDoc(userDocRef, {
+          username: loggedInUser.email,
+          role: data.role === 'admin' ? 'Admin' : 'Salesman'
+        });
+      }
+
       router.push('/dashboard');
     } catch (error) {
       const authError = error as AuthError;
@@ -106,7 +120,7 @@ export default function LoginPage() {
                            <RadioGroupItem value="admin" id="admin" className="peer sr-only" />
                            <Label
                             htmlFor="admin"
-                            className="flex h-full flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary cursor-pointer"
+                            className="flex h-full flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary cursor-pointer transition-all"
                           >
                             <CheckCircle2 className="absolute right-2 top-2 h-5 w-5 text-primary opacity-0 peer-data-[state=checked]:opacity-100 transition-opacity duration-200" />
                             ئەدمین
@@ -117,7 +131,7 @@ export default function LoginPage() {
                            <RadioGroupItem value="salesman" id="salesman" className="peer sr-only" />
                            <Label
                             htmlFor="salesman"
-                            className="flex h-full flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary cursor-pointer"
+                            className="flex h-full flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary cursor-pointer transition-all"
                           >
                             <CheckCircle2 className="absolute right-2 top-2 h-5 w-5 text-primary opacity-0 peer-data-[state=checked]:opacity-100 transition-opacity duration-200" />
                             فرۆشیار
