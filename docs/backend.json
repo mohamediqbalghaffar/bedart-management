@@ -12,16 +12,6 @@
       },
       "required": ["id", "username", "role"]
     },
-    "AdminUser": {
-        "title": "Admin User",
-        "description": "Represents an administrator's record for authorization purposes.",
-        "type": "object",
-        "properties": {
-            "uid": { "type": "string", "description": "The user's unique ID." },
-            "isAdmin": { "type": "boolean", "description": "Confirms admin status." }
-        },
-        "required": ["uid", "isAdmin"]
-    },
     "SellingForm": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "SellingForm",
@@ -193,10 +183,6 @@
     "/users/{userId}": {
       "schema": { "$ref": "#/entities/UserProfile" },
       "description": "Stores user profiles and roles. Used for authentication and authorization."
-    },
-    "/admins/{userId}": {
-      "schema": { "$ref": "#/entities/AdminUser" },
-      "description": "Stores a record of admin user IDs for fast, secure role verification in security rules."
     },
     "/customers/{customerId}": {
       "schema": { "$ref": "#/entities/Customer" },

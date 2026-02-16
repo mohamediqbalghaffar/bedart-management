@@ -7,15 +7,9 @@ service cloud.firestore {
       return request.auth.uid != null;
     }
 
-    function isFirstAdmin() {
-      // Correctly checks if the 'admins' collection is empty.
-      // This function requires the calling user to have 'list' permission on the 'admins' collection.
-      return get(/databases/$(database)/documents/admins).size() == 0;
-    }
-
     function isAdmin() {
-      // Fast, non-recursive check for admin privileges.
-      return isAuth() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      // Check the user's role in their profile document.
+      return isAuth() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
     }
     
     function isOwner(userId) {
@@ -26,26 +20,11 @@ service cloud.firestore {
     // An admin can read/update any user's profile.
     match /users/{userId} {
       allow create: if isAuth();
-      allow get, update: if isOwner(userId) || isAdmin();
+      allow get: if isOwner(userId) || isAdmin();
+      // Owners can update their profile, but not their role. Only admins can change roles.
+      allow update: if (isOwner(userId) && request.resource.data.role == resource.data.role) || isAdmin();
       allow list: if isAdmin();
       allow delete: if isAdmin();
-    }
-    
-    // Admins collection rules
-    // isFirstAdmin() requires list permission on the /admins collection. It is safe to grant this to any authenticated user
-    // as the documents only contain a uid and a boolean.
-    match /admins {
-      allow list: if isAuth();
-    }
-
-    match /admins/{userId} {
-      allow get: if isAuth();
-      
-      // The FIRST user can CREATE their own admin document, securing the bootstrap process.
-      allow create: if isFirstAdmin() && isOwner(userId);
-      
-      // Existing admins can update or delete other admin documents.
-      allow update, delete: if isAdmin();
     }
     
     // Settings collections are admin-only for writes.

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useAuth, useUser, useFirestore, doc, getDoc, setDoc, getDocs, collection } from '@/firebase';
+import { useAuth, useUser, useFirestore, doc, getDoc, setDoc } from '@/firebase';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { signInWithEmailAndPassword, AuthError } from 'firebase/auth';
 import { BedDouble, Eye, EyeOff, Loader2 } from 'lucide-react';
@@ -66,7 +66,7 @@ function LoginForm({ role, schema, defaultPassword, instructionEmail, setIsProce
             const userDocRef = doc(firestore, 'users', loggedInUser.uid);
             const userDocSnap = await getDoc(userDocRef);
 
-            // Step 1: Ensure the user's profile document exists.
+            // Ensure the user's profile document exists with the correct role.
             if (!userDocSnap.exists()) {
                 await setDoc(userDocRef, {
                     username: loggedInUser.email,
@@ -74,23 +74,10 @@ function LoginForm({ role, schema, defaultPassword, instructionEmail, setIsProce
                 });
             }
 
-            // Step 2: If logging in as Admin, ensure the admin record exists.
-            if (role === 'Admin') {
-                const adminDocRef = doc(firestore, 'admins', loggedInUser.uid);
-                const adminDocSnap = await getDoc(adminDocRef);
-
-                if (!adminDocSnap.exists()) {
-                    await setDoc(adminDocRef, { uid: loggedInUser.uid, isAdmin: true });
-                }
-            }
-
             // Navigation is now handled by the parent component's useEffect.
         } catch (error) {
             const authError = error as AuthError;
-            // This error check specifically handles Firestore security rule failures during the admin doc creation.
-            if (authError.code === 'permission-denied' || (error as any)?.message?.includes('PERMISSION_DENIED')) {
-                 form.setError('root', { message: `Login successful, but failed to grant Admin privileges. Another admin may already exist. Contact support.` });
-            } else if (authError.code === 'auth/invalid-credential') {
+            if (authError.code === 'auth/invalid-credential') {
                 const detailedErrorMessage = `وشەی نهێنی هەڵەیە.\n\nدڵنیابە ئەم هەژمارە لە بەشی Authenticationی Firebase دروستکراوە:\nئیمەیڵ: ${email}\nوشەی نهێنی پێشنیارکراو: ${defaultPassword}`;
                 form.setError('root', { message: detailedErrorMessage });
             } else {
