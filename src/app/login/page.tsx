@@ -6,12 +6,13 @@ import { Input } from '@/components/ui/input';
 import { useAuth, useUser } from '@/firebase';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { signInWithEmailAndPassword, AuthError } from 'firebase/auth';
-import { BedDouble, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { BedDouble, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 const loginSchema = z.object({
   role: z.enum(['admin', 'salesman'], {
@@ -53,13 +54,19 @@ export default function LoginPage() {
       console.error(`Login attempt failed for email: ${email}. Firebase error code: ${authError.code}`, authError);
 
       if (authError.code === 'auth/invalid-credential') {
-        const detailedErrorMessage = `وشەی نهێنی یان ڕۆڵ هەڵەیە.\nتکایە دڵنیابە کە ئەم دوو هەژمارە لە بەشی Authenticationی Firebase دروستکراون:\n1. ئەدمین: ئیمەیڵ: admin@bedart.group | وشەی نهێنی: Rawezh1818\n2. فرۆشیار: ئیمەیڵ: salesman@bedart.group | وشەی نهێنی: 1234`;
+        const detailedErrorMessage = `وشەی نهێنی یان ڕۆڵی هەڵبژێردراو هەڵەیە.\n\nبۆ چوونەژوورەوە، دڵنیابە ئەم هەژمارانە لە بەشی Authenticationی Firebase دروستکراون:\n\nبۆ ئەدمین:\nئیمەیڵ: admin@bedart.group\nوشەی نهێنی: Rawezh1818\n\nبۆ فرۆشیار:\nئیمەیڵ: salesman@bedart.group\nوشەی نهێنی: 1234`;
         form.setError('root', { message: detailedErrorMessage });
       } else {
         form.setError('root', { message: 'هەڵەیەکی چاوەڕواننەکراو ڕوویدا. تکایە دووبارە هەوڵبدەرەوە.' });
       }
     }
   };
+
+  useEffect(() => {
+      if (!isUserLoading && user) {
+          router.replace('/dashboard');
+      }
+  }, [user, isUserLoading, router]);
 
   if (isUserLoading || user) {
     return (
@@ -96,22 +103,27 @@ export default function LoginPage() {
                         value={field.value}
                         className="flex justify-around gap-4"
                       >
-                        <FormItem className="flex-1">
-                          <FormControl>
-                             <RadioGroupItem value="admin" id="admin" className="sr-only" />
-                          </FormControl>
-                          <FormLabel htmlFor="admin" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer">
+                        <div className="relative flex-1">
+                           <RadioGroupItem value="admin" id="admin" className="peer sr-only" />
+                           <Label
+                            htmlFor="admin"
+                            className="flex h-full flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary cursor-pointer"
+                          >
+                            <CheckCircle2 className="absolute right-2 top-2 h-5 w-5 text-primary opacity-0 peer-data-[state=checked]:opacity-100 transition-opacity duration-200" />
                             ئەدمین
-                          </FormLabel>
-                        </FormItem>
-                         <FormItem className="flex-1">
-                          <FormControl>
-                            <RadioGroupItem value="salesman" id="salesman" className="sr-only" />
-                          </FormControl>
-                           <FormLabel htmlFor="salesman" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer">
+                          </Label>
+                        </div>
+
+                         <div className="relative flex-1">
+                           <RadioGroupItem value="salesman" id="salesman" className="peer sr-only" />
+                           <Label
+                            htmlFor="salesman"
+                            className="flex h-full flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary cursor-pointer"
+                          >
+                            <CheckCircle2 className="absolute right-2 top-2 h-5 w-5 text-primary opacity-0 peer-data-[state=checked]:opacity-100 transition-opacity duration-200" />
                             فرۆشیار
-                          </FormLabel>
-                        </FormItem>
+                          </Label>
+                        </div>
                       </RadioGroup>
                     </FormControl>
                     <FormMessage />
@@ -152,10 +164,8 @@ export default function LoginPage() {
               {form.formState.errors.root && (
                 <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md" dir="rtl">
                     <p className="font-bold mb-2 text-center">هەڵە لە چوونەژوورەوە</p>
-                    <div className="space-y-1 text-right">
-                        {form.formState.errors.root.message?.split('\n').map((line, i) => (
-                            <p key={i}>{line}</p>
-                        ))}
+                    <div className="space-y-2 text-right whitespace-pre-line">
+                        {form.formState.errors.root.message}
                     </div>
                 </div>
               )}
