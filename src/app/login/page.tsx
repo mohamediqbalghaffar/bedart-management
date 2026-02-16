@@ -27,11 +27,12 @@ type SalesmanLoginFormValues = z.infer<typeof salesmanLoginSchema>;
 
 
 // A generic login form component
-function LoginForm({ role, schema, defaultPassword, instructionEmail }: {
+function LoginForm({ role, schema, defaultPassword, instructionEmail, setIsProcessingLogin }: {
     role: 'Admin' | 'Salesman';
     schema: typeof adminLoginSchema | typeof salesmanLoginSchema;
     defaultPassword?: string;
     instructionEmail: string;
+    setIsProcessingLogin: (isProcessing: boolean) => void;
 }) {
     const auth = useAuth();
     const firestore = useFirestore();
@@ -50,6 +51,8 @@ function LoginForm({ role, schema, defaultPassword, instructionEmail }: {
             form.setError('root', { message: 'خزمەتگوزاری چوونەژوورەوە ئامادە نییە. تکایە دووبارە هەوڵبدەرەوە.' });
             return;
         }
+
+        setIsProcessingLogin(true);
 
         const email = instructionEmail;
         const password = data.password;
@@ -76,14 +79,12 @@ function LoginForm({ role, schema, defaultPassword, instructionEmail }: {
                 const adminDocRef = doc(firestore, 'admins', loggedInUser.uid);
                 const adminDocSnap = await getDoc(adminDocRef);
 
-                // If the admin record doesn't exist, try to create it.
-                // The security rules will only allow this if it's the first admin.
                 if (!adminDocSnap.exists()) {
                     await setDoc(adminDocRef, { uid: loggedInUser.uid, isAdmin: true });
                 }
             }
 
-            router.push('/dashboard');
+            // Navigation is now handled by the parent component's useEffect.
         } catch (error) {
             const authError = error as AuthError;
             // This error check specifically handles Firestore security rule failures during the admin doc creation.
@@ -95,6 +96,8 @@ function LoginForm({ role, schema, defaultPassword, instructionEmail }: {
             } else {
                 form.setError('root', { message: 'هەڵەیەکی چاوەڕواننەکراو ڕوویدا. تکایە دووبارە هەوڵبدەرەوە.' });
             }
+        } finally {
+            setIsProcessingLogin(false);
         }
     };
     
@@ -152,14 +155,17 @@ function LoginForm({ role, schema, defaultPassword, instructionEmail }: {
 export default function LoginPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const [isProcessingLogin, setIsProcessingLogin] = useState(false);
 
   useEffect(() => {
-      if (!isUserLoading && user) {
+      // Only redirect if a user exists AND we are not in the middle of the login form submission process.
+      if (!isUserLoading && user && !isProcessingLogin) {
           router.replace('/dashboard');
       }
-  }, [user, isUserLoading, router]);
+  }, [user, isUserLoading, router, isProcessingLogin]);
 
-  if (isUserLoading || user) {
+  // Updated loading condition
+  if (isUserLoading || (user && !isProcessingLogin)) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
@@ -191,6 +197,7 @@ export default function LoginPage() {
                         schema={adminLoginSchema}
                         defaultPassword="Rawezh1818"
                         instructionEmail="admin@bedart.group"
+                        setIsProcessingLogin={setIsProcessingLogin}
                     />
                 </TabsContent>
                 <TabsContent value="salesman" className="pt-4">
@@ -199,6 +206,7 @@ export default function LoginPage() {
                         schema={salesmanLoginSchema}
                         defaultPassword="123456"
                         instructionEmail="salesman@bedart.group"
+                        setIsProcessingLogin={setIsProcessingLogin}
                     />
                 </TabsContent>
             </Tabs>
