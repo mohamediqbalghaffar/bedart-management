@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,6 @@ import { useFirestore, useCollection, useMemoFirebase, collection, runTransactio
 import { WithId } from '@/firebase/firestore/use-collection';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { getDocs as getDocsClient, collection as getCollectionClient } from 'firebase/firestore';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +32,7 @@ type BuyingFormType = {
     supplierId: string;
     issueDate: string;
     customsFee?: number;
+    totalAmount?: number;
 };
 
 type Supplier = {
@@ -47,7 +47,7 @@ type BuyingFormProduct = {
 
 type EnrichedBuyingForm = WithId<BuyingFormType> & {
     supplierName?: string;
-    totalAmount?: number;
+    totalAmount: number;
 };
 
 function PurchaseFormDialog({ formId, onSave, trigger }: { formId: string | null, onSave: () => void, trigger: React.ReactNode }) {
@@ -89,42 +89,20 @@ function PurchasesList() {
     const { data: buyingForms, isLoading: isLoadingForms } = useCollection<BuyingFormType>(buyingFormsQuery);
     const { data: suppliers, isLoading: isLoadingSuppliers } = useCollection<Supplier>(suppliersQuery);
 
-    const [enrichedForms, setEnrichedForms] = useState<EnrichedBuyingForm[]>([]);
-    const [isCalculating, setIsCalculating] = useState(false);
-    
     const handleFormSave = () => {
         setRefreshKey(prev => prev + 1); // Trigger a re-fetch
     };
 
-    useEffect(() => {
-        async function enrichAndCalculateTotals() {
-            if (!buyingForms || !suppliers || !firestore) return;
+    const enrichedForms = useMemo(() => {
+        if (!buyingForms || !suppliers) return [];
+        const supplierMap = new Map(suppliers.map(s => [s.id, s.supplierName]));
+        return buyingForms.map(form => ({
+            ...form,
+            supplierName: supplierMap.get(form.supplierId) || 'Unknown Supplier',
+            totalAmount: form.totalAmount || 0,
+        }));
+    }, [buyingForms, suppliers]);
 
-            setIsCalculating(true);
-            const supplierMap = new Map(suppliers.map(s => [s.id, s.supplierName]));
-
-            const enriched = await Promise.all(buyingForms.map(async (form) => {
-                const productsColRef = getCollectionClient(firestore, `buying_forms/${form.id}/buying_form_products`);
-                const productsSnapshot = await getDocsClient(productsColRef);
-                const products = productsSnapshot.docs.map(doc => doc.data() as BuyingFormProduct);
-
-                const subTotal = products.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
-                const totalAmount = subTotal + (form.customsFee || 0);
-
-                return {
-                    ...form,
-                    supplierName: supplierMap.get(form.supplierId) || 'Unknown Supplier',
-                    totalAmount: totalAmount,
-                };
-            }));
-
-            setEnrichedForms(enriched);
-            setIsCalculating(false);
-        }
-
-        enrichAndCalculateTotals();
-
-    }, [buyingForms, suppliers, firestore]);
 
     const handleDelete = async (formId: string) => {
         if (!firestore) return;
@@ -183,7 +161,7 @@ function PurchasesList() {
     };
 
 
-    const isLoading = isLoadingForms || isLoadingSuppliers || isCalculating;
+    const isLoading = isLoadingForms || isLoadingSuppliers;
 
     return (
          <Card>
@@ -298,7 +276,5 @@ export default function PurchasesPage() {
         </div>
     );
 }
-
-    
 
     

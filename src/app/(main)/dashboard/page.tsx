@@ -60,6 +60,7 @@ type BuyingForm = {
     issueDate: string;
     supplierId: string;
     customsFee?: number;
+    totalAmount?: number;
 };
 
 type BuyingFormProduct = {
@@ -288,7 +289,7 @@ function PurchasesDetailDialog({ purchases }: { purchases: WithId<BuyingForm>[] 
     const suppliersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'suppliers') : null, [firestore]);
     const { data: suppliers, isLoading: loadingSuppliers } = useCollection<Supplier>(suppliersQuery);
     
-    const [enrichedData, setEnrichedData] = useState<(WithId<BuyingForm> & { totalAmount: number, supplierName: string })[]>([]);
+    const [enrichedData, setEnrichedData] = useState<(WithId<BuyingForm> & { supplierName: string })[]>([]);
     const [perProductSummary, setPerProductSummary] = useState<{ productName: string, totalQuantity: number, totalCost: number }[]>([]);
     const [totalOverallQuantity, setTotalOverallQuantity] = useState(0);
     const [totalOverallCost, setTotalOverallCost] = useState(0);
@@ -332,26 +333,15 @@ function PurchasesDetailDialog({ purchases }: { purchases: WithId<BuyingForm>[] 
                 summary.totalCost += lineCost;
                 productSummaryMap.set(p.productName, summary);
             });
-
-            const enrichedFormsData = await Promise.all(
-                purchases
-                .filter(p => categoryFilter === 'all' || relevantFormIds.has(p.id))
-                .map(async (p) => {
-                    const productsSnap = await getDocs(collection(firestore, `buying_forms/${p.id}/buying_form_products`));
-                    let formSubTotal = 0;
-                    productsSnap.docs.forEach(doc => {
-                        const productData = doc.data() as BuyingFormProduct;
-                        formSubTotal += productData.quantity * productData.unitPrice;
-                    });
-                    const totalAmount = formSubTotal + (p.customsFee || 0);
-                    return {
-                        ...p,
-                        totalAmount,
-                        supplierName: supplierMap.get(p.supplierId) || 'N/A'
-                    };
-                })
-            );
             
+            const enrichedFormsData = purchases
+                .filter(p => categoryFilter === 'all' || relevantFormIds.has(p.id))
+                .map(p => ({
+                    ...p,
+                    totalAmount: p.totalAmount || 0, // Use pre-calculated amount
+                    supplierName: supplierMap.get(p.supplierId) || 'N/A',
+                }));
+
             setTotalOverallQuantity(grandTotalQuantity);
             setTotalOverallCost(grandTotalCost);
             setPerProductSummary(Array.from(productSummaryMap.entries()).map(([productName, data]) => ({ productName, ...data })));
@@ -444,7 +434,7 @@ function PurchasesDetailDialog({ purchases }: { purchases: WithId<BuyingForm>[] 
                                     <TableRow key={purchase.id}>
                                         <TableCell>{purchase.supplierName}</TableCell>
                                         <TableCell>{format(parseISO(purchase.issueDate), 'yyyy-MM-dd')}</TableCell>
-                                        <TableCell>{currencyFormatter.format(purchase.totalAmount)}</TableCell>
+                                        <TableCell>{currencyFormatter.format(purchase.totalAmount || 0)}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -524,9 +514,6 @@ function DashboardStats({ dateRange }: { dateRange: { from: string, to: string }
     const { data: products, isLoading: loadingProducts } = useCollection<Product>(productsQuery);
     const { data: buyingForms, isLoading: loadingBuyingForms } = useCollection<BuyingForm>(buyingFormsQuery);
     
-    const [totalPurchases, setTotalPurchases] = React.useState(0);
-    const [isCalculatingPurchases, setIsCalculatingPurchases] = React.useState(false);
-
     const totalRevenue = React.useMemo(() => sales?.reduce((acc, sale) => acc + sale.totalPrice, 0) || 0, [sales]);
     
     const { totalExpensesUSD, totalExpensesIQD } = React.useMemo(() => {
@@ -541,31 +528,6 @@ function DashboardStats({ dateRange }: { dateRange: { from: string, to: string }
         }, { totalExpensesUSD: 0, totalExpensesIQD: 0 });
     }, [expenses]);
     
-     React.useEffect(() => {
-        async function calculateTotalPurchases() {
-            if (!buyingForms || !firestore) {
-                setTotalPurchases(0);
-                return;
-            };
-            setIsCalculatingPurchases(true);
-            let total = 0;
-            for (const form of buyingForms) {
-                try {
-                    const productsSnap = await getDocs(collection(firestore, `buying_forms/${form.id}/buying_form_products`));
-                    const subTotal = productsSnap.docs.reduce((acc, doc) => acc + (doc.data().quantity * doc.data().unitPrice), 0);
-                    total += subTotal + (form.customsFee || 0);
-                } catch (e) {
-                    console.error("Error fetching products for buying form:", form.id, e);
-                }
-            }
-            setTotalPurchases(total);
-            setIsCalculatingPurchases(false);
-        }
-
-        calculateTotalPurchases();
-    }, [buyingForms, firestore]);
-
-
     const groupedProducts = useMemo(() => {
         if (!products) return [];
         const productMap = new Map<string, GroupedProduct>();
@@ -590,7 +552,7 @@ function DashboardStats({ dateRange }: { dateRange: { from: string, to: string }
         return groupedProducts.filter(p => p.totalQuantity < 5).length;
     }, [groupedProducts]);
 
-    const isLoading = loadingSales || loadingExpenses || loadingProducts || loadingBuyingForms || isCalculatingPurchases;
+    const isLoading = loadingSales || loadingExpenses || loadingProducts || loadingBuyingForms;
 
     if (isLoading) {
         return (
@@ -653,7 +615,7 @@ function DashboardStats({ dateRange }: { dateRange: { from: string, to: string }
             <Dialog>
                 <DialogTrigger asChild>
                      <div className="cursor-pointer">
-                        <StatCard title="کۆی کڕین" value={currencyFormatter.format(totalPurchases)} icon={Package} description="کۆی گشتی کڕین لە ماوەی دیاریکراودا." />
+                        <StatCard title="ژمارەی پسوولەی کڕین" value={buyingForms?.length?.toString() ?? '0'} icon={Package} description="کۆی گشتی پسوولەی کڕین لە ماوەی دیاریکراودا." />
                     </div>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-4xl" dir="rtl">
@@ -685,14 +647,13 @@ function DashboardStats({ dateRange }: { dateRange: { from: string, to: string }
 
 const chartConfig = {
   sales: { label: "فرۆش", color: "hsl(var(--chart-2))", icon: TrendingUp },
-  purchases: { label: "کڕین", color: "hsl(var(--chart-3))", icon: Package },
   expenses: { label: "خەرجی", color: "hsl(var(--chart-5))", icon: TrendingDown },
   netProfit: { label: "قازانجی پوخت", color: "hsl(var(--chart-1))", icon: LineChart }
 } satisfies ChartConfig
 
 function RecentActivityChart({ dateRange }: { dateRange: { from: string, to: string } }) {
     const firestore = useFirestore();
-    const [activeSubjects, setActiveSubjects] = useState({ sales: true, expenses: true, purchases: true, netProfit: true });
+    const [activeSubjects, setActiveSubjects] = useState({ sales: true, expenses: true, netProfit: true });
     const [viewMode, setViewMode] = useState<'daily' | 'total'>('daily');
     
     const [chartData, setChartData] = useState<any[]>([]);
@@ -711,22 +672,20 @@ function RecentActivityChart({ dateRange }: { dateRange: { from: string, to: str
             const endDate = endOfDay(toDate);
             
             let salesQuery = query(collection(firestore, 'selling_forms'), where('issueDate', '>=', dateRange.from), where('issueDate', '<=', dateRange.to));
-            let purchasesQuery = query(collection(firestore, 'buying_forms'), where('issueDate', '>=', dateRange.from), where('issueDate', '<=', dateRange.to));
             let expensesQuery = query(collection(firestore, 'expenses'), where('date', '>=', dateRange.from), where('date', '<=', dateRange.to));
             
-            const [salesSnap, purchasesSnap, expensesSnap] = await Promise.all([ getDocs(salesQuery), getDocs(purchasesQuery), getDocs(expensesQuery) ]);
+            const [salesSnap, expensesSnap] = await Promise.all([ getDocs(salesQuery), getDocs(expensesQuery) ]);
             let sales = salesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as WithId<SellingForm>[];
-            let purchases = purchasesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as WithId<BuyingForm>[];
             const expenses = expensesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as WithId<Expense>[];
 
-            let totalSales = 0, totalPurchases = 0, totalExpensesUSD = 0;
-            const dateMap = new Map<string, { sales: number; expenses: number; purchases: number; netProfit: number }>();
+            let totalSales = 0, totalExpensesUSD = 0;
+            const dateMap = new Map<string, { sales: number; expenses: number; netProfit: number }>();
             
             if (viewMode === 'daily') {
                 const days = differenceInDays(endDate, startDate);
                 for (let i = days; i >= 0; i--) {
                     const date = subDays(endDate, i);
-                    dateMap.set(format(date, 'yyyy-MM-dd'), { sales: 0, expenses: 0, purchases: 0, netProfit: 0 });
+                    dateMap.set(format(date, 'yyyy-MM-dd'), { sales: 0, expenses: 0, netProfit: 0 });
                 }
             }
 
@@ -746,29 +705,17 @@ function RecentActivityChart({ dateRange }: { dateRange: { from: string, to: str
                     }
                 }
             });
-
-            for (const purchase of purchases) {
-                const productsSnap = await getDocs(collection(firestore, `buying_forms/${purchase.id}/buying_form_products`));
-                const subTotal = productsSnap.docs.reduce((acc, doc) => acc + (doc.data().quantity * doc.data().unitPrice), 0);
-                const totalAmount = subTotal + (purchase.customsFee || 0);
-                totalPurchases += totalAmount;
-                const purchaseDate = format(parseISO(purchase.issueDate), 'yyyy-MM-dd');
-                if(viewMode === 'daily' && dateMap.has(purchaseDate)) {
-                    dateMap.get(purchaseDate)!.purchases += totalAmount;
-                }
-            }
             
             if (viewMode === 'daily') {
                 dateMap.forEach((data) => {
-                    data.netProfit = data.sales - data.expenses - data.purchases;
+                    data.netProfit = data.sales - data.expenses;
                 });
                 const finalData = Array.from(dateMap.entries()).map(([date, data]) => ({ date: format(parseISO(date), 'MMM d'), ...data }));
                 setChartData(finalData);
             } else { // Total view
-                const totalNetProfit = totalSales - totalExpensesUSD - totalPurchases;
+                const totalNetProfit = totalSales - totalExpensesUSD;
                 setTotalData([
                     { name: 'کۆی فرۆش', value: totalSales, fill: 'var(--color-sales)' },
-                    { name: 'کۆی کڕین', value: totalPurchases, fill: 'var(--color-purchases)' },
                     { name: 'کۆی خەرجی', value: totalExpensesUSD, fill: 'var(--color-expenses)' },
                     { name: 'کۆی قازانج', value: totalNetProfit, fill: 'var(--color-netProfit)' },
                 ]);
@@ -787,7 +734,7 @@ function RecentActivityChart({ dateRange }: { dateRange: { from: string, to: str
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <CardTitle className="text-white">نەخشەی چالاکییەکان</CardTitle>
-                        <CardDescription className="text-white/80">بینینی فرۆشتن، کڕین، خەرجی، و قازانج بەپێی ماوەی دیاریکراو.</CardDescription>
+                        <CardDescription className="text-white/80">بینینی فرۆشتن، خەرجی، و قازانج بەپێی ماوەی دیاریکراو.</CardDescription>
                     </div>
                 </div>
                  <div className="flex flex-col sm:flex-row items-center justify-end gap-4 mt-4" dir="rtl">
@@ -825,19 +772,17 @@ function RecentActivityChart({ dateRange }: { dateRange: { from: string, to: str
                         )}/>}/>
                         <defs>
                             <linearGradient id="fillSales" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-sales)" stopOpacity={0.8} /><stop offset="95%" stopColor="var(--color-sales)" stopOpacity={0.1} /></linearGradient>
-                            <linearGradient id="fillPurchases" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-purchases)" stopOpacity={0.8} /><stop offset="95%" stopColor="var(--color-purchases)" stopOpacity={0.1} /></linearGradient>
                             <linearGradient id="fillExpenses" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-expenses)" stopOpacity={0.8} /><stop offset="95%" stopColor="var(--color-expenses)" stopOpacity={0.1} /></linearGradient>
                             <linearGradient id="fillNetProfit" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-netProfit)" stopOpacity={0.8} /><stop offset="95%" stopColor="var(--color-netProfit)" stopOpacity={0.1} /></linearGradient>
                         </defs>
                         {activeSubjects.sales && <Area dataKey="sales" type="natural" fill="url(#fillSales)" stroke="var(--color-sales)" stackId="a" />}
-                        {activeSubjects.purchases && <Area dataKey="purchases" type="natural" fill="url(#fillPurchases)" stroke="var(--color-purchases)" stackId="b" />}
                         {activeSubjects.expenses && <Area dataKey="expenses" type="natural" fill="url(#fillExpenses)" stroke="var(--color-expenses)" stackId="c" />}
                         {activeSubjects.netProfit && <Area dataKey="netProfit" type="natural" fill="url(#fillNetProfit)" stroke="var(--color-netProfit)" stackId="d" />}
                     </AreaChart>
                 </ChartContainer>
                 ) : (
                  <ChartContainer config={chartConfig} className="h-80 w-full">
-                    <BarChart accessibilityLayer data={totalData.filter(d => activeSubjects[d.name.includes('فرۆش') ? 'sales' : d.name.includes('کڕین') ? 'purchases' : d.name.includes('خەرجی') ? 'expenses' : 'netProfit'])}>
+                    <BarChart accessibilityLayer data={totalData.filter(d => activeSubjects[d.name.includes('فرۆش') ? 'sales' : d.name.includes('خەرجی') ? 'expenses' : 'netProfit'])}>
                          <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)" />
                         <XAxis
                             dataKey="name"
@@ -881,3 +826,5 @@ export default function DashboardPage() {
         </div>
     );
 }
+
+    

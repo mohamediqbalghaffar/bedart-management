@@ -477,7 +477,8 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
             }
 
             const { items, ...mainData } = data;
-            const buyingFormData = { ...mainData, id: buyingFormId };
+            const finalTotalAmount = items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0) + Number(mainData.customsFee || 0);
+            const buyingFormData = { ...mainData, id: buyingFormId, totalAmount: finalTotalAmount };
             transaction.set(buyingFormRef, buyingFormData, { merge: true });
             
             // Delete old items and add new ones (this is okay as it's not interleaved with reads from the same documents)
@@ -669,3 +670,5 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
   );
 }
 
+
+    
