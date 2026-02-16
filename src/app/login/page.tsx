@@ -56,10 +56,17 @@ export default function LoginPage() {
       const userDocSnap = await getDoc(userDocRef);
 
       if (!userDocSnap.exists()) {
+        const userRole = data.role === 'admin' ? 'Admin' : 'Salesman';
         await setDoc(userDocRef, {
           username: loggedInUser.email,
-          role: data.role === 'admin' ? 'Admin' : 'Salesman'
+          role: userRole,
         });
+
+        // If the user is an admin, also create a record in the 'admins' collection
+        if (userRole === 'Admin') {
+            const adminDocRef = doc(firestore, 'admins', loggedInUser.uid);
+            await setDoc(adminDocRef, { uid: loggedInUser.uid, isAdmin: true });
+        }
       }
 
       router.push('/dashboard');
@@ -116,27 +123,23 @@ export default function LoginPage() {
                         value={field.value}
                         className="flex justify-around gap-4"
                       >
-                        <div className="relative flex-1">
-                           <RadioGroupItem value="admin" id="admin" className="peer sr-only" />
-                           <Label
-                            htmlFor="admin"
-                            className="flex h-full flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary cursor-pointer transition-all"
-                          >
-                            <CheckCircle2 className="absolute right-2 top-2 h-5 w-5 text-primary opacity-0 peer-data-[state=checked]:opacity-100 transition-opacity duration-200" />
-                            ئەدمین
-                          </Label>
-                        </div>
+                        <Label
+                          htmlFor="admin"
+                          className="relative flex-1 cursor-pointer rounded-md border-2 border-muted bg-popover p-4 transition-all hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary"
+                        >
+                          <RadioGroupItem value="admin" id="admin" className="peer sr-only" />
+                          <CheckCircle2 className="absolute right-2 top-2 h-5 w-5 text-primary opacity-0 transition-opacity duration-200 [.peer:checked~&]:opacity-100" />
+                          ئەدمین
+                        </Label>
 
-                         <div className="relative flex-1">
-                           <RadioGroupItem value="salesman" id="salesman" className="peer sr-only" />
-                           <Label
-                            htmlFor="salesman"
-                            className="flex h-full flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary cursor-pointer transition-all"
-                          >
-                            <CheckCircle2 className="absolute right-2 top-2 h-5 w-5 text-primary opacity-0 peer-data-[state=checked]:opacity-100 transition-opacity duration-200" />
-                            فرۆشیار
-                          </Label>
-                        </div>
+                         <Label
+                          htmlFor="salesman"
+                          className="relative flex-1 cursor-pointer rounded-md border-2 border-muted bg-popover p-4 transition-all hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary"
+                        >
+                          <RadioGroupItem value="salesman" id="salesman" className="peer sr-only" />
+                          <CheckCircle2 className="absolute right-2 top-2 h-5 w-5 text-primary opacity-0 transition-opacity duration-200 [.peer:checked~&]:opacity-100" />
+                          فرۆشیار
+                        </Label>
                       </RadioGroup>
                     </FormControl>
                     <FormMessage />
@@ -196,3 +199,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    

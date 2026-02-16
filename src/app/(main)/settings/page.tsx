@@ -103,8 +103,19 @@ function UserManagement() {
     const handleRoleChange = async (userId: string, newRole: User['role']) => {
         if (!firestore) return;
         try {
+            const batch = writeBatch(firestore);
             const userRef = doc(firestore, 'users', userId);
-            await updateDoc(userRef, { role: newRole });
+            batch.update(userRef, { role: newRole });
+
+            const adminRef = doc(firestore, 'admins', userId);
+            if (newRole === 'Admin') {
+                batch.set(adminRef, { uid: userId, isAdmin: true });
+            } else {
+                batch.delete(adminRef);
+            }
+            
+            await batch.commit();
+
             toast({ title: "سەرکەوتوو بوو", description: "ڕۆڵی بەکارهێنەر نوێکرایەوە.", className: "bg-accent text-accent-foreground" });
         } catch (error) {
             console.error("Error updating role: ", error);
@@ -226,6 +237,7 @@ const COLLECTIONS_TO_MANAGE = [
     'users',
     'product_categories',
     'expense_categories',
+    'admins',
 ];
 
 function DataManagement() {

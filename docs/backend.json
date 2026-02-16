@@ -1,92 +1,50 @@
 
 {
   "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Represents a user of the CRM system.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the User entity." },
+        "username": { "type": "string", "description": "User's username." },
+        "role": { "type": "string", "description": "User's role: Admin, Data Manager, Salesman." }
+      },
+      "required": ["id", "username", "role"]
+    },
+    "AdminUser": {
+        "title": "Admin User",
+        "description": "Represents an administrator's record for authorization purposes.",
+        "type": "object",
+        "properties": {
+            "uid": { "type": "string", "description": "The user's unique ID." },
+            "isAdmin": { "type": "boolean", "description": "Confirms admin status." }
+        },
+        "required": ["uid", "isAdmin"]
+    },
     "SellingForm": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "SellingForm",
       "type": "object",
       "description": "Represents a sales form for the mattress and bedding shop.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the SellingForm entity."
-        },
-        "creatorId": {
-          "type": "string",
-          "description": "The UID of the user who created the form."
-        },
-        "formNumber": {
-          "type": "string",
-          "description": "Auto-incrementing form number."
-        },
-        "customerName": {
-          "type": "string",
-          "description": "Name of the customer."
-        },
-        "customerPhoneNumber": {
-          "type": "string",
-          "description": "Customer's phone number."
-        },
-        "customerAddress": {
-          "type": "string",
-          "description": "Customer's address."
-        },
-        "issueDate": {
-          "type": "string",
-          "description": "Date the form was issued.",
-          "format": "date-time"
-        },
-        "deliveryCost": {
-          "type": "number",
-          "description": "Optional delivery cost."
-        },
-        "isDeliveryPaid": {
-          "type": "boolean",
-          "description": "Indicates if the delivery cost has been paid."
-        },
-        "totalPrice": {
-          "type": "number",
-          "description": "Total price of the products and delivery."
-        },
-        "paymentStatus": {
-          "type": "string",
-          "description": "Payment status: Unpaid, Partially Paid, Fully Paid."
-        },
-        "paymentType": {
-          "type": "string",
-          "description": "Payment type: After delivery, Installments, Pre-order."
-        },
-        "remainingBalance": {
-          "type": "number",
-          "description": "Remaining balance to be paid."
-        },
-        "products": {
-          "type": "array",
-          "description": "Array of product details.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "payments": {
-          "type": "array",
-          "description": "Array of payment details.",
-          "items": {
-            "type": "string"
-          }
-        }
+        "id": { "type": "string", "description": "Unique identifier for the SellingForm entity." },
+        "creatorId": { "type": "string", "description": "The UID of the user who created the form." },
+        "formNumber": { "type": "string", "description": "Auto-incrementing form number." },
+        "customerName": { "type": "string", "description": "Name of the customer." },
+        "customerPhoneNumber": { "type": "string", "description": "Customer's phone number." },
+        "customerAddress": { "type": "string", "description": "Customer's address." },
+        "issueDate": { "type": "string", "description": "Date the form was issued.", "format": "date-time" },
+        "deliveryCost": { "type": "number", "description": "Optional delivery cost." },
+        "isDeliveryPaid": { "type": "boolean", "description": "Indicates if the delivery cost has been paid." },
+        "totalPrice": { "type": "number", "description": "Total price of the products and delivery." },
+        "paymentStatus": { "type": "string", "description": "Payment status: Unpaid, Partially Paid, Fully Paid." },
+        "paymentType": { "type": "string", "description": "Payment type: After delivery, Installments, Pre-order." },
+        "remainingBalance": { "type": "number", "description": "Remaining balance to be paid." },
+        "products": { "type": "array", "description": "Array of product details.", "items": { "type": "string" } },
+        "payments": { "type": "array", "description": "Array of payment details.", "items": { "type": "string" } }
       },
-      "required": [
-        "id",
-        "creatorId",
-        "formNumber",
-        "customerName",
-        "customerPhoneNumber",
-        "customerAddress",
-        "issueDate",
-        "totalPrice",
-        "paymentStatus",
-        "paymentType"
-      ]
+      "required": ["id", "creatorId", "formNumber", "customerName", "customerPhoneNumber", "customerAddress", "issueDate", "totalPrice", "paymentStatus", "paymentType"]
     },
     "BuyingForm": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -94,41 +52,14 @@
       "type": "object",
       "description": "Represents a buying form for purchasing products from suppliers.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the BuyingForm entity."
-        },
-        "supplierId": {
-          "type": "string",
-          "description": "Reference to Supplier. (Relationship: Supplier 1:N BuyingForm)"
-        },
-        "issueDate": {
-          "type": "string",
-          "description": "Date the form was issued.",
-          "format": "date-time"
-        },
-        "customsFee": {
-          "type": "number",
-          "description": "Customs or country entry fee."
-        },
-        "products": {
-          "type": "array",
-          "description": "Array of product details.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "totalAmount": {
-          "type": "number",
-          "description": "The total amount of the buying form, calculated on save."
-        }
+        "id": { "type": "string", "description": "Unique identifier for the BuyingForm entity." },
+        "supplierId": { "type": "string", "description": "Reference to Supplier. (Relationship: Supplier 1:N BuyingForm)" },
+        "issueDate": { "type": "string", "description": "Date the form was issued.", "format": "date-time" },
+        "customsFee": { "type": "number", "description": "Customs or country entry fee." },
+        "products": { "type": "array", "description": "Array of product details.", "items": { "type": "string" } },
+        "totalAmount": { "type": "number", "description": "The total amount of the buying form, calculated on save." }
       },
-      "required": [
-        "id",
-        "supplierId",
-        "issueDate",
-        "totalAmount"
-      ]
+      "required": ["id", "supplierId", "issueDate", "totalAmount"]
     },
     "Expense": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -136,49 +67,16 @@
       "type": "object",
       "description": "Represents an expense record.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Expense entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "Name or title of the expense."
-        },
-        "date": {
-          "type": "string",
-          "description": "Date of the expense.",
-          "format": "date-time"
-        },
-        "amount": {
-          "type": "number",
-          "description": "Amount of the expense."
-        },
-        "currency": {
-            "type": "string",
-            "description": "The currency of the expense.",
-            "enum": ["USD", "IQD"]
-        },
-        "category": {
-          "type": "string",
-          "description": "Category of the expense: Daily, Salary, Rent, Electricity, Transport, Other."
-        },
-        "note": {
-          "type": "string",
-          "description": "Optional note about the expense."
-        },
-        "sellingFormId": {
-          "type": "string",
-          "description": "Reference to SellingForm if the expense is linked to a sale. (Relationship: SellingForm 1:N Expense)"
-        }
+        "id": { "type": "string", "description": "Unique identifier for the Expense entity." },
+        "name": { "type": "string", "description": "Name or title of the expense." },
+        "date": { "type": "string", "description": "Date of the expense.", "format": "date-time" },
+        "amount": { "type": "number", "description": "Amount of the expense." },
+        "currency": { "type": "string", "description": "The currency of the expense.", "enum": ["USD", "IQD"] },
+        "category": { "type": "string", "description": "Category of the expense: Daily, Salary, Rent, Electricity, Transport, Other." },
+        "note": { "type": "string", "description": "Optional note about the expense." },
+        "sellingFormId": { "type": "string", "description": "Reference to SellingForm if the expense is linked to a sale. (Relationship: SellingForm 1:N Expense)" }
       },
-      "required": [
-        "id",
-        "name",
-        "date",
-        "amount",
-        "category",
-        "currency"
-      ]
+      "required": ["id", "name", "date", "amount", "category", "currency"]
     },
     "Product": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -186,46 +84,16 @@
       "type": "object",
       "description": "Represents a product in the warehouse or shop.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Product entity."
-        },
-        "productName": {
-          "type": "string",
-          "description": "Name of the product."
-        },
-        "category": {
-          "type": "string",
-          "description": "Category of the product: Mattress, Bed, Pillow, Cover."
-        },
-        "sizeModel": {
-          "type": "string",
-          "description": "Size or model of the product."
-        },
-        "supplierId": {
-          "type": "string",
-          "description": "Reference to Supplier if known. (Relationship: Supplier 1:N Product)"
-        },
-        "stockLocation": {
-          "type": "string",
-          "description": "Stock location: Warehouse, Shop Showroom."
-        },
-        "currentQuantity": {
-          "type": "number",
-          "description": "Current quantity in stock (auto-calculated)."
-        },
-        "sellingPrice": {
-            "type": "number",
-            "description": "The price at which the product is sold."
-        }
+        "id": { "type": "string", "description": "Unique identifier for the Product entity." },
+        "productName": { "type": "string", "description": "Name of the product." },
+        "category": { "type": "string", "description": "Category of the product: Mattress, Bed, Pillow, Cover." },
+        "sizeModel": { "type": "string", "description": "Size or model of the product." },
+        "supplierId": { "type": "string", "description": "Reference to Supplier if known. (Relationship: Supplier 1:N Product)" },
+        "stockLocation": { "type": "string", "description": "Stock location: Warehouse, Shop Showroom." },
+        "currentQuantity": { "type": "number", "description": "Current quantity in stock (auto-calculated)." },
+        "sellingPrice": { "type": "number", "description": "The price at which the product is sold." }
       },
-      "required": [
-        "id",
-        "productName",
-        "category",
-        "stockLocation",
-        "currentQuantity"
-      ]
+      "required": ["id", "productName", "category", "stockLocation", "currentQuantity"]
     },
     "StockMovement": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -233,52 +101,17 @@
       "type": "object",
       "description": "Represents a stock movement record (in or out).",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the StockMovement entity."
-        },
-        "productId": {
-          "type": "string",
-          "description": "Reference to Product. (Relationship: Product 1:N StockMovement)"
-        },
-        "quantity": {
-          "type": "number",
-          "description": "Quantity of the product moved."
-        },
-        "fromLocation": {
-          "type": "string",
-          "description": "From location: Warehouse, Shop."
-        },
-        "toLocation": {
-          "type": "string",
-          "description": "To location: Warehouse, Shop."
-        },
-        "date": {
-          "type": "string",
-          "description": "Date of the stock movement.",
-          "format": "date-time"
-        },
-        "note": {
-          "type": "string",
-          "description": "Optional note about the stock movement."
-        },
-        "buyingFormId": {
-          "type": "string",
-          "description": "Reference to BuyingForm if the movement is due to buying. (Relationship: BuyingForm 1:N StockMovement)"
-        },
-        "sellingFormId": {
-          "type": "string",
-          "description": "Reference to SellingForm if the movement is due to selling. (Relationship: SellingForm 1:N StockMovement)"
-        }
+        "id": { "type": "string", "description": "Unique identifier for the StockMovement entity." },
+        "productId": { "type": "string", "description": "Reference to Product. (Relationship: Product 1:N StockMovement)" },
+        "quantity": { "type": "number", "description": "Quantity of the product moved." },
+        "fromLocation": { "type": "string", "description": "From location: Warehouse, Shop." },
+        "toLocation": { "type": "string", "description": "To location: Warehouse, Shop." },
+        "date": { "type": "string", "description": "Date of the stock movement.", "format": "date-time" },
+        "note": { "type": "string", "description": "Optional note about the stock movement." },
+        "buyingFormId": { "type": "string", "description": "Reference to BuyingForm if the movement is due to buying. (Relationship: BuyingForm 1:N StockMovement)" },
+        "sellingFormId": { "type": "string", "description": "Reference to SellingForm if the movement is due to selling. (Relationship: SellingForm 1:N StockMovement)" }
       },
-      "required": [
-        "id",
-        "productId",
-        "quantity",
-        "fromLocation",
-        "toLocation",
-        "date"
-      ]
+      "required": ["id", "productId", "quantity", "fromLocation", "toLocation", "date"]
     },
     "Supplier": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -286,23 +119,11 @@
       "type": "object",
       "description": "Represents a supplier of products.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Supplier entity."
-        },
-        "supplierName": {
-          "type": "string",
-          "description": "Name of the supplier."
-        },
-        "contactInformation": {
-          "type": "string",
-          "description": "Supplier contact information."
-        }
+        "id": { "type": "string", "description": "Unique identifier for the Supplier entity." },
+        "supplierName": { "type": "string", "description": "Name of the supplier." },
+        "contactInformation": { "type": "string", "description": "Supplier contact information." }
       },
-      "required": [
-        "id",
-        "supplierName"
-      ]
+      "required": ["id", "supplierName"]
     },
     "Payment": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -310,64 +131,14 @@
       "type": "object",
       "description": "Represents a payment record.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Payment entity."
-        },
-        "sellingFormId": {
-          "type": "string",
-          "description": "Reference to SellingForm. (Relationship: SellingForm 1:N Payment)"
-        },
-        "paymentDate": {
-          "type": "string",
-          "description": "Date of the payment.",
-          "format": "date-time"
-        },
-        "amountPaid": {
-          "type": "number",
-          "description": "Amount paid."
-        },
-        "paymentMethod": {
-          "type": "string",
-          "description": "Payment method: Cash, Transfer."
-        },
-        "note": {
-          "type": "string",
-          "description": "Optional note about the payment."
-        }
+        "id": { "type": "string", "description": "Unique identifier for the Payment entity." },
+        "sellingFormId": { "type": "string", "description": "Reference to SellingForm. (Relationship: SellingForm 1:N Payment)" },
+        "paymentDate": { "type": "string", "description": "Date of the payment.", "format": "date-time" },
+        "amountPaid": { "type": "number", "description": "Amount paid." },
+        "paymentMethod": { "type": "string", "description": "Payment method: Cash, Transfer." },
+        "note": { "type": "string", "description": "Optional note about the payment." }
       },
-      "required": [
-        "id",
-        "sellingFormId",
-        "paymentDate",
-        "amountPaid",
-        "paymentMethod"
-      ]
-    },
-    "User": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "User",
-      "type": "object",
-      "description": "Represents a user of the CRM system.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the User entity."
-        },
-        "username": {
-          "type": "string",
-          "description": "User's username."
-        },
-        "role": {
-          "type": "string",
-          "description": "User's role: Admin, Data Manager, Salesman."
-        }
-      },
-      "required": [
-        "id",
-        "username",
-        "role"
-      ]
+      "required": ["id", "sellingFormId", "paymentDate", "amountPaid", "paymentMethod"]
     },
     "Customer": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -375,22 +146,10 @@
       "type": "object",
       "description": "Represents a customer in the CRM.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Customer entity."
-        },
-        "customerName": {
-          "type": "string",
-          "description": "The name of the customer."
-        },
-        "customerPhoneNumber": {
-          "type": "string",
-          "description": "The customer's phone number."
-        },
-        "customerAddress": {
-          "type": "string",
-          "description": "The customer's address."
-        }
+        "id": { "type": "string", "description": "Unique identifier for the Customer entity." },
+        "customerName": { "type": "string", "description": "The name of the customer." },
+        "customerPhoneNumber": { "type": "string", "description": "The customer's phone number." },
+        "customerAddress": { "type": "string", "description": "The customer's address." }
       },
       "required": ["id", "customerName"]
     },
@@ -400,39 +159,14 @@
       "type": "object",
       "description": "Represents the association between products and selling forms, capturing quantity and price.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the ProductSellingForm entity."
-        },
-        "sellingFormId": {
-          "type": "string",
-          "description": "Reference to SellingForm. (Relationship: SellingForm N:N Product)"
-        },
-        "productId": {
-          "type": "string",
-          "description": "Reference to Product. (Relationship: Product N:N SellingForm)"
-        },
-        "quantity": {
-          "type": "number",
-          "description": "Quantity of the product sold."
-        },
-        "unitPrice": {
-          "type": "number",
-          "description": "Price of a single unit of the product."
-        },
-        "lineTotal": {
-          "type": "number",
-          "description": "Total price for the line item (Quantity * Unit Price)."
-        }
+        "id": { "type": "string", "description": "Unique identifier for the ProductSellingForm entity." },
+        "sellingFormId": { "type": "string", "description": "Reference to SellingForm. (Relationship: SellingForm N:N Product)" },
+        "productId": { "type": "string", "description": "Reference to Product. (Relationship: Product N:N SellingForm)" },
+        "quantity": { "type": "number", "description": "Quantity of the product sold." },
+        "unitPrice": { "type": "number", "description": "Price of a single unit of the product." },
+        "lineTotal": { "type": "number", "description": "Total price for the line item (Quantity * Unit Price)." }
       },
-      "required": [
-        "id",
-        "sellingFormId",
-        "productId",
-        "quantity",
-        "unitPrice",
-        "lineTotal"
-      ]
+      "required": ["id", "sellingFormId", "productId", "quantity", "unitPrice", "lineTotal"]
     },
     "ProductBuyingForm": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -440,38 +174,14 @@
       "type": "object",
       "description": "Represents the association between products and buying forms, capturing quantity and price.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the ProductBuyingForm entity."
-        },
-        "buyingFormId": {
-          "type": "string",
-          "description": "Reference to BuyingForm. (Relationship: BuyingForm N:N Product)"
-        },
-        "productId": {
-          "type": "string",
-          "description": "Reference to Product. (Relationship: Product N:N BuyingForm)"
-        },
-        "quantity": {
-          "type": "number",
-          "description": "Quantity of the product bought."
-        },
-        "unitPrice": {
-          "type": "number",
-          "description": "Price of a single unit of the product."
-        },
-        "landedCost": {
-          "type": "number",
-          "description": "The total landed cost per product after customs."
-        }
+        "id": { "type": "string", "description": "Unique identifier for the ProductBuyingForm entity." },
+        "buyingFormId": { "type": "string", "description": "Reference to BuyingForm. (Relationship: BuyingForm N:N Product)" },
+        "productId": { "type": "string", "description": "Reference to Product. (Relationship: Product N:N BuyingForm)" },
+        "quantity": { "type": "number", "description": "Quantity of the product bought." },
+        "unitPrice": { "type": "number", "description": "Price of a single unit of the product." },
+        "landedCost": { "type": "number", "description": "The total landed cost per product after customs." }
       },
-      "required": [
-        "id",
-        "buyingFormId",
-        "productId",
-        "quantity",
-        "unitPrice"
-      ]
+      "required": ["id", "buyingFormId", "productId", "quantity", "unitPrice"]
     }
   },
   "auth": {
@@ -484,68 +194,48 @@
       {
         "path": "/users/{userId}",
         "definition": {
-          "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
+          "entityName": "UserProfile",
+          "schema": { "$ref": "#/backend/entities/UserProfile" },
           "description": "Stores user profiles and roles. Used for authentication and authorization.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            }
-          ]
+          "params": [{ "name": "userId", "description": "The unique identifier of the user." }]
+        }
+      },
+      {
+        "path": "/admins/{userId}",
+        "definition": {
+          "entityName": "AdminUser",
+          "schema": { "$ref": "#/backend/entities/AdminUser" },
+          "description": "Stores a record of admin user IDs for fast, secure role verification in security rules.",
+          "params": [{ "name": "userId", "description": "The unique identifier of the admin user." }]
         }
       },
       {
         "path": "/customers/{customerId}",
         "definition": {
           "entityName": "Customer",
-          "schema": {
-            "$ref": "#/backend/entities/Customer"
-          },
+          "schema": { "$ref": "#/backend/entities/Customer" },
           "description": "Stores customer information.",
-          "params": [
-            {
-              "name": "customerId",
-              "description": "The unique identifier of the customer."
-            }
-          ]
+          "params": [{ "name": "customerId", "description": "The unique identifier of the customer." }]
         }
       },
       {
         "path": "/selling_forms/{sellingFormId}",
         "definition": {
           "entityName": "SellingForm",
-          "schema": {
-            "$ref": "#/backend/entities/SellingForm"
-          },
+          "schema": { "$ref": "#/backend/entities/SellingForm" },
           "description": "Stores selling forms data. Includes denormalized data for total price, payment status and payment type.",
-          "params": [
-            {
-              "name": "sellingFormId",
-              "description": "The unique identifier of the selling form."
-            }
-          ]
+          "params": [{ "name": "sellingFormId", "description": "The unique identifier of the selling form." }]
         }
       },
       {
         "path": "/selling_forms/{sellingFormId}/payments/{paymentId}",
         "definition": {
           "entityName": "Payment",
-          "schema": {
-            "$ref": "#/backend/entities/Payment"
-          },
+          "schema": { "$ref": "#/backend/entities/Payment" },
           "description": "Stores payment data related to a specific selling form.",
           "params": [
-            {
-              "name": "sellingFormId",
-              "description": "The unique identifier of the selling form."
-            },
-            {
-              "name": "paymentId",
-              "description": "The unique identifier of the payment."
-            }
+            { "name": "sellingFormId", "description": "The unique identifier of the selling form." },
+            { "name": "paymentId", "description": "The unique identifier of the payment." }
           ]
         }
       },
@@ -553,19 +243,11 @@
         "path": "/selling_forms/{sellingFormId}/products/{productSellingFormId}",
         "definition": {
           "entityName": "ProductSellingForm",
-          "schema": {
-            "$ref": "#/backend/entities/ProductSellingForm"
-          },
+          "schema": { "$ref": "#/backend/entities/ProductSellingForm" },
           "description": "Stores product data related to a specific selling form. Includes quantity and prices.",
           "params": [
-            {
-              "name": "sellingFormId",
-              "description": "The unique identifier of the selling form."
-            },
-            {
-              "name": "productSellingFormId",
-              "description": "The unique identifier of the product selling form."
-            }
+            { "name": "sellingFormId", "description": "The unique identifier of the selling form." },
+            { "name": "productSellingFormId", "description": "The unique identifier of the product selling form." }
           ]
         }
       },
@@ -573,35 +255,20 @@
         "path": "/buying_forms/{buyingFormId}",
         "definition": {
           "entityName": "BuyingForm",
-          "schema": {
-            "$ref": "#/backend/entities/BuyingForm"
-          },
+          "schema": { "$ref": "#/backend/entities/BuyingForm" },
           "description": "Stores buying forms data.",
-          "params": [
-            {
-              "name": "buyingFormId",
-              "description": "The unique identifier of the buying form."
-            }
-          ]
+          "params": [{ "name": "buyingFormId", "description": "The unique identifier of the buying form." }]
         }
       },
       {
         "path": "/buying_forms/{buyingFormId}/products/{productBuyingFormId}",
         "definition": {
           "entityName": "ProductBuyingForm",
-          "schema": {
-            "$ref": "#/backend/entities/ProductBuyingForm"
-          },
+          "schema": { "$ref": "#/backend/entities/ProductBuyingForm" },
           "description": "Stores product data related to a specific buying form. Includes quantity and prices.",
           "params": [
-            {
-              "name": "buyingFormId",
-              "description": "The unique identifier of the buying form."
-            },
-            {
-              "name": "productBuyingFormId",
-              "description": "The unique identifier of the product buying form."
-            }
+            { "name": "buyingFormId", "description": "The unique identifier of the buying form." },
+            { "name": "productBuyingFormId", "description": "The unique identifier of the product buying form." }
           ]
         }
       },
@@ -609,70 +276,41 @@
         "path": "/expenses/{expenseId}",
         "definition": {
           "entityName": "Expense",
-          "schema": {
-            "$ref": "#/backend/entities/Expense"
-          },
+          "schema": { "$ref": "#/backend/entities/Expense" },
           "description": "Stores expense records.",
-          "params": [
-            {
-              "name": "expenseId",
-              "description": "The unique identifier of the expense."
-            }
-          ]
+          "params": [{ "name": "expenseId", "description": "The unique identifier of the expense." }]
         }
       },
       {
         "path": "/products/{productId}",
         "definition": {
           "entityName": "Product",
-          "schema": {
-            "$ref": "#/backend/entities/Product"
-          },
+          "schema": { "$ref": "#/backend/entities/Product" },
           "description": "Stores product information.",
-          "params": [
-            {
-              "name": "productId",
-              "description": "The unique identifier of the product."
-            }
-          ]
+          "params": [{ "name": "productId", "description": "The unique identifier of the product." }]
         }
       },
       {
         "path": "/stock_movements/{stockMovementId}",
         "definition": {
           "entityName": "StockMovement",
-          "schema": {
-            "$ref": "#/backend/entities/StockMovement"
-          },
+          "schema": { "$ref": "#/backend/entities/StockMovement" },
           "description": "Stores stock movement records.",
-          "params": [
-            {
-              "name": "stockMovementId",
-              "description": "The unique identifier of the stock movement."
-            }
-          ]
+          "params": [{ "name": "stockMovementId", "description": "The unique identifier of the stock movement." }]
         }
       },
       {
         "path": "/suppliers/{supplierId}",
         "definition": {
           "entityName": "Supplier",
-          "schema": {
-            "$ref": "#/backend/entities/Supplier"
-          },
+          "schema": { "$ref": "#/backend/entities/Supplier" },
           "description": "Stores supplier information.",
-          "params": [
-            {
-              "name": "supplierId",
-              "description": "The unique identifier of the supplier."
-            }
-          ]
+          "params": [{ "name": "supplierId", "description": "The unique identifier of the supplier." }]
         }
       }
     ],
     "reasoning": "The Firestore structure is designed to facilitate a secure and scalable CRM for the mattress shop, adhering to the principles of Authorization Independence (CRITICAL), Clarity of Intent, DBAC (Database Based Access Control), and QAPs (Rules are not Filters). Authorization Independence is achieved through denormalization. For instance, user roles are stored in the `users` collection and potentially duplicated within collaborative documents or subcollections if needed (though explicit group roles were not specified in this iteration of the requirements). QAPs are supported by segregating data based on access requirements. The `users/{userId}` structure encapsulates private user data. Collaborative entities (if they existed) would use membership maps stored directly within the document, allowing list operations based on membership to be performed securely. The structure below creates dedicated collections to segregate the data based on roles and different access permissions."
   }
 }
-
 
     
