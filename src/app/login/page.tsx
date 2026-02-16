@@ -53,7 +53,7 @@ export default function LoginPage() {
       const authError = error as AuthError;
 
       if (authError.code === 'auth/invalid-credential') {
-        const detailedErrorMessage = `وشەی نهێنی یان ڕۆڵی هەڵبژێردراو هەڵەیە.\n\nبۆ چوونەژوورەوە، دڵنیابە ئەم هەژمارانە لە بەشی Authenticationی Firebase دروستکراون:\n\nبۆ ئەدمین:\nئیمەیڵ: admin@bedart.group\nوشەی نهێنی: Rawezh1818\n\nبۆ فرۆشیار:\nئیمەیڵ: salesman@bedart.group\nوشەی نهێنی: 1234`;
+        const detailedErrorMessage = `وشەی نهێنی یان ڕۆڵی هەڵبژێردراو هەڵەیە.\n\nبۆ چوونەژوورەوە، دڵنیابە ئەم هەژمارانە لە بەشی Authenticationی Firebase دروستکراون:\n\nبۆ ئەدمین:\nئیمەیڵ: admin@bedart.group\nوشەی نهێنی: Rawezh1818\n\nبۆ فرۆشیار:\nئیمەیڵ: salesman@bedart.group\nوشەی نهێنی: 123456`;
         form.setError('root', { message: detailedErrorMessage });
       } else {
         form.setError('root', { message: 'هەڵەیەکی چاوەڕواننەکراو ڕوویدا. تکایە دووبارە هەوڵبدەرەوە.' });
