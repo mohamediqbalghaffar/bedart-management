@@ -1,3 +1,4 @@
+
 'use client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -62,16 +63,22 @@ function LoginForm({ role, schema, defaultPassword, instructionEmail }: {
             const userDocRef = doc(firestore, 'users', loggedInUser.uid);
             const userDocSnap = await getDoc(userDocRef);
 
+            // Step 1: Ensure the user's profile document exists.
             if (!userDocSnap.exists()) {
                 await setDoc(userDocRef, {
                     username: loggedInUser.email,
                     role: role,
                 });
+            }
 
-                if (role === 'Admin') {
-                    // Let the security rules handle the check for the first admin.
-                    // This write will only succeed if the `isFirstAdmin()` condition is true in the rules.
-                    const adminDocRef = doc(firestore, 'admins', loggedInUser.uid);
+            // Step 2: If logging in as Admin, ensure the admin record exists.
+            if (role === 'Admin') {
+                const adminDocRef = doc(firestore, 'admins', loggedInUser.uid);
+                const adminDocSnap = await getDoc(adminDocRef);
+
+                // If the admin record doesn't exist, try to create it.
+                // The security rules will only allow this if it's the first admin.
+                if (!adminDocSnap.exists()) {
                     await setDoc(adminDocRef, { uid: loggedInUser.uid, isAdmin: true });
                 }
             }
@@ -79,7 +86,10 @@ function LoginForm({ role, schema, defaultPassword, instructionEmail }: {
             router.push('/dashboard');
         } catch (error) {
             const authError = error as AuthError;
-            if (authError.code === 'auth/invalid-credential') {
+            // This error check specifically handles Firestore security rule failures during the admin doc creation.
+            if (authError.code === 'permission-denied' || (error as any)?.message?.includes('PERMISSION_DENIED')) {
+                 form.setError('root', { message: `Login successful, but failed to grant Admin privileges. Another admin may already exist. Contact support.` });
+            } else if (authError.code === 'auth/invalid-credential') {
                 const detailedErrorMessage = `وشەی نهێنی هەڵەیە.\n\nدڵنیابە ئەم هەژمارە لە بەشی Authenticationی Firebase دروستکراوە:\nئیمەیڵ: ${email}\nوشەی نهێنی پێشنیارکراو: ${defaultPassword}`;
                 form.setError('root', { message: detailedErrorMessage });
             } else {
