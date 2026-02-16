@@ -53,7 +53,8 @@ export default function LoginPage() {
       console.error(`Login attempt failed for email: ${email}. Firebase error code: ${authError.code}`, authError);
 
       if (authError.code === 'auth/invalid-credential') {
-        form.setError('root', { message: 'وشەی نهێنی یان ڕۆڵ هەڵەیە. دڵنیابە کە هەژمارەکان لە سیستەمدا بوونیان هەیە.' });
+        const detailedErrorMessage = `وشەی نهێنی یان ڕۆڵ هەڵەیە.\nتکایە دڵنیابە کە ئەم دوو هەژمارە لە بەشی Authenticationی Firebase دروستکراون:\n1. ئەدمین: ئیمەیڵ: admin@bedart.group | وشەی نهێنی: Rawezh1818\n2. فرۆشیار: ئیمەیڵ: salesman@bedart.group | وشەی نهێنی: 1234`;
+        form.setError('root', { message: detailedErrorMessage });
       } else {
         form.setError('root', { message: 'هەڵەیەکی چاوەڕواننەکراو ڕوویدا. تکایە دووبارە هەوڵبدەرەوە.' });
       }
@@ -149,7 +150,14 @@ export default function LoginPage() {
                 )}
               />
               {form.formState.errors.root && (
-                <p className="text-sm font-medium text-destructive text-center">{form.formState.errors.root.message}</p>
+                <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md" dir="rtl">
+                    <p className="font-bold mb-2 text-center">هەڵە لە چوونەژوورەوە</p>
+                    <div className="space-y-1 text-right">
+                        {form.formState.errors.root.message?.split('\n').map((line, i) => (
+                            <p key={i}>{line}</p>
+                        ))}
+                    </div>
+                </div>
               )}
               <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
