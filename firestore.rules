@@ -8,8 +8,8 @@ service cloud.firestore {
     }
 
     function isFirstAdmin() {
-      // Allow if listing the 'admins' collection returns no documents.
-      // This is the correct way to check if a collection is empty.
+      // Correctly checks if the 'admins' collection is empty.
+      // This function requires the calling user to have 'list' permission on the 'admins' collection.
       return list(/databases/$(database)/documents/admins, 1).size() == 0;
     }
 
@@ -31,14 +31,17 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
     
-    // Admins collection can be written to by other admins,
-    // OR by the first user ever trying to become an admin.
+    // Admins collection rules
     match /admins/{userId} {
-      // Allow any authenticated user to list the collection (for isFirstAdmin) and get their own status.
-      allow list, get: if isAuth();
-      // An existing admin can make another user an admin.
-      // OR a user can make themselves an admin if no other admins exist.
-      allow write: if isAdmin() || (isFirstAdmin() && isOwner(userId));
+      // Any authenticated user can check for an admin's existence and list the collection.
+      // The 'list' permission is required for the isFirstAdmin() function to work correctly.
+      allow get, list: if isAuth();
+      
+      // The FIRST user can CREATE their own admin document, securing the bootstrap process.
+      allow create: if isFirstAdmin() && isOwner(userId);
+      
+      // Existing admins can update or delete other admin documents.
+      allow update, delete: if isAdmin();
     }
     
     // Settings collections are admin-only for writes.
