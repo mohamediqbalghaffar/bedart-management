@@ -190,127 +190,53 @@
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/users/{userId}",
-        "definition": {
-          "entityName": "UserProfile",
-          "schema": { "$ref": "#/backend/entities/UserProfile" },
-          "description": "Stores user profiles and roles. Used for authentication and authorization.",
-          "params": [{ "name": "userId", "description": "The unique identifier of the user." }]
-        }
-      },
-      {
-        "path": "/admins/{userId}",
-        "definition": {
-          "entityName": "AdminUser",
-          "schema": { "$ref": "#/backend/entities/AdminUser" },
-          "description": "Stores a record of admin user IDs for fast, secure role verification in security rules.",
-          "params": [{ "name": "userId", "description": "The unique identifier of the admin user." }]
-        }
-      },
-      {
-        "path": "/customers/{customerId}",
-        "definition": {
-          "entityName": "Customer",
-          "schema": { "$ref": "#/backend/entities/Customer" },
-          "description": "Stores customer information.",
-          "params": [{ "name": "customerId", "description": "The unique identifier of the customer." }]
-        }
-      },
-      {
-        "path": "/selling_forms/{sellingFormId}",
-        "definition": {
-          "entityName": "SellingForm",
-          "schema": { "$ref": "#/backend/entities/SellingForm" },
-          "description": "Stores selling forms data. Includes denormalized data for total price, payment status and payment type.",
-          "params": [{ "name": "sellingFormId", "description": "The unique identifier of the selling form." }]
-        }
-      },
-      {
-        "path": "/selling_forms/{sellingFormId}/payments/{paymentId}",
-        "definition": {
-          "entityName": "Payment",
-          "schema": { "$ref": "#/backend/entities/Payment" },
-          "description": "Stores payment data related to a specific selling form.",
-          "params": [
-            { "name": "sellingFormId", "description": "The unique identifier of the selling form." },
-            { "name": "paymentId", "description": "The unique identifier of the payment." }
-          ]
-        }
-      },
-      {
-        "path": "/selling_forms/{sellingFormId}/products/{productSellingFormId}",
-        "definition": {
-          "entityName": "ProductSellingForm",
-          "schema": { "$ref": "#/backend/entities/ProductSellingForm" },
-          "description": "Stores product data related to a specific selling form. Includes quantity and prices.",
-          "params": [
-            { "name": "sellingFormId", "description": "The unique identifier of the selling form." },
-            { "name": "productSellingFormId", "description": "The unique identifier of the product selling form." }
-          ]
-        }
-      },
-      {
-        "path": "/buying_forms/{buyingFormId}",
-        "definition": {
-          "entityName": "BuyingForm",
-          "schema": { "$ref": "#/backend/entities/BuyingForm" },
-          "description": "Stores buying forms data.",
-          "params": [{ "name": "buyingFormId", "description": "The unique identifier of the buying form." }]
-        }
-      },
-      {
-        "path": "/buying_forms/{buyingFormId}/products/{productBuyingFormId}",
-        "definition": {
-          "entityName": "ProductBuyingForm",
-          "schema": { "$ref": "#/backend/entities/ProductBuyingForm" },
-          "description": "Stores product data related to a specific buying form. Includes quantity and prices.",
-          "params": [
-            { "name": "buyingFormId", "description": "The unique identifier of the buying form." },
-            { "name": "productBuyingFormId", "description": "The unique identifier of the product buying form." }
-          ]
-        }
-      },
-      {
-        "path": "/expenses/{expenseId}",
-        "definition": {
-          "entityName": "Expense",
-          "schema": { "$ref": "#/backend/entities/Expense" },
-          "description": "Stores expense records.",
-          "params": [{ "name": "expenseId", "description": "The unique identifier of the expense." }]
-        }
-      },
-      {
-        "path": "/products/{productId}",
-        "definition": {
-          "entityName": "Product",
-          "schema": { "$ref": "#/backend/entities/Product" },
-          "description": "Stores product information.",
-          "params": [{ "name": "productId", "description": "The unique identifier of the product." }]
-        }
-      },
-      {
-        "path": "/stock_movements/{stockMovementId}",
-        "definition": {
-          "entityName": "StockMovement",
-          "schema": { "$ref": "#/backend/entities/StockMovement" },
-          "description": "Stores stock movement records.",
-          "params": [{ "name": "stockMovementId", "description": "The unique identifier of the stock movement." }]
-        }
-      },
-      {
-        "path": "/suppliers/{supplierId}",
-        "definition": {
-          "entityName": "Supplier",
-          "schema": { "$ref": "#/backend/entities/Supplier" },
-          "description": "Stores supplier information.",
-          "params": [{ "name": "supplierId", "description": "The unique identifier of the supplier." }]
-        }
-      }
-    ],
-    "reasoning": "The Firestore structure is designed to facilitate a secure and scalable CRM for the mattress shop, adhering to the principles of Authorization Independence (CRITICAL), Clarity of Intent, DBAC (Database Based Access Control), and QAPs (Rules are not Filters). Authorization Independence is achieved through denormalization. For instance, user roles are stored in the `users` collection and potentially duplicated within collaborative documents or subcollections if needed (though explicit group roles were not specified in this iteration of the requirements). QAPs are supported by segregating data based on access requirements. The `users/{userId}` structure encapsulates private user data. Collaborative entities (if they existed) would use membership maps stored directly within the document, allowing list operations based on membership to be performed securely. The structure below creates dedicated collections to segregate the data based on roles and different access permissions."
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Stores user profiles and roles. Used for authentication and authorization."
+    },
+    "/admins/{userId}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Stores a record of admin user IDs for fast, secure role verification in security rules."
+    },
+    "/customers/{customerId}": {
+      "schema": { "$ref": "#/entities/Customer" },
+      "description": "Stores customer information."
+    },
+    "/selling_forms/{sellingFormId}": {
+      "schema": { "$ref": "#/entities/SellingForm" },
+      "description": "Stores selling forms data. Includes denormalized data for total price, payment status and payment type."
+    },
+    "/selling_forms/{sellingFormId}/payments/{paymentId}": {
+      "schema": { "$ref": "#/entities/Payment" },
+      "description": "Stores payment data related to a specific selling form."
+    },
+    "/selling_forms/{sellingFormId}/products/{productSellingFormId}": {
+      "schema": { "$ref": "#/entities/ProductSellingForm" },
+      "description": "Stores product data related to a specific selling form. Includes quantity and prices."
+    },
+    "/buying_forms/{buyingFormId}": {
+      "schema": { "$ref": "#/entities/BuyingForm" },
+      "description": "Stores buying forms data."
+    },
+    "/buying_forms/{buyingFormId}/products/{productBuyingFormId}": {
+      "schema": { "$ref": "#/entities/ProductBuyingForm" },
+      "description": "Stores product data related to a specific buying form. Includes quantity and prices."
+    },
+    "/expenses/{expenseId}": {
+      "schema": { "$ref": "#/entities/Expense" },
+      "description": "Stores expense records."
+    },
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Stores product information."
+    },
+    "/stock_movements/{stockMovementId}": {
+      "schema": { "$ref": "#/entities/StockMovement" },
+      "description": "Stores stock movement records."
+    },
+    "/suppliers/{supplierId}": {
+      "schema": { "$ref": "#/entities/Supplier" },
+      "description": "Stores supplier information."
+    }
   }
 }
-
-    
