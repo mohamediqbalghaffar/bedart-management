@@ -13,6 +13,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 const loginSchema = z.object({
   role: z.enum(['admin', 'salesman'], {
@@ -59,14 +60,13 @@ export default function LoginPage() {
 
       if (!userDocSnap.exists()) {
         const userRole = data.role === 'admin' ? 'Admin' : 'Salesman';
+        // This only creates the user profile. It does NOT grant admin privileges.
+        // Admin privileges must be granted manually in Firestore or by another admin
+        // for the first admin user to prevent a security deadlock.
         await setDoc(userDocRef, {
           username: loggedInUser.email,
           role: userRole,
         });
-        
-        // IMPORTANT: For a new admin to get privileges, their document MUST be created
-        // in the 'admins' collection. This is a one-time manual step for the first admin,
-        // or can be done by another admin via the Settings page.
       }
 
       router.push('/dashboard');
@@ -124,19 +124,19 @@ export default function LoginPage() {
                       >
                         <Label
                           htmlFor="admin"
-                          className="relative flex-1 cursor-pointer rounded-md border-2 border-muted bg-popover p-4 transition-all hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary"
+                          className={cn("relative flex-1 cursor-pointer rounded-md border-2 border-muted bg-popover p-4 transition-all hover:bg-accent hover:text-accent-foreground", field.value === 'admin' && 'border-primary')}
                         >
                           <RadioGroupItem value="admin" id="admin" className="peer sr-only" />
-                          <CheckCircle2 className="absolute right-2 top-2 h-5 w-5 text-primary opacity-0 transition-opacity duration-200 [.peer:checked~&]:opacity-100" />
+                          <CheckCircle2 className="absolute right-2 top-2 h-5 w-5 text-primary opacity-0 transition-opacity duration-200 peer-aria-checked:opacity-100" />
                           ئەدمین
                         </Label>
 
                          <Label
                           htmlFor="salesman"
-                          className="relative flex-1 cursor-pointer rounded-md border-2 border-muted bg-popover p-4 transition-all hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary"
+                          className={cn("relative flex-1 cursor-pointer rounded-md border-2 border-muted bg-popover p-4 transition-all hover:bg-accent hover:text-accent-foreground", field.value === 'salesman' && 'border-primary')}
                         >
                           <RadioGroupItem value="salesman" id="salesman" className="peer sr-only" />
-                          <CheckCircle2 className="absolute right-2 top-2 h-5 w-5 text-primary opacity-0 transition-opacity duration-200 [.peer:checked~&]:opacity-100" />
+                          <CheckCircle2 className="absolute right-2 top-2 h-5 w-5 text-primary opacity-0 transition-opacity duration-200 peer-aria-checked:opacity-100" />
                           فرۆشیار
                         </Label>
                       </RadioGroup>
