@@ -3,73 +3,53 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useAuth, useFirestore, useUser } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, AuthError } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { signInWithEmailAndPassword, AuthError } from 'firebase/auth';
 import { BedDouble, Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6, { message: 'وشەی نهێنی دەبێت لە 6 پیت کەمتر نەبێت.' }),
+  role: z.enum(['admin', 'salesman'], {
+    required_error: "تکایە ڕۆڵێک هەڵبژێرە.",
+  }),
+  password: z.string().min(1, { message: 'تکایە وشەی نهێنی بنووسە.' }),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const auth = useAuth();
-  const firestore = useFirestore();
   const router = useRouter();
   const { user, isUserLoading } = useUser();
   const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => {
-    if (!isUserLoading && user) {
-      router.replace('/dashboard');
-    }
-  }, [user, isUserLoading, router]);
-
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
+      role: undefined,
       password: '',
     },
   });
 
   const onSubmit = async (data: LoginFormValues) => {
     if (!auth) return;
+
+    // Use pre-defined emails based on role and attempt to sign in.
+    // Passwords are not hardcoded here; they are validated by Firebase Auth.
+    const email = data.role === 'admin' ? 'admin@bedart.group' : 'salesman@bedart.group';
+    const password = data.password;
+
     try {
-      await signInWithEmailAndPassword(auth, data.email, data.password);
+      await signInWithEmailAndPassword(auth, email, password);
       router.push('/dashboard');
     } catch (error) {
-      const authError = error as AuthError;
-      if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential') {
-        try {
-          const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-          const newUser = userCredential.user;
-
-          if (newUser && firestore) {
-            const userDocRef = doc(firestore, 'users', newUser.uid);
-            await setDoc(userDocRef, {
-              id: newUser.uid,
-              username: newUser.email,
-              role: 'Salesman',
-            });
-          }
-          router.push('/dashboard');
-        } catch (creationError) {
-          console.error('Account creation failed:', creationError);
-          form.setError('root', { message: 'هەژمار دروستنەکرا. تکایە دووبارە هەوڵبدەرەوە.' });
-        }
-      } else {
-        console.error('Login failed:', error);
-        form.setError('root', { message: 'ئیمەیڵ یان وشەی نهێنی هەڵەیە.' });
-      }
+      console.error('Login failed:', error);
+      form.setError('root', { message: 'وشەی نهێنی یان ڕۆڵی هەڵبژێردراو هەڵەیە.' });
     }
   };
 
@@ -91,24 +71,46 @@ export default function LoginPage() {
                 </div>
             </div>
           <CardTitle>BedArt Group</CardTitle>
-          <CardDescription>بۆ چوونەژوورەوە یان دروستکردنی هەژمار، زانیارییەکانت بنووسە.</CardDescription>
+          <CardDescription>تکایە ڕۆڵەکەت هەڵبژێرە و وشەی نهێنی بنووسە.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" dir="rtl">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" dir="rtl">
               <FormField
                 control={form.control}
-                name="email"
+                name="role"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>ئیمەیڵ</FormLabel>
+                  <FormItem className="space-y-3">
+                    <FormLabel>من کێم؟</FormLabel>
                     <FormControl>
-                      <Input placeholder="name@example.com" {...field} />
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="flex justify-around gap-4"
+                      >
+                        <FormItem className="flex-1">
+                          <FormControl>
+                             <RadioGroupItem value="admin" id="admin" className="sr-only" />
+                          </FormControl>
+                          <FormLabel htmlFor="admin" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer">
+                            ئەدمین
+                          </FormLabel>
+                        </FormItem>
+                         <FormItem className="flex-1">
+                          <FormControl>
+                            <RadioGroupItem value="salesman" id="salesman" className="sr-only" />
+                          </FormControl>
+                           <FormLabel htmlFor="salesman" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer">
+                            فرۆشیار
+                          </FormLabel>
+                        </FormItem>
+                      </RadioGroup>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="password"
@@ -140,15 +142,15 @@ export default function LoginPage() {
                 )}
               />
               {form.formState.errors.root && (
-                <p className="text-sm font-medium text-destructive">{form.formState.errors.root.message}</p>
+                <p className="text-sm font-medium text-destructive text-center">{form.formState.errors.root.message}</p>
               )}
               <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? '...چاوەڕوانبە' : 'چوونەژوورەوە / خۆتۆمارکردن'}
+                {form.formState.isSubmitting ? '...چاوەڕوانبە' : 'چوونەژوورەوە'}
               </Button>
             </form>
           </Form>
         </CardContent>
-        <CardFooter className="text-center text-xs text-muted-foreground">
+         <CardFooter className="text-center text-xs text-muted-foreground flex justify-center">
             <p>بەکارهێنان تەنها بۆ کارمەندانە.</p>
         </CardFooter>
       </Card>
