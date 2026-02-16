@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -43,7 +44,8 @@ type Supplier = {
     supplierName: string;
 };
 
-function StockList() {
+
+export default function StockPage() {
     const firestore = useFirestore();
     const searchParams = useSearchParams();
     const initialSearch = searchParams.get('search') || '';
@@ -140,113 +142,100 @@ function StockList() {
     const onTransferSuccess = () => {
         setRefreshTrigger(prev => prev + 1);
     }
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>لیستی کۆگا</CardTitle>
-                <div className="flex items-center justify-between gap-4 mt-4">
-                    <div className="relative w-full max-w-sm">
-                        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="...گەڕان بەدوای کاڵا"
-                            className="pr-10"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                    <Button variant="outline" onClick={exportToExcel}>
-                        <FileDown />
-                        هەناردەکردنی ڕاپۆرت
-                    </Button>
-                </div>
-            </CardHeader>
-            <CardContent>
-                <ScrollArea className="h-[60vh]">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="text-center">گواستنەوە</TableHead>
-                                <TableHead className="text-right">
-                                    <div className='flex items-center justify-end gap-1'>
-                                        <span>دابینکەر</span>
-                                        <TooltipProvider>
-                                            <Tooltip>
-                                                <TooltipTrigger>
-                                                    <Info className="h-3 w-3 text-muted-foreground" />
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                    <p>کۆتا دابینکەر کە ئەم کاڵایەی لێ کڕاوە</p>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
-                                    </div>
-                                </TableHead>
-                                <TableHead className="text-center">کۆی گشتی</TableHead>
-                                <TableHead className="text-center">فرۆشگا</TableHead>
-                                <TableHead className="text-center">کۆگا</TableHead>
-                                <TableHead className="text-right">پۆل</TableHead>
-                                <TableHead className="text-right">کاڵا</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {isLoading ? (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="h-24 text-center">
-                                        <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-                                    </TableCell>
-                                </TableRow>
-                            ) : groupedProducts.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
-                                        {searchTerm ? `هیچ کاڵایەک نەدۆزرایەوە بۆ "${searchTerm}"` : "هیچ کاڵایەک لە کۆگا نییە."}
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                groupedProducts.map((product) => (
-                                    <TableRow key={`${product.productName}-${product.sizeModel}`}>
-                                        <TableCell className="text-center">
-                                            <StockTransferDialog product={product} onTransferSuccess={onTransferSuccess}>
-                                                <Button variant="ghost" size="icon" disabled={!product.locations.Warehouse && !product.locations['Shop Showroom']}>
-                                                    <ArrowRightLeft className="h-4 w-4 text-blue-500" />
-                                                </Button>
-                                            </StockTransferDialog>
-                                        </TableCell>
-                                        <TableCell className="text-right">{product.supplierName}</TableCell>
-                                        <TableCell className="text-center">
-                                            <Badge variant={product.totalQuantity < 5 ? "destructive" : "secondary"}>
-                                                {product.totalQuantity}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-center">{product.locations['Shop Showroom']?.currentQuantity || 0}</TableCell>
-                                        <TableCell className="text-center">{product.locations.Warehouse?.currentQuantity || 0}</TableCell>
-                                        <TableCell className="text-right">{product.category}</TableCell>
-                                        <TableCell className="font-medium text-right">{product.productName} {product.sizeModel && `(${product.sizeModel})`}</TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </ScrollArea>
-            </CardContent>
-        </Card>
-    );
-}
-
-const StockPageContent = () => {
+    
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <PageHeader title="بەڕێوەبردنی کۆگا" description="ئاستی کۆگا و زانیاری کاڵاکانت لێرە بەڕێوەببە." />
-            <StockList />
+            <Card>
+                <CardHeader>
+                    <CardTitle>لیستی کۆگا</CardTitle>
+                    <div className="flex items-center justify-between gap-4 mt-4">
+                        <div className="relative w-full max-w-sm">
+                            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="...گەڕان بەدوای کاڵا"
+                                className="pr-10"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        <Button variant="outline" onClick={exportToExcel}>
+                            <FileDown />
+                            هەناردەکردنی ڕاپۆرت
+                        </Button>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <ScrollArea className="h-[60vh]">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="text-center">گواستنەوە</TableHead>
+                                    <TableHead className="text-right">
+                                        <div className='flex items-center justify-end gap-1'>
+                                            <span>دابینکەر</span>
+                                            <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger>
+                                                        <Info className="h-3 w-3 text-muted-foreground" />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>کۆتا دابینکەر کە ئەم کاڵایەی لێ کڕاوە</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
+                                        </div>
+                                    </TableHead>
+                                    <TableHead className="text-center">کۆی گشتی</TableHead>
+                                    <TableHead className="text-center">فرۆشگا</TableHead>
+                                    <TableHead className="text-center">کۆگا</TableHead>
+                                    <TableHead className="text-right">پۆل</TableHead>
+                                    <TableHead className="text-right">کاڵا</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {isLoading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={7} className="h-24 text-center">
+                                            <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+                                        </TableCell>
+                                    </TableRow>
+                                ) : groupedProducts.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
+                                            {searchTerm ? `هیچ کاڵایەک نەدۆزرایەوە بۆ "${searchTerm}"` : "هیچ کاڵایەک لە کۆگا نییە."}
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    groupedProducts.map((product) => (
+                                        <TableRow key={`${product.productName}-${product.sizeModel}`}>
+                                            <TableCell className="text-center">
+                                                <StockTransferDialog product={product} onTransferSuccess={onTransferSuccess}>
+                                                    <Button variant="ghost" size="icon" disabled={!product.locations.Warehouse && !product.locations['Shop Showroom']}>
+                                                        <ArrowRightLeft className="h-4 w-4 text-blue-500" />
+                                                    </Button>
+                                                </StockTransferDialog>
+                                            </TableCell>
+                                            <TableCell className="text-right">{product.supplierName}</TableCell>
+                                            <TableCell className="text-center">
+                                                <Badge variant={product.totalQuantity < 5 ? "destructive" : "secondary"}>
+                                                    {product.totalQuantity}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-center">{product.locations['Shop Showroom']?.currentQuantity || 0}</TableCell>
+                                            <TableCell className="text-center">{product.locations.Warehouse?.currentQuantity || 0}</TableCell>
+                                            <TableCell className="text-right">{product.category}</TableCell>
+                                            <TableCell className="font-medium text-right">{product.productName} {product.sizeModel && `(${product.sizeModel})`}</TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </ScrollArea>
+                </CardContent>
+            </Card>
         </div>
     );
-};
-
-
-export default function StockPage() {
-    return (
-        <React.Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
-            <StockPageContent />
-        </React.Suspense>
-    );
 }
+
+    
