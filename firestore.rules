@@ -10,7 +10,7 @@ service cloud.firestore {
     function isFirstAdmin() {
       // Correctly checks if the 'admins' collection is empty.
       // This function requires the calling user to have 'list' permission on the 'admins' collection.
-      return list(/databases/$(database)/documents/admins, 1).size() == 0;
+      return get(/databases/$(database)/documents/admins).size() == 0;
     }
 
     function isAdmin() {
@@ -32,10 +32,14 @@ service cloud.firestore {
     }
     
     // Admins collection rules
+    // isFirstAdmin() requires list permission on the /admins collection. It is safe to grant this to any authenticated user
+    // as the documents only contain a uid and a boolean.
+    match /admins {
+      allow list: if isAuth();
+    }
+
     match /admins/{userId} {
-      // Any authenticated user can check for an admin's existence and list the collection.
-      // The 'list' permission is required for the isFirstAdmin() function to work correctly.
-      allow get, list: if isAuth();
+      allow get: if isAuth();
       
       // The FIRST user can CREATE their own admin document, securing the bootstrap process.
       allow create: if isFirstAdmin() && isOwner(userId);
