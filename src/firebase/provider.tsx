@@ -2,16 +2,15 @@
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { FirebaseApp } from 'firebase/app';
-import { Firestore } from 'firebase/firestore';
+import { Firestore, doc } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener'
+import { useDoc } from './firestore/use-doc';
 
-interface FirebaseProviderProps {
-  children: ReactNode;
-  firebaseApp: FirebaseApp;
-  firestore: Firestore;
-  auth: Auth;
-}
+export type UserProfile = {
+  role?: 'Admin' | 'Data Manager' | 'Salesman';
+  username?: string;
+};
 
 // Internal state for user authentication
 interface UserAuthState {
@@ -30,6 +29,8 @@ export interface FirebaseContextState {
   user: User | null;
   isUserLoading: boolean; // True during initial auth check
   userError: Error | null; // Error from auth listener
+  userProfile: UserProfile | null;
+  isProfileLoading: boolean;
 }
 
 // Return type for useFirebase()
@@ -40,6 +41,8 @@ export interface FirebaseServicesAndUser {
   user: User | null;
   isUserLoading: boolean;
   userError: Error | null;
+  userProfile: UserProfile | null;
+  isProfileLoading: boolean;
 }
 
 // Return type for useUser() - specific to user auth state
@@ -47,6 +50,8 @@ export interface UserHookResult {
   user: User | null;
   isUserLoading: boolean;
   userError: Error | null;
+  userProfile: UserProfile | null;
+  isProfileLoading: boolean;
 }
 
 // React Context
@@ -66,6 +71,13 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     isUserLoading: true,
     userError: null,
   });
+
+  const userProfileRef = useMemoFirebase(() => {
+      if (!firestore || !userAuthState.user) return null;
+      return doc(firestore, 'users', userAuthState.user.uid);
+  }, [firestore, userAuthState.user]);
+
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
   useEffect(() => {
     if (!auth) {
@@ -98,8 +110,10 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       user: userAuthState.user,
       isUserLoading: userAuthState.isUserLoading,
       userError: userAuthState.userError,
+      userProfile: userProfile,
+      isProfileLoading: isProfileLoading,
     };
-  }, [firebaseApp, firestore, auth, userAuthState]);
+  }, [firebaseApp, firestore, auth, userAuthState, userProfile, isProfileLoading]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>
@@ -113,7 +127,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
  * Hook to access core Firebase services and user authentication state.
  * Throws error if core services are not available or used outside provider.
  */
-export const useFirebase = (): Omit<FirebaseServicesAndUser, 'user' | 'isUserLoading' | 'userError'> => {
+export const useFirebase = (): Omit<FirebaseServicesAndUser, 'user' | 'isUserLoading' | 'userError' | 'userProfile' | 'isProfileLoading'> => {
   const context = useContext(FirebaseContext);
 
   if (context === undefined) {
@@ -182,5 +196,7 @@ export const useUser = (): UserHookResult => {
         user: context.user,
         isUserLoading: context.isUserLoading,
         userError: context.userError,
+        userProfile: context.userProfile,
+        isProfileLoading: context.isProfileLoading,
     };
 };

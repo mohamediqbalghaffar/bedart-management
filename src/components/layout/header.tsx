@@ -1,28 +1,32 @@
 'use client';
 
 import Link from 'next/link';
-import { BedDouble, Menu } from 'lucide-react';
+import { BedDouble, Menu, Home, ShoppingCart, Package, Users, Building, DollarSign, Settings, Archive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
+import { useUser } from '@/firebase';
+import { cn } from '@/lib/utils';
+import { usePathname } from 'next/navigation';
 
-const navLinks = [
-  { href: '/dashboard', label: 'داشبۆرد' },
-  { href: '/sales', label: 'فرۆشەکان' },
-  { href: '/purchases', label: 'کڕینەکان' },
-  { href: '/stock', label: 'کۆگا' },
-  { href: '/customers', label: 'کڕیارەکان' },
-  { href: '/suppliers', label: 'دابینکەران' },
-  { href: '/expenses', label: 'خەرجییەکان' },
-  { href: '/settings', label: 'ڕێکخستنەکان' },
+const allNavLinks = [
+  { href: '/dashboard', label: 'داشبۆرد', icon: Home, adminOnly: false },
+  { href: '/sales', label: 'فرۆشتنەکان', icon: ShoppingCart, adminOnly: false },
+  { href: '/purchases', label: 'کڕینەکان', icon: Package, adminOnly: true },
+  { href: '/stock', label: 'کۆگا', icon: Archive, adminOnly: false },
+  { href: '/customers', label: 'کڕیارەکان', icon: Users, adminOnly: false },
+  { href: '/suppliers', label: 'دابینکەران', icon: Building, adminOnly: true },
+  { href: '/expenses', label: 'خەرجییەکان', icon: DollarSign, adminOnly: true },
+  { href: '/settings', label: 'ڕێکخستنەکان', icon: Settings, adminOnly: true },
 ];
 
 export function Header() {
+  const { userProfile } = useUser();
+  const pathname = usePathname();
+
+  const navLinks = userProfile?.role === 'Admin' 
+    ? allNavLinks 
+    : allNavLinks.filter(link => !link.adminOnly);
+
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 md:hidden">
         <Sheet>
@@ -45,8 +49,9 @@ export function Header() {
                         <Link
                             key={link.href}
                             href={link.href}
-                            className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                            className={cn("flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground", { 'text-foreground': pathname === link.href })}
                         >
+                            <link.icon className="h-5 w-5" />
                             {link.label}
                         </Link>
                     ))}

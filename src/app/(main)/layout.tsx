@@ -2,14 +2,22 @@
 
 import { SidebarNav } from '@/components/layout/sidebar-nav';
 import { useUser } from '@/firebase';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Header } from '@/components/layout/header';
 
+const salesmanRestrictedRoutes = [
+    '/settings',
+    '/expenses',
+    '/purchases',
+    '/suppliers'
+];
+
 export default function MainLayout({ children }: { children: React.ReactNode }) {
-  const { user, isUserLoading } = useUser();
+  const { user, isUserLoading, userProfile, isProfileLoading } = useUser();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -17,7 +25,17 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     }
   }, [user, isUserLoading, router]);
 
-  if (isUserLoading) {
+  useEffect(() => {
+      if (userProfile && userProfile.role === 'Salesman') {
+          if (salesmanRestrictedRoutes.some(route => pathname.startsWith(route))) {
+              router.replace('/dashboard');
+          }
+      }
+  }, [userProfile, pathname, router]);
+
+  const isLoading = isUserLoading || isProfileLoading;
+
+  if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -25,7 +43,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     );
   }
   
-  if (!user) {
+  if (!user || !userProfile) {
      return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />

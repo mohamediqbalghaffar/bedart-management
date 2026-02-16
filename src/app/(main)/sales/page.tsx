@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { SalesForm } from "./components/sales-form";
-import { useFirestore, useCollection, useMemoFirebase, collection, deleteDoc, doc, getDocs, runTransaction, useDoc } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, collection, deleteDoc, doc, getDocs, runTransaction, useUser } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { SalesDetails } from './components/sales-details';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -58,37 +58,6 @@ const paymentTypeOptions: { value: PaymentType | 'all', label: string }[] = [
 
 function SalesFormDialog({ formId, onSave, trigger }: { formId: string | null, onSave: () => void, trigger: React.ReactNode }) {
     const [open, setOpen] = useState(false);
-    const firestore = useFirestore();
-
-    const companyInfoRef = useMemoFirebase(() => (firestore ? doc(firestore, 'app_settings', 'companyInfo') : null), [firestore]);
-    const { data: companyInfo, isLoading: isLoadingInfo } = useDoc<CompanyInfo>(companyInfoRef);
-
-    const renderHeader = () => {
-        if (isLoadingInfo) {
-            return (
-                <div className="space-y-2">
-                    <div className="h-7 w-48 mx-auto bg-muted animate-pulse rounded-md" />
-                    <div className="h-4 w-64 mx-auto bg-muted animate-pulse rounded-md" />
-                    <div className="h-3 w-40 mx-auto bg-muted animate-pulse rounded-md" />
-                </div>
-            )
-        }
-
-        const title = companyInfo?.name || 'BedArt Group';
-        const contact = (companyInfo?.contact || 'ته ختی نوستن . دوشک . پشتی\n07708171818 - 07700771818').replace(/\s/g, '');
-        const contactParts = contact.split('\n');
-
-        return (
-            <>
-                <DialogTitle className="text-2xl font-bold">{title}</DialogTitle>
-                <DialogDescription className="text-sm">
-                    {contactParts[0]}
-                    {contactParts.length > 1 && <br />}
-                    {contactParts.length > 1 && <span className="text-xs text-muted-foreground">{contactParts.slice(1).join('\n')}</span>}
-                </DialogDescription>
-            </>
-        )
-    }
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -96,7 +65,12 @@ function SalesFormDialog({ formId, onSave, trigger }: { formId: string | null, o
             <DialogContent className="sm:max-w-4xl" dir="rtl">
                 <DialogHeader>
                     <div className="text-center p-4">
-                        {renderHeader()}
+                       <DialogTitle className="text-2xl font-bold">BedArt Group</DialogTitle>
+                        <DialogDescription className="text-sm">
+                            تەختی نوستن . دۆشەک . پشتی
+                            <br />
+                            <span className="text-xs text-muted-foreground">07708171818 - 07700771818</span>
+                        </DialogDescription>
                     </div>
                 </DialogHeader>
                 <div className="max-h-[80vh] overflow-y-auto p-2">
@@ -116,6 +90,7 @@ function SalesList() {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<PaymentStatus | 'all'>('all');
     const [typeFilter, setTypeFilter] = useState<PaymentType | 'all'>('all');
+    const { userProfile } = useUser();
 
     const sellingFormsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -348,27 +323,29 @@ function SalesList() {
                                                     </Button>
                                                 }
                                             />
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button variant="ghost" size="icon">
-                                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                                    </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent dir="rtl">
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>دڵنیایت لە سڕینەوەی ئەم فۆڕمە؟</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            ئەم کردارە پاشگەزبوونەوەی نییە. کاڵاکان دەگەڕێنرێنەوە بۆ کۆگا و فۆڕمەکە بە هەمیشەیی دەسڕێتەوە.
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDelete(sale.id)} className="bg-destructive hover:bg-destructive/90">
-                                                            بەڵێ، بیسڕەوە
-                                                        </AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
+                                            {userProfile?.role === 'Admin' && (
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="ghost" size="icon">
+                                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent dir="rtl">
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>دڵنیایت لە سڕینەوەی ئەم فۆڕمە؟</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                ئەم کردارە پاشگەزبوونەوەی نییە. کاڵاکان دەگەڕێنرێنەوە بۆ کۆگا و فۆڕمەکە بە هەمیشەیی دەسڕێتەوە.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleDelete(sale.id)} className="bg-destructive hover:bg-destructive/90">
+                                                                بەڵێ، بیسڕەوە
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            )}
                                             <Dialog>
                                                 <DialogTrigger asChild>
                                                     <Button variant="ghost" size="icon">

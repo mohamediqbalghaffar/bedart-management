@@ -6,19 +6,28 @@ import { BedDouble, Home, ShoppingCart, Package, Users, Building, DollarSign, Se
 import { cn } from '@/lib/utils';
 import { UserNav } from './user-nav';
 import { Separator } from '../ui/separator';
+import { useUser } from '@/firebase';
 
-const navLinks = [
-  { href: '/dashboard', label: 'داشبۆرد', icon: Home },
-  { href: '/sales', label: 'فرۆشتنەکان', icon: ShoppingCart },
-  { href: '/purchases', label: 'کڕینەکان', icon: Package },
-  { href: '/stock', label: 'کۆگا', icon: Archive },
-  { href: '/customers', label: 'کڕیارەکان', icon: Users },
-  { href: '/suppliers', label: 'دابینکەران', icon: Building },
-  { href: '/expenses', label: 'خەرجییەکان', icon: DollarSign },
+const allNavLinks = [
+  { href: '/dashboard', label: 'داشبۆرد', icon: Home, adminOnly: false },
+  { href: '/sales', label: 'فرۆشتنەکان', icon: ShoppingCart, adminOnly: false },
+  { href: '/purchases', label: 'کڕینەکان', icon: Package, adminOnly: true },
+  { href: '/stock', label: 'کۆگا', icon: Archive, adminOnly: false },
+  { href: '/customers', label: 'کڕیارەکان', icon: Users, adminOnly: false },
+  { href: '/suppliers', label: 'دابینکەران', icon: Building, adminOnly: true },
+  { href: '/expenses', label: 'خەرجییەکان', icon: DollarSign, adminOnly: true },
 ];
+
+const settingsLink = { href: '/settings', label: 'ڕێکخستنەکان', icon: Settings };
+
 
 export function SidebarNav() {
   const pathname = usePathname();
+  const { userProfile } = useUser();
+
+  const navLinks = userProfile?.role === 'Admin' 
+    ? allNavLinks 
+    : allNavLinks.filter(link => !link.adminOnly);
 
   return (
     <div className="hidden border-l bg-muted/40 md:block">
@@ -37,7 +46,7 @@ export function SidebarNav() {
                 href={link.href}
                 className={cn(
                   'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                  { 'bg-muted text-primary': pathname === link.href }
+                  { 'bg-muted text-primary': pathname.startsWith(link.href) }
                 )}
               >
                 <link.icon className="h-4 w-4" />
@@ -48,16 +57,18 @@ export function SidebarNav() {
         </div>
         <div className="mt-auto p-4 space-y-4">
             <Separator />
-             <Link
-                href="/settings"
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                  { 'bg-muted text-primary': pathname === '/settings' }
-                )}
-              >
-                <Settings className="h-4 w-4" />
-                ڕێکخستنەکان
-              </Link>
+             {userProfile?.role === 'Admin' && (
+                 <Link
+                    href={settingsLink.href}
+                    className={cn(
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+                    { 'bg-muted text-primary': pathname.startsWith(settingsLink.href) }
+                    )}
+                >
+                    <settingsLink.icon className="h-4 w-4" />
+                    {settingsLink.label}
+                </Link>
+             )}
           <UserNav />
         </div>
       </div>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -16,15 +15,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase, doc } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { LogOut } from 'lucide-react';
-
-type UserProfile = {
-  role?: string;
-  username?: string;
-};
 
 const roleTranslations: Record<string, string> = {
     'Admin': 'بەڕێوەبەر',
@@ -34,16 +28,8 @@ const roleTranslations: Record<string, string> = {
 
 export function UserNav() {
   const auth = useAuth();
-  const { user } = useUser();
+  const { user, userProfile } = useUser();
   const router = useRouter();
-  const firestore = useFirestore();
-
-  const userProfileRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
-
-  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
   const handleSignOut = async () => {
     if (auth) {
