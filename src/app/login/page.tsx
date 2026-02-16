@@ -49,7 +49,11 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (error) {
       console.error('Login failed:', error);
-      form.setError('root', { message: 'وشەی نهێنی یان ڕۆڵی هەڵبژێردراو هەڵەیە.' });
+      if ((error as AuthError).code === 'auth/invalid-credential') {
+        form.setError('root', { message: 'وشەی نهێنی یان ڕۆڵی هەڵبژێردراو هەڵەیە. تکایە دڵنیابە لە دروستیان.' });
+      } else {
+        form.setError('root', { message: 'هەڵەیەک ڕوویدا لە کاتی چوونەژوورەوە. تکایە دووبارە هەوڵبدەرەوە.' });
+      }
     }
   };
 
