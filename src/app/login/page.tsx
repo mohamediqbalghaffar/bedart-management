@@ -60,13 +60,17 @@ export default function LoginPage() {
 
       if (!userDocSnap.exists()) {
         const userRole = data.role === 'admin' ? 'Admin' : 'Salesman';
-        // This only creates the user profile. It does NOT grant admin privileges.
-        // Admin privileges must be granted manually in Firestore or by another admin
-        // for the first admin user to prevent a security deadlock.
         await setDoc(userDocRef, {
           username: loggedInUser.email,
           role: userRole,
         });
+        
+        // If the role is admin, also create a record in the 'admins' collection
+        // This will only succeed for the very first admin, subsequent ones need to be added by an existing admin
+        if (userRole === 'Admin') {
+            const adminDocRef = doc(firestore, 'admins', loggedInUser.uid);
+            await setDoc(adminDocRef, { uid: loggedInUser.uid, isAdmin: true });
+        }
       }
 
       router.push('/dashboard');

@@ -7,9 +7,14 @@ service cloud.firestore {
       return request.auth.uid != null;
     }
 
+    function isFirstAdmin() {
+      // Allow if the 'admins' collection is empty.
+      // This is a non-recursive read and is efficient for small collections.
+      return get(/databases/$(database)/documents/admins).size() == 0;
+    }
+
     function isAdmin() {
       // Fast, non-recursive check for admin privileges.
-      // This is the recommended pattern to avoid deadlocks.
       return isAuth() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
     
@@ -26,11 +31,13 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
     
-    // Admins collection is read-only for clients. Writes are handled by server-side logic (or trusted admin client).
-    // In our case, the logic in the settings page handles writes, protected by the `isAdmin()` check on the component.
+    // Admins collection can be written to by other admins,
+    // OR by the first user ever trying to become an admin.
     match /admins/{userId} {
       allow read: if isAuth();
-      allow write: if isAdmin(); // Allows an admin to make another user an admin.
+      // An existing admin can make another user an admin.
+      // OR a user can make themselves an admin if no other admins exist.
+      allow write: if isAdmin() || (isFirstAdmin() && isOwner(userId));
     }
     
     // Settings collections are admin-only for writes.
