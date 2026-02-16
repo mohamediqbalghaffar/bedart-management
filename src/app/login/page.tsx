@@ -3,87 +3,145 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useAuth, useUser, useFirestore, doc, getDoc, setDoc } from '@/firebase';
+import { useAuth, useUser, useFirestore, doc, getDoc, setDoc, getDocs, collection } from '@/firebase';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { signInWithEmailAndPassword, AuthError } from 'firebase/auth';
-import { BedDouble, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react';
+import { BedDouble, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-const loginSchema = z.object({
-  role: z.enum(['admin', 'salesman'], {
-    required_error: "تکایە ڕۆڵێک هەڵبژێرە.",
-  }),
+// Schemas for each login type
+const adminLoginSchema = z.object({
   password: z.string().min(1, { message: 'تکایە وشەی نهێنی بنووسە.' }),
 });
+type AdminLoginFormValues = z.infer<typeof adminLoginSchema>;
 
-type LoginFormValues = z.infer<typeof loginSchema>;
+const salesmanLoginSchema = z.object({
+  password: z.string().min(1, { message: 'تکایە وشەی نهێنی بنووسە.' }),
+});
+type SalesmanLoginFormValues = z.infer<typeof salesmanLoginSchema>;
+
+
+// A generic login form component
+function LoginForm({ role, schema, defaultPassword, instructionEmail }: {
+    role: 'Admin' | 'Salesman';
+    schema: typeof adminLoginSchema | typeof salesmanLoginSchema;
+    defaultPassword?: string;
+    instructionEmail: string;
+}) {
+    const auth = useAuth();
+    const firestore = useFirestore();
+    const router = useRouter();
+    const [showPassword, setShowPassword] = useState(false);
+
+    const form = useForm<z.infer<typeof schema>>({
+        resolver: zodResolver(schema),
+        defaultValues: {
+            password: '',
+        },
+    });
+
+    const onSubmit = async (data: z.infer<typeof schema>) => {
+        if (!auth || !firestore) {
+            form.setError('root', { message: 'خزمەتگوزاری چوونەژوورەوە ئامادە نییە. تکایە دووبارە هەوڵبدەرەوە.' });
+            return;
+        }
+
+        const email = instructionEmail;
+        const password = data.password;
+
+        form.clearErrors('root');
+
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const loggedInUser = userCredential.user;
+
+            const userDocRef = doc(firestore, 'users', loggedInUser.uid);
+            const userDocSnap = await getDoc(userDocRef);
+
+            if (!userDocSnap.exists()) {
+                await setDoc(userDocRef, {
+                    username: loggedInUser.email,
+                    role: role,
+                });
+
+                if (role === 'Admin') {
+                    // Let the security rules handle the check for the first admin.
+                    // This write will only succeed if the `isFirstAdmin()` condition is true in the rules.
+                    const adminDocRef = doc(firestore, 'admins', loggedInUser.uid);
+                    await setDoc(adminDocRef, { uid: loggedInUser.uid, isAdmin: true });
+                }
+            }
+
+            router.push('/dashboard');
+        } catch (error) {
+            const authError = error as AuthError;
+            if (authError.code === 'auth/invalid-credential') {
+                const detailedErrorMessage = `وشەی نهێنی هەڵەیە.\n\nدڵنیابە ئەم هەژمارە لە بەشی Authenticationی Firebase دروستکراوە:\nئیمەیڵ: ${email}\nوشەی نهێنی پێشنیارکراو: ${defaultPassword}`;
+                form.setError('root', { message: detailedErrorMessage });
+            } else {
+                form.setError('root', { message: 'هەڵەیەکی چاوەڕواننەکراو ڕوویدا. تکایە دووبارە هەوڵبدەرەوە.' });
+            }
+        }
+    };
+    
+    return (
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" dir="rtl">
+                <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>وشەی نهێنی</FormLabel>
+                            <FormControl>
+                                <div className="relative">
+                                    <Input
+                                        type={showPassword ? "text" : "password"}
+                                        {...field}
+                                        className="pl-10"
+                                        dir="ltr"
+                                        style={{ textAlign: 'left' }}
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="absolute left-1 top-1/2 h-full -translate-y-1/2 px-3"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                    >
+                                        {showPassword ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
+                                    </Button>
+                                </div>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                {form.formState.errors.root && (
+                    <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md" dir="rtl">
+                        <p className="font-bold mb-2 text-center">هەڵە لە چوونەژوورەوە</p>
+                        <div className="space-y-2 text-right whitespace-pre-line">
+                            {form.formState.errors.root.message}
+                        </div>
+                    </div>
+                )}
+                <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                    {form.formState.isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                    {form.formState.isSubmitting ? '...چاوەڕوانبە' : 'چوونەژوورەوە'}
+                </Button>
+            </form>
+        </Form>
+    );
+}
+
 
 export default function LoginPage() {
-  const auth = useAuth();
-  const firestore = useFirestore();
-  const router = useRouter();
   const { user, isUserLoading } = useUser();
-  const [showPassword, setShowPassword] = useState(false);
-
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      role: undefined,
-      password: '',
-    },
-  });
-
-  const onSubmit = async (data: LoginFormValues) => {
-    if (!auth || !firestore) {
-        form.setError('root', { message: 'خزمەتگوزاری چوونەژوورەوە ئامادە نییە. تکایە دووبارە هەوڵبدەرەوە.' });
-        return;
-    };
-
-    const email = data.role === 'admin' ? 'admin@bedart.group' : 'salesman@bedart.group';
-    const password = data.password;
-
-    form.clearErrors('root');
-
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const loggedInUser = userCredential.user;
-
-      // Ensure user profile document exists
-      const userDocRef = doc(firestore, 'users', loggedInUser.uid);
-      const userDocSnap = await getDoc(userDocRef);
-
-      if (!userDocSnap.exists()) {
-        const userRole = data.role === 'admin' ? 'Admin' : 'Salesman';
-        await setDoc(userDocRef, {
-          username: loggedInUser.email,
-          role: userRole,
-        });
-        
-        // If the role is admin, also create a record in the 'admins' collection
-        // This will only succeed for the very first admin, subsequent ones need to be added by an existing admin
-        if (userRole === 'Admin') {
-            const adminDocRef = doc(firestore, 'admins', loggedInUser.uid);
-            await setDoc(adminDocRef, { uid: loggedInUser.uid, isAdmin: true });
-        }
-      }
-
-      router.push('/dashboard');
-    } catch (error) {
-      const authError = error as AuthError;
-      if (authError.code === 'auth/invalid-credential') {
-        const detailedErrorMessage = `وشەی نهێنی یان ڕۆڵی هەڵبژێردراو هەڵەیە.\n\nبۆ چوونەژوورەوە، دڵنیابە ئەم هەژمارانە لە بەشی Authenticationی Firebase دروستکراون:\n\nبۆ ئەدمین:\nئیمەیڵ: admin@bedart.group\nوشەی نهێنی: Rawezh1818\n\nبۆ فرۆشیار:\nئیمەیڵ: salesman@bedart.group\nوشەی نهێنی: 123456`;
-        form.setError('root', { message: detailedErrorMessage });
-      } else {
-         form.setError('root', { message: 'هەڵەیەکی چاوەڕواننەکراو ڕوویدا. تکایە دووبارە هەوڵبدەرەوە.' });
-      }
-    }
-  };
+  const router = useRouter();
 
   useEffect(() => {
       if (!isUserLoading && user) {
@@ -100,7 +158,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background/80" style={{ backgroundImage: 'url(https://picsum.photos/seed/login-bg/1920/1080)', backgroundSize: 'cover' }}>
+    <div className="flex min-h-screen items-center justify-center bg-background/80 px-4" style={{ backgroundImage: 'url(https://picsum.photos/seed/login-bg/1920/1080)', backgroundSize: 'cover' }}>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
             <div className="flex justify-center items-center mb-4">
@@ -109,91 +167,31 @@ export default function LoginPage() {
                 </div>
             </div>
           <CardTitle>BedArt Group</CardTitle>
-          <CardDescription>تکایە ڕۆڵەکەت هەڵبژێرە و وشەی نهێنی بنووسە.</CardDescription>
+          <CardDescription>تکایە جۆری هەژمارەکەت هەڵبژێرە و بچۆ ژوورەوە.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" dir="rtl">
-              <FormField
-                control={form.control}
-                name="role"
-                render={({ field }) => (
-                  <FormItem className="space-y-3">
-                    <FormLabel>من کێم؟</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        className="flex justify-around gap-4"
-                      >
-                        <Label
-                          htmlFor="admin"
-                          className={cn("relative flex-1 cursor-pointer rounded-md border-2 border-muted bg-popover p-4 transition-all hover:bg-accent hover:text-accent-foreground", field.value === 'admin' && 'border-primary')}
-                        >
-                          <RadioGroupItem value="admin" id="admin" className="peer sr-only" />
-                          <CheckCircle2 className="absolute right-2 top-2 h-5 w-5 text-primary opacity-0 transition-opacity duration-200 peer-aria-checked:opacity-100" />
-                          ئەدمین
-                        </Label>
-
-                         <Label
-                          htmlFor="salesman"
-                          className={cn("relative flex-1 cursor-pointer rounded-md border-2 border-muted bg-popover p-4 transition-all hover:bg-accent hover:text-accent-foreground", field.value === 'salesman' && 'border-primary')}
-                        >
-                          <RadioGroupItem value="salesman" id="salesman" className="peer sr-only" />
-                          <CheckCircle2 className="absolute right-2 top-2 h-5 w-5 text-primary opacity-0 transition-opacity duration-200 peer-aria-checked:opacity-100" />
-                          فرۆشیار
-                        </Label>
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>وشەی نهێنی</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          type={showPassword ? "text" : "password"}
-                          {...field}
-                          className="pl-10"
-                          dir="ltr"
-                          style={{ textAlign: 'left' }}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute left-1 top-1/2 h-full -translate-y-1/2 px-3"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? <EyeOff className="h-5 w-5 text-muted-foreground" /> : <Eye className="h-5 w-5 text-muted-foreground" />}
-                        </Button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {form.formState.errors.root && (
-                <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md" dir="rtl">
-                    <p className="font-bold mb-2 text-center">هەڵە لە چوونەژوورەوە</p>
-                    <div className="space-y-2 text-right whitespace-pre-line">
-                        {form.formState.errors.root.message}
-                    </div>
-                </div>
-              )}
-              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                {form.formState.isSubmitting ? '...چاوەڕوانبە' : 'چوونەژوورەوە'}
-              </Button>
-            </form>
-          </Form>
+            <Tabs defaultValue="admin" className="w-full" dir="rtl">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="admin">ئەدمین</TabsTrigger>
+                    <TabsTrigger value="salesman">فرۆشیار</TabsTrigger>
+                </TabsList>
+                <TabsContent value="admin" className="pt-4">
+                    <LoginForm 
+                        role="Admin" 
+                        schema={adminLoginSchema}
+                        defaultPassword="Rawezh1818"
+                        instructionEmail="admin@bedart.group"
+                    />
+                </TabsContent>
+                <TabsContent value="salesman" className="pt-4">
+                     <LoginForm 
+                        role="Salesman" 
+                        schema={salesmanLoginSchema}
+                        defaultPassword="123456"
+                        instructionEmail="salesman@bedart.group"
+                    />
+                </TabsContent>
+            </Tabs>
         </CardContent>
          <CardFooter className="text-center text-xs text-muted-foreground flex justify-center">
             <p>بەکارهێنان تەنها بۆ کارمەندانە.</p>
