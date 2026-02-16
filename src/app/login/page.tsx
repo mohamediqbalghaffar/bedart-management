@@ -51,7 +51,6 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (error) {
       const authError = error as AuthError;
-      console.error(`Login attempt failed for email: ${email}. Firebase error code: ${authError.code}`, authError);
 
       if (authError.code === 'auth/invalid-credential') {
         const detailedErrorMessage = `وشەی نهێنی یان ڕۆڵی هەڵبژێردراو هەڵەیە.\n\nبۆ چوونەژوورەوە، دڵنیابە ئەم هەژمارانە لە بەشی Authenticationی Firebase دروستکراون:\n\nبۆ ئەدمین:\nئیمەیڵ: admin@bedart.group\nوشەی نهێنی: Rawezh1818\n\nبۆ فرۆشیار:\nئیمەیڵ: salesman@bedart.group\nوشەی نهێنی: 1234`;
