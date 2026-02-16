@@ -8,9 +8,9 @@ service cloud.firestore {
     }
 
     function isFirstAdmin() {
-      // Allow if the 'admins' collection is empty.
-      // This is a non-recursive read and is efficient for small collections.
-      return get(/databases/$(database)/documents/admins).size() == 0;
+      // Allow if listing the 'admins' collection returns no documents.
+      // This is the correct way to check if a collection is empty.
+      return list(/databases/$(database)/documents/admins, 1).size() == 0;
     }
 
     function isAdmin() {
@@ -34,7 +34,8 @@ service cloud.firestore {
     // Admins collection can be written to by other admins,
     // OR by the first user ever trying to become an admin.
     match /admins/{userId} {
-      allow read: if isAuth();
+      // Allow any authenticated user to list the collection (for isFirstAdmin) and get their own status.
+      allow list, get: if isAuth();
       // An existing admin can make another user an admin.
       // OR a user can make themselves an admin if no other admins exist.
       allow write: if isAdmin() || (isFirstAdmin() && isOwner(userId));
