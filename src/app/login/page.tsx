@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { useAuth, useUser } from '@/firebase';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { signInWithEmailAndPassword, AuthError } from 'firebase/auth';
-import { BedDouble, Eye, EyeOff } from 'lucide-react';
+import { BedDouble, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -37,10 +37,11 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
-    if (!auth) return;
+    if (!auth) {
+        form.setError('root', { message: 'خزمەتگوزاری چوونەژوورەوە ئامادە نییە. تکایە دووبارە هەوڵبدەرەوە.' });
+        return;
+    };
 
-    // Use pre-defined emails based on role and attempt to sign in.
-    // Passwords are not hardcoded here; they are validated by Firebase Auth.
     const email = data.role === 'admin' ? 'admin@bedart.group' : 'salesman@bedart.group';
     const password = data.password;
 
@@ -48,11 +49,13 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, email, password);
       router.push('/dashboard');
     } catch (error) {
-      console.error('Login failed:', error);
-      if ((error as AuthError).code === 'auth/invalid-credential') {
-        form.setError('root', { message: 'وشەی نهێنی یان ڕۆڵی هەڵبژێردراو هەڵەیە. تکایە دڵنیابە لە دروستیان.' });
+      const authError = error as AuthError;
+      console.error(`Login attempt failed for email: ${email}. Firebase error code: ${authError.code}`, authError);
+
+      if (authError.code === 'auth/invalid-credential') {
+        form.setError('root', { message: 'وشەی نهێنی یان ڕۆڵ هەڵەیە. دڵنیابە کە هەژمارەکان لە سیستەمدا بوونیان هەیە.' });
       } else {
-        form.setError('root', { message: 'هەڵەیەک ڕوویدا لە کاتی چوونەژوورەوە. تکایە دووبارە هەوڵبدەرەوە.' });
+        form.setError('root', { message: 'هەڵەیەکی چاوەڕواننەکراو ڕوویدا. تکایە دووبارە هەوڵبدەرەوە.' });
       }
     }
   };
@@ -149,6 +152,7 @@ export default function LoginPage() {
                 <p className="text-sm font-medium text-destructive text-center">{form.formState.errors.root.message}</p>
               )}
               <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
                 {form.formState.isSubmitting ? '...چاوەڕوانبە' : 'چوونەژوورەوە'}
               </Button>
             </form>
