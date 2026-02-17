@@ -4,18 +4,16 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BedDouble, Home, ShoppingCart, Package, Users, Building, DollarSign, Settings, Archive } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { UserNav } from './user-nav';
 import { Separator } from '../ui/separator';
-import { useUser } from '@/firebase';
 
 const allNavLinks = [
-  { href: '/dashboard', label: 'داشبۆرد', icon: Home, adminOnly: false },
-  { href: '/sales', label: 'فرۆشتنەکان', icon: ShoppingCart, adminOnly: false },
-  { href: '/purchases', label: 'کڕینەکان', icon: Package, adminOnly: true },
-  { href: '/stock', label: 'کۆگا', icon: Archive, adminOnly: false },
-  { href: '/customers', label: 'کڕیارەکان', icon: Users, adminOnly: false },
-  { href: '/suppliers', label: 'دابینکەران', icon: Building, adminOnly: true },
-  { href: '/expenses', label: 'خەرجییەکان', icon: DollarSign, adminOnly: true },
+  { href: '/dashboard', label: 'داشبۆرد', icon: Home },
+  { href: '/sales', label: 'فرۆشتنەکان', icon: ShoppingCart },
+  { href: '/purchases', label: 'کڕینەکان', icon: Package },
+  { href: '/stock', label: 'کۆگا', icon: Archive },
+  { href: '/customers', label: 'کڕیارەکان', icon: Users },
+  { href: '/suppliers', label: 'دابینکەران', icon: Building },
+  { href: '/expenses', label: 'خەرجییەکان', icon: DollarSign },
 ];
 
 const settingsLink = { href: '/settings', label: 'ڕێکخستنەکان', icon: Settings };
@@ -23,11 +21,8 @@ const settingsLink = { href: '/settings', label: 'ڕێکخستنەکان', icon:
 
 export function SidebarNav() {
   const pathname = usePathname();
-  const { userProfile } = useUser();
 
-  const navLinks = userProfile?.role === 'Admin' 
-    ? allNavLinks 
-    : allNavLinks.filter(link => !link.adminOnly);
+  const navLinks = allNavLinks;
 
   return (
     <div className="hidden border-l bg-muted/40 md:block">
@@ -57,19 +52,16 @@ export function SidebarNav() {
         </div>
         <div className="mt-auto p-4 space-y-4">
             <Separator />
-             {userProfile?.role === 'Admin' && (
-                 <Link
-                    href={settingsLink.href}
-                    className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                    { 'bg-muted text-primary': pathname.startsWith(settingsLink.href) }
-                    )}
-                >
-                    <settingsLink.icon className="h-4 w-4" />
-                    {settingsLink.label}
-                </Link>
-             )}
-          <UserNav />
+             <Link
+                href={settingsLink.href}
+                className={cn(
+                'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+                { 'bg-muted text-primary': pathname.startsWith(settingsLink.href) }
+                )}
+            >
+                <settingsLink.icon className="h-4 w-4" />
+                {settingsLink.label}
+            </Link>
         </div>
       </div>
     </div>

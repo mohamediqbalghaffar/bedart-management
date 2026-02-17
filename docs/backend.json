@@ -1,17 +1,6 @@
 
 {
   "entities": {
-    "UserProfile": {
-      "title": "User Profile",
-      "description": "Represents a user of the CRM system.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string", "description": "Unique identifier for the User entity." },
-        "username": { "type": "string", "description": "User's username." },
-        "role": { "type": "string", "description": "User's role: Admin, Data Manager, Salesman." }
-      },
-      "required": ["id", "username", "role"]
-    },
     "SellingForm": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "SellingForm",
@@ -174,16 +163,7 @@
       "required": ["id", "buyingFormId", "productId", "quantity", "unitPrice"]
     }
   },
-  "auth": {
-    "providers": [
-      "password"
-    ]
-  },
   "firestore": {
-    "/users/{userId}": {
-      "schema": { "$ref": "#/entities/UserProfile" },
-      "description": "Stores user profiles and roles. Used for authentication and authorization."
-    },
     "/customers/{customerId}": {
       "schema": { "$ref": "#/entities/Customer" },
       "description": "Stores customer information."

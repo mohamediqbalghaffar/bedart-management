@@ -4,28 +4,24 @@ import Link from 'next/link';
 import { BedDouble, Menu, Home, ShoppingCart, Package, Users, Building, DollarSign, Settings, Archive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
-import { useUser } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
 
 const allNavLinks = [
-  { href: '/dashboard', label: 'داشبۆرد', icon: Home, adminOnly: false },
-  { href: '/sales', label: 'فرۆشتنەکان', icon: ShoppingCart, adminOnly: false },
-  { href: '/purchases', label: 'کڕینەکان', icon: Package, adminOnly: true },
-  { href: '/stock', label: 'کۆگا', icon: Archive, adminOnly: false },
-  { href: '/customers', label: 'کڕیارەکان', icon: Users, adminOnly: false },
-  { href: '/suppliers', label: 'دابینکەران', icon: Building, adminOnly: true },
-  { href: '/expenses', label: 'خەرجییەکان', icon: DollarSign, adminOnly: true },
-  { href: '/settings', label: 'ڕێکخستنەکان', icon: Settings, adminOnly: true },
+  { href: '/dashboard', label: 'داشبۆرد', icon: Home },
+  { href: '/sales', label: 'فرۆشتنەکان', icon: ShoppingCart },
+  { href: '/purchases', label: 'کڕینەکان', icon: Package },
+  { href: '/stock', label: 'کۆگا', icon: Archive },
+  { href: '/customers', label: 'کڕیارەکان', icon: Users },
+  { href: '/suppliers', label: 'دابینکەران', icon: Building },
+  { href: '/expenses', label: 'خەرجییەکان', icon: DollarSign },
+  { href: '/settings', label: 'ڕێکخستنەکان', icon: Settings },
 ];
 
 export function Header() {
-  const { userProfile } = useUser();
   const pathname = usePathname();
 
-  const navLinks = userProfile?.role === 'Admin' 
-    ? allNavLinks 
-    : allNavLinks.filter(link => !link.adminOnly);
+  const navLinks = allNavLinks;
 
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 md:hidden">
