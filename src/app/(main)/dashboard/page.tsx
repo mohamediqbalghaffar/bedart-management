@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { useFirestore, collection, getDocs, query, where } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, DollarSign, ShoppingCart, Archive, Package, LineChart, TrendingUp, TrendingDown } from 'lucide-react';
+import { Loader2, DollarSign, ShoppingCart, Archive, Package, LineChart, TrendingUp, TrendingDown, CalendarIcon } from 'lucide-react';
 import { StatCard } from '@/components/shared/stat-card';
 import { subDays, parseISO, isValid, startOfDay, endOfDay, differenceInDays, format } from 'date-fns';
 import { AreaChart, Area, CartesianGrid, ResponsiveContainer, XAxis, YAxis, BarChart, Bar } from 'recharts';
@@ -17,7 +17,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useRouter } from 'next/navigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ckb } from '@/lib/ckb-locale';
-import { DatePicker } from '@/components/ui/date-picker';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 
 // --- TYPE DEFINITIONS ---
@@ -477,17 +480,55 @@ export default function DashboardPage() {
                  <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-muted-foreground">لە:</span>
-                        <DatePicker
-                            date={dateRange.from}
-                            onSelect={(date) => setDateRange(prev => ({...prev, from: date || prev.from }))}
-                        />
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-[180px] justify-start text-right font-normal",
+                                    !dateRange.from && "text-muted-foreground"
+                                )}
+                                >
+                                <CalendarIcon className="ml-2 h-4 w-4" />
+                                {dateRange.from ? format(dateRange.from, "dd/MM/yyyy") : <span>بەروارێک هەڵبژێرە</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                mode="single"
+                                selected={dateRange.from}
+                                onSelect={(date) => setDateRange(prev => ({...prev, from: date || prev.from }))}
+                                initialFocus
+                                locale={ckb}
+                                />
+                            </PopoverContent>
+                        </Popover>
                     </div>
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-muted-foreground">بۆ:</span>
-                        <DatePicker
-                            date={dateRange.to}
-                            onSelect={(date) => setDateRange(prev => ({...prev, to: date || prev.to }))}
-                        />
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-[180px] justify-start text-right font-normal",
+                                    !dateRange.to && "text-muted-foreground"
+                                )}
+                                >
+                                <CalendarIcon className="ml-2 h-4 w-4" />
+                                {dateRange.to ? format(dateRange.to, "dd/MM/yyyy") : <span>بەروارێک هەڵبژێرە</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                mode="single"
+                                selected={dateRange.to}
+                                onSelect={(date) => setDateRange(prev => ({...prev, to: date || prev.to }))}
+                                initialFocus
+                                locale={ckb}
+                                />
+                            </PopoverContent>
+                        </Popover>
                     </div>
                 </div>
             </PageHeader>
