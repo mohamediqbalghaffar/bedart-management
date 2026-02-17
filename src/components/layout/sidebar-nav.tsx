@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -28,7 +29,7 @@ export function SidebarNav() {
   const navLinks = allNavLinks.filter(link => role && link.roles.includes(role));
 
   return (
-    <div className="hidden border-l bg-muted/40 md:block">
+    <div className="hidden border-r bg-muted/40 md:block">
       <div className="flex h-full max-h-screen flex-col gap-2">
         <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
           <Link href="/" className="flex items-center gap-2 font-semibold">
@@ -68,7 +69,7 @@ export function SidebarNav() {
                 </Link>
             )}
             <Button variant="ghost" className="w-full justify-start" onClick={logout}>
-                <LogOut className="h-4 w-4 ml-3" />
+                <LogOut className="h-4 w-4 mr-3" />
                 چوونەدەرەوە
             </Button>
         </div>
@@ -76,3 +77,5 @@ export function SidebarNav() {
     </div>
   );
 }
+
+    

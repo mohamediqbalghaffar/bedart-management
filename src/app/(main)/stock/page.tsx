@@ -88,7 +88,7 @@ export default function StockPage() {
                         productName: p.productName,
                         category: p.category,
                         sizeModel: p.sizeModel,
-                        supplierName: p.supplierId ? supplierMap.get(p.supplierId) || 'N/A' : 'N/A',
+                        supplierName: p.supplierId ? supplierMap.get(p.supplierId) || 'نەزانراو' : 'نەزانراو',
                         supplierId: p.supplierId,
                         locations: {},
                         totalQuantity: 0,
@@ -100,7 +100,7 @@ export default function StockPage() {
                 grouped.totalQuantity += p.currentQuantity;
                 if(p.supplierId) {
                     grouped.supplierId = p.supplierId;
-                    grouped.supplierName = supplierMap.get(p.supplierId) || 'N/A';
+                    grouped.supplierName = supplierMap.get(p.supplierId) || 'نەزانراو';
                 }
             });
         
@@ -124,7 +124,7 @@ export default function StockPage() {
         const dataToExport = groupedProducts.map(p => ({
             "ناوی کاڵا": p.productName,
             "پۆل": p.category,
-            "قەبارە/مۆدێل": p.sizeModel || 'N/A',
+            "قەبارە/مۆدێل": p.sizeModel || 'نەزانراو',
             "کۆگا": p.locations.Warehouse?.currentQuantity || 0,
             "فرۆشگا": p.locations['Shop Showroom']?.currentQuantity || 0,
             "کۆی گشتی": p.totalQuantity,
@@ -170,7 +170,11 @@ export default function StockPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="text-center">گواستنەوە</TableHead>
+                                    <TableHead className="text-right">کاڵا</TableHead>
+                                    <TableHead className="text-right">پۆل</TableHead>
+                                    <TableHead className="text-center">کۆگا</TableHead>
+                                    <TableHead className="text-center">فرۆشگا</TableHead>
+                                    <TableHead className="text-center">کۆی گشتی</TableHead>
                                     <TableHead className="text-right">
                                         <div className='flex items-center justify-end gap-1'>
                                             <span>دابینکەر</span>
@@ -186,11 +190,7 @@ export default function StockPage() {
                                             </TooltipProvider>
                                         </div>
                                     </TableHead>
-                                    <TableHead className="text-center">کۆی گشتی</TableHead>
-                                    <TableHead className="text-center">فرۆشگا</TableHead>
-                                    <TableHead className="text-center">کۆگا</TableHead>
-                                    <TableHead className="text-right">پۆل</TableHead>
-                                    <TableHead className="text-right">کاڵا</TableHead>
+                                    <TableHead className="text-center">گواستنەوە</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -209,6 +209,16 @@ export default function StockPage() {
                                 ) : (
                                     groupedProducts.map((product) => (
                                         <TableRow key={`${product.productName}-${product.sizeModel}`}>
+                                            <TableCell className="font-medium text-right">{product.productName} {product.sizeModel && `(${product.sizeModel})`}</TableCell>
+                                            <TableCell className="text-right">{product.category}</TableCell>
+                                            <TableCell className="text-center">{product.locations.Warehouse?.currentQuantity || 0}</TableCell>
+                                            <TableCell className="text-center">{product.locations['Shop Showroom']?.currentQuantity || 0}</TableCell>
+                                            <TableCell className="text-center">
+                                                <Badge variant={product.totalQuantity < 5 ? "destructive" : "secondary"}>
+                                                    {product.totalQuantity}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right">{product.supplierName}</TableCell>
                                             <TableCell className="text-center">
                                                 <StockTransferDialog product={product} onTransferSuccess={onTransferSuccess}>
                                                     <Button variant="ghost" size="icon" disabled={!product.locations.Warehouse && !product.locations['Shop Showroom']}>
@@ -216,16 +226,6 @@ export default function StockPage() {
                                                     </Button>
                                                 </StockTransferDialog>
                                             </TableCell>
-                                            <TableCell className="text-right">{product.supplierName}</TableCell>
-                                            <TableCell className="text-center">
-                                                <Badge variant={product.totalQuantity < 5 ? "destructive" : "secondary"}>
-                                                    {product.totalQuantity}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-center">{product.locations['Shop Showroom']?.currentQuantity || 0}</TableCell>
-                                            <TableCell className="text-center">{product.locations.Warehouse?.currentQuantity || 0}</TableCell>
-                                            <TableCell className="text-right">{product.category}</TableCell>
-                                            <TableCell className="font-medium text-right">{product.productName} {product.sizeModel && `(${product.sizeModel})`}</TableCell>
                                         </TableRow>
                                     ))
                                 )}

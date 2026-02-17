@@ -80,8 +80,8 @@ function CustomersList() {
                             customers?.map((customer) => (
                                 <TableRow key={customer.id}>
                                     <TableCell className="font-medium text-right">{customer.customerName}</TableCell>
-                                    <TableCell className="text-right">{customer.customerPhoneNumber || 'N/A'}</TableCell>
-                                    <TableCell className="text-right">{customer.customerAddress || 'N/A'}</TableCell>
+                                    <TableCell className="text-right">{customer.customerPhoneNumber || 'نەزانراو'}</TableCell>
+                                    <TableCell className="text-right">{customer.customerAddress || 'نەزانراو'}</TableCell>
                                 </TableRow>
                             ))
                         )}
@@ -102,3 +102,5 @@ export default function CustomersPage() {
         </div>
     );
 }
+
+    

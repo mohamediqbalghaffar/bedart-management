@@ -39,7 +39,7 @@ const buyingFormSchema = z.object({
   supplierId: z.string().min(1, "هەڵبژاردنی دابینکەر پێویستە."),
   issueDate: z.string().refine((val) => /^\d{4}-\d{2}-\d{2}$/.test(val), { message: "فۆرماتی بەروار هەڵەیە (YYYY-MM-DD)." }),
   items: z.array(z.object({
-    product: z.string().min(1, "بابەت پێویستە."),
+    product: z.string().min(1, "ناوی کاڵا پێویستە."),
     category: z.string().min(1, "پۆل پێویستە."),
     sizeModel: z.string().optional(),
     quantity: z.coerce.number().min(1, "دانە دەبێت لانیکەم 1 بێت."),
@@ -90,7 +90,7 @@ function TemplateDownloadButton() {
 
     return (
         <Button type="button" variant="outline" size="sm" onClick={handleDownload}>
-            <Download className="ml-2 h-4 w-4" />
+            <Download className="mr-2 h-4 w-4" />
             دابەزاندنی نموونە
         </Button>
     )
@@ -186,12 +186,12 @@ function ExcelImportButton({ form, allProducts }: { form: UseFormReturn<BuyingFo
             <Button type="button" variant="outline" size="sm" onClick={handleClick} disabled={isLoading}>
                 {isLoading ? (
                     <>
-                        <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ...شیکردنەوە
                     </>
                 ) : (
                     <>
-                        <FileUp className="ml-2 h-4 w-4" />
+                        <FileUp className="mr-2 h-4 w-4" />
                         هاوردەکردن لە ئێکسڵ
                     </>
                 )}
@@ -295,10 +295,10 @@ function BuyingFormItemRow({
             <TableCell className="align-top">
                 <FormField control={form.control} name={`items.${index}.sellingPrice`} render={({ field }) => (<FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
             </TableCell>
-            <TableCell className="align-top pt-5 font-semibold">
+            <TableCell className="align-top pt-5 font-semibold text-left">
                 {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(watchedItem?.quantity * watchedItem?.unitPrice || 0)}
             </TableCell>
-            <TableCell className="align-top">
+            <TableCell className="align-top text-left">
                 <Button variant="ghost" size="icon" onClick={() => remove(index)}>
                     <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
@@ -600,7 +600,7 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
             <Table>
                 <TableHeader>
                     <TableRow className="bg-primary/90 hover:bg-primary">
-                        <TableHead className="w-2/5 text-primary-foreground text-center">بابەت</TableHead>
+                        <TableHead className="w-2/5 text-primary-foreground text-center">کاڵا</TableHead>
                         <TableHead className="w-[15%] text-primary-foreground text-center">پۆل</TableHead>
                         <TableHead className="text-primary-foreground text-center">دانە</TableHead>
                         <TableHead className="text-primary-foreground text-center">نرخی کڕین (USD)</TableHead>
@@ -624,7 +624,7 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
             </Table>
             <div className="flex gap-2 mt-4">
                 <Button type="button" variant="outline" size="sm" onClick={() => append({ product: "", quantity: 1, unitPrice: 0, sellingPrice: 0, category: 'Mattress', sizeModel: '' })}>
-                    <PlusCircle className="ml-2 h-4 w-4" />
+                    <PlusCircle className="mr-2 h-4 w-4" />
                     زیادکردنی کاڵا
                 </Button>
                 <ExcelImportButton form={form} allProducts={products} />
@@ -669,6 +669,5 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
     </Form>
   );
 }
-
 
     

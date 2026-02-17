@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -17,6 +18,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useRouter } from 'next/navigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { ckb } from '@/lib/ckb-locale';
+
 
 // --- TYPE DEFINITIONS ---
 
@@ -124,7 +127,7 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
                     }
                 });
                 dateMap.forEach((data) => { data.netProfit = data.sales - data.expenses; });
-                const finalChartData = Array.from(dateMap.entries()).map(([date, data]) => ({ date: format(parseISO(date), 'MMM d'), ...data }));
+                const finalChartData = Array.from(dateMap.entries()).map(([date, data]) => ({ date, ...data }));
                 setChartData(finalChartData);
 
                 // 4. Process ALL dialog data
@@ -150,7 +153,7 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
                 
                 // Purchases Dialog
                 const supplierMap = new Map(suppliersData.map(s => [s.id, s.supplierName]));
-                const enrichedPurchases = buyingFormsData.map(p => ({ ...p, supplierName: supplierMap.get(p.supplierId) || 'N/A' }));
+                const enrichedPurchases = buyingFormsData.map(p => ({ ...p, supplierName: supplierMap.get(p.supplierId) || 'نەزانراو' }));
                 const purchasesDialogSummary = allBuyingFormsProducts.reduce((acc, p) => {
                     const lineCost = p.quantity * p.unitPrice;
                     acc.totalQuantity += p.quantity;
@@ -274,7 +277,7 @@ function SalesDetailDialog({ data }: { data: any }) {
                     <AccordionContent className="px-6 pb-6">
                         <Table><TableHeader><TableRow><TableHead className="text-right">کڕیار</TableHead><TableHead className="text-right">بەروار</TableHead><TableHead className="text-right">کۆی گشتی</TableHead></TableRow></TableHeader>
                             <TableBody>
-                                {filteredData.sales?.map((sale: any) => ( <TableRow key={sale.id}><TableCell>{sale.customerName}</TableCell><TableCell>{format(parseISO(sale.issueDate), 'yyyy-MM-dd')}</TableCell><TableCell>{currencyFormatter.format(sale.totalPrice)}</TableCell></TableRow> ))}
+                                {filteredData.sales?.map((sale: any) => ( <TableRow key={sale.id}><TableCell>{sale.customerName}</TableCell><TableCell>{format(parseISO(sale.issueDate), 'P', { locale: ckb })}</TableCell><TableCell>{currencyFormatter.format(sale.totalPrice)}</TableCell></TableRow> ))}
                             </TableBody>
                         </Table>
                     </AccordionContent>
@@ -289,7 +292,7 @@ function ExpensesDetailDialog({ expenses }: { expenses: WithId<Expense>[] | null
         <div className="max-h-[60vh] overflow-y-auto">
             <Table><TableHeader><TableRow><TableHead className="text-right">خەرجی</TableHead><TableHead className="text-right">بەروار</TableHead><TableHead className="text-right">بڕ</TableHead></TableRow></TableHeader>
                 <TableBody>
-                    {expenses?.map(expense => ( <TableRow key={expense.id}><TableCell>{expense.name}</TableCell><TableCell>{format(parseISO(expense.date), 'yyyy-MM-dd')}</TableCell><TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: expense.currency || 'USD' }).format(expense.amount)}</TableCell></TableRow> ))}
+                    {expenses?.map(expense => ( <TableRow key={expense.id}><TableCell>{expense.name}</TableCell><TableCell>{format(parseISO(expense.date), 'P', { locale: ckb })}</TableCell><TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: expense.currency || 'USD' }).format(expense.amount)}</TableCell></TableRow> ))}
                 </TableBody>
             </Table>
         </div>
@@ -332,7 +335,7 @@ function PurchasesDetailDialog({ data }: { data: any }) {
                     <AccordionContent className="px-6 pb-6">
                         <Table><TableHeader><TableRow><TableHead className="text-right">دابینکەر</TableHead><TableHead className="text-right">بەروار</TableHead><TableHead className="text-right">کۆی گشتی پسوولە</TableHead></TableRow></TableHeader>
                             <TableBody>
-                                {purchases?.map((purchase: any) => ( <TableRow key={purchase.id}><TableCell>{purchase.supplierName}</TableCell><TableCell>{format(parseISO(purchase.issueDate), 'yyyy-MM-dd')}</TableCell><TableCell>{currencyFormatter.format(purchase.totalAmount || 0)}</TableCell></TableRow> ))}
+                                {purchases?.map((purchase: any) => ( <TableRow key={purchase.id}><TableCell>{purchase.supplierName}</TableCell><TableCell>{format(parseISO(purchase.issueDate), 'P', { locale: ckb })}</TableCell><TableCell>{currencyFormatter.format(purchase.totalAmount || 0)}</TableCell></TableRow> ))}
                             </TableBody>
                         </Table>
                     </AccordionContent>
@@ -429,9 +432,9 @@ function RecentActivityChart({ data }: { data: any[] }) {
                 <ChartContainer config={chartConfig} className="h-80 w-full">
                     <AreaChart accessibilityLayer data={data}>
                         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)" />
-                        <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => value} tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}/>
+                        <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => format(parseISO(value), 'd MMM', { locale: ckb })} tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}/>
                         <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={currencyFormatter} tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}/>
-                        <ChartTooltip cursor={true} content={<ChartTooltipContent indicator="dot" labelClassName="text-white" className="bg-card/80 backdrop-blur-sm text-white border-border/50" formatter={(value, name, item) => ( <div className="flex items-center gap-2"><div style={{ backgroundColor: item.color }} className="w-2.5 h-2.5 rounded-full" /><div className="flex justify-between w-full"><span className="text-muted-foreground">{chartConfig[name as keyof typeof chartConfig].label}: </span><span className="font-bold ml-2">{currencyFormatter(value as number)}</span></div></div> )}/>}/>
+                        <ChartTooltip cursor={true} content={<ChartTooltipContent labelFormatter={(label) => format(parseISO(label), 'eeee, d MMMM yyyy', { locale: ckb })} indicator="dot" labelClassName="text-white" className="bg-card/80 backdrop-blur-sm text-white border-border/50" formatter={(value, name, item) => ( <div className="flex items-center gap-2"><div style={{ backgroundColor: item.color }} className="w-2.5 h-2.5 rounded-full" /><div className="flex justify-between w-full"><span className="text-muted-foreground">{chartConfig[name as keyof typeof chartConfig].label}: </span><span className="font-bold ml-2">{currencyFormatter(value as number)}</span></div></div> )}/>}/>
                         <defs><linearGradient id="fillSales" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-sales)" stopOpacity={0.8} /><stop offset="95%" stopColor="var(--color-sales)" stopOpacity={0.1} /></linearGradient><linearGradient id="fillExpenses" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-expenses)" stopOpacity={0.8} /><stop offset="95%" stopColor="var(--color-expenses)" stopOpacity={0.1} /></linearGradient><linearGradient id="fillNetProfit" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-netProfit)" stopOpacity={0.8} /><stop offset="95%" stopColor="var(--color-netProfit)" stopOpacity={0.1} /></linearGradient></defs>
                         {activeSubjects.sales && <Area dataKey="sales" type="natural" fill="url(#fillSales)" stroke="var(--color-sales)" stackId="a" />}
                         {activeSubjects.expenses && <Area dataKey="expenses" type="natural" fill="url(#fillExpenses)" stroke="var(--color-expenses)" stackId="c" />}
@@ -486,3 +489,5 @@ export default function DashboardPage() {
         </div>
     );
 }
+
+    

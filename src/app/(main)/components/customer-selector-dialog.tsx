@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -85,8 +86,8 @@ export function CustomerSelectorDialog({ onCustomerSelect }: CustomerSelectorDia
               filteredCustomers.map(customer => (
                 <TableRow key={customer.id}>
                   <TableCell className="text-right font-medium">{customer.customerName}</TableCell>
-                  <TableCell className="text-right">{customer.customerPhoneNumber || 'N/A'}</TableCell>
-                  <TableCell className="text-right">{customer.customerAddress || 'N/A'}</TableCell>
+                  <TableCell className="text-right">{customer.customerPhoneNumber || 'نەزانراو'}</TableCell>
+                  <TableCell className="text-right">{customer.customerAddress || 'نەزانراو'}</TableCell>
                   <TableCell className="text-left">
                     <Button variant="ghost" size="sm" onClick={() => handleSelect(customer)}>
                       هەڵبژاردن
@@ -101,3 +102,5 @@ export function CustomerSelectorDialog({ onCustomerSelect }: CustomerSelectorDia
     </div>
   );
 }
+
+    

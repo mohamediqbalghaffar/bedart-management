@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -108,8 +109,8 @@ export function SalesDetails({ formId }: { formId: string }) {
                 <CardContent>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                         <div><span className="font-semibold">کڕیار:</span><p className="text-muted-foreground">{formData.customerName}</p></div>
-                        <div><span className="font-semibold">ژ. مۆبایل:</span><p className="text-muted-foreground">{formData.customerPhoneNumber || 'N/A'}</p></div>
-                        <div className="col-span-2"><span className="font-semibold">ناونیشان:</span><p className="text-muted-foreground">{formData.customerAddress || 'N/A'}</p></div>
+                        <div><span className="font-semibold">ژ. مۆبایل:</span><p className="text-muted-foreground">{formData.customerPhoneNumber || 'نەزانراو'}</p></div>
+                        <div className="col-span-2"><span className="font-semibold">ناونیشان:</span><p className="text-muted-foreground">{formData.customerAddress || 'نەزانراو'}</p></div>
                         <div className="col-span-2"><span className="font-semibold">جۆری پارەدان:</span><p className="text-muted-foreground">{paymentTypeTranslations[formData.paymentType] || formData.paymentType}</p></div>
                     </div>
                 </CardContent>
@@ -119,7 +120,7 @@ export function SalesDetails({ formId }: { formId: string }) {
                  <CardHeader><CardTitle>کاڵا فرۆشراوەکان</CardTitle></CardHeader>
                 <CardContent>
                     <Table>
-                        <TableHeader><TableRow><TableHead className="text-right">بابەت</TableHead><TableHead className="text-right">دانە</TableHead><TableHead className="text-right">نرخی تاک</TableHead><TableHead className="text-left">نرخی کۆ</TableHead></TableRow></TableHeader>
+                        <TableHeader><TableRow><TableHead className="text-right">کاڵا</TableHead><TableHead className="text-right">دانە</TableHead><TableHead className="text-right">نرخی تاک</TableHead><TableHead className="text-left">نرخی کۆ</TableHead></TableRow></TableHeader>
                         <TableBody>
                             {products && products.length > 0 ? (
                                 products.map((item, index) => (
@@ -157,7 +158,7 @@ export function SalesDetails({ formId }: { formId: string }) {
                                             <TableCell className="text-right">{p.paymentDate}</TableCell>
                                             <TableCell className="text-right font-semibold">{currencyFormatter.format(p.amountPaid)}</TableCell>
                                             <TableCell className="text-right">{p.paymentMethod === 'Cash' ? 'کاش' : 'حەواڵە'}</TableCell>
-                                            <TableCell className="text-right">{p.note || 'N/A'}</TableCell>
+                                            <TableCell className="text-right">{p.note || 'نەزانراو'}</TableCell>
                                         </TableRow>
                                     ))
                                 ) : (
@@ -181,3 +182,5 @@ export function SalesDetails({ formId }: { formId: string }) {
         </div>
     );
 }
+
+    

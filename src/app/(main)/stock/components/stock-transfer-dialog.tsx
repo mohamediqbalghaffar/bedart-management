@@ -218,7 +218,7 @@ export function StockTransferDialog({ product, children, onTransferSuccess }: St
             />
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting || maxQuantity === 0}>
-                {form.formState.isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 گواستنەوە
               </Button>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
@@ -231,3 +231,5 @@ export function StockTransferDialog({ product, children, onTransferSuccess }: St
     </Dialog>
   );
 }
+
+    

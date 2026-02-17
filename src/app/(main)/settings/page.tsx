@@ -79,7 +79,7 @@ function GeneralSettings() {
             </CardContent>
             <CardFooter>
                  <Button onClick={handleSave} disabled={isSaving}>
-                    {isSaving ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : null}
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     پاشەکەوتکردن
                 </Button>
             </CardFooter>
@@ -350,7 +350,7 @@ function DataManagement() {
                 </CardHeader>
                 <CardContent>
                     <Button variant="outline" onClick={exportAllData} disabled={isExporting}>
-                        {isExporting ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <FileDown className="ml-2 h-4 w-4" />}
+                        {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
                         هەناردەکردنی هەموو داتاکان
                     </Button>
                 </CardContent>
@@ -365,7 +365,7 @@ function DataManagement() {
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
                            <Button variant="destructive">
-                                <Trash2 className="ml-2 h-4 w-4" />
+                                <Trash2 className="mr-2 h-4 w-4" />
                                 سڕینەوەی هەموو داتا
                             </Button>
                         </AlertDialogTrigger>
@@ -391,7 +391,7 @@ function DataManagement() {
                                     onClick={deleteAllData} 
                                     disabled={deleteConfirmation !== CONFIRMATION_TEXT || isDeleting}
                                     className="bg-destructive hover:bg-destructive/90">
-                                        {isDeleting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                                        {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                         تێگەیشتم، هەمووی بسڕەوە
                                 </AlertDialogAction>
                             </AlertDialogFooter>

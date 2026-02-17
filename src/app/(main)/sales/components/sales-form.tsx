@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -37,7 +38,7 @@ const salesFormSchema = z.object({
   customerAddress: z.string().optional(),
   issueDate: z.string().refine((val) => /^\d{4}-\d{2}-\d{2}$/.test(val), { message: "فۆرماتی بەروار هەڵەیە (YYYY-MM-DD)." }),
   items: z.array(z.object({
-    product: z.string().min(1, "بابەت پێویستە."),
+    product: z.string().min(1, "ناوی کاڵا پێویستە."),
     quantity: z.coerce.number().min(1, "دانە دەبێت لانیکەم 1 بێت."),
     unitPrice: z.coerce.number().min(0, "نرخ پێویستە."),
     category: z.string().min(1, "پۆل پێویستە."),
@@ -530,7 +531,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="w-[30%] text-right">بابەت</TableHead>
+                            <TableHead className="w-[30%] text-right">کاڵا</TableHead>
                             <TableHead className="text-center">دانە</TableHead>
                             <TableHead className="text-center">نرخی تاک</TableHead>
                             <TableHead className="text-left">نرخی کۆ</TableHead>
@@ -550,7 +551,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                     </TableBody>
                 </Table>
                 <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ product: "", quantity: 1, unitPrice: 0, category: 'Mattress' })}>
-                    <PlusCircle className="ml-2 h-4 w-4" />
+                    <PlusCircle className="mr-2 h-4 w-4" />
                     زیادکردنی کاڵا
                 </Button>
             </CardContent>
@@ -736,7 +737,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                         </TableBody>
                     </Table>
                     <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => appendPayment({ date: format(new Date(), 'yyyy-MM-dd'), amount: 0, method: 'Cash', note:'' })}>
-                        <PlusCircle className="ml-2 h-4 w-4" /> زیادکردنی قیست
+                        <PlusCircle className="mr-2 h-4 w-4" /> زیادکردنی قیست
                     </Button>
                 </CardContent>
              </Card>
@@ -751,3 +752,5 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
     </Form>
   );
 }
+
+    

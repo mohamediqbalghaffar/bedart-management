@@ -154,7 +154,7 @@ function EditableExpenseRow({ expense }: { expense: WithId<Expense> }) {
     return (
         <TableRow key={expense.id}>
             <TableCell className="font-medium text-right">{expense.name}</TableCell>
-            <TableCell className="text-right">{expense.note || 'N/A'}</TableCell>
+            <TableCell className="text-right">{expense.note || 'نەزانراو'}</TableCell>
             <TableCell className="text-right">{currencyFormatter.format(expense.amount)}</TableCell>
             <TableCell className="text-right"><Badge variant="outline">{categoryTranslations[expense.category] || expense.category}</Badge></TableCell>
             <TableCell className="text-right">{expense.date}</TableCell>
@@ -238,3 +238,5 @@ export default function ExpensesPage() {
         </div>
     );
 }
+
+    

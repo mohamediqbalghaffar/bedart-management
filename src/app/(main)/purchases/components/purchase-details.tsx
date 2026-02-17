@@ -88,7 +88,7 @@ export function PurchaseDetails({ formId }: { formId: string }) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="text-right">بابەت</TableHead>
+                                <TableHead className="text-right">کاڵا</TableHead>
                                 <TableHead className="text-right">دانە</TableHead>
                                 <TableHead className="text-right">نرخی تاک (USD)</TableHead>
                                 <TableHead className="text-left">نرخی کۆ (USD)</TableHead>
@@ -121,7 +121,5 @@ export function PurchaseDetails({ formId }: { formId: string }) {
         </div>
     );
 }
-
-    
 
     

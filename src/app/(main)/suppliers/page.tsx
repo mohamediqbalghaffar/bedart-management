@@ -79,7 +79,7 @@ function SuppliersList() {
                             suppliers.map((supplier) => (
                             <TableRow key={supplier.id}>
                                 <TableCell className="font-medium text-right">{supplier.supplierName}</TableCell>
-                                <TableCell className="text-right" style={{ whiteSpace: 'pre-wrap' }}>{supplier.contactInformation || 'N/A'}</TableCell>
+                                <TableCell className="text-right" style={{ whiteSpace: 'pre-wrap' }}>{supplier.contactInformation || 'نەزانراو'}</TableCell>
                             </TableRow>
                         )))}
                     </TableBody>
@@ -99,3 +99,5 @@ export default function SuppliersPage() {
         </div>
     );
 }
+
+    
