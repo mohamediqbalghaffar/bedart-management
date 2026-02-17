@@ -38,25 +38,31 @@ const dayPeriod = {
   wide: { am: 'بەیانی', pm: 'دوای نیوەڕۆ', midnight: 'نیوەی شەو', noon: 'نیوەڕۆ', morning: 'بەیانی', afternoon: 'دوای نیوەڕۆ', evening: 'ئێوارە', night: 'شەو' },
 };
 
-const formatLong = {
-  date: {
-    full: 'EEEE, d MMMM, yyyy', // یەکشەممە، ١٤ی نیسانی ٢٠٢٤
-    long: 'd MMMM, yyyy', // ١٤ی نیسانی ٢٠٢٤
-    medium: 'd MMM, yyyy', // ١٤ نیسان ٢٠٢٤
-    short: 'dd/MM/yyyy', // ١٤/٠٤/٢٠٢٤
-  },
-  time: {
-    full: 'h:mm:ss a zzzz',
-    long: 'h:mm:ss a z',
-    medium: 'h:mm:ss a',
-    short: 'h:mm a',
-  },
-  dateTime: {
-    full: "{{date}} 'لە' {{time}}",
-    long: "{{date}} 'لە' {{time}}",
-    medium: '{{date}}, {{time}}',
-    short: '{{date}}, {{time}}',
-  },
+const formatLongDate = {
+  full: 'EEEE, d MMMM, yyyy',
+  long: 'd MMMM, yyyy',
+  medium: 'd MMM, yyyy',
+  short: 'dd/MM/yyyy',
+};
+
+const formatLongTime = {
+  full: 'h:mm:ss a zzzz',
+  long: 'h:mm:ss a z',
+  medium: 'h:mm:ss a',
+  short: 'h:mm a',
+};
+
+const formatLongDateTime = {
+  full: "{{date}} 'لە' {{time}}",
+  long: "{{date}} 'لە' {{time}}",
+  medium: '{{date}}, {{time}}',
+  short: '{{date}}, {{time}}',
+};
+
+const formatLong: any = {
+  date: (options: { width: keyof typeof formatLongDate }) => formatLongDate[options.width],
+  time: (options: { width: keyof typeof formatLongTime }) => formatLongTime[options.width],
+  dateTime: (options: { width: keyof typeof formatLongDateTime }) => formatLongDateTime[options.width],
 };
 
 const localize = {
@@ -81,11 +87,9 @@ export const ckb: Locale = {
   code: 'ckb',
   localize: localize as any,
   match: match as any,
-  formatLong: formatLong as any,
+  formatLong: formatLong,
   options: {
     weekStartsOn: 6, // Saturday
     firstWeekContainsDate: 1,
   },
 };
-
-    
