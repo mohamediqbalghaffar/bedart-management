@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -11,7 +10,6 @@ import { subDays, parseISO, isValid, startOfDay, endOfDay, differenceInDays, for
 import { AreaChart, Area, CartesianGrid, ResponsiveContainer, XAxis, YAxis, BarChart, Bar } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
@@ -19,6 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useRouter } from 'next/navigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ckb } from '@/lib/ckb-locale';
+import { DatePicker } from '@/components/ui/date-picker';
 
 
 // --- TYPE DEFINITIONS ---
@@ -456,8 +455,17 @@ function RecentActivityChart({ data }: { data: any[] }) {
 // --- MAIN PAGE COMPONENT ---
 
 export default function DashboardPage() {
-    const [dateRange, setDateRange] = useState({ from: format(subDays(new Date(), 29), 'yyyy-MM-dd'), to: format(new Date(), 'yyyy-MM-dd') });
-    const { isLoading, error, stats, chartData, dialogData } = useDashboardData(dateRange);
+    const [dateRange, setDateRange] = useState<{ from: Date, to: Date }>({ 
+        from: subDays(new Date(), 29), 
+        to: new Date() 
+    });
+
+    const formattedDateRange = useMemo(() => ({
+        from: format(dateRange.from, 'yyyy-MM-dd'),
+        to: format(dateRange.to, 'yyyy-MM-dd'),
+    }), [dateRange]);
+
+    const { isLoading, error, stats, chartData, dialogData } = useDashboardData(formattedDateRange);
 
     if (error) {
         return <div className="text-destructive text-center p-8">هەڵەیەک ڕوویدا لە کاتی هێنانی داتاکان: {error.message}</div>
@@ -466,10 +474,21 @@ export default function DashboardPage() {
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <PageHeader title="داشبۆردی سەرەکی" description="پوختەی کارەکانت لێرە ببینە.">
-                <div className="flex items-center gap-2">
-                    <Input type="date" value={dateRange.from} onChange={(e) => setDateRange(prev => ({...prev, from: e.target.value }))} placeholder="YYYY-MM-DD" className="w-40"/>
-                    <span className="text-muted-foreground">-</span>
-                    <Input type="date" value={dateRange.to} onChange={(e) => setDateRange(prev => ({...prev, to: e.target.value }))} placeholder="YYYY-MM-DD" className="w-40"/>
+                 <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-muted-foreground">لە:</span>
+                        <DatePicker
+                            date={dateRange.from}
+                            onSelect={(date) => setDateRange(prev => ({...prev, from: date || prev.from }))}
+                        />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-muted-foreground">بۆ:</span>
+                        <DatePicker
+                            date={dateRange.to}
+                            onSelect={(date) => setDateRange(prev => ({...prev, to: date || prev.to }))}
+                        />
+                    </div>
                 </div>
             </PageHeader>
             
