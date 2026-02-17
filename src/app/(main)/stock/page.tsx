@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -45,7 +44,7 @@ type Supplier = {
 };
 
 
-export default function StockPage() {
+function StockPageContent() {
     const firestore = useFirestore();
     const searchParams = useSearchParams();
     const initialSearch = searchParams.get('search') || '';
@@ -238,4 +237,10 @@ export default function StockPage() {
     );
 }
 
-    
+export default function StockPage() {
+    return (
+        <Suspense>
+            <StockPageContent />
+        </Suspense>
+    )
+}
