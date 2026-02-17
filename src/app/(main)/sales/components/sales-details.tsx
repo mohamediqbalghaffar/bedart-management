@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { PaymentStatus, PaymentType } from '@/lib/types';
 
 type SellingFormType = {
     id: string;
@@ -15,8 +16,8 @@ type SellingFormType = {
     issueDate: string;
     totalPrice: number;
     remainingBalance: number;
-    paymentStatus: 'Unpaid' | 'Partially Paid' | 'Fully Paid';
-    paymentType: 'After Delivery' | 'Installments' | 'Pre-order';
+    paymentStatus: PaymentStatus;
+    paymentType: PaymentType;
     formNumber: string;
     deliveryCost?: number;
     discountType?: 'percentage' | 'cash';
@@ -37,6 +38,20 @@ type Payment = {
     paymentMethod: 'Cash' | 'Transfer';
     note?: string;
 };
+
+const paymentStatusTranslations: Record<PaymentStatus, string> = {
+    'Fully Paid': 'هەمووی دراوە',
+    'Partially Paid': 'بەشێکی دراوە',
+    'Unpaid': 'نەدراوە'
+};
+
+const paymentTypeTranslations: Record<PaymentType, string> = {
+    'Direct Payment': 'پارەی ڕاستەوخۆ',
+    'After Delivery': 'دوای گەیاندن',
+    'Installments': 'قیست',
+    'Pre-order': 'داواکاری پێشوەختە',
+};
+
 
 export function SalesDetails({ formId }: { formId: string }) {
     const firestore = useFirestore();
@@ -69,6 +84,10 @@ export function SalesDetails({ formId }: { formId: string }) {
         return formData.discountValue;
     })();
 
+    const totalPaid = payments?.reduce((acc, p) => acc + p.amountPaid, 0) || 0;
+    const calculatedRemaining = Math.max(0, formData.totalPrice - totalPaid);
+    const overpayment = Math.max(0, totalPaid - formData.totalPrice);
+
     return (
         <div className="space-y-6">
             <Card>
@@ -82,7 +101,7 @@ export function SalesDetails({ formId }: { formId: string }) {
                             variant={formData.paymentStatus === 'Fully Paid' ? 'default' : formData.paymentStatus === 'Unpaid' ? 'destructive' : 'secondary'} 
                             className={formData.paymentStatus === 'Fully Paid' ? 'bg-accent text-accent-foreground' : ''}
                         >
-                            {formData.paymentStatus === 'Fully Paid' ? 'هەمووی دراوە' : formData.paymentStatus === 'Partially Paid' ? 'بەشێکی دراوە' : 'نەدراوە'}
+                            {paymentStatusTranslations[formData.paymentStatus] || formData.paymentStatus}
                         </Badge>
                     </div>
                 </CardHeader>
@@ -91,6 +110,7 @@ export function SalesDetails({ formId }: { formId: string }) {
                         <div><span className="font-semibold">کڕیار:</span><p className="text-muted-foreground">{formData.customerName}</p></div>
                         <div><span className="font-semibold">ژ. مۆبایل:</span><p className="text-muted-foreground">{formData.customerPhoneNumber || 'N/A'}</p></div>
                         <div className="col-span-2"><span className="font-semibold">ناونیشان:</span><p className="text-muted-foreground">{formData.customerAddress || 'N/A'}</p></div>
+                        <div className="col-span-2"><span className="font-semibold">جۆری پارەدان:</span><p className="text-muted-foreground">{paymentTypeTranslations[formData.paymentType] || formData.paymentType}</p></div>
                     </div>
                 </CardContent>
             </Card>
@@ -124,9 +144,9 @@ export function SalesDetails({ formId }: { formId: string }) {
                 </CardContent>
             </Card>
 
-            {formData.paymentType === 'Installments' && (
+            {(formData.paymentType === 'Installments' || (payments && payments.length > 0)) && (
                  <Card>
-                    <CardHeader><CardTitle>پارەدانەکان (قیست)</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>تۆماری پارەدانەکان</CardTitle></CardHeader>
                     <CardContent>
                         <Table>
                             <TableHeader><TableRow><TableHead className="text-right">بەروار</TableHead><TableHead className="text-right">بڕ</TableHead><TableHead className="text-right">شێواز</TableHead><TableHead className="text-right">تێبینی</TableHead></TableRow></TableHeader>
@@ -146,8 +166,14 @@ export function SalesDetails({ formId }: { formId: string }) {
                             </TableBody>
                         </Table>
                          <div className="mt-4 space-y-2 text-left p-4 border-t">
-                            <div className="flex justify-between"><span>کۆی دراوە:</span><span className="font-medium text-accent">{currencyFormatter.format(formData.totalPrice - formData.remainingBalance)}</span></div>
-                            <div className="flex justify-between font-bold text-lg text-destructive"><span>ماوە:</span><span>{currencyFormatter.format(formData.remainingBalance)}</span></div>
+                            <div className="flex justify-between"><span>کۆی دراوە:</span><span className="font-medium text-green-500">{currencyFormatter.format(totalPaid)}</span></div>
+                            <div className="flex justify-between font-bold text-lg text-destructive"><span>ماوە:</span><span>{currencyFormatter.format(calculatedRemaining)}</span></div>
+                             {overpayment > 0 && (
+                                <div className="flex justify-between font-bold text-lg text-green-500">
+                                    <span>بڕی زیادە:</span>
+                                    <span>{currencyFormatter.format(overpayment)}</span>
+                                </div>
+                            )}
                         </div>
                     </CardContent>
                 </Card>

@@ -1,6 +1,6 @@
 
 export type SaleStatus = 'Fully Paid' | 'Unpaid' | 'Partially Paid';
-export type PaymentType = 'After Delivery' | 'Installments' | 'Pre-order';
+export type PaymentType = 'After Delivery' | 'Installments' | 'Pre-order' | 'Direct Payment';
 export type PaymentMethod = 'Cash' | 'Transfer';
 export type StockLocation = 'Warehouse' | 'Shop Showroom';
 export type ExpenseCategory = 'Daily' | 'Salary' | 'Rent' | 'Electricity' | 'Transport' | 'Other';

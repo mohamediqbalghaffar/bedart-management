@@ -175,20 +175,49 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
 
   const paymentType = form.watch('paymentType');
   const discountType = form.watch('discountType');
+  const watchedItems = form.watch('items');
+  const deliveryCost = form.watch('deliveryCost');
+  const watchedPayments = form.watch('payments');
+  const discountValue = form.watch('discountValue');
+
+  const subTotal = watchedItems.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
+
+  const discountAmount = React.useMemo(() => {
+    if (!discountType || !discountValue || discountValue <= 0) return 0;
+    if (discountType === 'percentage') {
+      return (subTotal * discountValue) / 100;
+    }
+    return discountValue;
+  }, [subTotal, discountType, discountValue]);
+
+  const totalAfterDiscount = subTotal - discountAmount;
+  const totalAmount = totalAfterDiscount + Number(deliveryCost || 0);
+  const totalPaid = watchedPayments?.reduce((acc, p) => acc + (p.amount || 0), 0) || 0;
+  
+  const remainingBalance = Math.max(0, totalAmount - totalPaid);
+  const overpayment = Math.max(0, totalPaid - totalAmount);
 
    useEffect(() => {
-        if (paymentType === 'Direct Payment') {
-            form.setValue('paymentStatus', 'Fully Paid');
-        } else if (paymentType === 'After Delivery') {
-            form.setValue('paymentStatus', 'Unpaid');
-        }
-    }, [paymentType, form]);
-
-    useEffect(() => {
         if (!discountType) {
             form.setValue('discountValue', 0);
         }
     }, [discountType, form]);
+
+    useEffect(() => {
+        if (paymentType === 'Direct Payment' || paymentType === 'Pre-order') {
+            form.setValue('paymentStatus', 'Fully Paid');
+        } else if (paymentType === 'After Delivery') {
+            form.setValue('paymentStatus', 'Unpaid');
+        } else if (paymentType === 'Installments') {
+            if (totalPaid === 0) {
+                form.setValue('paymentStatus', 'Unpaid');
+            } else if (totalPaid >= totalAmount) {
+                form.setValue('paymentStatus', 'Fully Paid');
+            } else {
+                form.setValue('paymentStatus', 'Partially Paid');
+            }
+        }
+    }, [paymentType, form, totalPaid, totalAmount]);
 
 
   useEffect(() => {
@@ -250,35 +279,9 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
     control: form.control,
     name: "payments",
   });
-
-  const watchedItems = form.watch('items');
-  const deliveryCost = form.watch('deliveryCost');
-  const watchedPayments = form.watch('payments');
-  const discountValue = form.watch('discountValue');
-  const paymentStatus = form.watch('paymentStatus');
   
   const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
-  const subTotal = watchedItems.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
-
-  const discountAmount = React.useMemo(() => {
-    if (!discountType || !discountValue || discountValue <= 0) return 0;
-    if (discountType === 'percentage') {
-      return (subTotal * discountValue) / 100;
-    }
-    return discountValue;
-  }, [subTotal, discountType, discountValue]);
-
-  const totalAfterDiscount = subTotal - discountAmount;
-  const totalAmount = totalAfterDiscount + Number(deliveryCost || 0);
-  const totalPaid = watchedPayments?.reduce((acc, p) => acc + p.amount, 0) || 0;
   
-  const remainingBalance = React.useMemo(() => {
-    if (paymentStatus === 'Fully Paid') return 0;
-    if (paymentStatus === 'Unpaid') return totalAmount;
-    return totalAmount - totalPaid;
-  }, [paymentStatus, totalAmount, totalPaid]);
-
-
   async function onSubmit(data: SalesFormValues) {
     if (!firestore) {
       toast({ variant: "destructive", title: "هەڵەیەک ڕوویدا", description: "پەیوەندی لەگەڵ بنکەی داتاکەدا نییە." });
@@ -377,12 +380,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
         }
         
         const { items, payments, ...mainData } = data;
-        const finalRemainingBalance = (() => {
-          if (mainData.paymentStatus === 'Fully Paid') return 0;
-          if (mainData.paymentStatus === 'Unpaid') return totalAmount;
-          const paidAmount = payments?.reduce((acc, p) => acc + p.amount, 0) || 0;
-          return totalAmount - paidAmount;
-        })();
+        const finalRemainingBalance = Math.max(0, totalAmount - (payments?.reduce((acc, p) => acc + (p.amount || 0), 0) || 0));
         
         const sellingFormData: any = { ...mainData, id: sellingFormId, creatorId: "system", issueDate: data.issueDate, totalPrice: totalAmount, remainingBalance: finalRemainingBalance };
         if (!sellingFormData.discountValue) sellingFormData.discountValue = 0;
@@ -625,7 +623,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                             render={({ field }) => (
                             <FormItem>
                                 <FormLabel>دۆخی پارەدان</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value} dir="rtl" disabled={paymentType === 'Direct Payment' || paymentType === 'After Delivery'}>
+                                <Select onValueChange={field.onChange} value={field.value} dir="rtl" disabled={paymentType !== 'Installments'}>
                                 <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
                                 <SelectContent>
                                     <SelectItem value="Fully Paid">هەمووی دراوە</SelectItem>
@@ -662,13 +660,19 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                     {paymentType === 'Installments' && (
                         <>
                             <div className="flex items-center justify-between gap-4 p-2 rounded-md">
-                                <span className="text-muted-foreground">دراوە:</span>
+                                <span className="text-muted-foreground">کۆی دراوە:</span>
                                 <span className="font-semibold text-green-500">{currencyFormatter.format(totalPaid)}</span>
                             </div>
                             <div className="flex items-center justify-between gap-4 p-2 rounded-md bg-destructive/10 text-destructive text-lg">
                                 <span className="font-bold">ماوە:</span>
                                 <span className="font-bold">{currencyFormatter.format(remainingBalance)}</span>
                             </div>
+                             {overpayment > 0 && (
+                                <div className="flex items-center justify-between gap-4 p-2 rounded-md bg-green-500/10 text-green-500 text-lg">
+                                    <span className="font-bold">بڕی زیادە:</span>
+                                    <span className="font-bold">{currencyFormatter.format(overpayment)}</span>
+                                </div>
+                            )}
                         </>
                     )}
                 </CardContent>
