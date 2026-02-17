@@ -1,27 +1,29 @@
 'use client';
 
 import Link from 'next/link';
-import { BedDouble, Menu, Home, ShoppingCart, Package, Users, Building, DollarSign, Settings, Archive } from 'lucide-react';
+import { BedDouble, Menu, Home, ShoppingCart, Package, Users, Building, DollarSign, Settings, Archive, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/contexts/auth-context';
 
 const allNavLinks = [
-  { href: '/dashboard', label: 'داشبۆرد', icon: Home },
-  { href: '/sales', label: 'فرۆشتنەکان', icon: ShoppingCart },
-  { href: '/purchases', label: 'کڕینەکان', icon: Package },
-  { href: '/stock', label: 'کۆگا', icon: Archive },
-  { href: '/customers', label: 'کڕیارەکان', icon: Users },
-  { href: '/suppliers', label: 'دابینکەران', icon: Building },
-  { href: '/expenses', label: 'خەرجییەکان', icon: DollarSign },
-  { href: '/settings', label: 'ڕێکخستنەکان', icon: Settings },
+  { href: '/dashboard', label: 'داشبۆرد', icon: Home, roles: ['admin'] },
+  { href: '/sales', label: 'فرۆشتنەکان', icon: ShoppingCart, roles: ['admin', 'salesman'] },
+  { href: '/purchases', label: 'کڕینەکان', icon: Package, roles: ['admin'] },
+  { href: '/stock', label: 'کۆگا', icon: Archive, roles: ['admin', 'salesman'] },
+  { href: '/customers', label: 'کڕیارەکان', icon: Users, roles: ['admin'] },
+  { href: '/suppliers', label: 'دابینکەران', icon: Building, roles: ['admin'] },
+  { href: '/expenses', label: 'خەرجییەکان', icon: DollarSign, roles: ['admin'] },
+  { href: '/settings', label: 'ڕێکخستنەکان', icon: Settings, roles: ['admin'] },
 ];
 
 export function Header() {
   const pathname = usePathname();
+  const { role, logout } = useAuth();
 
-  const navLinks = allNavLinks;
+  const navLinks = allNavLinks.filter(link => role && link.roles.includes(role));
 
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 md:hidden">
@@ -54,6 +56,11 @@ export function Header() {
                  </nav>
             </SheetContent>
         </Sheet>
+         <div className="flex-1 text-center text-lg font-semibold">BedArt Group</div>
+         <Button size="icon" variant="ghost" onClick={logout}>
+            <LogOut className="h-5 w-5" />
+            <span className="sr-only">Logout</span>
+        </Button>
     </header>
   );
 }

@@ -2,27 +2,30 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BedDouble, Home, ShoppingCart, Package, Users, Building, DollarSign, Settings, Archive } from 'lucide-react';
+import { BedDouble, Home, ShoppingCart, Package, Users, Building, DollarSign, Settings, Archive, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '../ui/separator';
+import { useAuth } from '@/contexts/auth-context';
+import { Button } from '../ui/button';
 
 const allNavLinks = [
-  { href: '/dashboard', label: 'داشبۆرد', icon: Home },
-  { href: '/sales', label: 'فرۆشتنەکان', icon: ShoppingCart },
-  { href: '/purchases', label: 'کڕینەکان', icon: Package },
-  { href: '/stock', label: 'کۆگا', icon: Archive },
-  { href: '/customers', label: 'کڕیارەکان', icon: Users },
-  { href: '/suppliers', label: 'دابینکەران', icon: Building },
-  { href: '/expenses', label: 'خەرجییەکان', icon: DollarSign },
+  { href: '/dashboard', label: 'داشبۆرد', icon: Home, roles: ['admin'] },
+  { href: '/sales', label: 'فرۆشتنەکان', icon: ShoppingCart, roles: ['admin', 'salesman'] },
+  { href: '/purchases', label: 'کڕینەکان', icon: Package, roles: ['admin'] },
+  { href: '/stock', label: 'کۆگا', icon: Archive, roles: ['admin', 'salesman'] },
+  { href: '/customers', label: 'کڕیارەکان', icon: Users, roles: ['admin'] },
+  { href: '/suppliers', label: 'دابینکەران', icon: Building, roles: ['admin'] },
+  { href: '/expenses', label: 'خەرجییەکان', icon: DollarSign, roles: ['admin'] },
 ];
 
-const settingsLink = { href: '/settings', label: 'ڕێکخستنەکان', icon: Settings };
+const settingsLink = { href: '/settings', label: 'ڕێکخستنەکان', icon: Settings, roles: ['admin'] };
 
 
 export function SidebarNav() {
   const pathname = usePathname();
+  const { role, logout } = useAuth();
 
-  const navLinks = allNavLinks;
+  const navLinks = allNavLinks.filter(link => role && link.roles.includes(role));
 
   return (
     <div className="hidden border-l bg-muted/40 md:block">
@@ -52,16 +55,22 @@ export function SidebarNav() {
         </div>
         <div className="mt-auto p-4 space-y-4">
             <Separator />
-             <Link
-                href={settingsLink.href}
-                className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                { 'bg-muted text-primary': pathname.startsWith(settingsLink.href) }
-                )}
-            >
-                <settingsLink.icon className="h-4 w-4" />
-                {settingsLink.label}
-            </Link>
+            {role === 'admin' && (
+                 <Link
+                    href={settingsLink.href}
+                    className={cn(
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+                    { 'bg-muted text-primary': pathname.startsWith(settingsLink.href) }
+                    )}
+                >
+                    <settingsLink.icon className="h-4 w-4" />
+                    {settingsLink.label}
+                </Link>
+            )}
+            <Button variant="ghost" className="w-full justify-start" onClick={logout}>
+                <LogOut className="h-4 w-4 ml-3" />
+                چوونەدەرەوە
+            </Button>
         </div>
       </div>
     </div>
