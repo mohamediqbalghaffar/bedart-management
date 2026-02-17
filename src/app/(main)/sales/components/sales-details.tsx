@@ -84,7 +84,7 @@ export function SalesDetails({ formId }: { formId: string }) {
         return formData.discountValue;
     })();
 
-    const totalPaid = payments?.reduce((acc, p) => acc + p.amountPaid, 0) || 0;
+    const totalPaid = payments?.reduce((acc, p) => acc + (Number(p.amountPaid) || 0), 0) || 0;
     const calculatedRemaining = Math.max(0, formData.totalPrice - totalPaid);
     const overpayment = Math.max(0, totalPaid - formData.totalPrice);
 

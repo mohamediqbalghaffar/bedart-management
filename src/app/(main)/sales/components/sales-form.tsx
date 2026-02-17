@@ -49,7 +49,7 @@ const salesFormSchema = z.object({
   paymentType: z.enum(["After Delivery", "Installments", "Pre-order", "Direct Payment"]),
   payments: z.array(z.object({
       date: z.string().refine((val) => /^\d{4}-\d{2}-\d{2}$/.test(val), { message: "فۆرماتی بەروار هەڵەیە (YYYY-MM-DD)." }),
-      amount: z.coerce.number().min(0.01, "بڕ دەبێت موجەب بێت."),
+      amount: z.coerce.number().min(0, "بڕ ناتوانێت سالب بێت."),
       method: z.enum(["Cash", "Transfer"]),
       note: z.string().optional(),
   })).optional(),
@@ -192,7 +192,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
 
   const totalAfterDiscount = subTotal - discountAmount;
   const totalAmount = totalAfterDiscount + Number(deliveryCost || 0);
-  const totalPaid = watchedPayments?.reduce((acc, p) => acc + (p.amount || 0), 0) || 0;
+  const totalPaid = watchedPayments?.reduce((acc, p) => acc + (Number(p.amount) || 0), 0) || 0;
   
   const remainingBalance = Math.max(0, totalAmount - totalPaid);
   const overpayment = Math.max(0, totalPaid - totalAmount);
@@ -240,6 +240,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
             const payments = paymentsSnap.docs.map(d => ({
                 ...d.data(),
                 date: d.data().paymentDate,
+                amount: d.data().amountPaid
             }));
 
             setOriginalItems(items); // Store original items for stock calculation
@@ -288,6 +289,10 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
       return;
     }
     
+    // Sanitize payment amounts to ensure they are numbers
+    const sanitizedPayments = data.payments?.map(p => ({ ...p, amount: Number(p.amount) || 0 })) || [];
+    const sanitizedData = { ...data, payments: sanitizedPayments };
+
     const sellingFormRef = formId ? doc(firestore, "selling_forms", formId) : doc(collection(firestore, "selling_forms"));
     const sellingFormId = sellingFormRef.id;
 
@@ -318,7 +323,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
           });
         }
         
-        data.items.forEach(item => {
+        sanitizedData.items.forEach(item => {
           const showroomId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-shopshowroom`;
           const warehouseId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-warehouse`;
           productRefsToRead.set(showroomId, doc(firestore, 'products', showroomId));
@@ -340,7 +345,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
           });
         }
 
-        for (const item of data.items) {
+        for (const item of sanitizedData.items) {
           const showroomId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-shopshowroom`;
           const warehouseId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-warehouse`;
           
@@ -379,10 +384,22 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
           }
         }
         
-        const { items, payments, ...mainData } = data;
-        const finalRemainingBalance = Math.max(0, totalAmount - (payments?.reduce((acc, p) => acc + (p.amount || 0), 0) || 0));
+        const { items, payments, ...mainData } = sanitizedData;
+
+        // Recalculate totals inside the transaction for consistency
+        const subTotal = items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
+        const discountAmount = (() => {
+            if (!mainData.discountType || !mainData.discountValue) return 0;
+            if (mainData.discountType === 'percentage') {
+                return (subTotal * mainData.discountValue) / 100;
+            }
+            return mainData.discountValue;
+        })();
+        const finalTotalAmount = subTotal - discountAmount + Number(mainData.deliveryCost || 0);
+        const finalTotalPaid = payments?.reduce((acc, p) => acc + p.amount, 0) || 0;
+        const finalRemainingBalance = Math.max(0, finalTotalAmount - finalTotalPaid);
         
-        const sellingFormData: any = { ...mainData, id: sellingFormId, creatorId: "system", issueDate: data.issueDate, totalPrice: totalAmount, remainingBalance: finalRemainingBalance };
+        const sellingFormData: any = { ...mainData, id: sellingFormId, creatorId: "system", issueDate: sanitizedData.issueDate, totalPrice: finalTotalAmount, remainingBalance: finalRemainingBalance };
         if (!sellingFormData.discountValue) sellingFormData.discountValue = 0;
         if (!sellingFormData.discountType) delete sellingFormData.discountType;
         transaction.set(sellingFormRef, sellingFormData, { merge: true });
@@ -404,14 +421,16 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
           });
         });
 
-        if (data.paymentType === 'Installments' && payments) {
+        if (sanitizedData.paymentType === 'Installments' && payments) {
           payments.forEach(payment => {
             const paymentRef = doc(collection(firestore, `selling_forms/${sellingFormId}/payments`));
             transaction.set(paymentRef, {
-              ...payment,
               id: paymentRef.id,
-              paymentDate: payment.date,
               sellingFormId: sellingFormId,
+              paymentDate: payment.date,
+              amountPaid: payment.amount,
+              paymentMethod: payment.method,
+              note: payment.note,
             });
           });
         }
@@ -689,7 +708,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
                             {paymentFields.map((field, index) => (
                             <TableRow key={field.id}>
                                 <TableCell><FormField control={form.control} name={`payments.${index}.date`} render={({ field }) => ( <FormItem><FormControl><Input placeholder="YYYY-MM-DD" {...field} /></FormControl><FormMessage/></FormItem>)}/></TableCell>
-                                <TableCell><FormField control={form.control} name={`payments.${index}.amount`} render={({ field }) => ( <FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage/></FormItem>)}/></TableCell>
+                                <TableCell><FormField control={form.control} name={`payments.${index}.amount`} render={({ field }) => ( <FormItem><FormControl><Input type="number" step="0.01" inputMode="decimal" {...field} /></FormControl><FormMessage/></FormItem>)}/></TableCell>
                                 <TableCell>
                                     <FormField
                                     control={form.control}
