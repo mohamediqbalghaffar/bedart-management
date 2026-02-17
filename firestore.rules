@@ -12,18 +12,28 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // Check the user's role in their profile document.
+      // Check the user's role in their profile document. This get() is now
+      // permitted by the more specific `allow get` rule on /users/{userId}.
       return isAuth() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
     }
 
-    // A user can always read their own profile.
-    // An admin can read/update any user's profile.
+    // USER PROFILES
     match /users/{userId} {
+      // Any authenticated user can create their own profile document.
       allow create: if isAuth();
-      allow get: if isOwner(userId) || isAdmin();
-      // Owners can update their profile, but not their role. Only admins can change roles.
-      allow update: if (isOwner(userId) && request.resource.data.role == resource.data.role) || isAdmin();
-      allow list: if isAdmin();
+
+      // A user can ONLY get their own document. This rule is the key to the fix.
+      // It allows the isAdmin() function to work without causing a recursive loop
+      // because isAdmin() performs a get() on the user's own document.
+      allow get: if isOwner(userId);
+
+      // Admins can list all users (for user management), and can update any user's profile.
+      allow list, update: if isAdmin();
+
+      // A user can update their own profile, but cannot change their role.
+      allow update: if isOwner(userId) && request.resource.data.role == resource.data.role;
+      
+      // Only admins can delete users.
       allow delete: if isAdmin();
     }
     
