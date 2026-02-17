@@ -6,14 +6,14 @@ service cloud.firestore {
     function isAuth() {
       return request.auth.uid != null;
     }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
 
     function isAdmin() {
       // Check the user's role in their profile document.
       return isAuth() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
-    }
-    
-    function isOwner(userId) {
-      return request.auth.uid == userId;
     }
 
     // A user can always read their own profile.
@@ -66,7 +66,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
       
       // Subcollections follow the parent's delete logic.
-      match /selling_form_products/{productId} {
+      match /products/{productId} {
         allow read, create, update: if isAuth();
         allow delete: if isAdmin();
       }
@@ -85,7 +85,7 @@ service cloud.firestore {
     match /buying_forms/{buyingFormId} {
       allow read, write: if isAdmin();
 
-      match /buying_form_products/{productId} {
+      match /products/{productId} {
         allow read, write: if isAdmin();
       }
     }
