@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -7,8 +6,15 @@ import { DayPicker } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
+import { ckb } from "@/lib/ckb-locale"
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>
+
+const kurdishDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+const formatDayKurdish = (day: Date) => {
+  const dayOfMonth = day.getDate().toString();
+  return dayOfMonth.split('').map(digit => kurdishDigits[parseInt(digit, 10)]).join('');
+};
 
 function Calendar({
   className,
@@ -16,10 +22,14 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: CalendarProps) {
+  const isKurdish = props.locale === ckb;
+
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
       className={cn("p-3", className)}
+      dir={isKurdish ? "rtl" : "ltr"}
+      formatters={isKurdish ? { formatDay: formatDayKurdish } : {}}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",

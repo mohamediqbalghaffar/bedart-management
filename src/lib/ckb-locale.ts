@@ -1,4 +1,3 @@
-
 import type { Locale } from 'date-fns';
 
 const era = {
@@ -65,6 +64,23 @@ const formatLong: any = {
   dateTime: (options: { width: keyof typeof formatLongDateTime }) => formatLongDateTime[options.width],
 };
 
+const formatRelativeLocale = {
+  lastWeek: "'ڕۆژی' eeee 'ی ڕابردوو کاتژمێر' p",
+  yesterday: "'دوێنێ کاتژمێر' p",
+  today: "'ئەمڕۆ کاتژمێر' p",
+  tomorrow: "'سبەی کاتژمێر' p",
+  nextWeek: "'ڕۆژی' eeee 'ی داهاتوو کاتژمێر' p",
+  other: 'P',
+};
+
+const formatRelative = (
+  token: keyof typeof formatRelativeLocale,
+  _date: Date,
+  _baseDate: Date,
+  _options: any
+): string => formatRelativeLocale[token];
+
+
 const localize = {
     ordinalNumber: (n: number) => String(n),
     era: (n: number) => era.wide[n],
@@ -88,6 +104,7 @@ export const ckb: Locale = {
   localize: localize as any,
   match: match as any,
   formatLong: formatLong,
+  formatRelative: formatRelative as any,
   options: {
     weekStartsOn: 6, // Saturday
     firstWeekContainsDate: 1,
