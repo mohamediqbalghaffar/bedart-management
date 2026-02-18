@@ -73,7 +73,11 @@ function CustomCaption({ displayMonth, locale }: CaptionProps) {
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                    {months.map(month => <SelectItem key={month} value={month.toString()}>{format(new Date(displayMonth.getFullYear(), month), "LLLL", { locale: formatLocale })}</SelectItem>)}
+                    {months.map(month => (
+                        <SelectItem key={month} value={month.toString()}>
+                            {isCkb ? new Intl.NumberFormat('ar-EG-u-nu-arab').format(month + 1) : month + 1}
+                        </SelectItem>
+                    ))}
                 </SelectContent>
             </Select>
         </div>
