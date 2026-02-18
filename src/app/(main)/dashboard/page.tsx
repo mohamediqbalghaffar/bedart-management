@@ -78,7 +78,7 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
                     getDocs(expensesQuery),
                     getDocs(buyingFormsQuery),
                     getDocs(productsQuery),
-                    getDocs(suppliersQuery),
+                    getDocs(suppliersSnap),
                 ]);
 
                 const salesData = salesSnap.docs.map(doc => ({ ...doc.data(), id: doc.id })) as WithId<SellingForm>[];
@@ -495,10 +495,11 @@ export default function DashboardPage() {
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0 bg-white text-black" align="start">
                                 <div className="bg-purple-700 text-white p-4 text-center rounded-t-md">
-                                    <h3 className="text-lg font-semibold">{formatDate(dateRange.from, 'MMM do')}</h3>
+                                    <h3 className="text-lg font-semibold">{formatDate(dateRange.from, 'MMM do', { locale: ckb })}</h3>
                                 </div>
                                 <Calendar
                                 mode="single"
+                                locale={ckb}
                                 selected={dateRange.from}
                                 onSelect={(date) => setDateRange(prev => ({...prev, from: date || prev.from }))}
                                 initialFocus
@@ -523,10 +524,11 @@ export default function DashboardPage() {
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0 bg-white text-black" align="start">
                                 <div className="bg-purple-700 text-white p-4 text-center rounded-t-md">
-                                    <h3 className="text-lg font-semibold">{formatDate(dateRange.to, 'MMM do')}</h3>
+                                    <h3 className="text-lg font-semibold">{formatDate(dateRange.to, 'MMM do', { locale: ckb })}</h3>
                                 </div>
                                 <Calendar
                                 mode="single"
+                                locale={ckb}
                                 selected={dateRange.to}
                                 onSelect={(date) => setDateRange(prev => ({...prev, to: date || prev.to }))}
                                 initialFocus
