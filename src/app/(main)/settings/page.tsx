@@ -15,9 +15,8 @@ import { Input } from '@/components/ui/input';
 import * as XLSX from 'xlsx';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogHeader, DialogDescription, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogHeader, DialogDescription, DialogTitle, DialogTrigger, DialogContent } from '@/components/ui/dialog';
 import { AddUserForm } from './components/add-user-form';
-import { DialogContent } from '@radix-ui/react-dialog';
 
 // General Settings Component
 type CompanyInfo = {
@@ -337,19 +336,31 @@ function DataManagement() {
         for (const collectionName of COLLECTIONS_TO_MANAGE) {
             try {
                 const querySnapshot = await getDocs(collection(firestore, collectionName));
-                let data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                let data = querySnapshot.docs.map(doc => {
+                    const d = doc.data();
+                    delete d.id;
+                    return d;
+                });
 
                 // For nested collections
                 if (collectionName === 'selling_forms' || collectionName === 'buying_forms') {
                     const nestedData = [];
                     for(const docSnap of querySnapshot.docs) {
                         const productsSnapshot = await getDocs(collection(firestore, `${collectionName}/${docSnap.id}/products`));
-                        const products = productsSnapshot.docs.map(p => ({ [`${collectionName}_id`]: docSnap.id, ...p.data()}));
+                        const products = productsSnapshot.docs.map(p => {
+                            const d = p.data();
+                            delete d.id;
+                            return { [`${collectionName}_id`]: docSnap.id, ...d };
+                        });
                         nestedData.push(...products);
 
                         if(collectionName === 'selling_forms') {
                             const paymentsSnapshot = await getDocs(collection(firestore, `${collectionName}/${docSnap.id}/payments`));
-                            const payments = paymentsSnapshot.docs.map(p => ({ selling_form_id: docSnap.id, ...p.data()}));
+                            const payments = paymentsSnapshot.docs.map(p => {
+                                const d = p.data();
+                                delete d.id;
+                                return { selling_form_id: docSnap.id, ...d };
+                            });
                             
                             if (payments.length > 0) {
                                 const ws = XLSX.utils.json_to_sheet(payments);
@@ -367,8 +378,10 @@ function DataManagement() {
                     }
                 }
                 
-                const worksheet = XLSX.utils.json_to_sheet(data);
-                XLSX.utils.book_append_sheet(workbook, worksheet, collectionName);
+                if (data.length > 0) {
+                    const worksheet = XLSX.utils.json_to_sheet(data);
+                    XLSX.utils.book_append_sheet(workbook, worksheet, collectionName);
+                }
             } catch (e) {
                 console.warn(`Could not export ${collectionName}`, e);
             }
