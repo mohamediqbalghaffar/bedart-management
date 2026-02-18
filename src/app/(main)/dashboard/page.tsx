@@ -6,7 +6,8 @@ import { useFirestore, collection, getDocs, query, where } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, DollarSign, ShoppingCart, Archive, Package, LineChart, TrendingUp, TrendingDown, CalendarIcon } from 'lucide-react';
 import { StatCard } from '@/components/shared/stat-card';
-import { subDays, parseISO, isValid, startOfDay, endOfDay, differenceInDays, format } from 'date-fns';
+import { format as formatDate, subDays, parseISO, isValid, startOfDay, endOfDay, differenceInDays } from 'date-fns';
+import { format as formatJalali, toDate } from 'date-fns-jalali';
 import { AreaChart, Area, CartesianGrid, ResponsiveContainer, XAxis, YAxis, BarChart, Bar } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -116,15 +117,15 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
                 const endDate = endOfDay(parseISO(dateRange.to));
                 const days = differenceInDays(endDate, startDate);
                 for (let i = days; i >= 0; i--) {
-                    dateMap.set(format(subDays(endDate, i), 'yyyy-MM-dd'), { sales: 0, expenses: 0, netProfit: 0 });
+                    dateMap.set(formatDate(subDays(endDate, i), 'yyyy-MM-dd'), { sales: 0, expenses: 0, netProfit: 0 });
                 }
                 salesData.forEach(sale => {
-                    const saleDate = format(parseISO(sale.issueDate), 'yyyy-MM-dd');
+                    const saleDate = formatDate(parseISO(sale.issueDate), 'yyyy-MM-dd');
                     if (dateMap.has(saleDate)) dateMap.get(saleDate)!.sales += sale.totalPrice;
                 });
                 expensesData.forEach(expense => {
                     if (expense.currency !== 'IQD') {
-                        const expenseDate = format(parseISO(expense.date), 'yyyy-MM-dd');
+                        const expenseDate = formatDate(parseISO(expense.date), 'yyyy-MM-dd');
                         if (dateMap.has(expenseDate)) dateMap.get(expenseDate)!.expenses += expense.amount;
                     }
                 });
@@ -279,7 +280,7 @@ function SalesDetailDialog({ data }: { data: any }) {
                     <AccordionContent className="px-6 pb-6">
                         <Table><TableHeader><TableRow><TableHead className="text-right">کڕیار</TableHead><TableHead className="text-right">بەروار</TableHead><TableHead className="text-right">کۆی گشتی</TableHead></TableRow></TableHeader>
                             <TableBody>
-                                {filteredData.sales?.map((sale: any) => ( <TableRow key={sale.id}><TableCell>{sale.customerName}</TableCell><TableCell>{format(parseISO(sale.issueDate), 'P', { locale: ckb })}</TableCell><TableCell>{currencyFormatter.format(sale.totalPrice)}</TableCell></TableRow> ))}
+                                {filteredData.sales?.map((sale: any) => ( <TableRow key={sale.id}><TableCell>{sale.customerName}</TableCell><TableCell>{formatJalali(parseISO(sale.issueDate), 'P', { locale: ckb })}</TableCell><TableCell>{currencyFormatter.format(sale.totalPrice)}</TableCell></TableRow> ))}
                             </TableBody>
                         </Table>
                     </AccordionContent>
@@ -294,7 +295,7 @@ function ExpensesDetailDialog({ expenses }: { expenses: WithId<Expense>[] | null
         <div className="max-h-[60vh] overflow-y-auto">
             <Table><TableHeader><TableRow><TableHead className="text-right">خەرجی</TableHead><TableHead className="text-right">بەروار</TableHead><TableHead className="text-right">بڕ</TableHead></TableRow></TableHeader>
                 <TableBody>
-                    {expenses?.map(expense => ( <TableRow key={expense.id}><TableCell>{expense.name}</TableCell><TableCell>{format(parseISO(expense.date), 'P', { locale: ckb })}</TableCell><TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: expense.currency || 'USD' }).format(expense.amount)}</TableCell></TableRow> ))}
+                    {expenses?.map(expense => ( <TableRow key={expense.id}><TableCell>{expense.name}</TableCell><TableCell>{formatJalali(parseISO(expense.date), 'P', { locale: ckb })}</TableCell><TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: expense.currency || 'USD' }).format(expense.amount)}</TableCell></TableRow> ))}
                 </TableBody>
             </Table>
         </div>
@@ -337,7 +338,7 @@ function PurchasesDetailDialog({ data }: { data: any }) {
                     <AccordionContent className="px-6 pb-6">
                         <Table><TableHeader><TableRow><TableHead className="text-right">دابینکەر</TableHead><TableHead className="text-right">بەروار</TableHead><TableHead className="text-right">کۆی گشتی پسوولە</TableHead></TableRow></TableHeader>
                             <TableBody>
-                                {purchases?.map((purchase: any) => ( <TableRow key={purchase.id}><TableCell>{purchase.supplierName}</TableCell><TableCell>{format(parseISO(purchase.issueDate), 'P', { locale: ckb })}</TableCell><TableCell>{currencyFormatter.format(purchase.totalAmount || 0)}</TableCell></TableRow> ))}
+                                {purchases?.map((purchase: any) => ( <TableRow key={purchase.id}><TableCell>{purchase.supplierName}</TableCell><TableCell>{formatJalali(parseISO(purchase.issueDate), 'P', { locale: ckb })}</TableCell><TableCell>{currencyFormatter.format(purchase.totalAmount || 0)}</TableCell></TableRow> ))}
                             </TableBody>
                         </Table>
                     </AccordionContent>
@@ -434,9 +435,9 @@ function RecentActivityChart({ data }: { data: any[] }) {
                 <ChartContainer config={chartConfig} className="h-80 w-full">
                     <AreaChart accessibilityLayer data={data}>
                         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)" />
-                        <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => format(parseISO(value), 'd MMM', { locale: ckb })} tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}/>
+                        <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => formatJalali(parseISO(value), 'd MMM', { locale: ckb })} tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}/>
                         <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={currencyFormatter} tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}/>
-                        <ChartTooltip cursor={true} content={<ChartTooltipContent labelFormatter={(label) => format(parseISO(label), 'eeee, d MMMM yyyy', { locale: ckb })} indicator="dot" labelClassName="text-white" className="bg-card/80 backdrop-blur-sm text-white border-border/50" formatter={(value, name, item) => ( <div className="flex items-center gap-2"><div style={{ backgroundColor: item.color }} className="w-2.5 h-2.5 rounded-full" /><div className="flex justify-between w-full"><span className="text-muted-foreground">{chartConfig[name as keyof typeof chartConfig].label}: </span><span className="font-bold ml-2">{currencyFormatter(value as number)}</span></div></div> )}/>}/>
+                        <ChartTooltip cursor={true} content={<ChartTooltipContent labelFormatter={(label) => formatJalali(parseISO(label), 'eeee, d MMMM yyyy', { locale: ckb })} indicator="dot" labelClassName="text-white" className="bg-card/80 backdrop-blur-sm text-white border-border/50" formatter={(value, name, item) => ( <div className="flex items-center gap-2"><div style={{ backgroundColor: item.color }} className="w-2.5 h-2.5 rounded-full" /><div className="flex justify-between w-full"><span className="text-muted-foreground">{chartConfig[name as keyof typeof chartConfig].label}: </span><span className="font-bold ml-2">{currencyFormatter(value as number)}</span></div></div> )}/>}/>
                         <defs><linearGradient id="fillSales" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-sales)" stopOpacity={0.8} /><stop offset="95%" stopColor="var(--color-sales)" stopOpacity={0.1} /></linearGradient><linearGradient id="fillExpenses" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-expenses)" stopOpacity={0.8} /><stop offset="95%" stopColor="var(--color-expenses)" stopOpacity={0.1} /></linearGradient><linearGradient id="fillNetProfit" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-netProfit)" stopOpacity={0.8} /><stop offset="95%" stopColor="var(--color-netProfit)" stopOpacity={0.1} /></linearGradient></defs>
                         {activeSubjects.sales && <Area dataKey="sales" type="natural" fill="url(#fillSales)" stroke="var(--color-sales)" stackId="a" />}
                         {activeSubjects.expenses && <Area dataKey="expenses" type="natural" fill="url(#fillExpenses)" stroke="var(--color-expenses)" stackId="c" />}
@@ -464,8 +465,8 @@ export default function DashboardPage() {
     });
 
     const formattedDateRange = useMemo(() => ({
-        from: format(dateRange.from, 'yyyy-MM-dd'),
-        to: format(dateRange.to, 'yyyy-MM-dd'),
+        from: formatDate(dateRange.from, 'yyyy-MM-dd'),
+        to: formatDate(dateRange.to, 'yyyy-MM-dd'),
     }), [dateRange]);
 
     const { isLoading, error, stats, chartData, dialogData } = useDashboardData(formattedDateRange);
@@ -490,10 +491,10 @@ export default function DashboardPage() {
                                 )}
                                 >
                                 <CalendarIcon className="ml-2 h-4 w-4" />
-                                {dateRange.from ? format(dateRange.from, "dd/MM/yyyy") : <span>بەروارێک هەڵبژێرە</span>}
+                                {dateRange.from ? formatJalali(dateRange.from, "dd/MM/yyyy", { locale: ckb }) : <span>بەروارێک هەڵبژێرە</span>}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
+                            <PopoverContent className="w-auto p-0 bg-white">
                                 <Calendar
                                 mode="single"
                                 selected={dateRange.from}
@@ -516,10 +517,10 @@ export default function DashboardPage() {
                                 )}
                                 >
                                 <CalendarIcon className="ml-2 h-4 w-4" />
-                                {dateRange.to ? format(dateRange.to, "dd/MM/yyyy") : <span>بەروارێک هەڵبژێرە</span>}
+                                {dateRange.to ? formatJalali(dateRange.to, "dd/MM/yyyy", { locale: ckb }) : <span>بەروارێک هەڵبژێرە</span>}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
+                            <PopoverContent className="w-auto p-0 bg-white">
                                 <Calendar
                                 mode="single"
                                 selected={dateRange.to}
