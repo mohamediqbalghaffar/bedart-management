@@ -112,7 +112,7 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
                     grouped.totalQuantity += p.currentQuantity;
                 });
                 const groupedProducts = Array.from(groupedProductsMap.values());
-                const lowStockCount = groupedProducts.filter(p => p.totalQuantity < 5).length;
+                const lowStockCount = groupedProducts.filter(p => p.totalQuantity > 0 && p.totalQuantity < 5).length;
                 
                 setStats({ totalRevenue, totalExpensesUSD, totalExpensesIQD, buyingFormsCount: buyingFormsData.length, lowStockCount });
 
@@ -197,7 +197,7 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
                         totalQuantity: purchasesDialogSummary.totalQuantity,
                         totalCost: purchasesDialogSummary.totalCost,
                     },
-                    lowStockProducts: groupedProducts.filter(p => p.totalQuantity < 5),
+                    lowStockProducts: groupedProducts.filter(p => p.totalQuantity > 0 && p.totalQuantity < 5),
                 });
             } catch (err: any) {
                 console.error("Dashboard data processing failed:", err);
@@ -453,8 +453,8 @@ function DashboardStats({ stats, dialogData }: { stats: any, dialogData: any }) 
                 <DialogContent className="sm:max-w-4xl" dir="rtl"><DialogHeader><DialogTitle>وردەکاریی کڕینەکان</DialogTitle><DialogDescription>پوختەی کڕینەکان لە ماوەی دیاریکراودا.</DialogDescription></DialogHeader><PurchasesDetailDialog data={dialogData.purchases} /></DialogContent>
             </Dialog>
             
-            <Dialog><DialogTrigger asChild><div className="cursor-pointer"><StatCard title="کاڵای کەم لە کۆگا" value={stats.lowStockCount.toString()} icon={Archive} description="کاڵاکان کە لە 5 دانە کەمتریان ماوە" isNegative={stats.lowStockCount > 0} /></div></DialogTrigger>
-                <DialogContent className="sm:max-w-lg" dir="rtl"><DialogHeader><DialogTitle>کاڵا کەمبووەکان</DialogTitle><DialogDescription>لیستی ئەو کاڵایانەی کە بڕیان لە 5 دانە کەمترە.</DialogDescription></DialogHeader><LowStockDetailDialog products={dialogData.lowStockProducts} /></DialogContent>
+            <Dialog><DialogTrigger asChild><div className="cursor-pointer"><StatCard title="کاڵای کەم لە کۆگا" value={stats.lowStockCount.toString()} icon={Archive} description="کاڵاکان کە بڕیان لەنێوان 1 بۆ 4 دانەیە" isNegative={stats.lowStockCount > 0} /></div></DialogTrigger>
+                <DialogContent className="sm:max-w-lg" dir="rtl"><DialogHeader><DialogTitle>کاڵا کەمبووەکان</DialogTitle><DialogDescription>لیستی ئەو کاڵایانەی کە بڕیان لەنێوان 1 بۆ 4 دانەیە.</DialogDescription></DialogHeader><LowStockDetailDialog products={dialogData.lowStockProducts} /></DialogContent>
             </Dialog>
         </div>
     );
