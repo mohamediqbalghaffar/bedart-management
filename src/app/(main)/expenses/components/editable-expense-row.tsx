@@ -90,48 +90,46 @@ export function EditableExpenseRow({ expense, onExpenseUpdated }: { expense: Wit
 
     if (isEditing) {
         return (
-            <TableRow className="bg-secondary/20">
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleSave)} className="contents">
-                        <TableCell><FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/></TableCell>
-                        <TableCell><FormField control={form.control} name="note" render={({ field }) => (<FormItem><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/></TableCell>
-                        <TableCell>
-                            <div className="flex gap-2">
-                                <FormField control={form.control} name="amount" render={({ field }) => ( <FormItem className="flex-grow"><FormControl><Input type="number" {...field} step="0.01" /></FormControl><FormMessage /></FormItem>)}/>
-                                <FormField control={form.control} name="currency" render={({ field }) => (
-                                    <FormItem>
-                                        <Select onValueChange={field.onChange} value={field.value} dir="rtl">
-                                            <FormControl><SelectTrigger className="w-[80px]"><SelectValue /></SelectTrigger></FormControl>
-                                            <SelectContent><SelectItem value="USD">USD</SelectItem><SelectItem value="IQD">IQD</SelectItem></SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}/>
-                            </div>
-                        </TableCell>
-                        <TableCell>
-                             <FormField control={form.control} name="category" render={({ field }) => (
+            <Form {...form}>
+                <TableRow className="bg-secondary/20">
+                    <TableCell><FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/></TableCell>
+                    <TableCell><FormField control={form.control} name="note" render={({ field }) => (<FormItem><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/></TableCell>
+                    <TableCell>
+                        <div className="flex gap-2">
+                            <FormField control={form.control} name="amount" render={({ field }) => ( <FormItem className="flex-grow"><FormControl><Input type="number" {...field} step="0.01" /></FormControl><FormMessage /></FormItem>)}/>
+                            <FormField control={form.control} name="currency" render={({ field }) => (
                                 <FormItem>
                                     <Select onValueChange={field.onChange} value={field.value} dir="rtl">
-                                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                        <SelectContent>{Object.entries(categoryTranslations).map(([key, value]) => <SelectItem key={key} value={key}>{value}</SelectItem>)}</SelectContent>
+                                        <FormControl><SelectTrigger className="w-[80px]"><SelectValue /></SelectTrigger></FormControl>
+                                        <SelectContent><SelectItem value="USD">USD</SelectItem><SelectItem value="IQD">IQD</SelectItem></SelectContent>
                                     </Select>
                                     <FormMessage />
                                 </FormItem>
                             )}/>
-                        </TableCell>
-                        <TableCell><FormField control={form.control} name="date" render={({ field }) => (<FormItem><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)}/></TableCell>
-                        <TableCell className="text-left">
-                            <div className="flex gap-2">
-                                <Button size="icon" variant="ghost" type="submit" disabled={form.formState.isSubmitting}>
-                                    {form.formState.isSubmitting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="h-4 w-4 text-primary"/>}
-                                </Button>
-                                <Button size="icon" variant="ghost" onClick={() => setIsEditing(false)}><X className="h-4 w-4 text-muted-foreground"/></Button>
-                            </div>
-                        </TableCell>
-                    </form>
-                </Form>
-            </TableRow>
+                        </div>
+                    </TableCell>
+                    <TableCell>
+                            <FormField control={form.control} name="category" render={({ field }) => (
+                            <FormItem>
+                                <Select onValueChange={field.onChange} value={field.value} dir="rtl">
+                                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                    <SelectContent>{Object.entries(categoryTranslations).map(([key, value]) => <SelectItem key={key} value={key}>{value}</SelectItem>)}</SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}/>
+                    </TableCell>
+                    <TableCell><FormField control={form.control} name="date" render={({ field }) => (<FormItem><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)}/></TableCell>
+                    <TableCell className="text-left">
+                        <div className="flex gap-2">
+                            <Button size="icon" variant="ghost" onClick={form.handleSubmit(handleSave)} disabled={form.formState.isSubmitting}>
+                                {form.formState.isSubmitting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="h-4 w-4 text-primary"/>}
+                            </Button>
+                            <Button size="icon" variant="ghost" onClick={() => setIsEditing(false)}><X className="h-4 w-4 text-muted-foreground"/></Button>
+                        </div>
+                    </TableCell>
+                </TableRow>
+            </Form>
         );
     }
 
@@ -144,10 +142,10 @@ export function EditableExpenseRow({ expense, onExpenseUpdated }: { expense: Wit
             <TableCell className="text-right">{format(parseISO(expense.date), "yyyy-MM-dd")}</TableCell>
             <TableCell className="text-left">
                 <div className="flex gap-2">
-                     <Button size="icon" variant="ghost" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4 text-blue-500"/></Button>
-                     <AlertDialog>
+                        <Button size="icon" variant="ghost" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4 text-blue-500"/></Button>
+                        <AlertDialog>
                         <AlertDialogTrigger asChild>
-                           <Button size="icon" variant="ghost" disabled={isDeleting}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            <Button size="icon" variant="ghost" disabled={isDeleting}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent dir="rtl">
                             <AlertDialogHeader><AlertDialogTitle>ئایا دڵنیایت لە سڕینەوەی ئەم خەرجییە؟</AlertDialogTitle><AlertDialogDescription>ئەم کردارە پاشگەزبوونەوەی نییە و ناتوانیت بیگەڕێنیتەوە.</AlertDialogDescription></AlertDialogHeader>
