@@ -1,182 +1,86 @@
-
 'use client';
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
-import { useFirestore, addDocumentNonBlocking, collection } from "@/firebase";
-import { format } from "date-fns";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import React, { useState, useMemo } from 'react';
+import { PageHeader } from "@/components/shared/page-header";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
+import { useFirestore, useCollection, useMemoFirebase, collection } from '@/firebase';
+import { WithId } from '@/firebase/firestore/use-collection';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AddExpenseTableRow } from './components/add-expense-table-row';
+import { EditableExpenseRow } from './components/editable-expense-row';
 
-const expenseSchema = z.object({
-  name: z.string().min(1, { message: "ناوی خەرجی پێویستە." }),
-  note: z.string().optional(),
-  amount: z.coerce.number().min(0.01, "بڕی خەرجی دەبێت لانیکەم 0.01 بێت."),
-  currency: z.enum(['USD', 'IQD']),
-  category: z.enum(['Daily', 'Salary', 'Rent', 'Electricity', 'Transport', 'Other']),
-  date: z.string().refine((val) => /^\d{4}-\d{2}-\d{2}$/.test(val), { message: "فۆرماتی بەروار هەڵەیە (YYYY-MM-DD)." }),
-});
 
-type ExpenseFormValues = z.infer<typeof expenseSchema>;
+type Expense = {
+    name: string;
+    note?: string;
+    amount: number;
+    currency?: 'USD' | 'IQD';
+    category: 'Daily' | 'Salary' | 'Rent' | 'Electricity' | 'Transport' | 'Other';
+    date: string;
+};
 
-export function AddExpenseForm({ onExpenseAdded }: { onExpenseAdded?: () => void }) {
-  const firestore = useFirestore();
-  const { toast } = useToast();
+function ExpensesList() {
+    const firestore = useFirestore();
+    const [refreshKey, setRefreshKey] = useState(0);
 
-  const form = useForm<ExpenseFormValues>({
-    resolver: zodResolver(expenseSchema),
-    defaultValues: {
-      name: "",
-      note: "",
-      amount: 0,
-      currency: 'USD',
-      category: 'Daily',
-      date: format(new Date(), "yyyy-MM-dd"),
-    },
-  });
+    const expensesQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return collection(firestore, 'expenses');
+    }, [firestore, refreshKey]);
 
-  async function onSubmit(data: ExpenseFormValues) {
-    if (!firestore) {
-      toast({
-        variant: "destructive",
-        title: "هەڵەیەک ڕوویدا",
-        description: "پەیوەندی لەگەڵ بنکەی داتاکەدا نییە.",
-      });
-      return;
-    }
-
-    const expensesColRef = collection(firestore, "expenses");
+    const { data: expenses, isLoading } = useCollection<Expense>(expensesQuery);
     
-    addDocumentNonBlocking(expensesColRef, {
-      ...data,
-      date: data.date,
-    });
-
-    toast({
-      title: "سەرکەوتوو بوو!",
-      description: "خەرجی نوێ بە سەرکەوتوویی زیادکرا.",
-      className: "bg-accent text-accent-foreground",
-    });
-    form.reset();
-    if (onExpenseAdded) {
-      onExpenseAdded();
+    const handleExpenseChange = () => {
+        setRefreshKey(prev => prev + 1);
     }
-  }
 
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" dir="rtl">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>ناوی خەرجی</FormLabel>
-              <FormControl>
-                <Input placeholder="بۆ نموونە: کڕینی چا و قاوە" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="note"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>تێبینی</FormLabel>
-              <FormControl>
-                <Textarea placeholder="تێبینی بنووسە (ئارەزوومەندانە)" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <div className="grid grid-cols-3 gap-4">
-            <FormField
-                control={form.control}
-                name="amount"
-                render={({ field }) => (
-                    <FormItem className="col-span-2">
-                        <FormLabel>بڕی خەرجی</FormLabel>
-                        <FormControl>
-                            <Input type="number" placeholder="0.00" {...field} step="0.01" />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-            <FormField
-                control={form.control}
-                name="currency"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>دراو</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value} dir="rtl">
-                            <FormControl>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                <SelectItem value="USD">USD</SelectItem>
-                                <SelectItem value="IQD">IQD</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>لیستی خەرجییەکان</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-[20%] text-right">ناوی خەرجی</TableHead>
+                            <TableHead className="w-[20%] text-right">تێبینی</TableHead>
+                            <TableHead className="w-[20%] text-right">بڕ</TableHead>
+                            <TableHead className="w-[15%] text-right">پۆل</TableHead>
+                            <TableHead className="w-[15%] text-right">بەروار</TableHead>
+                            <TableHead className="w-[10%] text-left">کردارەکان</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        <AddExpenseTableRow onExpenseAdded={handleExpenseChange} />
+                        {isLoading ? (
+                            <TableRow>
+                                <TableCell colSpan={6} className="h-24 text-center">
+                                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+                                </TableCell>
+                            </TableRow>
+                        ) : !expenses || expenses.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">هیچ خەرجییەک تۆمار نەکراوە.</TableCell>
+                            </TableRow>
+                        ) : (
+                            expenses.map((expense) => (
+                                <EditableExpenseRow key={expense.id} expense={expense} onExpenseUpdated={handleExpenseChange} />
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+    );
+}
+
+export default function ExpensesPage() {
+    return (
+        <div className="p-4 md:p-8 space-y-8" dir="rtl">
+            <PageHeader title="بەڕێوەبردنی خەرجییەکان" description="تۆماری خەرجییەکانت لێرە ببینە و زیاد بکە." />
+            <ExpensesList />
         </div>
-        <FormField
-            control={form.control}
-            name="category"
-            render={({ field }) => (
-                <FormItem>
-                    <FormLabel>پۆلی خەرجی</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} dir="rtl">
-                        <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder="پۆلێک هەڵبژێرە..." />
-                            </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            <SelectItem value="Daily">ڕۆژانە</SelectItem>
-                            <SelectItem value="Salary">مووچە</SelectItem>
-                            <SelectItem value="Rent">کرێ</SelectItem>
-                            <SelectItem value="Electricity">کارەبا</SelectItem>
-                            <SelectItem value="Transport">گواستنەوە</SelectItem>
-                            <SelectItem value="Other">هەمەجۆر</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <FormMessage />
-                </FormItem>
-            )}
-        />
-        <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-                <FormItem>
-                    <FormLabel>بەروار</FormLabel>
-                    <FormControl>
-                        <Input placeholder="YYYY-MM-DD" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-            )}
-        />
-        <div className="flex justify-end pt-4">
-            <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? "...پاشەکەوت دەکرێت" : "پاشەکەوتکردن"}
-            </Button>
-        </div>
-      </form>
-    </Form>
-  );
+    );
 }
