@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
-import { useFirestore, collection, getDocs, query, where } from '@/firebase';
+import { useFirestore, collection, getDocs, query, where, useCollection, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, DollarSign, ShoppingCart, Archive, Package, LineChart, TrendingUp, TrendingDown, CalendarIcon } from 'lucide-react';
 import { StatCard } from '@/components/shared/stat-card';
@@ -47,8 +47,8 @@ const categoryTranslations: Record<string, string> = { Mattress: "دۆشەک", B
 
 const useDashboardData = (dateRange: { from: string, to: string }) => {
     const firestore = useFirestore();
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<Error | null>(null);
+    const [isProcessing, setIsProcessing] = useState(true);
+    const [processingError, setProcessingError] = useState<Error | null>(null);
 
     // Processed Data
     const [stats, setStats] = useState({ totalRevenue: 0, totalExpensesUSD: 0, totalExpensesIQD: 0, buyingFormsCount: 0, lowStockCount: 0 });
@@ -59,36 +59,37 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
         purchases: { purchases: [], perProduct: [], totalQuantity: 0, totalCost: 0 },
         lowStockProducts: [],
     });
+    
+    // Real-time queries
+    const salesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'selling_forms'), where('issueDate', '>=', dateRange.from), where('issueDate', '<=', dateRange.to)) : null, [firestore, dateRange]);
+    const expensesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'expenses'), where('date', '>=', dateRange.from), where('date', '<=', dateRange.to)) : null, [firestore, dateRange]);
+    const buyingFormsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'buying_forms'), where('issueDate', '>=', dateRange.from), where('issueDate', '<=', dateRange.to)) : null, [firestore, dateRange]);
+    const productsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'products')) : null, [firestore]);
+    const suppliersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'suppliers')) : null, [firestore]);
+    
+    const { data: salesData, isLoading: isLoadingSales, error: salesError } = useCollection<WithId<SellingForm>>(salesQuery);
+    const { data: expensesData, isLoading: isLoadingExpenses, error: expensesError } = useCollection<WithId<Expense>>(expensesQuery);
+    const { data: buyingFormsData, isLoading: isLoadingBuyingForms, error: buyingFormsError } = useCollection<WithId<BuyingForm>>(buyingFormsQuery);
+    const { data: productsData, isLoading: isLoadingProducts, error: productsError } = useCollection<WithId<Product>>(productsQuery);
+    const { data: suppliersData, isLoading: isLoadingSuppliers, error: suppliersError } = useCollection<WithId<Supplier>>(suppliersQuery);
+    
+    const isLoadingCollections = isLoadingSales || isLoadingExpenses || isLoadingBuyingForms || isLoadingProducts || isLoadingSuppliers;
+    const collectionError = salesError || expensesError || buyingFormsError || productsError || suppliersError;
 
     useEffect(() => {
-        if (!firestore || !dateRange.from || !dateRange.to) return;
+        // Guard against running processing logic with incomplete or error-state data
+        if (isLoadingCollections || collectionError || !firestore || !salesData || !expensesData || !buyingFormsData || !productsData || !suppliersData) {
+            if (!isLoadingCollections) {
+                 setIsProcessing(false);
+            }
+            return;
+        }
 
-        const fetchData = async () => {
-            setIsLoading(true);
-            setError(null);
+        const processAllData = async () => {
+            setIsProcessing(true);
+            setProcessingError(null);
             try {
-                // 1. Fetch all primary collections
-                const salesQuery = query(collection(firestore, 'selling_forms'), where('issueDate', '>=', dateRange.from), where('issueDate', '<=', dateRange.to));
-                const expensesQuery = query(collection(firestore, 'expenses'), where('date', '>=', dateRange.from), where('date', '<=', dateRange.to));
-                const buyingFormsQuery = query(collection(firestore, 'buying_forms'), where('issueDate', '>=', dateRange.from), where('issueDate', '<=', dateRange.to));
-                const productsQuery = query(collection(firestore, 'products'));
-                const suppliersQuery = query(collection(firestore, 'suppliers'));
-
-                const [salesSnap, expensesSnap, buyingFormsSnap, productsSnap, suppliersSnap] = await Promise.all([
-                    getDocs(salesQuery),
-                    getDocs(expensesQuery),
-                    getDocs(buyingFormsQuery),
-                    getDocs(productsQuery),
-                    getDocs(suppliersQuery),
-                ]);
-
-                const salesData = salesSnap.docs.map(doc => ({ ...doc.data(), id: doc.id })) as WithId<SellingForm>[];
-                const expensesData = expensesSnap.docs.map(doc => ({ ...doc.data(), id: doc.id })) as WithId<Expense>[];
-                const buyingFormsData = buyingFormsSnap.docs.map(doc => ({ ...doc.data(), id: doc.id })) as WithId<BuyingForm>[];
-                const productsData = productsSnap.docs.map(doc => ({ ...doc.data(), id: doc.id })) as WithId<Product>[];
-                const suppliersData = suppliersSnap.docs.map(doc => ({ ...doc.data(), id: doc.id })) as WithId<Supplier>[];
-
-                // 2. Process data and calculate stats
+                // Same logic as before, just using hook data instead of getDocs data
                 const totalRevenue = salesData.reduce((acc, sale) => acc + sale.totalPrice, 0);
                 
                 let { totalExpensesUSD, totalExpensesIQD } = expensesData.reduce((acc, expense) => {
@@ -115,7 +116,7 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
                 
                 setStats({ totalRevenue, totalExpensesUSD, totalExpensesIQD, buyingFormsCount: buyingFormsData.length, lowStockCount });
 
-                // 3. Process chart data
+                // Process chart data
                 const dateMap = new Map<string, { sales: number; expenses: number; netProfit: number }>();
                 const startDate = startOfDay(parseISO(dateRange.from));
                 const endDate = endOfDay(parseISO(dateRange.to));
@@ -146,7 +147,7 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
                 const finalChartData = Array.from(dateMap.entries()).map(([date, data]) => ({ date, ...data }));
                 setChartData(finalChartData);
 
-                // 4. Process ALL dialog data
+                // Process ALL dialog data
                 const salesProductsPromises = salesData.map(s => getDocs(collection(firestore, `selling_forms/${s.id}/selling_form_products`)));
                 const buyingFormsProductsPromises = buyingFormsData.map(b => getDocs(collection(firestore, `buying_forms/${b.id}/buying_form_products`)));
                 
@@ -199,17 +200,17 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
                     lowStockProducts: groupedProducts.filter(p => p.totalQuantity < 5),
                 });
             } catch (err: any) {
-                console.error("Dashboard data fetching failed:", err);
-                setError(err);
+                console.error("Dashboard data processing failed:", err);
+                setProcessingError(err);
             } finally {
-                setIsLoading(false);
+                setIsProcessing(false);
             }
         };
 
-        fetchData();
-    }, [dateRange, firestore]);
+        processAllData();
+    }, [dateRange, firestore, salesData, expensesData, buyingFormsData, productsData, suppliersData, isLoadingCollections, collectionError]);
 
-    return { isLoading, error, stats, chartData, dialogData };
+    return { isLoading: isLoadingCollections || isProcessing, error: collectionError || processingError, stats, chartData, dialogData };
 };
 
 
