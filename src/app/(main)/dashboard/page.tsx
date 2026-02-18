@@ -51,7 +51,7 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
     const [processingError, setProcessingError] = useState<Error | null>(null);
 
     // Processed Data
-    const [stats, setStats] = useState({ totalRevenue: 0, totalExpensesUSD: 0, totalExpensesIQD: 0, buyingFormsCount: 0, lowStockCount: 0 });
+    const [stats, setStats] = useState({ totalRevenue: 0, totalExpensesUSD: 0, buyingFormsCount: 0, lowStockCount: 0 });
     const [chartData, setChartData] = useState<any[]>([]);
     const [dialogData, setDialogData] = useState<any>({
         sales: { sales: [], perProduct: [], totalQuantity: 0, totalRevenue: 0, allSalesProducts: [] },
@@ -92,14 +92,17 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
                 // Same logic as before, just using hook data instead of getDocs data
                 const totalRevenue = salesData.reduce((acc, sale) => acc + sale.totalPrice, 0);
                 
-                let { totalExpensesUSD, totalExpensesIQD } = expensesData.reduce((acc, expense) => {
-                    if (expense.currency === 'IQD') acc.totalExpensesIQD += expense.amount;
-                    else acc.totalExpensesUSD += expense.amount;
+                const iqdToUsdRate = 1500;
+                const { totalUSD, totalIQD } = expensesData.reduce((acc, expense) => {
+                    if (expense.currency === 'IQD') acc.totalIQD += expense.amount;
+                    else acc.totalUSD += expense.amount;
                     return acc;
-                }, { totalExpensesUSD: 0, totalExpensesIQD: 0 });
+                }, { totalUSD: 0, totalIQD: 0 });
+                const totalExpensesFromIqdInUSD = totalIQD / iqdToUsdRate;
 
                 const totalPurchaseCost = buyingFormsData.reduce((acc, form) => acc + (form.totalAmount || 0), 0);
-                totalExpensesUSD += totalPurchaseCost;
+                
+                const totalExpensesUSD = totalUSD + totalExpensesFromIqdInUSD + totalPurchaseCost;
 
                 const groupedProductsMap = new Map<string, GroupedProduct>();
                 productsData.forEach(p => {
@@ -114,7 +117,7 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
                 const groupedProducts = Array.from(groupedProductsMap.values());
                 const lowStockCount = groupedProducts.filter(p => p.totalQuantity > 0 && p.totalQuantity < 5).length;
                 
-                setStats({ totalRevenue, totalExpensesUSD, totalExpensesIQD, buyingFormsCount: buyingFormsData.length, lowStockCount });
+                setStats({ totalRevenue, totalExpensesUSD, buyingFormsCount: buyingFormsData.length, lowStockCount });
 
                 // Process chart data
                 const dateMap = new Map<string, { sales: number; expenses: number; netProfit: number }>();
@@ -130,9 +133,13 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
                 });
 
                 expensesData.forEach(expense => {
-                    if (expense.currency !== 'IQD') {
-                        const expenseDate = formatDate(parseISO(expense.date), 'yyyy-MM-dd');
-                        if (dateMap.has(expenseDate)) dateMap.get(expenseDate)!.expenses += expense.amount;
+                    const expenseDate = formatDate(parseISO(expense.date), 'yyyy-MM-dd');
+                    if (dateMap.has(expenseDate)) {
+                        let amountInUSD = expense.amount;
+                        if (expense.currency === 'IQD') {
+                            amountInUSD = expense.amount / iqdToUsdRate;
+                        }
+                        dateMap.get(expenseDate)!.expenses += amountInUSD;
                     }
                 });
 
@@ -421,7 +428,7 @@ function DashboardStats({ stats, dialogData }: { stats: any, dialogData: any }) 
     const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 });
     const numberFormatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 0 });
 
-    const expenseDescription = `کۆی خەرجی گشتی و کڕینەکان. ${stats.totalExpensesIQD > 0 ? `+ ${numberFormatter.format(stats.totalExpensesIQD)} IQD` : ""}`.trim();
+    const expenseDescription = `کۆی گشتی خەرجی و کڕینەکان بە دۆلار.`;
 
     return (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
