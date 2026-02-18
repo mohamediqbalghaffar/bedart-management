@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Loader2, DollarSign, ShoppingCart, Archive, Package, LineChart, TrendingUp, TrendingDown, CalendarIcon } from 'lucide-react';
 import { StatCard } from '@/components/shared/stat-card';
 import { format as formatDate, subDays, parseISO, isValid, startOfDay, endOfDay, differenceInDays } from 'date-fns';
+import { ckb } from 'date-fns/locale/ckb';
 import { AreaChart, Area, CartesianGrid, ResponsiveContainer, XAxis, YAxis, BarChart, Bar } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -20,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 // --- TYPE DEFINITIONS ---
@@ -88,11 +90,15 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
 
                 // 2. Process data and calculate stats
                 const totalRevenue = salesData.reduce((acc, sale) => acc + sale.totalPrice, 0);
-                const { totalExpensesUSD, totalExpensesIQD } = expensesData.reduce((acc, expense) => {
+                
+                let { totalExpensesUSD, totalExpensesIQD } = expensesData.reduce((acc, expense) => {
                     if (expense.currency === 'IQD') acc.totalExpensesIQD += expense.amount;
                     else acc.totalExpensesUSD += expense.amount;
                     return acc;
                 }, { totalExpensesUSD: 0, totalExpensesIQD: 0 });
+
+                const totalPurchaseCost = buyingFormsData.reduce((acc, form) => acc + (form.totalAmount || 0), 0);
+                totalExpensesUSD += totalPurchaseCost;
 
                 const groupedProductsMap = new Map<string, GroupedProduct>();
                 productsData.forEach(p => {
@@ -121,12 +127,21 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
                     const saleDate = formatDate(parseISO(sale.issueDate), 'yyyy-MM-dd');
                     if (dateMap.has(saleDate)) dateMap.get(saleDate)!.sales += sale.totalPrice;
                 });
+
                 expensesData.forEach(expense => {
                     if (expense.currency !== 'IQD') {
                         const expenseDate = formatDate(parseISO(expense.date), 'yyyy-MM-dd');
                         if (dateMap.has(expenseDate)) dateMap.get(expenseDate)!.expenses += expense.amount;
                     }
                 });
+
+                buyingFormsData.forEach(purchase => {
+                    const purchaseDate = formatDate(parseISO(purchase.issueDate), 'yyyy-MM-dd');
+                    if(dateMap.has(purchaseDate)){
+                        dateMap.get(purchaseDate)!.expenses += purchase.totalAmount || 0;
+                    }
+                });
+
                 dateMap.forEach((data) => { data.netProfit = data.sales - data.expenses; });
                 const finalChartData = Array.from(dateMap.entries()).map(([date, data]) => ({ date, ...data }));
                 setChartData(finalChartData);
@@ -300,6 +315,44 @@ function ExpensesDetailDialog({ expenses }: { expenses: WithId<Expense>[] | null
     );
 }
 
+function CombinedExpensesDetailDialog({ expenses, purchases }: { expenses: WithId<Expense>[] | null, purchases: any[] | null }) {
+    const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+    return (
+        <Tabs defaultValue="general" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="general">خەرجی گشتی</TabsTrigger>
+                <TabsTrigger value="purchases">کڕینەکان</TabsTrigger>
+            </TabsList>
+            <TabsContent value="general">
+                <ExpensesDetailDialog expenses={expenses} />
+            </TabsContent>
+            <TabsContent value="purchases">
+                 <div className="max-h-[60vh] overflow-y-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="text-right">دابینکەر</TableHead>
+                                <TableHead className="text-right">بەروار</TableHead>
+                                <TableHead className="text-right">کۆی گشتی پسوولە</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {purchases?.map((purchase: any) => (
+                                <TableRow key={purchase.id}>
+                                    <TableCell>{purchase.supplierName}</TableCell>
+                                    <TableCell>{formatDate(parseISO(purchase.issueDate), 'dd/MM/yyyy')}</TableCell>
+                                    <TableCell>{currencyFormatter.format(purchase.totalAmount || 0)}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            </TabsContent>
+        </Tabs>
+    );
+}
+
+
 function PurchasesDetailDialog({ data }: { data: any }) {
     const { purchases, perProduct, totalQuantity, totalCost } = data;
     const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
@@ -367,14 +420,32 @@ function DashboardStats({ stats, dialogData }: { stats: any, dialogData: any }) 
     const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 });
     const numberFormatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 0 });
 
+    const expenseDescription = `کۆی خەرجی گشتی و کڕینەکان. ${stats.totalExpensesIQD > 0 ? `+ ${numberFormatter.format(stats.totalExpensesIQD)} IQD` : ""}`.trim();
+
     return (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
              <Dialog><DialogTrigger asChild><div className="cursor-pointer"><StatCard title="کۆی فرۆش" value={currencyFormatter.format(stats.totalRevenue)} icon={ShoppingCart} description="کۆی گشتی فرۆشتن لە ماوەی دیاریکراودا." /></div></DialogTrigger>
                 <DialogContent className="sm:max-w-4xl" dir="rtl"><DialogHeader><DialogTitle>وردەکاریی فرۆشتن</DialogTitle><DialogDescription>پوختەی فرۆشتنەکان لە ماوەی دیاریکراودا.</DialogDescription></DialogHeader><SalesDetailDialog data={dialogData.sales} /></DialogContent>
             </Dialog>
 
-            <Dialog><DialogTrigger asChild><div className="cursor-pointer"><StatCard title="کۆی خەرجی" value={currencyFormatter.format(stats.totalExpensesUSD)} icon={DollarSign} description={stats.totalExpensesIQD > 0 ? `+ ${numberFormatter.format(stats.totalExpensesIQD)} IQD` : "کۆی گشتی خەرجی لە ماوەی دیاریکراودا."}/></div></DialogTrigger>
-                <DialogContent className="sm:max-w-2xl" dir="rtl"><DialogHeader><DialogTitle>وردەکاریی خەرجییەکان</DialogTitle><DialogDescription>لیستی خەرجییەکان لە ماوەی دیاریکراودا.</DialogDescription></DialogHeader><ExpensesDetailDialog expenses={dialogData.expenses} /></DialogContent>
+            <Dialog>
+                <DialogTrigger asChild>
+                    <div className="cursor-pointer">
+                        <StatCard 
+                            title="کۆی خەرجی" 
+                            value={currencyFormatter.format(stats.totalExpensesUSD)} 
+                            icon={DollarSign} 
+                            description={expenseDescription}
+                        />
+                    </div>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-3xl" dir="rtl">
+                    <DialogHeader>
+                        <DialogTitle>وردەکاریی خەرجییەکان و کڕینەکان</DialogTitle>
+                        <DialogDescription>لیستی خەرجییە گشتییەکان و پسوولەکانی کڕین لە ماوەی دیاریکراودا.</DialogDescription>
+                    </DialogHeader>
+                    <CombinedExpensesDetailDialog expenses={dialogData.expenses} purchases={dialogData.purchases.purchases} />
+                </DialogContent>
             </Dialog>
 
             <Dialog><DialogTrigger asChild><div className="cursor-pointer"><StatCard title="ژمارەی پسوولەی کڕین" value={stats.buyingFormsCount.toString()} icon={Package} description="کۆی گشتی پسوولەی کڕین لە ماوەی دیاریکراودا." /></div></DialogTrigger>
@@ -498,6 +569,7 @@ export default function DashboardPage() {
                                 selected={dateRange.from}
                                 onSelect={(date) => setDateRange(prev => ({...prev, from: date || prev.from }))}
                                 initialFocus
+                                locale={ckb}
                                 />
                             </PopoverContent>
                         </Popover>
@@ -523,6 +595,7 @@ export default function DashboardPage() {
                                 selected={dateRange.to}
                                 onSelect={(date) => setDateRange(prev => ({...prev, to: date || prev.to }))}
                                 initialFocus
+                                locale={ckb}
                                 />
                             </PopoverContent>
                         </Popover>
