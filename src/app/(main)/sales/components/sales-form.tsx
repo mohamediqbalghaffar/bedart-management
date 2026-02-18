@@ -23,6 +23,7 @@ import { Loader2 } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { WithId } from "@/firebase/firestore/use-collection";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/contexts/auth-context";
 
 type Customer = {
   customerName: string;
@@ -137,6 +138,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [originalItems, setOriginalItems] = useState<any[]>([]);
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
+  const { role } = useAuth();
 
   const form = useForm<SalesFormValues>({
     resolver: zodResolver(salesFormSchema),
@@ -399,8 +401,17 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
         const finalTotalAmount = subTotal - discountAmount + Number(mainData.deliveryCost || 0);
         const finalTotalPaid = payments?.reduce((acc, p) => acc + p.amount, 0) || 0;
         const finalRemainingBalance = Math.max(0, finalTotalAmount - finalTotalPaid);
+        const creatorName = role === 'admin' ? 'Admin' : 'Salesman';
         
-        const sellingFormData: any = { ...mainData, id: sellingFormId, creatorId: "system", issueDate: sanitizedData.issueDate, totalPrice: finalTotalAmount, remainingBalance: finalRemainingBalance };
+        const sellingFormData: any = { 
+            ...mainData, 
+            id: sellingFormId, 
+            creatorId: role || "system",
+            creatorName,
+            issueDate: sanitizedData.issueDate, 
+            totalPrice: finalTotalAmount, 
+            remainingBalance: finalRemainingBalance 
+        };
         if (!sellingFormData.discountValue) sellingFormData.discountValue = 0;
         if (!sellingFormData.discountType) delete sellingFormData.discountType;
         transaction.set(sellingFormRef, sellingFormData, { merge: true });
@@ -752,5 +763,3 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
     </Form>
   );
 }
-
-    

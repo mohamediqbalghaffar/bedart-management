@@ -27,6 +27,7 @@ type SellingFormType = {
     paymentStatus: PaymentStatus;
     paymentType: PaymentType;
     formNumber: string;
+    creatorName?: string;
 };
 
 type SellingFormProduct = {
@@ -338,7 +339,7 @@ function SalesList() {
                                                     <AlertDialogFooter>
                                                         <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
                                                         <AlertDialogAction onClick={() => handleDelete(sale.id)} className="bg-destructive hover:bg-destructive/90">
-                                                            بەڵێ، بیسڕەوە
+                                                            بەڵێ، بسڕەوە
                                                         </AlertDialogAction>
                                                     </AlertDialogFooter>
                                                 </AlertDialogContent>
