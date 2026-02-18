@@ -169,11 +169,7 @@ function StockPageContent() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="text-right">کاڵا</TableHead>
-                                    <TableHead className="text-right">پۆل</TableHead>
-                                    <TableHead className="text-center">کۆگا</TableHead>
-                                    <TableHead className="text-center">فرۆشگا</TableHead>
-                                    <TableHead className="text-center">کۆی گشتی</TableHead>
+                                    <TableHead className="text-center">گواستنەوە</TableHead>
                                     <TableHead className="text-right">
                                         <div className='flex items-center justify-end gap-1'>
                                             <span>دابینکەر</span>
@@ -189,7 +185,11 @@ function StockPageContent() {
                                             </TooltipProvider>
                                         </div>
                                     </TableHead>
-                                    <TableHead className="text-center">گواستنەوە</TableHead>
+                                    <TableHead className="text-center">کۆی گشتی</TableHead>
+                                    <TableHead className="text-center">فرۆشگا</TableHead>
+                                    <TableHead className="text-center">کۆگا</TableHead>
+                                    <TableHead className="text-right">پۆل</TableHead>
+                                    <TableHead className="text-right">کاڵا</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -208,16 +208,6 @@ function StockPageContent() {
                                 ) : (
                                     groupedProducts.map((product) => (
                                         <TableRow key={`${product.productName}-${product.sizeModel}`}>
-                                            <TableCell className="font-medium text-right">{product.productName} {product.sizeModel && `(${product.sizeModel})`}</TableCell>
-                                            <TableCell className="text-right">{product.category}</TableCell>
-                                            <TableCell className="text-center">{product.locations.Warehouse?.currentQuantity || 0}</TableCell>
-                                            <TableCell className="text-center">{product.locations['Shop Showroom']?.currentQuantity || 0}</TableCell>
-                                            <TableCell className="text-center">
-                                                <Badge variant={product.totalQuantity < 5 ? "destructive" : "secondary"}>
-                                                    {product.totalQuantity}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right">{product.supplierName}</TableCell>
                                             <TableCell className="text-center">
                                                 <StockTransferDialog product={product} onTransferSuccess={onTransferSuccess}>
                                                     <Button variant="ghost" size="icon" disabled={!product.locations.Warehouse && !product.locations['Shop Showroom']}>
@@ -225,6 +215,16 @@ function StockPageContent() {
                                                     </Button>
                                                 </StockTransferDialog>
                                             </TableCell>
+                                            <TableCell className="text-right">{product.supplierName}</TableCell>
+                                            <TableCell className="text-center">
+                                                <Badge variant={product.totalQuantity < 5 ? "destructive" : "secondary"}>
+                                                    {product.totalQuantity}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-center">{product.locations['Shop Showroom']?.currentQuantity || 0}</TableCell>
+                                            <TableCell className="text-center">{product.locations.Warehouse?.currentQuantity || 0}</TableCell>
+                                            <TableCell className="text-right">{product.category}</TableCell>
+                                            <TableCell className="font-medium text-right">{product.productName} {product.sizeModel && `(${product.sizeModel})`}</TableCell>
                                         </TableRow>
                                     ))
                                 )}
