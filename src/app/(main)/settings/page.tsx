@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFirestore, useCollection, useMemoFirebase, collection, doc, updateDoc, addDoc, deleteDoc, getDocs, writeBatch, getDoc, setDoc } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Trash2, FileDown, AlertTriangle, PlusCircle } from 'lucide-react';
+import { Loader2, Trash2, FileDown, AlertTriangle, PlusCircle, FileUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
@@ -324,7 +324,106 @@ function DataManagement() {
     const [isExporting, setIsExporting] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteConfirmation, setDeleteConfirmation] = useState('');
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
     const CONFIRMATION_TEXT = 'سڕینەوەی هەموو داتا';
+
+    const downloadTemplate = () => {
+        try {
+            const workbook = XLSX.utils.book_new();
+
+            const productsHeaders = [{ productName: "Product Name", category: "Category (Mattress, Bed, Pillow, Cover)", sizeModel: "Size/Model", stockLocation: "Stock Location (Warehouse, Shop Showroom)", currentQuantity: "Quantity", unitPrice: "Purchase Price", sellingPrice: "Selling Price" }];
+            const customersHeaders = [{ customerName: "Customer Name", customerPhoneNumber: "Phone Number", customerAddress: "Address" }];
+            const suppliersHeaders = [{ supplierName: "Supplier Name", contactInformation: "Contact Info" }];
+            const expensesHeaders = [{ name: "Expense Name", note: "Note", amount: "Amount", currency: "Currency (USD/IQD)", category: "Category (Daily, Salary, ...)", date: "Date (YYYY-MM-DD)" }];
+            
+            const wsProducts = XLSX.utils.json_to_sheet(productsHeaders);
+            const wsCustomers = XLSX.utils.json_to_sheet(customersHeaders);
+            const wsSuppliers = XLSX.utils.json_to_sheet(suppliersHeaders);
+            const wsExpenses = XLSX.utils.json_to_sheet(expensesHeaders);
+
+            XLSX.utils.book_append_sheet(workbook, wsProducts, "products");
+            XLSX.utils.book_append_sheet(workbook, wsCustomers, "customers");
+            XLSX.utils.book_append_sheet(workbook, wsSuppliers, "suppliers");
+            XLSX.utils.book_append_sheet(workbook, wsExpenses, "expenses");
+            
+            XLSX.writeFile(workbook, "Data_Upload_Template.xlsx");
+            toast({ title: "سەرکەوتوو بوو", description: "نموونەی فایل بەسەرکەوتوویی دابەزێنرا." });
+
+        } catch (error) {
+            console.error("Error downloading template:", error);
+            toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "دابەزاندنی نموونەکە سەرکەوتوو نەبوو." });
+        }
+    }
+
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !firestore) return;
+
+        setIsUploading(true);
+        toast({ title: "...بارکردنی داتا", description: "تکایە چاوەڕوان بە." });
+
+        try {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = e.target?.result;
+                    if (!(data instanceof ArrayBuffer)) {
+                        throw new Error("Failed to read file.");
+                    }
+
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const batch = writeBatch(firestore);
+                    let count = 0;
+
+                    const processSheet = (sheetName: string, collectionName: string) => {
+                        const worksheet = workbook.Sheets[sheetName];
+                        if (!worksheet) return;
+
+                        const jsonData = XLSX.utils.sheet_to_json<any>(worksheet);
+                        
+                        jsonData.forEach(row => {
+                            if (collectionName === 'products') {
+                                if (!row.productName || !row.stockLocation) return;
+                                const productId = `${String(row.productName).toLowerCase().replace(/[^a-z0-9]/g, '-')}-${String(row.stockLocation).toLowerCase().replace(/\s/g, '')}`;
+                                const productRef = doc(firestore, collectionName, productId);
+                                batch.set(productRef, { ...row, id: productId }, { merge: true });
+                            } else {
+                                const docRef = doc(collection(firestore, collectionName));
+                                batch.set(docRef, { ...row, id: docRef.id });
+                            }
+                            count++;
+                        });
+                    };
+
+                    processSheet("products", "products");
+                    processSheet("customers", "customers");
+                    processSheet("suppliers", "suppliers");
+                    processSheet("expenses", "expenses");
+                    
+                    await batch.commit();
+
+                    toast({ title: "سەرکەوتوو بوو", description: `${count} تۆمار بە سەرکەوتوویی زیادکرا/نوێکرایەوە.`, className: "bg-accent text-accent-foreground" });
+                } catch(err) {
+                    console.error("Error processing file:", err);
+                    toast({ variant: 'destructive', title: "هەڵە لە پرۆسێسی فایل", description: "دڵنیابە فایلەکە و ناوەڕۆکەکەی دروستە." });
+                } finally {
+                    setIsUploading(false);
+                    if (fileInputRef.current) {
+                        fileInputRef.current.value = "";
+                    }
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        } catch (error) {
+             console.error("Error uploading data:", error);
+             toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "بارکردنی داتاکان سەرکەوتوو نەبوو." });
+             setIsUploading(false);
+             if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+             }
+        }
+    };
 
     const exportAllData = async () => {
         if (!firestore) return;
@@ -333,48 +432,46 @@ function DataManagement() {
 
         const workbook = XLSX.utils.book_new();
 
+        const subcollectionData: { [key: string]: any[] } = {
+            selling_form_products: [],
+            selling_form_payments: [],
+            buying_form_products: [],
+        };
+
         for (const collectionName of COLLECTIONS_TO_MANAGE) {
             try {
                 const querySnapshot = await getDocs(collection(firestore, collectionName));
-                let data = querySnapshot.docs.map(doc => {
-                    const d = doc.data();
+                const data = querySnapshot.docs.map(docSnap => {
+                    const d = docSnap.data();
                     delete d.id;
-                    return d;
+                    return { firestore_id: docSnap.id, ...d };
                 });
 
-                // For nested collections
-                if (collectionName === 'selling_forms' || collectionName === 'buying_forms') {
-                    const nestedData = [];
-                    for(const docSnap of querySnapshot.docs) {
-                        const productsSnapshot = await getDocs(collection(firestore, `${collectionName}/${docSnap.id}/products`));
-                        const products = productsSnapshot.docs.map(p => {
+                if (collectionName === 'selling_forms') {
+                    for (const docSnap of querySnapshot.docs) {
+                        const formId = docSnap.id;
+                        const productsSnapshot = await getDocs(collection(firestore, `selling_forms/${docSnap.id}/products`));
+                        productsSnapshot.forEach(p => {
                             const d = p.data();
                             delete d.id;
-                            return { [`${collectionName}_id`]: docSnap.id, ...d };
+                            subcollectionData.selling_form_products.push({ form_firestore_id: formId, ...d });
                         });
-                        nestedData.push(...products);
-
-                        if(collectionName === 'selling_forms') {
-                            const paymentsSnapshot = await getDocs(collection(firestore, `${collectionName}/${docSnap.id}/payments`));
-                            const payments = paymentsSnapshot.docs.map(p => {
-                                const d = p.data();
-                                delete d.id;
-                                return { selling_form_id: docSnap.id, ...d };
-                            });
-                            
-                            if (payments.length > 0) {
-                                const ws = XLSX.utils.json_to_sheet(payments);
-                                if (!workbook.Sheets['selling_form_payments']) {
-                                    XLSX.utils.book_append_sheet(workbook, ws, 'selling_form_payments');
-                                } else {
-                                    XLSX.utils.sheet_add_json(workbook.Sheets['selling_form_payments'], payments, { origin: -1, skipHeader: true });
-                                }
-                            }
-                        }
+                        const paymentsSnapshot = await getDocs(collection(firestore, `selling_forms/${docSnap.id}/payments`));
+                        paymentsSnapshot.forEach(p => {
+                            const d = p.data();
+                            delete d.id;
+                            subcollectionData.selling_form_payments.push({ form_firestore_id: formId, ...d });
+                        });
                     }
-                    if (nestedData.length > 0) {
-                         const ws = XLSX.utils.json_to_sheet(nestedData);
-                         XLSX.utils.book_append_sheet(workbook, ws, `${collectionName}_products`);
+                } else if (collectionName === 'buying_forms') {
+                    for (const docSnap of querySnapshot.docs) {
+                        const formId = docSnap.id;
+                        const productsSnapshot = await getDocs(collection(firestore, `buying_forms/${docSnap.id}/products`));
+                        productsSnapshot.forEach(p => {
+                            const d = p.data();
+                            delete d.id;
+                            subcollectionData.buying_form_products.push({ form_firestore_id: formId, ...d });
+                        });
                     }
                 }
                 
@@ -386,8 +483,15 @@ function DataManagement() {
                 console.warn(`Could not export ${collectionName}`, e);
             }
         }
+        
+        for (const [sheetName, data] of Object.entries(subcollectionData)) {
+            if (data.length > 0) {
+                const worksheet = XLSX.utils.json_to_sheet(data);
+                XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+            }
+        }
 
-        XLSX.writeFile(workbook, `Backup_All_Data.xlsx`);
+        XLSX.writeFile(workbook, `Backup_All_Data_${new Date().toISOString().split('T')[0]}.xlsx`);
         toast({ title: "سەرکەوتوو بوو", description: `هەموو داتاکان بەسەرکەوتوویی هەناردەکران.` });
         setIsExporting(false);
     }
@@ -438,12 +542,21 @@ function DataManagement() {
             <Card>
                 <CardHeader>
                     <CardTitle>بەڕێوەبردنی داتا</CardTitle>
-                    <CardDescription>هەناردەکردنی هەموو داتاکان وەک یەک فایل.</CardDescription>
+                    <CardDescription>هەناردەکردن، هاوردەکردن، و بەڕێوەبردنی داتای خاو.</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex items-center gap-2">
                     <Button variant="outline" onClick={exportAllData} disabled={isExporting}>
                         {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
                         هەناردەکردنی هەموو داتاکان
+                    </Button>
+                    <Button variant="outline" onClick={downloadTemplate}>
+                        <FileDown className="mr-2 h-4 w-4" />
+                        دابەزاندنی نموونە
+                    </Button>
+                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".xlsx, .xls" />
+                    <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                        {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileUp className="mr-2 h-4 w-4" />}
+                        بارکردنی داتا
                     </Button>
                 </CardContent>
             </Card>
