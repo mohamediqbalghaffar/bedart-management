@@ -163,6 +163,19 @@
         "landedCost": { "type": "number", "description": "The total landed cost per product after customs." }
       },
       "required": ["id", "buyingFormId", "productId", "quantity", "unitPrice"]
+    },
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents an application user.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the User entity." },
+        "username": { "type": "string", "description": "The user's login name (email format recommended)." },
+        "password": { "type": "string", "description": "The user's password." },
+        "role": { "type": "string", "description": "The user's role.", "enum": ["Admin", "Data Manager", "Salesman"] }
+      },
+      "required": ["id", "username", "password", "role"]
     }
   },
   "firestore": {
@@ -205,6 +218,10 @@
     "/suppliers/{supplierId}": {
       "schema": { "$ref": "#/entities/Supplier" },
       "description": "Stores supplier information."
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores user account information."
     }
   }
 }

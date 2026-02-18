@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -8,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFirestore, useCollection, useMemoFirebase, collection, doc, updateDoc, addDoc, deleteDoc, getDocs, writeBatch, getDoc, setDoc } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Trash2, FileDown, AlertTriangle } from 'lucide-react';
+import { Loader2, Trash2, FileDown, AlertTriangle, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +15,9 @@ import { Input } from '@/components/ui/input';
 import * as XLSX from 'xlsx';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogHeader, DialogDescription, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AddUserForm } from './components/add-user-form';
+import { DialogContent } from '@radix-ui/react-dialog';
 
 // General Settings Component
 type CompanyInfo = {
@@ -87,9 +89,37 @@ function GeneralSettings() {
     );
 }
 
+// Add User Dialog
+function AddUserDialog({ onUserAdded }: { onUserAdded: () => void }) {
+    const [open, setOpen] = React.useState(false);
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button variant="outline">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    زیادکردنی بەکارهێنەر
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md" dir="rtl">
+                <DialogHeader>
+                    <DialogTitle>بەکارهێنەری نوێ</DialogTitle>
+                    <DialogDescription>
+                        زانیارییەکانی بەکارهێنەری نوێ بنووسە.
+                    </DialogDescription>
+                </DialogHeader>
+                <AddUserForm onUserAdded={() => {
+                    onUserAdded();
+                    setOpen(false);
+                }} />
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 // User Management Component
 type User = {
+    id: string;
     username: string;
     role: 'Admin' | 'Data Manager' | 'Salesman';
 };
@@ -97,8 +127,14 @@ type User = {
 function UserManagement() {
     const firestore = useFirestore();
     const { toast } = useToast();
-    const usersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
+    const [refreshKey, setRefreshKey] = React.useState(0);
+    
+    const usersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore, refreshKey]);
     const { data: users, isLoading } = useCollection<User>(usersQuery);
+
+    const handleUserChange = () => {
+        setRefreshKey(prev => prev + 1);
+    };
 
     const handleRoleChange = async (userId: string, newRole: User['role']) => {
         if (!firestore) return;
@@ -122,12 +158,35 @@ function UserManagement() {
             toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "نوێکردنەوەی ڕۆڵ سەرکەوتوو نەبوو." });
         }
     };
+
+    const handleDeleteUser = async (userId: string) => {
+        if (!firestore) return;
+        try {
+            const userRef = doc(firestore, 'users', userId);
+            const adminRef = doc(firestore, 'admins', userId);
+
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists() && userSnap.data().role === 'Admin') {
+                await deleteDoc(adminRef);
+            }
+            await deleteDoc(userRef);
+
+            toast({ title: "بەکارهێنەر سڕایەوە", description: "بەکارهێنەرەکە بە سەرکەوتوویی سڕایەوە.", className: "bg-accent text-accent-foreground" });
+            handleUserChange();
+        } catch (error) {
+            console.error("Error deleting user: ", error);
+            toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "سڕینەوەی بەکارهێنەر سەرکەوتوو نەبوو." });
+        }
+    };
     
     return (
         <Card>
-            <CardHeader>
-                <CardTitle>بەڕێوەبردنی بەکارهێنەران</CardTitle>
-                <CardDescription>ڕۆڵ و دەسەڵاتی بەکارهێنەرانی سیستەم بگۆڕە.</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                    <CardTitle>بەڕێوەبردنی بەکارهێنەران</CardTitle>
+                    <CardDescription>ڕۆڵ و دەسەڵاتی بەکارهێنەرانی سیستەم بگۆڕە.</CardDescription>
+                </div>
+                <AddUserDialog onUserAdded={handleUserChange} />
             </CardHeader>
             <CardContent>
                 <Table>
@@ -135,11 +194,14 @@ function UserManagement() {
                         <TableRow>
                             <TableHead className="text-right">ئیمەیڵ (ناوی بەکارهێنەر)</TableHead>
                             <TableHead className="text-right w-[200px]">ڕۆڵ</TableHead>
+                            <TableHead className="text-left w-[100px]">کردارەکان</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoading ? (
-                            <TableRow><TableCell colSpan={2} className="h-24 text-center"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></TableCell></TableRow>
+                            <TableRow><TableCell colSpan={3} className="h-24 text-center"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></TableCell></TableRow>
+                        ) : !users || users.length === 0 ? (
+                            <TableRow><TableCell colSpan={3} className="h-24 text-center text-muted-foreground">هیچ بەکارهێنەرێک نییە.</TableCell></TableRow>
                         ) : users?.map(user => (
                             <TableRow key={user.id}>
                                 <TableCell className="font-medium text-right">{user.username}</TableCell>
@@ -152,6 +214,23 @@ function UserManagement() {
                                             <SelectItem value="Salesman">فرۆشیار</SelectItem>
                                         </SelectContent>
                                     </Select>
+                                </TableCell>
+                                <TableCell className="text-left">
+                                     <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent dir="rtl">
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>دڵنیایت لە سڕینەوەی ئەم بەکارهێنەرە؟</AlertDialogTitle>
+                                                <AlertDialogDescription>ئەم کردارە پاشگەزبوونەوەی نییە.</AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleDeleteUser(user.id)} className="bg-destructive hover:bg-destructive/90">بەڵێ، بسڕەوە</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -432,5 +511,3 @@ export default function SettingsPage() {
         </div>
     );
 }
-
-    
