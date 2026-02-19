@@ -115,10 +115,15 @@ function UploadProductsButton({ onUploadComplete }: { onUploadComplete: () => vo
                 
                 const result = await analyzeSqlExport({ csvData: csvData });
                 
-                if (result.dataType !== 'products') {
-                    throw new Error(`AI داتاکانی وەک ${result.dataType} ناسییەوە، نەک وەک کاڵا.`);
+                if (result.products) {
+                    extractedRecords = result.products;
+                } else if (result.customers || result.suppliers) {
+                    const detectedType = result.customers ? 'customers' : 'suppliers';
+                    throw new Error(`AI داتاکانی وەک ${detectedType} ناسییەوە، نەک وەک کاڵا.`);
+                } else {
+                     throw new Error("AI could not identify any product data in the file.");
                 }
-                extractedRecords = result.records;
+
             } else {
                 throw new Error("جۆری فایلەکە پشتگیری نەکراوە.");
             }
@@ -311,5 +316,3 @@ export default function ProductsPage() {
         </div>
     );
 }
-
-    

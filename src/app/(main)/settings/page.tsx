@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useRef } from 'react';
@@ -319,31 +320,51 @@ function DataManagement() {
             const result = await analyzeSqlExport({ csvData: text });
             
             let count = 0;
-            toast({ title: '...هاوردەکردن', description: `AI داتاکانی وەک ${result.dataType} ناساندەوە. خەریکی هاوردەکردنە.` });
+            let dataType: 'products' | 'customers' | 'suppliers' | null = null;
+            let records: any[] = [];
 
-            switch (result.dataType) {
+            if (result.products && result.products.length > 0) {
+                dataType = 'products';
+                records = result.products;
+            } else if (result.customers && result.customers.length > 0) {
+                dataType = 'customers';
+                records = result.customers;
+            } else if (result.suppliers && result.suppliers.length > 0) {
+                dataType = 'suppliers';
+                records = result.suppliers;
+            } else {
+                throw new Error("AI could not extract any records from the file.");
+            }
+
+            toast({ title: '...هاوردەکردن', description: `AI داتاکانی وەک ${dataType} ناساندەوە. خەریکی هاوردەکردنە.` });
+
+            switch (dataType) {
                 case 'products':
-                    for (const record of result.records) {
-                        const productId = `${record.productName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${record.stockLocation.toLowerCase().replace(/\s/g, '')}`;
-                        const docRef = doc(firestore, 'products', productId);
-                        await setDoc(docRef, { ...record, id: productId }, { merge: true });
-                        count++;
+                    for (const record of records) {
+                        const productName = record.productName;
+                        const stockLocation = record.stockLocation || 'Warehouse';
+                        if (productName && stockLocation) {
+                            const productId = `${productName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${stockLocation.toLowerCase().replace(/\s/g, '')}`;
+                            const docRef = doc(firestore, 'products', productId);
+                            await setDoc(docRef, { ...record, stockLocation, id: productId }, { merge: true });
+                            count++;
+                        }
                     }
                     break;
                 case 'customers':
                 case 'suppliers':
-                    for (const record of result.records) {
-                        const docRef = doc(collection(firestore, result.dataType));
+                    for (const record of records) {
+                        const docRef = doc(collection(firestore, dataType));
                         await setDoc(docRef, { ...record, id: docRef.id });
                         count++;
                     }
                     break;
             }
-             toast({ title: 'سەرکەوتوو بوو', description: `${count} تۆماری نوێ لە جۆری ${result.dataType} بە سەرکەوتوویی زیادکرا.`, className: 'bg-accent text-accent-foreground' });
+             toast({ title: 'سەرکەوتوو بوو', description: `${count} تۆماری نوێ لە جۆری ${dataType} بە سەرکەوتوویی زیادکرا.`, className: 'bg-accent text-accent-foreground' });
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error importing from CSV with AI:", error);
-            toast({ variant: 'destructive', title: 'هەڵەیەک ڕوویدا', description: 'هاوردەکردن لە CSV سەرکەوتوو نەبوو.' });
+            toast({ variant: 'destructive', title: 'هەڵەیەک ڕوویدا', description: error.message || 'هاوردەکردن لە CSV سەرکەوتوو نەبوو.' });
         } finally {
              setIsImporting(false);
             if (csvFileInputRef.current) {

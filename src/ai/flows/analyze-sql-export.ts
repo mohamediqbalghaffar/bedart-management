@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI agent for analyzing generic data from exported CSV files.
@@ -37,11 +38,12 @@ const SupplierImportSchema = z.object({
     contactInformation: z.string().optional().describe("Supplier contact information (phone, address, etc.)."),
 });
 
-const SqlExportOutputSchema = z.discriminatedUnion("dataType", [
-  z.object({ dataType: z.literal('products'), records: z.array(ProductImportSchema) }),
-  z.object({ dataType: z.literal('customers'), records: z.array(CustomerImportSchema) }),
-  z.object({ dataType: z.literal('suppliers'), records: z.array(SupplierImportSchema) }),
-]);
+const SqlExportOutputSchema = z.object({
+  products: z.array(ProductImportSchema).optional().describe("Populate this array if the data is determined to be products."),
+  customers: z.array(CustomerImportSchema).optional().describe("Populate this array if the data is determined to be customers."),
+  suppliers: z.array(SupplierImportSchema).optional().describe("Populate this array if the data is determined to be suppliers."),
+}).describe("The output will be an object containing ONLY ONE of the following arrays: 'products', 'customers', or 'suppliers', based on the data type you identify from the CSV.");
+
 
 export type SqlExportOutput = z.infer<typeof SqlExportOutputSchema>;
 
@@ -54,19 +56,19 @@ const prompt = ai.definePrompt({
   input: {schema: SqlExportInputSchema},
   output: {schema: SqlExportOutputSchema},
   prompt: `You are an expert data migration assistant for a CRM.
-Your task is to analyze the provided CSV data and determine what kind of data it represents and then extract it into a structured format.
+Your task is to analyze the provided CSV data, determine what kind of data it represents, and then extract it into a structured format.
 
-The data can be one of the following types: 'products', 'customers', or 'suppliers'.
+The data can be one of three types: 'products', 'customers', or 'suppliers'.
 
 Your tasks are:
 1.  **Analyze the CSV Header and Rows**: Look at the column names (which could be in any language) and the data to figure out if you're looking at products, customers, or suppliers.
-2.  **Set the 'dataType'**: Based on your analysis, set the 'dataType' field in the output to 'products', 'customers', or 'suppliers'.
-3.  **Extract and Map Data**: For each row in the CSV, extract the relevant data and map it to the fields defined in the corresponding output schema.
+2.  **Populate ONE output array**: Based on your analysis, populate ONLY ONE of the following arrays in the output object: 'products', 'customers', or 'suppliers'. The other two arrays must be left undefined.
+3.  **Extract and Map Data**: For each row in the CSV, extract the relevant data and map it to the fields defined in the corresponding schema for that data type.
     *   For **products**, you must identify columns for at least 'productName', 'category', 'currentQuantity', and 'stockLocation'. If 'stockLocation' isn't present, you must default to 'Warehouse' for all records. Categories must be one of: 'Mattress', 'Bed', 'Pillow', 'Cover'.
     *   For **customers**, you must identify a column for 'customerName'. 'customerPhoneNumber' and 'customerAddress' are optional.
     *   For **suppliers**, you must identify a column for 'supplierName'. 'contactInformation' is optional.
 4.  **Filter Rows**: Ignore any header rows, empty rows, or rows that contain totals or summaries. Only extract rows that represent individual data records.
-5.  **Return Structured Output**: The final output must be a single JSON object matching the 'SqlExportOutputSchema'.
+5.  **Return Structured Output**: The final output must be a single JSON object matching the 'SqlExportOutputSchema', with only one of the main array properties populated.
 
 CSV Data:
 {{{csvData}}}`,
