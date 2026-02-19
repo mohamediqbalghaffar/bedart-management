@@ -25,6 +25,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { PurchaseDetails } from './components/purchase-details';
 import * as XLSX from 'xlsx';
+import { analyzePurchaseExcel } from '@/ai/flows/analyze-purchase-excel';
 
 
 // Matches the structure in backend.json
@@ -50,10 +51,9 @@ type EnrichedBuyingForm = WithId<BuyingFormType> & {
     totalAmount: number;
 };
 
-type Product = {
+type ProductDefinition = {
     productName: string;
     sellingPrice?: number;
-    unitPrice?: number;
 };
 
 function PurchaseFormDialog({ formId, onSave, trigger }: { formId: string | null, onSave: () => void, trigger: React.ReactNode }) {
@@ -85,11 +85,11 @@ function UploadPurchaseFormButton({ onSave }: { onSave: () => void }) {
     const { toast } = useToast();
     const firestore = useFirestore();
 
-    const productsQuery = useMemoFirebase(() => {
+    const productDefinitionsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return collection(firestore, 'products');
+        return collection(firestore, 'product_definitions');
     }, [firestore]);
-    const { data: allProducts } = useCollection<Product>(productsQuery);
+    const { data: allProductDefinitions } = useCollection<ProductDefinition>(productDefinitionsQuery);
 
 
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,39 +101,48 @@ function UploadPurchaseFormButton({ onSave }: { onSave: () => void }) {
 
         try {
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = async (e) => {
+                const dataUri = e.target?.result as string;
+                if (!dataUri) {
+                    toast({ variant: 'destructive', title: "هەڵە لە خوێندنەوەی فایل" });
+                    setIsParsing(false);
+                    return;
+                }
+                
                 try {
-                    const data = e.target?.result;
-                    const workbook = XLSX.read(data, { type: "array" });
-                    const sheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[sheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
+                    const existingProductNames = allProductDefinitions?.map(p => p.productName) || [];
+                    
+                    const result = await analyzePurchaseExcel({ 
+                        documentDataUri: dataUri, 
+                        existingProductNames 
+                    });
 
-                    const newItems = jsonData.map(row => {
-                        const productName = row['ناوی کاڵا'] || '';
-                        if (!productName) return null;
-
-                        const existingProduct = allProducts?.find(p => p.productName.toLowerCase() === productName.toLowerCase());
-                        
-                        return {
-                            product: productName,
-                            quantity: Number(row['دانە'] || 1),
-                            unitPrice: Number(row['نرخی کڕین'] || 0),
-                            sellingPrice: Number(row['نرخی فرۆشتن'] || existingProduct?.sellingPrice || 0),
-                            category: 'Mattress', // Default value
-                            sizeModel: '',       // Default value
-                        };
-                    }).filter(item => item !== null);
-
-                    if (newItems.length > 0) {
-                        setInitialItems(newItems as any[]);
-                        setDialogOpen(true);
-                    } else {
-                        toast({ variant: 'destructive', title: "هیچ کاڵایەک نەدۆزرایەوە", description: "فایلەکە بەتاڵە یان ستوونە پێویستەکانی تێدا نییە." });
+                    if (!result || result.length === 0) {
+                         toast({ variant: 'destructive', title: "هیچ کاڵایەک نەدۆزرایەوە", description: "AI نەیتوانی هیچ کاڵایەک لەم فایلە دەربهێنێت." });
+                         setIsParsing(false);
+                         return;
                     }
-                } catch (parseError) {
-                    console.error("XLSX parsing failed:", parseError);
-                    toast({ variant: "destructive", title: "هەڵە لە شیکردنەوەی فایل", description: "دڵنیابە فایلەکە فۆرماتێکی دروستی هەیە." });
+                    
+                    const productDefMap = new Map(allProductDefinitions?.map(p => [p.productName, p]));
+
+                    const newItems = result.map(item => {
+                        const existingDef = productDefMap.get(item.product);
+                        return {
+                            product: item.product,
+                            quantity: item.quantity,
+                            unitPrice: item.unitPrice,
+                            sellingPrice: existingDef?.sellingPrice || 0,
+                            category: item.category,
+                            sizeModel: '',
+                        };
+                    });
+
+                    setInitialItems(newItems as any[]);
+                    setDialogOpen(true);
+
+                } catch (aiError: any) {
+                     console.error("AI analysis failed:", aiError);
+                     toast({ variant: 'destructive', title: "هەڵە لە شیکردنەوەی فایل", description: "AI نەیتوانی داتاکان دەربهێنێت." });
                 } finally {
                     setIsParsing(false);
                     if (fileInputRef.current) {
@@ -141,7 +150,7 @@ function UploadPurchaseFormButton({ onSave }: { onSave: () => void }) {
                     }
                 }
             };
-            reader.readAsArrayBuffer(file);
+            reader.readAsDataURL(file);
         } catch (error) {
             console.error("File processing error:", error);
             toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "پرۆسێسی فایلەکە سەرکەوتوو نەبوو." });
