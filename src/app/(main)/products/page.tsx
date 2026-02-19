@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Loader2, FileDown, FileUp } from "lucide-react";
+import { PlusCircle, Loader2, FileDown, FileUp, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useFirestore, useCollection, useMemoFirebase, collection, writeBatch, doc } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
@@ -13,6 +13,7 @@ import { AddProductForm } from './components/add-product-form';
 import { EditableProductRow } from './components/editable-product-row';
 import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
+import { Input } from '@/components/ui/input';
 
 export type ProductDefinition = {
     productName: string;
@@ -40,8 +41,8 @@ function DownloadTemplateButton() {
     const handleDownload = () => {
         try {
             const worksheet = XLSX.utils.json_to_sheet([
-                { productName: "دۆشەکی نموونە", sellingPrice: 500 },
-                { productName: "تەختی نموونە", sellingPrice: 800 },
+                { productName: "دۆشەکی نموونە", sellingPrice: 0 },
+                { productName: "تەختی نموونە", sellingPrice: 0 },
             ]);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
@@ -174,20 +175,41 @@ function UploadItemsButton({ onUploadSuccess, existingProducts }: { onUploadSucc
 }
 
 // Component to display the list of product definitions
-function ProductDefinitionsList({ products, isLoading, onProductUpdated }: { products: WithId<ProductDefinition>[] | null, isLoading: boolean, onProductUpdated: () => void }) {
+function ProductDefinitionsList({ products, isLoading, onProductUpdated, searchTerm }: { products: WithId<ProductDefinition>[] | null, isLoading: boolean, onProductUpdated: () => void, searchTerm: string }) {
+    
+    const filteredProducts = useMemo(() => {
+        if (!products) return [];
+        if (!searchTerm) return products;
+        return products.filter(p => 
+            p.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.category.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [products, searchTerm]);
+
     return (
         <Card>
-            <CardHeader><CardTitle>لیستی پێناسەی کاڵاکان</CardTitle></CardHeader>
+            <CardHeader>
+                <CardTitle>لیستی پێناسەی کاڵاکان</CardTitle>
+                <div className="relative w-full max-w-sm mt-4">
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="...گەڕان"
+                        className="pr-10"
+                        value={searchTerm}
+                        onChange={(e) => onProductUpdated(e.target.value)}
+                    />
+                </div>
+            </CardHeader>
             <CardContent>
                 <Table>
-                    <TableHeader><TableRow><TableHead className="text-right">ناوی کاڵا</TableHead><TableHead className="text-right">پۆل</TableHead><TableHead className="text-right">نرخی فرۆشتن</TableHead><TableHead className="text-left">کردارەکان</TableHead></TableRow></TableHeader>
+                    <TableHeader><TableRow><TableHead className="text-right w-[50%]">ناوی کاڵا</TableHead><TableHead className="text-right w-[30%]">پۆل</TableHead><TableHead className="text-left w-[20%]">کردارەکان</TableHead></TableRow></TableHeader>
                     <TableBody>
                         {isLoading ? (
-                            <TableRow><TableCell colSpan={4} className="h-24 text-center"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></TableCell></TableRow>
-                        ) : !products || products.length === 0 ? (
-                            <TableRow><TableCell colSpan={4} className="py-8 text-center text-muted-foreground">هیچ پێناسەیەکی کاڵا تۆمار نەکراوە.</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={3} className="h-24 text-center"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></TableCell></TableRow>
+                        ) : !filteredProducts || filteredProducts.length === 0 ? (
+                            <TableRow><TableCell colSpan={3} className="py-8 text-center text-muted-foreground">هیچ پێناسەیەکی کاڵا تۆمار نەکراوە.</TableCell></TableRow>
                         ) : (
-                            products.map((product) => <EditableProductRow key={product.id} product={product} onProductUpdated={onProductUpdated} />)
+                            filteredProducts.map((product) => <EditableProductRow key={product.id} product={product} onProductUpdated={onProductUpdated} />)
                         )}
                     </TableBody>
                 </Table>
@@ -199,6 +221,7 @@ function ProductDefinitionsList({ products, isLoading, onProductUpdated }: { pro
 // Main page component that orchestrates everything
 export default function ProductsPage() {
     const [refreshKey, setRefreshKey] = useState(0);
+    const [searchTerm, setSearchTerm] = useState('');
     const handleSave = () => setRefreshKey(prev => prev + 1);
     
     const firestore = useFirestore();
@@ -217,7 +240,7 @@ export default function ProductsPage() {
                     <UploadItemsButton onUploadSuccess={handleSave} existingProducts={products} />
                 </div>
             </PageHeader>
-            <ProductDefinitionsList products={products} isLoading={isLoading} onProductUpdated={handleSave} />
+            <ProductDefinitionsList products={products} isLoading={isLoading} onProductUpdated={handleSave} searchTerm={searchTerm} />
         </div>
     );
 }

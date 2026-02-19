@@ -21,7 +21,6 @@ import { ProductCategory } from '@/lib/types';
 const productSchema = z.object({
   productName: z.string().min(1, { message: "ناوی کاڵا پێویستە." }),
   category: z.enum(['Mattress', 'Bed', 'Pillow', 'Cover']),
-  sellingPrice: z.coerce.number().min(0, "نرخ ناتوانێت سالب بێت."),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -43,33 +42,40 @@ export function EditableProductRow({ product, onProductUpdated }: { product: Wit
 
     const form = useForm<ProductFormValues>({
         resolver: zodResolver(productSchema),
-        defaultValues: product,
+        defaultValues: {
+            productName: product.productName,
+            category: product.category,
+        },
     });
 
     const handleSave = async (data: ProductFormValues) => {
         if (!firestore) return;
         setIsSaving(true);
+        const oldProductName = product.productName;
+        const newProductName = data.productName;
+
         try {
+            const batch = writeBatch(firestore);
+
             // Update the definition itself
             const definitionRef = doc(firestore, "product_definitions", product.id);
-            await updateDoc(definitionRef, data);
+            batch.update(definitionRef, data);
 
-            // Also update all related stock items in the `products` collection
-            const stockQuery = query(collection(firestore, 'products'), where('productName', '==', product.productName));
-            const stockSnap = await getDocs(stockQuery);
-            
-            if(!stockSnap.empty) {
-                const batch = writeBatch(firestore);
+            // If product name changed, update all related stock items
+            if (oldProductName !== newProductName) {
+                const stockQuery = query(collection(firestore, 'products'), where('productName', '==', oldProductName));
+                const stockSnap = await getDocs(stockQuery);
                 stockSnap.forEach(stockDoc => {
                     batch.update(stockDoc.ref, { 
-                        category: data.category, 
-                        sellingPrice: data.sellingPrice 
+                        productName: newProductName,
+                        category: data.category,
                     });
                 });
-                await batch.commit();
             }
 
-            toast({ title: "سەرکەوتوو بوو", description: "پێناسەی کاڵا و هەموو دانەکانی کۆگا نوێکرانەوە.", className: "bg-accent text-accent-foreground" });
+            await batch.commit();
+
+            toast({ title: "سەرکەوتوو بوو", description: "پێناسەی کاڵا نوێکرایەوە.", className: "bg-accent text-accent-foreground" });
             setIsEditing(false);
             onProductUpdated();
         } catch (error) {
@@ -95,13 +101,15 @@ export function EditableProductRow({ product, onProductUpdated }: { product: Wit
         }
     };
     
-    const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
-
     if (isEditing) {
         return (
             <Form {...form}>
                 <TableRow className="bg-secondary/20">
-                    <TableCell><FormField control={form.control} name="productName" render={({ field }) => (<FormItem><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/></TableCell>
+                    <TableCell>
+                        <FormField control={form.control} name="productName" render={({ field }) => (
+                            <FormItem><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                        )}/>
+                    </TableCell>
                     <TableCell>
                         <FormField control={form.control} name="category" render={({ field }) => (
                             <FormItem>
@@ -113,7 +121,6 @@ export function EditableProductRow({ product, onProductUpdated }: { product: Wit
                             </FormItem>
                         )}/>
                     </TableCell>
-                    <TableCell><FormField control={form.control} name="sellingPrice" render={({ field }) => (<FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)}/></TableCell>
                     <TableCell className="text-left">
                         <div className="flex gap-2">
                             <Button size="icon" variant="ghost" onClick={form.handleSubmit(handleSave)} disabled={isSaving}>
@@ -131,7 +138,6 @@ export function EditableProductRow({ product, onProductUpdated }: { product: Wit
         <TableRow key={product.id}>
             <TableCell className="font-medium text-right">{product.productName}</TableCell>
             <TableCell className="text-right">{categoryTranslations[product.category] || product.category}</TableCell>
-            <TableCell className="text-right">{currencyFormatter.format(product.sellingPrice || 0)}</TableCell>
             <TableCell className="text-left">
                 <div className="flex gap-2">
                     <Button size="icon" variant="ghost" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4 text-blue-500"/></Button>
