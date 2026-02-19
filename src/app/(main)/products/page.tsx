@@ -1,20 +1,16 @@
-
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Loader2, FileUp } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { useFirestore, useCollection, useMemoFirebase, collection, writeBatch, doc } from '@/firebase';
+import { PlusCircle, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { useFirestore, useCollection, useMemoFirebase, collection } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AddProductForm } from './components/add-product-form';
 import { EditableProductRow } from './components/editable-product-row';
-import { useToast } from '@/hooks/use-toast';
-import { analyzeSqlExport } from '@/ai/flows/analyze-sql-export';
-import * as XLSX from 'xlsx';
 
 export type ProductDefinition = {
     productName: string;
@@ -48,185 +44,6 @@ function AddProductDialog({ onProductAdded }: { onProductAdded: () => void }) {
         </Dialog>
     );
 }
-
-function UploadProductsButton({ onUploadComplete }: { onUploadComplete: () => void }) {
-    const [isParsing, setIsParsing] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const [productsToAdd, setProductsToAdd] = useState<any[]>([]);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const { toast } = useToast();
-    const firestore = useFirestore();
-
-    const definitionsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return collection(firestore, 'product_definitions');
-    }, [firestore]);
-    const { data: existingDefinitions } = useCollection<ProductDefinition>(definitionsQuery);
-
-    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file || !firestore) return;
-
-        setIsParsing(true);
-        toast({ title: '...شیکردنەوەی فایل' });
-
-        try {
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                try {
-                    const data = e.target?.result;
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    
-                    const sheetName = workbook.SheetNames[0];
-                    if (!sheetName) {
-                        throw new Error("فایلە ئێکسڵەکە بەتاڵە یان هیچ شیتی تێدا نییە.");
-                    }
-                    const worksheet = workbook.Sheets[sheetName];
-                    const csvData = XLSX.utils.sheet_to_csv(worksheet);
-
-                    if (!csvData) {
-                        throw new Error("نەتوانرا داتا لە فایلە ئێکسڵەکە دەربهێنرێت.");
-                    }
-                    
-                    const result = await analyzeSqlExport({ csvData: csvData });
-                    
-                    let extractedRecords: { productName: string; category: any; }[] = [];
-
-                    if (result.dataType === 'products' && result.products) {
-                        extractedRecords = result.products;
-                    } else if (result.dataType) {
-                        throw new Error(`AI داتاکانی وەک ${result.dataType} ناسییەوە، نەک وەک کاڵا.`);
-                    } else {
-                        throw new Error("AI could not identify any product data in the file.");
-                    }
-                    
-                    if (extractedRecords.length === 0) {
-                        toast({ title: "هیچ کاڵایەکی نوێ نەدۆزرایەوە", description: "هیچ کاڵایەکی گونجاو لە فایلەکەدا نەبوو بۆ زیادکردن." });
-                        return;
-                    }
-
-                    const existingNames = new Set(existingDefinitions?.map(d => d.productName.toLowerCase()) || []);
-                    const uniqueNewProducts = new Map<string, any>();
-
-                    extractedRecords.forEach(item => {
-                        if (!item.productName || !item.category) return;
-                        const lowerCaseName = item.productName.toLowerCase();
-                        if (!existingNames.has(lowerCaseName) && !uniqueNewProducts.has(lowerCaseName)) {
-                            uniqueNewProducts.set(lowerCaseName, {
-                                productName: item.productName,
-                                category: item.category,
-                                sellingPrice: 0,
-                            });
-                        }
-                    });
-
-                    const finalProductsToAdd = Array.from(uniqueNewProducts.values());
-
-                    if (finalProductsToAdd.length > 0) {
-                        setProductsToAdd(finalProductsToAdd);
-                        setDialogOpen(true);
-                    } else {
-                        toast({ title: "هیچ کاڵایەکی نوێ نەدۆزرایەوە", description: "هەموو کاڵاکانی ناو فایلەکە پێشتر تۆمارکراون." });
-                    }
-
-                } catch (error: any) {
-                    console.error("File processing error:", error);
-                    toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: error.message || "شیکردنەوەی فایلەکە سەرکەوتوو نەبوو." });
-                } finally {
-                    setIsParsing(false);
-                    if (fileInputRef.current) {
-                        fileInputRef.current.value = "";
-                    }
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        } catch (error: any) {
-            console.error("File selection error:", error);
-            toast({ variant: 'destructive', title: 'هەڵە', description: 'هەڵەیەک لە کاتی هەڵبژاردنی فایل ڕوویدا.' });
-            setIsParsing(false);
-        }
-    };
-
-    const handleConfirmAdd = async () => {
-        if (!firestore || productsToAdd.length === 0) return;
-        
-        setIsSaving(true);
-        try {
-            const batch = writeBatch(firestore);
-            productsToAdd.forEach(productData => {
-                const docRef = doc(collection(firestore, 'product_definitions'));
-                batch.set(docRef, { ...productData, id: docRef.id });
-            });
-
-            await batch.commit();
-
-            toast({ title: 'سەرکەوتوو بوو', description: `${productsToAdd.length} پێناسەی کاڵای نوێ زیادکرا.`, className: 'bg-accent text-accent-foreground' });
-            setDialogOpen(false);
-            onUploadComplete();
-        } catch (error) {
-            console.error("Error saving new products:", error);
-            toast({ variant: 'destructive', title: 'هەڵە', description: 'پاشەکەوتکردنی کاڵاکان سەرکەوتوو نەبوو.' });
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    const triggerUpload = () => fileInputRef.current?.click();
-
-    return (
-        <>
-            <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                className="hidden"
-                accept=".xlsx, .xls"
-            />
-            <Button onClick={triggerUpload} disabled={isParsing} variant="outline">
-                {isParsing ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <FileUp />}
-                هاوردەکردنی کاڵا
-            </Button>
-
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent dir="rtl">
-                    <DialogHeader>
-                        <DialogTitle>دڵنیابوونەوە لە زیادکردنی کاڵا</DialogTitle>
-                        <DialogDescription>
-                            ئەم کاڵا نوێیانە بۆ لیستی پێناسەکان زیاد دەکرێن.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="max-h-[60vh] overflow-y-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="text-right">ناوی کاڵا</TableHead>
-                                    <TableHead className="text-right">پۆل</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {productsToAdd.map(p => (
-                                    <TableRow key={p.productName}>
-                                        <TableCell>{p.productName}</TableCell>
-                                        <TableCell>{p.category}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                    <DialogFooter>
-                        <Button onClick={handleConfirmAdd} disabled={isSaving}>
-                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            دڵنیام و زیادیان بکە
-                        </Button>
-                         <Button variant="outline" onClick={() => setDialogOpen(false)}>پاشگەزبوونەوە</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        </>
-    );
-}
-
 
 function ProductDefinitionsList() {
     const firestore = useFirestore();
@@ -290,7 +107,6 @@ export default function ProductsPage() {
             <PageHeader title="بەڕێوەبردنی ناوی کاڵاکان" description="پێناسەی کاڵا سەرەکییەکانت لێرە ببینە و زیاد بکە.">
                 <div className="flex items-center gap-2">
                     <AddProductDialog onProductAdded={handleSave} />
-                    <UploadProductsButton onUploadComplete={handleSave} />
                 </div>
             </PageHeader>
             <ProductDefinitionsList />
