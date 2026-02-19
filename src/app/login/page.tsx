@@ -8,6 +8,13 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/auth-context';
 import { BedDouble, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore, useCollection, useMemoFirebase, collection } from '@/firebase';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { WithId } from '@/firebase/firestore/use-collection';
+
+type User = {
+    name: string;
+}
 
 export default function LoginPage() {
   const [name, setName] = useState('');
@@ -15,6 +22,14 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const { toast } = useToast();
+  const firestore = useFirestore();
+
+  const usersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'users');
+  }, [firestore]);
+
+  const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
 
   const handleLogin = async () => {
     if (!name || !code) {
@@ -49,20 +64,24 @@ export default function LoginPage() {
         <CardHeader>
           <CardTitle>چوونەژوورەوە</CardTitle>
           <CardDescription>
-            تکایە ناو و کۆدی نهێنی بنووسە.
+            بەکارهێنەرێک هەڵبژێرە و کۆدی نهێنی بنووسە.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">ناو</Label>
-            <Input 
-                id="name" 
-                type="text"
-                placeholder="ناوی بەکارهێنەر"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-            />
+            <Select onValueChange={setName} value={name} dir="rtl" disabled={isLoadingUsers}>
+              <SelectTrigger>
+                  <SelectValue placeholder={isLoadingUsers ? "...چاوەڕوانبە" : "بەکارهێنەرێک هەڵبژێرە"} />
+              </SelectTrigger>
+              <SelectContent>
+                  {users?.map((user: WithId<User>) => (
+                      <SelectItem key={user.id} value={user.name}>
+                          {user.name}
+                      </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="code">کۆدی نهێنی</Label>
@@ -75,7 +94,7 @@ export default function LoginPage() {
                 onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
             />
           </div>
-           <Button onClick={handleLogin} disabled={isLoading} className="w-full">
+           <Button onClick={handleLogin} disabled={isLoading || isLoadingUsers} className="w-full">
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             چوونەژوورەوە
           </Button>
