@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -138,7 +137,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [originalItems, setOriginalItems] = useState<any[]>([]);
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
-  const { role } = useAuth();
+  const { user } = useAuth();
 
   const form = useForm<SalesFormValues>({
     resolver: zodResolver(salesFormSchema),
@@ -401,12 +400,13 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
         const finalTotalAmount = subTotal - discountAmount + Number(mainData.deliveryCost || 0);
         const finalTotalPaid = payments?.reduce((acc, p) => acc + p.amount, 0) || 0;
         const finalRemainingBalance = Math.max(0, finalTotalAmount - finalTotalPaid);
-        const creatorName = role === 'admin' ? 'Admin' : 'Salesman';
+        const creatorName = user?.name || "System";
+        const creatorId = user?.name || "system"; // In a real app, this would be a user ID
         
         const sellingFormData: any = { 
             ...mainData, 
             id: sellingFormId, 
-            creatorId: role || "system",
+            creatorId: creatorId,
             creatorName,
             issueDate: sanitizedData.issueDate, 
             totalPrice: finalTotalAmount, 

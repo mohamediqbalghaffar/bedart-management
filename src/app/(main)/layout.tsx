@@ -10,21 +10,21 @@ import { Loader2 } from 'lucide-react';
 const salesmanAllowedPaths = ['/sales', '/stock', '/dashboard'];
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
-  const { role, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
     if (!isLoading) {
-      if (!role) {
+      if (!user) {
         router.push('/login');
-      } else if (role === 'salesman' && !salesmanAllowedPaths.includes(pathname)) {
+      } else if (user.role === 'Salesman' && !salesmanAllowedPaths.some(p => pathname.startsWith(p))) {
          router.push('/sales');
       }
     }
-  }, [role, isLoading, router, pathname]);
+  }, [user, isLoading, router, pathname]);
 
-  if (isLoading || !role) {
+  if (isLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />

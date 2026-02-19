@@ -172,9 +172,10 @@
       "properties": {
         "id": { "type": "string", "description": "Unique identifier for the User entity." },
         "name": { "type": "string", "description": "The user's name." },
-        "role": { "type": "string", "description": "The user's role.", "enum": ["Admin", "Data Manager", "Salesman"] }
+        "role": { "type": "string", "description": "The user's role.", "enum": ["Admin", "Data Manager", "Salesman"] },
+        "code": { "type": "string", "description": "The user's password code." }
       },
-      "required": ["id", "name", "role"]
+      "required": ["id", "name", "role", "code"]
     }
   },
   "firestore": {

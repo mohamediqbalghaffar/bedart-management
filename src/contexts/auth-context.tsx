@@ -1,32 +1,42 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import { useFirestore, collection, query, where, getDocs } from '@/firebase';
 
-type Role = 'admin' | 'salesman';
+type Role = 'Admin' | 'Data Manager' | 'Salesman';
+type User = {
+    id: string;
+    name: string;
+    role: Role;
+    code: string;
+}
+type AuthUser = {
+    name: string;
+    role: Role;
+}
 
 interface AuthContextType {
-  role: Role | null;
+  user: AuthUser | null;
   isLoading: boolean;
-  login: (role: Role, code: string) => boolean;
+  login: (name: string, code: string) => Promise<boolean>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const ADMIN_CODE = 'Rawezh1818';
-const SALESMAN_CODE = '123456';
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [role, setRole] = useState<Role | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
+  const firestore = useFirestore();
 
   useEffect(() => {
     try {
-      const storedRole = localStorage.getItem('userRole') as Role | null;
-      if (storedRole) {
-        setRole(storedRole);
+      const storedUser = localStorage.getItem('authUser');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
       }
     } catch (error) {
       console.error("Could not access localStorage:", error);
@@ -34,33 +44,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     }
   }, []);
+  
+   useEffect(() => {
+    if (!isLoading && !user && pathname !== '/login') {
+      router.push('/login');
+    }
+  }, [user, isLoading, pathname, router]);
 
-  const login = (selectedRole: Role, code: string): boolean => {
-    let isValid = false;
-    if (selectedRole === 'admin' && code === ADMIN_CODE) {
-      isValid = true;
-    } else if (selectedRole === 'salesman' && code === SALESMAN_CODE) {
-      isValid = true;
+  const login = async (name: string, code: string): Promise<boolean> => {
+    if (!firestore) {
+        console.error("Firestore is not initialized.");
+        return false;
     }
 
-    if (isValid) {
-      setRole(selectedRole);
-      try {
-        localStorage.setItem('userRole', selectedRole);
-      } catch (error) {
-        console.error("Could not write to localStorage:", error);
-      }
-      router.push('/dashboard');
-      return true;
-    } else {
-      return false;
+    const usersRef = collection(firestore, "users");
+    const q = query(usersRef, where("name", "==", name));
+
+    try {
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) {
+            console.log("No user found with that name.");
+            return false;
+        }
+
+        const userDoc = querySnapshot.docs[0];
+        const userData = userDoc.data() as User;
+
+        if (userData.code === code) {
+            const authUser: AuthUser = { name: userData.name, role: userData.role };
+            setUser(authUser);
+            try {
+                localStorage.setItem('authUser', JSON.stringify(authUser));
+            } catch (error) {
+                console.error("Could not write to localStorage:", error);
+            }
+            router.push('/dashboard');
+            return true;
+        } else {
+            console.log("Incorrect code.");
+            return false;
+        }
+    } catch (error) {
+        console.error("Error during login:", error);
+        return false;
     }
   };
 
   const logout = () => {
-    setRole(null);
+    setUser(null);
     try {
-      localStorage.removeItem('userRole');
+      localStorage.removeItem('authUser');
     } catch (error) {
        console.error("Could not remove from localStorage:", error);
     }
@@ -68,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ role, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
@@ -79,5 +112,6 @@ export function useAuth() {
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
-  return context;
+  const { user } = context;
+  return { ...context, role: user?.role || null };
 }

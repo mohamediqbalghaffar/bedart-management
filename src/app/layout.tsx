@@ -26,11 +26,11 @@ export default function RootLayout({
   return (
     <html lang="ku" dir="rtl">
       <body className={`${notoKufiArabic.variable} font-body antialiased`}>
-        <AuthProvider>
-          <FirebaseClientProvider>
+        <FirebaseClientProvider>
+          <AuthProvider>
             {children}
-          </FirebaseClientProvider>
-        </AuthProvider>
+          </AuthProvider>
+        </FirebaseClientProvider>
         <ClientToaster />
       </body>
     </html>

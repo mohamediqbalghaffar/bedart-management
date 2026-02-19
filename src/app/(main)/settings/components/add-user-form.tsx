@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore, doc, collection, writeBatch } from "@/firebase";
+import { useFirestore, doc, collection, setDoc } from "@/firebase";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 
 const userSchema = z.object({
   name: z.string().min(1, { message: "ناوی بەکارهێنەر پێویستە." }),
+  code: z.string().min(1, { message: "کۆدی نهێنی پێویستە."}),
   role: z.enum(['Admin', 'Data Manager', 'Salesman'], { required_error: "ڕۆڵ پێویستە."}),
 });
 
@@ -26,6 +27,7 @@ export function AddUserForm({ onUserAdded }: { onUserAdded?: () => void }) {
     resolver: zodResolver(userSchema),
     defaultValues: {
       name: "",
+      code: "",
       role: "Salesman",
     },
   });
@@ -41,18 +43,8 @@ export function AddUserForm({ onUserAdded }: { onUserAdded?: () => void }) {
     }
 
     try {
-        const batch = writeBatch(firestore);
-        
         const userRef = doc(collection(firestore, 'users'));
-
-        batch.set(userRef, { ...data, id: userRef.id });
-
-        if (data.role === 'Admin') {
-            const adminRef = doc(firestore, 'admins', userRef.id);
-            batch.set(adminRef, { uid: userRef.id, isAdmin: true });
-        }
-        
-        await batch.commit();
+        await setDoc(userRef, { ...data, id: userRef.id });
 
         toast({
             title: "سەرکەوتوو بوو!",
@@ -81,6 +73,19 @@ export function AddUserForm({ onUserAdded }: { onUserAdded?: () => void }) {
               <FormLabel>ناوی بەکارهێنەر</FormLabel>
               <FormControl>
                 <Input placeholder="ناوی تەواو" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="code"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>کۆدی نهێنی</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="••••••••" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
