@@ -102,18 +102,29 @@ function UploadPurchaseFormButton({ onSave }: { onSave: () => void }) {
         try {
             const reader = new FileReader();
             reader.onload = async (e) => {
-                const dataUri = e.target?.result as string;
-                if (!dataUri) {
-                    toast({ variant: 'destructive', title: "هەڵە لە خوێندنەوەی فایل" });
-                    setIsParsing(false);
-                    return;
+                const data = e.target?.result;
+                if (!data) {
+                     toast({ variant: 'destructive', title: "هەڵە لە خوێندنەوەی فایل" });
+                     setIsParsing(false);
+                     return;
                 }
                 
                 try {
+                    const workbook = XLSX.read(data, { type: "array" });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const csvData = XLSX.utils.sheet_to_csv(worksheet);
+
+                    if (!csvData) {
+                        toast({ variant: 'destructive', title: "فایل بەتاڵە", description: "نەتوانرا داتا لە فایلە هەڵبژێردراوەکە بخوێنرێتەوە." });
+                        setIsParsing(false);
+                        return;
+                    }
+
                     const existingProductNames = allProductDefinitions?.map(p => p.productName) || [];
                     
                     const result = await analyzePurchaseExcel({ 
-                        documentDataUri: dataUri, 
+                        csvData, 
                         existingProductNames 
                     });
 
@@ -150,7 +161,7 @@ function UploadPurchaseFormButton({ onSave }: { onSave: () => void }) {
                     }
                 }
             };
-            reader.readAsDataURL(file);
+            reader.readAsArrayBuffer(file);
         } catch (error) {
             console.error("File processing error:", error);
             toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "پرۆسێسی فایلەکە سەرکەوتوو نەبوو." });

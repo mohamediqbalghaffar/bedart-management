@@ -12,10 +12,10 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ExcelDataInputSchema = z.object({
-  documentDataUri: z
+  csvData: z
     .string()
     .describe(
-      "A document (image, PDF, or Excel file) of a purchase receipt or invoice, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+      "A CSV string representing the purchase data. The columns should include product name, quantity, and purchase price."
     ),
   existingProductNames: z.array(z.string()).describe("An array of existing product names to check against for similarities.")
 });
@@ -41,25 +41,27 @@ const prompt = ai.definePrompt({
   input: {schema: ExcelDataInputSchema},
   output: {schema: ExcelDataOutputSchema},
   prompt: `You are an expert data entry assistant for a purchasing department who is a native Central Kurdish speaker.
-Your task is to analyze the provided document (which could be an image, PDF, or an Excel file) of a purchase receipt or invoice and extract a list of products with enhanced details.
+Your task is to analyze the provided CSV data from a purchase invoice and extract a list of products with enhanced details.
 
-You will extract data from the document. The user will provide the document and a list of existing product names.
+You will extract data from the CSV. The user will provide the CSV data and a list of existing product names.
+
+The CSV has the following columns, although the names might vary slightly: 'ناوی کاڵا' (Product Name), 'دانە' (Quantity), 'نرخی کڕین' (Purchase Price), and 'نرخی فرۆشتن' (Selling Price).
 
 Your tasks are:
-1.  **Extract Line Items**: Identify the table or list of products in the document. Extract the product name, quantity, and unit price for each line item.
+1.  **Parse the CSV**: Identify and extract the product name, quantity, and purchase price ('unitPrice') for each row. Ignore the selling price column.
 2.  **Translate to Central Kurdish**: If the product names are not in Kurdish, translate them into natural and correct Central Kurdish (Sorani).
 3.  **Check for Duplicates/Similarities**: Compare the extracted product name with the 'existingProductNames' list. If a very similar product already exists, you MUST use the existing name from the list to maintain consistency.
 4.  **Categorize Product**: Based on the product name, determine its category. The category must be one of the following (in English): "Mattress", "Bed", "Pillow", "Cover".
 5.  **Structure Output**: Return a structured JSON array. Each object must contain 'product' (the final standardized name), 'quantity', 'unitPrice', and 'category'.
-6.  **Filter Items**: Ignore any header text, totals, taxes, or other non-product information. Only extract rows that represent individual products.
+6.  **Filter Rows**: Ignore the header row and any empty or invalid rows in the CSV.
 
 Existing Product Names:
 {{#each existingProductNames}}
 - {{{this}}}
 {{/each}}
 
-Document:
-{{media url=documentDataUri}}`,
+CSV Data:
+{{{csvData}}}`,
 });
 
 const analyzePurchaseExcelFlow = ai.defineFlow(
