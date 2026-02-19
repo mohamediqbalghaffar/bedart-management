@@ -1,8 +1,10 @@
+
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import '../printable-receipt.css';
 import { PaymentType } from '@/lib/types';
+import { BedDouble } from 'lucide-react';
 
 
 // Define types for props
@@ -66,49 +68,45 @@ export const PrintableReceipt = React.forwardRef<HTMLDivElement, PrintableReceip
     const remainingBalance = Math.max(0, formData.totalPrice - totalPaid);
 
     return (
-        <div ref={ref} className="receipt-container p-8">
+        <div ref={ref} className="receipt-container">
             <header className="receipt-header">
-                <div>
-                    {/* Placeholder for logo */}
+                 <div className="company-logo">
+                   <BedDouble className="inline-block h-10 w-10 text-primary" />
                 </div>
-                <div className="company-details text-right">
-                    <h2 className="text-2xl font-bold">{companyInfo?.name || 'BedArt Group'}</h2>
-                    <p className="whitespace-pre-line">{companyInfo?.contact || 'تەختی نوستن . دۆشەک . پشتی\n07708171818 - 07700771818'}</p>
+                <div className="company-details">
+                    <h2>{companyInfo?.name || 'BedArt Group'}</h2>
+                    <p>{companyInfo?.contact || 'تەختی نوستن . دۆشەک . پشتی\n07708171818 - 07700771818'}</p>
                 </div>
             </header>
 
             <main>
-                <h1 className="receipt-title">PAYMENT RECEIPT / پسوولەی پارەدان</h1>
+                <h1 className="receipt-title">پسوولەی پارەدان / Payment Receipt</h1>
 
                 <section className="receipt-info">
                     <div>
-                        <p><strong>Receipt No:</strong> {formData.formNumber}</p>
-                        <p><strong>Date:</strong> {formData.issueDate}</p>
+                        <p><strong>ژمارەی پسوولە:</strong> {formData.formNumber}</p>
+                        <p><strong>بەروار:</strong> {formData.issueDate}</p>
+                         <p><strong>فرۆشیار:</strong> {formData.creatorName || 'نەزانراو'}</p>
                     </div>
-                    <div className="text-right">
-                        <p><strong>Customer:</strong> {formData.customerName}</p>
-                        <p><strong>Phone:</strong> {formData.customerPhoneNumber || 'N/A'}</p>
-                        <p><strong>Sales Rep:</strong> {formData.creatorName || 'N/A'}</p>
+                    <div>
+                        <p><strong>کڕیار:</strong> {formData.customerName}</p>
+                        <p><strong>ژ. مۆبایل:</strong> {formData.customerPhoneNumber || 'نەزانراو'}</p>
                     </div>
                 </section>
-
-                <hr className="my-4 border-black" />
 
                 <table className="line-items-table">
                     <thead>
                         <tr>
-                            <th className="text-right">Item / کاڵا</th>
-                            <th>Description / تێبینی</th>
-                            <th>Qty / دانە</th>
-                            <th>Unit Price / نرخ</th>
-                            <th>Subtotal / کۆی گشتی</th>
+                            <th>کاڵا / Item</th>
+                            <th>دانە / Qty</th>
+                            <th>نرخ / Unit Price</th>
+                            <th>کۆی گشتی / Subtotal</th>
                         </tr>
                     </thead>
                     <tbody>
                         {products.map((item, index) => (
                             <tr key={index}>
                                 <td>{item.productName}</td>
-                                <td></td>
                                 <td>{item.quantity}</td>
                                 <td>{currencyFormatter.format(item.unitPrice)}</td>
                                 <td>{currencyFormatter.format(item.lineTotal)}</td>
@@ -119,41 +117,41 @@ export const PrintableReceipt = React.forwardRef<HTMLDivElement, PrintableReceip
                 
                 <section className="totals-section">
                     <div>
-                        <span>Subtotal / کۆی کاڵاکان:</span>
+                        <span>کۆی کاڵاکان / Subtotal:</span>
                         <span>{currencyFormatter.format(subTotal)}</span>
                     </div>
                     {discountAmount > 0 && (
                          <div>
-                            <span>Discount / داشکاندن:</span>
-                            <span>-{currencyFormatter.format(discountAmount)}</span>
+                            <span>داشکاندن / Discount:</span>
+                            <span className='text-destructive'>-{currencyFormatter.format(discountAmount)}</span>
                         </div>
                     )}
                     {formData.deliveryCost && formData.deliveryCost > 0 && (
                          <div>
-                            <span>Delivery / گەیاندن:</span>
+                            <span>گەیاندن / Delivery:</span>
                             <span>{currencyFormatter.format(formData.deliveryCost)}</span>
                         </div>
                     )}
                     <div className="total-amount">
-                        <span>Total Amount / کۆی گشتی:</span>
+                        <span>کۆی گشتی / Total Amount:</span>
                         <span>{currencyFormatter.format(formData.totalPrice)}</span>
                     </div>
                      <div>
-                        <span>Paid Amount / بڕی دراو:</span>
-                        <span>{currencyFormatter.format(totalPaid)}</span>
+                        <span>بڕی دراو / Paid Amount:</span>
+                        <span className='text-green-600'>{currencyFormatter.format(totalPaid)}</span>
                     </div>
-                     <div>
-                        <span>Remaining Balance / بڕی ماوە:</span>
+                     <div className='font-bold text-lg text-red-600'>
+                        <span>بڕی ماوە / Remaining Balance:</span>
                         <span>{currencyFormatter.format(remainingBalance)}</span>
                     </div>
                 </section>
 
                 <footer className="receipt-footer">
                     <div>
-                        <strong>Payment Method / شێوازی پارەدان:</strong> {paymentTypeTranslations[formData.paymentType] || formData.paymentType}
+                        <strong>شێوازی پارەدان / Payment Method:</strong> {paymentTypeTranslations[formData.paymentType] || formData.paymentType}
                     </div>
                     <div className="signature-line">
-                        Authorized Signature / واژۆی ڕێپێدراو
+                        واژۆی ڕێپێدراو / Authorized Signature
                     </div>
                     <p className="thank-you-message">سوپاس بۆ مامەڵەکردن لەگەڵمان</p>
                 </footer>

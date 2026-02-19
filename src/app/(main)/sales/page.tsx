@@ -1,15 +1,16 @@
+
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Loader2, FileSpreadsheet, Trash2, Edit, ArrowUpDown, Search } from "lucide-react";
+import { PlusCircle, Loader2, FileSpreadsheet, Trash2, Edit, ArrowUpDown, Search, Printer } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { SalesForm } from "./components/sales-form";
-import { useFirestore, useCollection, useMemoFirebase, collection, deleteDoc, doc, getDocs, runTransaction } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, collection, deleteDoc, doc, getDocs, runTransaction, getDoc } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { SalesDetails } from './components/sales-details';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -17,6 +18,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PaymentStatus, PaymentType } from '@/lib/types';
+import { PrintableReceipt } from './components/printable-receipt';
+import './printable-receipt.css';
 
 
 // Matches the structure in backend.json for SellingForm
@@ -28,6 +31,10 @@ type SellingFormType = {
     paymentType: PaymentType;
     formNumber: string;
     creatorName?: string;
+    customerPhoneNumber?: string;
+    deliveryCost?: number;
+    discountType?: 'percentage' | 'cash';
+    discountValue?: number;
 };
 
 type SellingFormProduct = {
@@ -35,6 +42,7 @@ type SellingFormProduct = {
     productName: string;
     quantity: number;
     unitPrice: number;
+    lineTotal: number;
 };
 
 type CompanyInfo = {
@@ -81,6 +89,83 @@ function SalesFormDialog({ formId, onSave, trigger }: { formId: string | null, o
         </Dialog>
     );
 }
+
+function DirectPrintButton({ formId }: { formId: string }) {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const [isPrinting, setIsPrinting] = useState(false);
+    const [printData, setPrintData] = useState<any>(null);
+    const printRef = useRef(null);
+
+    useEffect(() => {
+        if (isPrinting && printData) {
+            const timer = setTimeout(() => {
+                window.print();
+                setIsPrinting(false);
+                setPrintData(null);
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, [isPrinting, printData]);
+
+    const handlePrint = async () => {
+        if (!firestore) return;
+        setIsPrinting(true);
+        toast({ title: '...ئامادەکردنی پسوولە' });
+
+        try {
+            const formRef = doc(firestore, 'selling_forms', formId);
+            const productsRef = collection(firestore, `selling_forms/${formId}/selling_form_products`);
+            const paymentsRef = collection(firestore, `selling_forms/${formId}/payments`);
+            const companyInfoRef = doc(firestore, 'app_settings', 'companyInfo');
+
+            const [formSnap, productsSnap, paymentsSnap, companyInfoSnap] = await Promise.all([
+                getDoc(formRef),
+                getDocs(productsRef),
+                getDocs(paymentsSnap),
+                getDoc(companyInfoRef),
+            ]);
+
+            if (!formSnap.exists()) {
+                toast({ variant: 'destructive', title: 'هەڵە', description: 'پسوولە نەدۆزرایەوە.' });
+                setIsPrinting(false);
+                return;
+            }
+
+            setPrintData({
+                formData: formSnap.data(),
+                products: productsSnap.docs.map(d => d.data()),
+                payments: paymentsSnap.docs.map(d => d.data()),
+                companyInfo: companyInfoSnap.exists() ? companyInfoSnap.data() : null,
+            });
+
+        } catch (error) {
+            console.error("Error preparing print data:", error);
+            toast({ variant: 'destructive', title: 'هەڵەیەک ڕوویدا', description: 'ئامادەکردنی داتا بۆ چاپ سەرکەوتوو نەبوو.' });
+            setIsPrinting(false);
+        }
+    };
+
+    return (
+        <>
+            <Button variant="ghost" size="icon" onClick={handlePrint} disabled={isPrinting}>
+                {isPrinting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4 text-green-500" />}
+            </Button>
+            {isPrinting && printData && (
+                 <div id="printable-area">
+                    <PrintableReceipt
+                        ref={printRef}
+                        formData={printData.formData}
+                        products={printData.products}
+                        payments={printData.payments}
+                        companyInfo={printData.companyInfo}
+                    />
+                </div>
+            )}
+        </>
+    );
+}
+
 
 function SalesList() {
     const firestore = useFirestore();
@@ -357,6 +442,7 @@ function SalesList() {
                                                     <SalesDetails formId={sale.id} />
                                                 </DialogContent>
                                             </Dialog>
+                                            <DirectPrintButton formId={sale.id} />
                                         </div>
                                     </TableCell>
                                 </TableRow>
