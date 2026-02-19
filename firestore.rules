@@ -4,5 +4,9 @@ service cloud.firestore {
     match /{document=**} {
       allow read, write: if true;
     }
+
+    match /product_definitions/{productDefinitionId} {
+        allow read, write: if true;
+    }
   }
 }

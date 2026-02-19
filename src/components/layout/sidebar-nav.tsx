@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BedDouble, Home, ShoppingCart, Package, Users, Building, DollarSign, Settings, Archive, LogOut } from 'lucide-react';
+import { BedDouble, Home, ShoppingCart, Package, Users, Building, DollarSign, Settings, Archive, LogOut, PackageSearch } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '../ui/separator';
 import { useAuth } from '@/contexts/auth-context';
@@ -13,6 +13,7 @@ const allNavLinks = [
   { href: '/sales', label: 'فرۆشتنەکان', icon: ShoppingCart, roles: ['admin', 'data manager', 'salesman'] },
   { href: '/purchases', label: 'کڕینەکان', icon: Package, roles: ['admin', 'data manager'] },
   { href: '/stock', label: 'کۆگا', icon: Archive, roles: ['admin', 'data manager', 'salesman'] },
+  { href: '/products', label: 'ناوی کاڵاکان', icon: PackageSearch, roles: ['admin', 'data manager'] },
   { href: '/customers', label: 'کڕیارەکان', icon: Users, roles: ['admin', 'data manager', 'salesman'] },
   { href: '/suppliers', label: 'دابینکەران', icon: Building, roles: ['admin', 'data manager'] },
   { href: '/expenses', label: 'خەرجییەکان', icon: DollarSign, roles: ['admin', 'data manager'] },
