@@ -55,6 +55,7 @@ type BuyingFormValues = z.infer<typeof buyingFormSchema>;
 type BuyingFormProps = {
     formId?: string | null;
     onSave?: () => void;
+    initialItems?: any[];
 };
 
 function TemplateDownloadButton() {
@@ -307,7 +308,7 @@ function BuyingFormItemRow({
     );
 }
 
-export function BuyingForm({ onSave, formId }: BuyingFormProps) {
+export function BuyingForm({ onSave, formId, initialItems }: BuyingFormProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isLoadingData, setIsLoadingData] = useState(false);
@@ -330,7 +331,7 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
     defaultValues: {
       supplierId: "",
       issueDate: format(new Date(), "yyyy-MM-dd"),
-      items: [{ product: "", quantity: 1, unitPrice: 0, sellingPrice: 0, category: "Mattress", sizeModel: "" }],
+      items: initialItems || [{ product: "", quantity: 1, unitPrice: 0, sellingPrice: 0, category: "Mattress", sizeModel: "" }],
       customsFee: 0,
       stockLocation: "Warehouse",
     },
@@ -669,5 +670,3 @@ export function BuyingForm({ onSave, formId }: BuyingFormProps) {
     </Form>
   );
 }
-
-    

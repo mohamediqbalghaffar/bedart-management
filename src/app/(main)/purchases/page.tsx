@@ -1,12 +1,12 @@
 
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Loader2, Trash2, FileSpreadsheet, Edit } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import { PlusCircle, Loader2, Trash2, FileSpreadsheet, Edit, FileUp } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { BuyingForm } from "./components/buying-form";
 import { useFirestore, useCollection, useMemoFirebase, collection, runTransaction, doc, getDocs, deleteDoc } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
 import { PurchaseDetails } from './components/purchase-details';
+import * as XLSX from 'xlsx';
+import { analyzePurchaseExcel } from '@/ai/flows/analyze-purchase-excel';
 
 
 // Matches the structure in backend.json
@@ -50,6 +52,12 @@ type EnrichedBuyingForm = WithId<BuyingFormType> & {
     totalAmount: number;
 };
 
+type Product = {
+    productName: string;
+    sellingPrice?: number;
+    unitPrice?: number;
+};
+
 function PurchaseFormDialog({ formId, onSave, trigger }: { formId: string | null, onSave: () => void, trigger: React.ReactNode }) {
     const [open, setOpen] = useState(false);
 
@@ -69,6 +77,123 @@ function PurchaseFormDialog({ formId, onSave, trigger }: { formId: string | null
             </DialogContent>
         </Dialog>
     )
+}
+
+function UploadPurchaseFormButton({ onSave }: { onSave: () => void }) {
+    const [isParsing, setIsParsing] = useState(false);
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [initialItems, setInitialItems] = useState<any[] | undefined>(undefined);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const { toast } = useToast();
+    const firestore = useFirestore();
+
+    const productsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return collection(firestore, 'products');
+    }, [firestore]);
+    const { data: allProducts } = useCollection<Product>(productsQuery);
+
+
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setIsParsing(true);
+        toast({ title: '...شیکردنەوەی فایل' });
+
+        try {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const data = e.target?.result;
+                if (!(data instanceof ArrayBuffer)) {
+                    toast({ variant: 'destructive', title: "هەڵە لە خوێندنەوەی فایل" });
+                    setIsParsing(false);
+                    return;
+                }
+                
+                try {
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const csvData = XLSX.utils.sheet_to_csv(worksheet);
+
+                    const existingProductNames = allProducts?.map(p => p.productName) || [];
+                    const result = await analyzePurchaseExcel({ excelDataAsCsv: csvData, existingProductNames });
+                    
+                    const newItems = result.map(item => {
+                        const existingProduct = allProducts?.find(p => p.productName.toLowerCase() === item.product.toLowerCase());
+                        return {
+                            ...item,
+                            sellingPrice: existingProduct?.sellingPrice || 0,
+                            sizeModel: '', 
+                        }
+                    });
+
+                    if (newItems.length > 0) {
+                        setInitialItems(newItems);
+                        setDialogOpen(true);
+                    } else {
+                        toast({ variant: 'destructive', title: "هیچ کاڵایەک نەدۆزرایەوە", description: "دڵنیابە فایلەکە ستوونی ناوی کاڵا، دانە، و نرخی تێدایە." });
+                    }
+
+                } catch (aiError: any) {
+                     console.error("AI analysis failed:", aiError);
+                     if (aiError.message && aiError.message.includes('503 Service Unavailable')) {
+                        toast({ variant: 'destructive', title: "خزمەتگوزاری سەرقاڵە", description: "مۆدێلی AI لەکارکەوتووە. تکایە چەند خولەکێکی تر هەوڵبدەرەوە." });
+                     } else {
+                        toast({ variant: 'destructive', title: "هەڵە لە شیکردنەوەی فایل", description: "AI نەیتوانی داتاکان دەربهێنێت." });
+                     }
+                } finally {
+                    setIsParsing(false);
+                     if (fileInputRef.current) {
+                        fileInputRef.current.value = "";
+                    }
+                }
+            };
+            reader.readAsArrayBuffer(file);
+
+        } catch (error) {
+            console.error("File processing error:", error);
+            toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "پرۆسێسی فایلەکە سەرکەوتوو نەبوو." });
+            setIsParsing(false);
+        }
+    };
+    
+    const triggerUpload = () => fileInputRef.current?.click();
+
+    return (
+        <>
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+                accept=".xlsx, .xls"
+            />
+            <Button onClick={triggerUpload} disabled={isParsing} variant="outline">
+                {isParsing ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <FileUp />}
+                هاوردەکردنی پسوولە
+            </Button>
+
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogContent className="sm:max-w-7xl" dir="rtl">
+                    <DialogHeader>
+                        <DialogTitle>دروستکردنی پسوولەی کڕین لە فایل</DialogTitle>
+                        <DialogDescription>
+                           وردبینی زانیارییەکان بکە و دابینکەر هەڵبژێرە، پاشان پاشەکەوتی بکە.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="max-h-[80vh] overflow-y-auto p-2">
+                        <BuyingForm 
+                            formId={null} 
+                            onSave={() => { onSave(); setDialogOpen(false); }} 
+                            initialItems={initialItems} 
+                        />
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </>
+    );
 }
 
 function PurchasesList() {
@@ -265,16 +390,17 @@ export default function PurchasesPage() {
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <PageHeader title="بەڕێوەبردنی کڕینەکان" description="تۆماری پسوولەکانی کڕین لێرە ببینە و زیاد بکە.">
-                <PurchaseFormDialog formId={null} onSave={handleSave} trigger={
-                     <Button>
-                        <PlusCircle />
-                        پسوولەی کڕینی نوێ
-                    </Button>
-                }/>
+                <div className="flex items-center gap-2">
+                    <PurchaseFormDialog formId={null} onSave={handleSave} trigger={
+                        <Button>
+                            <PlusCircle />
+                            پسوولەی کڕینی نوێ
+                        </Button>
+                    }/>
+                    <UploadPurchaseFormButton onSave={handleSave} />
+                </div>
             </PageHeader>
             <PurchasesList />
         </div>
     );
 }
-
-    
