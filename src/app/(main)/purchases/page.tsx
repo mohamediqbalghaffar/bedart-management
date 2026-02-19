@@ -5,7 +5,7 @@ import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Loader2, Trash2, FileSpreadsheet, Edit, FileUp } from "lucide-react";
+import { PlusCircle, Loader2, Trash2, FileSpreadsheet, Edit, FileUp, FileDown } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { BuyingForm } from "./components/buying-form";
 import { useFirestore, useCollection, useMemoFirebase, collection, runTransaction, doc, getDocs, deleteDoc } from '@/firebase';
@@ -185,6 +185,72 @@ function UploadPurchaseFormButton({ onSave }: { onSave: () => void }) {
         </>
     );
 }
+
+function DownloadTemplateButton() {
+    const { toast } = useToast();
+
+    const handleDownload = () => {
+        try {
+            const headers = [
+                "ناوی کاڵا",
+                "دانە",
+                "نرخی کڕین",
+                "پۆل",
+                "نرخی فرۆشتن",
+                "قەبارە/مۆدێل"
+            ];
+            const sampleData = [
+                {
+                    "ناوی کاڵا": "دۆشەکی نموونە",
+                    "دانە": 10,
+                    "نرخی کڕین": 150,
+                    "پۆل": "Mattress",
+                    "نرخی فرۆشتن": 250,
+                    "قەبارە/مۆدێل": "180x200"
+                }
+            ];
+            
+            const worksheet = XLSX.utils.json_to_sheet(sampleData);
+            XLSX.utils.sheet_add_aoa(worksheet, [headers], { origin: "A1" });
+
+            // Set column widths
+            worksheet['!cols'] = [
+                { wch: 25 }, // ناوی کاڵا
+                { wch: 10 }, // دانە
+                { wch: 15 }, // نرخی کڕین
+                { wch: 15 }, // پۆل
+                { wch: 15 }, // نرخی فرۆشتن
+                { wch: 20 }, // قەبارە/مۆدێل
+            ];
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Purchase Template");
+            XLSX.writeFile(workbook, "Purchase_Import_Template.xlsx");
+
+            toast({
+                title: "سەرکەوتوو بوو",
+                description: "فایلی نموونەی کڕین بە سەرکەوتوویی دابەزێنرا.",
+                className: "bg-accent text-accent-foreground",
+            });
+
+        } catch (error) {
+            console.error("Error downloading template:", error);
+            toast({
+                variant: 'destructive',
+                title: "هەڵەیەک ڕوویدا",
+                description: "دابەزاندنی فایلی نموونە سەرکەوتوو نەبوو.",
+            });
+        }
+    };
+
+    return (
+        <Button onClick={handleDownload} variant="outline">
+            <FileDown className="ml-2 h-4 w-4" />
+            دابەزاندنی نموونە
+        </Button>
+    );
+}
+
 
 function PurchasesList() {
     const firestore = useFirestore();
@@ -388,6 +454,7 @@ export default function PurchasesPage() {
                         </Button>
                     }/>
                     <UploadPurchaseFormButton onSave={handleSave} />
+                    <DownloadTemplateButton />
                 </div>
             </PageHeader>
             <PurchasesList />
