@@ -13,6 +13,7 @@ import { AddProductForm } from './components/add-product-form';
 import { EditableProductRow } from './components/editable-product-row';
 import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
+import { categorizeProducts } from '@/ai/flows/categorize-products';
 
 export type ProductDefinition = {
     productName: string;
@@ -40,12 +41,12 @@ function DownloadTemplateButton() {
     const handleDownload = () => {
         try {
             const worksheet = XLSX.utils.json_to_sheet([
-                { productName: "دۆشەکی نموونە", category: "Mattress", sellingPrice: 500 },
-                { productName: "تەختی نموونە", category: "Bed", sellingPrice: 800 },
+                { productName: "دۆشەکی نموونە", sellingPrice: 500 },
+                { productName: "تەختی نموونە", sellingPrice: 800 },
             ]);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
-            worksheet['!cols'] = [ { wch: 25 }, { wch: 15 }, { wch: 15 } ];
+            worksheet['!cols'] = [ { wch: 25 }, { wch: 15 } ];
             XLSX.writeFile(workbook, "Product_Import_Template.xlsx");
             toast({ title: " سەرکەوتوو بوو", description: "فایلی نموونە بە سەرکەوتوویی دابەزێنرا.", className: "bg-accent text-accent-foreground"});
         } catch (error) {
@@ -69,8 +70,10 @@ function UploadItemsButton({ onUploadSuccess, existingProducts }: { onUploadSucc
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
+        
         setIsParsing(true);
         toast({ title: '...شیکردنەوەی فایل' });
+        
         try {
             const reader = new FileReader();
             reader.onload = async (e) => {
@@ -80,12 +83,34 @@ function UploadItemsButton({ onUploadSuccess, existingProducts }: { onUploadSucc
                     const sheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[sheetName];
                     const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
-                    const existingProductNames = new Set((existingProducts || []).map(p => p.productName.toLowerCase()));
-                    const productsToUpload = jsonData.map(row => ({
-                        productName: row.productName || row['ناوی کاڵا'],
-                        category: row.category || row['پۆل'],
+
+                    const productsFromSheet = jsonData.map(row => ({
+                        productName: String(row.productName || row['ناوی کاڵا'] || ''),
                         sellingPrice: Number(row.sellingPrice) || Number(row['نرخی فرۆشتن']) || 0,
-                    })).filter(p => p.productName && p.category && !existingProductNames.has(p.productName.toLowerCase())) as ProductDefinition[];
+                    })).filter(p => p.productName);
+
+                    if (productsFromSheet.length === 0) {
+                        toast({ variant: 'default', title: "هیچ کاڵایەک نەدۆزرایەوە", description: "فایلەکە بەتاڵە یان ستوونی 'productName'ی تێدا نییە." });
+                        return;
+                    }
+                    
+                    toast({ title: '...پۆلێنکردنی کاڵاکان', description: 'AI خەریکی دیاریکردنی پۆلەکانە.' });
+
+                    const productNames = productsFromSheet.map(p => p.productName);
+                    const categorizedProducts = await categorizeProducts(productNames);
+
+                    const categorizedMap = new Map(categorizedProducts.map(p => [p.productName, p.category]));
+                    const existingProductNames = new Set((existingProducts || []).map(p => p.productName.toLowerCase()));
+
+                    const productsToUpload = productsFromSheet
+                        .map(p => ({
+                            productName: p.productName,
+                            sellingPrice: p.sellingPrice,
+                            category: categorizedMap.get(p.productName) || 'Mattress', // Default to Mattress if AI fails for one
+                        }))
+                        .filter(p => p.productName && !existingProductNames.has(p.productName.toLowerCase())) as ProductDefinition[];
+
+
                     if (productsToUpload.length > 0) {
                         setNewProducts(productsToUpload);
                         setIsDialogOpen(true);
@@ -93,7 +118,8 @@ function UploadItemsButton({ onUploadSuccess, existingProducts }: { onUploadSucc
                         toast({ variant: 'default', title: "هیچ کاڵایەکی نوێ نەدۆزرایەوە", description: "هەموو کاڵاکانی ناو فایلەکە پێشتر بوونیان هەیە." });
                     }
                 } catch (parseError) {
-                    toast({ variant: "destructive", title: "هەڵە لە شیکردنەوەی فایل", description: "دڵنیابە فۆرماتی فایلەکە ڕاستە." });
+                    console.error("AI or parsing error:", parseError);
+                    toast({ variant: "destructive", title: "هەڵە لە شیکردنەوە", description: "نەتوانرا فایلەکە بخوێنرێتەوە یان AI هەڵەی کرد." });
                 } finally {
                     setIsParsing(false);
                     if (fileInputRef.current) fileInputRef.current.value = "";
