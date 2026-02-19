@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
 import { PurchaseDetails } from './components/purchase-details';
-import { analyzePurchaseExcel } from '@/ai/flows/analyze-purchase-excel';
+import * as XLSX from 'xlsx';
 
 
 // Matches the structure in backend.json
@@ -101,50 +101,47 @@ function UploadPurchaseFormButton({ onSave }: { onSave: () => void }) {
 
         try {
             const reader = new FileReader();
-            reader.onload = async (e) => {
-                const dataUri = e.target?.result;
-                if (typeof dataUri !== 'string') {
-                    toast({ variant: 'destructive', title: "هەڵە لە خوێندنەوەی فایل" });
-                    setIsParsing(false);
-                    return;
-                }
-                
+            reader.onload = (e) => {
                 try {
-                    const existingProductNames = allProducts?.map(p => p.productName) || [];
-                    const result = await analyzePurchaseExcel({ documentDataUri: dataUri, existingProductNames });
-                    
-                    const newItems = result.map(item => {
-                        const existingProduct = allProducts?.find(p => p.productName.toLowerCase() === item.product.toLowerCase());
+                    const data = e.target?.result;
+                    const workbook = XLSX.read(data, { type: "array" });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+                    const newItems = jsonData.map(row => {
+                        const productName = row.product || row['ناوی کاڵا'] || '';
+                        if (!productName) return null;
+
+                        const existingProduct = allProducts?.find(p => p.productName.toLowerCase() === productName.toLowerCase());
+                        
                         return {
-                            ...item,
-                            sellingPrice: existingProduct?.sellingPrice || 0,
-                            sizeModel: '', 
-                        }
-                    });
+                            product: productName,
+                            quantity: Number(row.quantity || row['دانە'] || 1),
+                            unitPrice: Number(row.unitPrice || row['نرخی کڕین'] || 0),
+                            category: row.category || row['پۆل'] || 'Mattress',
+                            sellingPrice: Number(row.sellingPrice || row['نرخی فرۆشتن'] || existingProduct?.sellingPrice || 0),
+                            sizeModel: row.sizeModel || row['قەبارە/مۆدێل'] || '',
+                        };
+                    }).filter(Boolean);
 
                     if (newItems.length > 0) {
-                        setInitialItems(newItems);
+                        setInitialItems(newItems as any[]);
                         setDialogOpen(true);
                     } else {
-                        toast({ variant: 'destructive', title: "هیچ کاڵایەک نەدۆزرایەوە", description: "AI نەیتوانی هیچ کاڵایەک لەم فایلە دەربهێنێت." });
+                        toast({ variant: 'destructive', title: "هیچ کاڵایەک نەدۆزرایەوە", description: "فایلەکە بەتاڵە یان ستوونە پێویستەکانی تێدا نییە." });
                     }
-
-                } catch (aiError: any) {
-                     console.error("AI analysis failed:", aiError);
-                     if (aiError.message && aiError.message.includes('503 Service Unavailable')) {
-                        toast({ variant: 'destructive', title: "خزمەتگوزاری سەرقاڵە", description: "مۆدێلی AI لەکارکەوتووە. تکایە چەند خولەکێکی تر هەوڵبدەرەوە." });
-                     } else {
-                        toast({ variant: 'destructive', title: "هەڵە لە شیکردنەوەی فایل", description: "AI نەیتوانی داتاکان دەربهێنێت." });
-                     }
+                } catch (parseError) {
+                    console.error("XLSX parsing failed:", parseError);
+                    toast({ variant: "destructive", title: "هەڵە لە شیکردنەوەی فایل", description: "دڵنیابە فایلەکە فۆرماتێکی دروستی هەیە." });
                 } finally {
                     setIsParsing(false);
-                     if (fileInputRef.current) {
+                    if (fileInputRef.current) {
                         fileInputRef.current.value = "";
                     }
                 }
             };
-            reader.readAsDataURL(file);
-
+            reader.readAsArrayBuffer(file);
         } catch (error) {
             console.error("File processing error:", error);
             toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "پرۆسێسی فایلەکە سەرکەوتوو نەبوو." });
@@ -161,7 +158,7 @@ function UploadPurchaseFormButton({ onSave }: { onSave: () => void }) {
                 ref={fileInputRef}
                 onChange={handleFileChange}
                 className="hidden"
-                accept="image/jpeg, image/png, application/pdf"
+                accept=".xlsx, .xls"
             />
             <Button onClick={triggerUpload} disabled={isParsing} variant="outline">
                 {isParsing ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <FileUp />}
