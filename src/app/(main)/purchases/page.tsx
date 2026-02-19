@@ -73,7 +73,6 @@ function PurchaseFormDialog({ formId, onSave, trigger }: { formId: string | null
                     <BuyingForm formId={formId} onSave={() => { onSave(); setOpen(false); }} />
                 </div>
             </DialogContent>
-        </Dialog>
     )
 }
 
@@ -110,20 +109,20 @@ function UploadPurchaseFormButton({ onSave }: { onSave: () => void }) {
                     const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
 
                     const newItems = jsonData.map(row => {
-                        const productName = row.product || row['ناوی کاڵا'] || '';
+                        const productName = row['ناوی کاڵا'] || '';
                         if (!productName) return null;
 
                         const existingProduct = allProducts?.find(p => p.productName.toLowerCase() === productName.toLowerCase());
                         
                         return {
                             product: productName,
-                            quantity: Number(row.quantity || row['دانە'] || 1),
-                            unitPrice: Number(row.unitPrice || row['نرخی کڕین'] || 0),
-                            category: row.category || row['پۆل'] || 'Mattress',
-                            sellingPrice: Number(row.sellingPrice || row['نرخی فرۆشتن'] || existingProduct?.sellingPrice || 0),
-                            sizeModel: row.sizeModel || row['قەبارە/مۆدێل'] || '',
+                            quantity: Number(row['دانە'] || 1),
+                            unitPrice: Number(row['نرخی کڕین'] || 0),
+                            sellingPrice: Number(row['نرخی فرۆشتن'] || existingProduct?.sellingPrice || 0),
+                            category: 'Mattress', // Default value
+                            sizeModel: '',       // Default value
                         };
-                    }).filter(Boolean);
+                    }).filter(item => item !== null);
 
                     if (newItems.length > 0) {
                         setInitialItems(newItems as any[]);
@@ -191,36 +190,23 @@ function DownloadTemplateButton() {
 
     const handleDownload = () => {
         try {
-            const headers = [
-                "ناوی کاڵا",
-                "دانە",
-                "نرخی کڕین",
-                "پۆل",
-                "نرخی فرۆشتن",
-                "قەبارە/مۆدێل"
-            ];
             const sampleData = [
                 {
                     "ناوی کاڵا": "دۆشەکی نموونە",
                     "دانە": 10,
                     "نرخی کڕین": 150,
-                    "پۆل": "Mattress",
                     "نرخی فرۆشتن": 250,
-                    "قەبارە/مۆدێل": "180x200"
                 }
             ];
             
             const worksheet = XLSX.utils.json_to_sheet(sampleData);
-            XLSX.utils.sheet_add_aoa(worksheet, [headers], { origin: "A1" });
 
             // Set column widths
             worksheet['!cols'] = [
                 { wch: 25 }, // ناوی کاڵا
                 { wch: 10 }, // دانە
                 { wch: 15 }, // نرخی کڕین
-                { wch: 15 }, // پۆل
                 { wch: 15 }, // نرخی فرۆشتن
-                { wch: 20 }, // قەبارە/مۆدێل
             ];
 
             const workbook = XLSX.utils.book_new();
