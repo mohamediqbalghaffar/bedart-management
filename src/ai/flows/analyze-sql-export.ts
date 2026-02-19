@@ -39,10 +39,11 @@ const SupplierImportSchema = z.object({
 });
 
 const SqlExportOutputSchema = z.object({
-  products: z.array(ProductImportSchema).optional().describe("Populate this array if the data is determined to be products."),
-  customers: z.array(CustomerImportSchema).optional().describe("Populate this array if the data is determined to be customers."),
-  suppliers: z.array(SupplierImportSchema).optional().describe("Populate this array if the data is determined to be suppliers."),
-}).describe("The output will be an object containing ONLY ONE of the following arrays: 'products', 'customers', or 'suppliers', based on the data type you identify from the CSV.");
+    dataType: z.enum(['products', 'customers', 'suppliers', 'unknown']).describe("The type of data identified in the CSV."),
+    products: z.array(ProductImportSchema).optional().describe("Populate this array if the data is determined to be products."),
+    customers: z.array(CustomerImportSchema).optional().describe("Populate this array if the data is determined to be customers."),
+    suppliers: z.array(SupplierImportSchema).optional().describe("Populate this array if the data is determined to be suppliers."),
+}).describe("The output will be an object containing the identified 'dataType' and ONLY ONE of the following arrays: 'products', 'customers', or 'suppliers', based on that type.");
 
 
 export type SqlExportOutput = z.infer<typeof SqlExportOutputSchema>;
@@ -61,14 +62,15 @@ Your task is to analyze the provided CSV data, determine what kind of data it re
 The data can be one of three types: 'products', 'customers', or 'suppliers'.
 
 Your tasks are:
-1.  **Analyze the CSV Header and Rows**: Look at the column names (which could be in any language) and the data to figure out if you're looking at products, customers, or suppliers.
-2.  **Populate ONE output array**: Based on your analysis, populate ONLY ONE of the following arrays in the output object: 'products', 'customers', or 'suppliers'. The other two arrays must be left undefined.
-3.  **Extract and Map Data**: For each row in the CSV, extract the relevant data and map it to the fields defined in the corresponding schema for that data type.
-    *   For **products**, you must identify columns for at least 'productName', 'category', 'currentQuantity', and 'stockLocation'. If 'stockLocation' isn't present, you must default to 'Warehouse' for all records. Categories must be one of: 'Mattress', 'Bed', 'Pillow', 'Cover'.
+1.  **Analyze the CSV**: Look at the column names (which could be in any language) and the data to figure out if you're looking at products, customers, or suppliers.
+2.  **Set 'dataType'**: You MUST set the \`dataType\` field in the output to one of 'products', 'customers', or 'suppliers'. If you cannot confidently determine the type, set it to 'unknown'.
+3.  **Populate ONE Array**: Based on the \`dataType\` you identified, you MUST populate ONLY the corresponding array in the output object (\`products\`, \`customers\`, or \`suppliers\`). The other two arrays MUST be left empty or undefined. Do not populate multiple arrays.
+4.  **Map Data**: For each row in the CSV, extract the relevant data and map it to the fields defined in the corresponding schema.
+    *   For **products**, you must identify columns for at least 'productName', 'category', 'currentQuantity', and 'stockLocation'. If 'stockLocation' isn't present, default it to 'Warehouse'. Categories must be one of: 'Mattress', 'Bed', 'Pillow', 'Cover'.
     *   For **customers**, you must identify a column for 'customerName'. 'customerPhoneNumber' and 'customerAddress' are optional.
     *   For **suppliers**, you must identify a column for 'supplierName'. 'contactInformation' is optional.
-4.  **Filter Rows**: Ignore any header rows, empty rows, or rows that contain totals or summaries. Only extract rows that represent individual data records.
-5.  **Return Structured Output**: The final output must be a single JSON object matching the 'SqlExportOutputSchema', with only one of the main array properties populated.
+5.  **Filter Rows**: Ignore any header rows, empty rows, or rows that contain totals or summaries.
+6.  **Return Valid JSON**: The final output must be a single JSON object that strictly matches the 'SqlExportOutputSchema'. It must contain the 'dataType' and only ONE of the data arrays.
 
 CSV Data:
 {{{csvData}}}`,

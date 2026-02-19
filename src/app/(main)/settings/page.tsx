@@ -320,20 +320,17 @@ function DataManagement() {
             const result = await analyzeSqlExport({ csvData: text });
             
             let count = 0;
-            let dataType: 'products' | 'customers' | 'suppliers' | null = null;
+            const dataType = result.dataType;
             let records: any[] = [];
 
-            if (result.products && result.products.length > 0) {
-                dataType = 'products';
+            if (dataType === 'products' && result.products) {
                 records = result.products;
-            } else if (result.customers && result.customers.length > 0) {
-                dataType = 'customers';
+            } else if (dataType === 'customers' && result.customers) {
                 records = result.customers;
-            } else if (result.suppliers && result.suppliers.length > 0) {
-                dataType = 'suppliers';
+            } else if (dataType === 'suppliers' && result.suppliers) {
                 records = result.suppliers;
             } else {
-                throw new Error("AI could not extract any records from the file.");
+                throw new Error("AI could not identify the data type or the data is empty.");
             }
 
             toast({ title: '...هاوردەکردن', description: `AI داتاکانی وەک ${dataType} ناساندەوە. خەریکی هاوردەکردنە.` });
