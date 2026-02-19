@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
@@ -122,7 +121,7 @@ function DirectPrintButton({ formId }: { formId: string }) {
             const [formSnap, productsSnap, paymentsSnap, companyInfoSnap] = await Promise.all([
                 getDoc(formRef),
                 getDocs(productsRef),
-                getDocs(paymentsSnap),
+                getDocs(paymentsRef),
                 getDoc(companyInfoRef),
             ]);
 
