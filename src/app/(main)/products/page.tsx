@@ -15,7 +15,7 @@ import { EditableProductRow } from './components/editable-product-row';
 export type ProductDefinition = {
     productName: string;
     category: 'Mattress' | 'Bed' | 'Pillow' | 'Cover';
-    sellingPrice: number;
+    sellingPrice?: number;
 };
 
 function AddProductDialog({ onProductAdded }: { onProductAdded: () => void }) {

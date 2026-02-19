@@ -131,7 +131,7 @@ export function EditableProductRow({ product, onProductUpdated }: { product: Wit
         <TableRow key={product.id}>
             <TableCell className="font-medium text-right">{product.productName}</TableCell>
             <TableCell className="text-right">{categoryTranslations[product.category] || product.category}</TableCell>
-            <TableCell className="text-right">{currencyFormatter.format(product.sellingPrice)}</TableCell>
+            <TableCell className="text-right">{currencyFormatter.format(product.sellingPrice || 0)}</TableCell>
             <TableCell className="text-left">
                 <div className="flex gap-2">
                     <Button size="icon" variant="ghost" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4 text-blue-500"/></Button>

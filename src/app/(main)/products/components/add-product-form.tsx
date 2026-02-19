@@ -14,7 +14,6 @@ import { ProductCategory } from "@/lib/types";
 const productSchema = z.object({
   productName: z.string().min(1, { message: "ناوی کاڵا پێویستە." }),
   category: z.enum(['Mattress', 'Bed', 'Pillow', 'Cover'], { required_error: "پۆل پێویستە."}),
-  sellingPrice: z.coerce.number().min(0, "نرخی فرۆشتن ناتوانێت سالب بێت."),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -36,7 +35,6 @@ export function AddProductForm({ onProductAdded }: { onProductAdded?: () => void
     defaultValues: {
       productName: "",
       category: "Mattress",
-      sellingPrice: 0,
     },
   });
 
@@ -52,7 +50,7 @@ export function AddProductForm({ onProductAdded }: { onProductAdded?: () => void
 
     try {
         const docRef = doc(collection(firestore, 'product_definitions'));
-        await setDoc(docRef, { ...data, id: docRef.id });
+        await setDoc(docRef, { ...data, id: docRef.id, sellingPrice: 0 });
 
         toast({
             title: "سەرکەوتوو بوو!",
@@ -105,19 +103,6 @@ export function AddProductForm({ onProductAdded }: { onProductAdded?: () => void
                     <FormMessage />
                 </FormItem>
             )}
-        />
-        <FormField
-          control={form.control}
-          name="sellingPrice"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>نرخی فرۆشتن (USD)</FormLabel>
-              <FormControl>
-                <Input type="number" step="0.01" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
         />
         <div className="flex justify-end pt-4">
             <Button type="submit" disabled={form.formState.isSubmitting}>

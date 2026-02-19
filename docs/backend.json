@@ -87,7 +87,7 @@
         "category": { "type": "string", "description": "The category of the product.", "enum": ["Mattress", "Bed", "Pillow", "Cover"] },
         "sellingPrice": { "type": "number", "description": "The default selling price for the product." }
       },
-      "required": ["id", "productName", "category", "sellingPrice"]
+      "required": ["id", "productName", "category"]
     },
     "StockMovement": {
       "$schema": "http://json-schema.org/draft-07/schema#",
