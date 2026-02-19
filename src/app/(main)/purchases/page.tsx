@@ -11,7 +11,7 @@ import { BuyingForm } from "./components/buying-form";
 import { useFirestore, useCollection, useMemoFirebase, collection, runTransaction, doc, getDocs, deleteDoc } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -73,7 +73,8 @@ function PurchaseFormDialog({ formId, onSave, trigger }: { formId: string | null
                     <BuyingForm formId={formId} onSave={() => { onSave(); setOpen(false); }} />
                 </div>
             </DialogContent>
-    )
+        </Dialog>
+    );
 }
 
 function UploadPurchaseFormButton({ onSave }: { onSave: () => void }) {
