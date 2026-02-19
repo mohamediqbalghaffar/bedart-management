@@ -14,6 +14,7 @@ import { EditableProductRow } from './components/editable-product-row';
 import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
 import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export type ProductDefinition = {
     productName: string;
@@ -175,7 +176,13 @@ function UploadItemsButton({ onUploadSuccess, existingProducts }: { onUploadSucc
 }
 
 // Component to display the list of product definitions
-function ProductDefinitionsList({ products, isLoading, onProductUpdated, searchTerm }: { products: WithId<ProductDefinition>[] | null, isLoading: boolean, onProductUpdated: () => void, searchTerm: string }) {
+function ProductDefinitionsList({ products, isLoading, onProductUpdated, onSearchTermChange, searchTerm }: {
+    products: WithId<ProductDefinition>[] | null,
+    isLoading: boolean,
+    onProductUpdated: () => void,
+    onSearchTermChange: (value: string) => void,
+    searchTerm: string
+}) {
     
     const filteredProducts = useMemo(() => {
         if (!products) return [];
@@ -196,23 +203,31 @@ function ProductDefinitionsList({ products, isLoading, onProductUpdated, searchT
                         placeholder="...گەڕان"
                         className="pr-10"
                         value={searchTerm}
-                        onChange={(e) => onProductUpdated(e.target.value)}
+                        onChange={(e) => onSearchTermChange(e.target.value)}
                     />
                 </div>
             </CardHeader>
             <CardContent>
-                <Table>
-                    <TableHeader><TableRow><TableHead className="text-right w-[50%]">ناوی کاڵا</TableHead><TableHead className="text-right w-[30%]">پۆل</TableHead><TableHead className="text-left w-[20%]">کردارەکان</TableHead></TableRow></TableHeader>
-                    <TableBody>
-                        {isLoading ? (
-                            <TableRow><TableCell colSpan={3} className="h-24 text-center"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></TableCell></TableRow>
-                        ) : !filteredProducts || filteredProducts.length === 0 ? (
-                            <TableRow><TableCell colSpan={3} className="py-8 text-center text-muted-foreground">هیچ پێناسەیەکی کاڵا تۆمار نەکراوە.</TableCell></TableRow>
-                        ) : (
-                            filteredProducts.map((product) => <EditableProductRow key={product.id} product={product} onProductUpdated={onProductUpdated} />)
-                        )}
-                    </TableBody>
-                </Table>
+                 <ScrollArea className="h-[60vh] border rounded-lg">
+                    <Table>
+                        <TableHeader className="sticky top-0 bg-card z-10">
+                            <TableRow>
+                                <TableHead className="text-right w-[50%]">ناوی کاڵا</TableHead>
+                                <TableHead className="text-right w-[30%]">پۆل</TableHead>
+                                <TableHead className="text-left w-[20%]">کردارەکان</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {isLoading ? (
+                                <TableRow><TableCell colSpan={3} className="h-24 text-center"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></TableCell></TableRow>
+                            ) : !filteredProducts || filteredProducts.length === 0 ? (
+                                <TableRow><TableCell colSpan={3} className="py-8 text-center text-muted-foreground">هیچ پێناسەیەکی کاڵا تۆمار نەکراوە.</TableCell></TableRow>
+                            ) : (
+                                filteredProducts.map((product) => <EditableProductRow key={product.id} product={product} onProductUpdated={onProductUpdated} />)
+                            )}
+                        </TableBody>
+                    </Table>
+                </ScrollArea>
             </CardContent>
         </Card>
     );
@@ -240,7 +255,13 @@ export default function ProductsPage() {
                     <UploadItemsButton onUploadSuccess={handleSave} existingProducts={products} />
                 </div>
             </PageHeader>
-            <ProductDefinitionsList products={products} isLoading={isLoading} onProductUpdated={handleSave} searchTerm={searchTerm} />
+            <ProductDefinitionsList 
+                products={products} 
+                isLoading={isLoading} 
+                onProductUpdated={handleSave} 
+                searchTerm={searchTerm} 
+                onSearchTermChange={setSearchTerm} 
+            />
         </div>
     );
 }
