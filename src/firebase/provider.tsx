@@ -74,7 +74,7 @@ export const useFirebase = (): { firebaseApp: FirebaseApp, firestore: Firestore 
 export const useFirestore = (): Firestore | null => {
   const context = useContext(FirebaseContext);
    if (context === undefined) {
-    throw new Error('useFirestore must be used within a FirebaseProvider.');
+    return null;
   }
   return context.firestore;
 };
@@ -83,7 +83,7 @@ export const useFirestore = (): Firestore | null => {
 export const useFirebaseApp = (): FirebaseApp | null => {
   const context = useContext(FirebaseContext);
    if (context === undefined) {
-    throw new Error('useFirebaseApp must be used within a FirebaseProvider.');
+    return null;
   }
   return context.firebaseApp;
 };
