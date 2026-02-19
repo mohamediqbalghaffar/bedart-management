@@ -208,26 +208,28 @@ function ProductDefinitionsList({ products, isLoading, onProductUpdated, onSearc
                 </div>
             </CardHeader>
             <CardContent>
-                 <ScrollArea className="h-[60vh] border rounded-lg">
-                    <Table>
-                        <TableHeader className="sticky top-0 bg-card z-10">
-                            <TableRow>
-                                <TableHead className="text-right w-[50%]">ناوی کاڵا</TableHead>
-                                <TableHead className="text-right w-[30%]">پۆل</TableHead>
-                                <TableHead className="text-left w-[20%]">کردارەکان</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {isLoading ? (
-                                <TableRow><TableCell colSpan={3} className="h-24 text-center"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></TableCell></TableRow>
-                            ) : !filteredProducts || filteredProducts.length === 0 ? (
-                                <TableRow><TableCell colSpan={3} className="py-8 text-center text-muted-foreground">هیچ پێناسەیەکی کاڵا تۆمار نەکراوە.</TableCell></TableRow>
-                            ) : (
-                                filteredProducts.map((product) => <EditableProductRow key={product.id} product={product} onProductUpdated={onProductUpdated} />)
-                            )}
-                        </TableBody>
-                    </Table>
-                </ScrollArea>
+                 <div dir="ltr">
+                    <ScrollArea className="h-[60vh] border rounded-lg">
+                        <Table dir="rtl">
+                            <TableHeader className="sticky top-0 bg-card z-10">
+                                <TableRow>
+                                    <TableHead className="text-right w-[20%]">کردارەکان</TableHead>
+                                    <TableHead className="text-right w-[30%]">پۆل</TableHead>
+                                    <TableHead className="text-left w-[50%]">ناوی کاڵا</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {isLoading ? (
+                                    <TableRow><TableCell colSpan={3} className="h-24 text-center"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></TableCell></TableRow>
+                                ) : !filteredProducts || filteredProducts.length === 0 ? (
+                                    <TableRow><TableCell colSpan={3} className="py-8 text-center text-muted-foreground">هیچ پێناسەیەکی کاڵا تۆمار نەکراوە.</TableCell></TableRow>
+                                ) : (
+                                    filteredProducts.map((product) => <EditableProductRow key={product.id} product={product} onProductUpdated={onProductUpdated} />)
+                                )}
+                            </TableBody>
+                        </Table>
+                    </ScrollArea>
+                </div>
             </CardContent>
         </Card>
     );

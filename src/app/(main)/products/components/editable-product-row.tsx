@@ -105,10 +105,13 @@ export function EditableProductRow({ product, onProductUpdated }: { product: Wit
         return (
             <Form {...form}>
                 <TableRow className="bg-secondary/20">
-                    <TableCell>
-                        <FormField control={form.control} name="productName" render={({ field }) => (
-                            <FormItem><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                        )}/>
+                     <TableCell className="text-right">
+                        <div className="flex gap-2">
+                            <Button size="icon" variant="ghost" onClick={form.handleSubmit(handleSave)} disabled={isSaving}>
+                                {isSaving ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="h-4 w-4 text-primary"/>}
+                            </Button>
+                            <Button size="icon" variant="ghost" onClick={() => setIsEditing(false)}><X className="h-4 w-4 text-muted-foreground"/></Button>
+                        </div>
                     </TableCell>
                     <TableCell>
                         <FormField control={form.control} name="category" render={({ field }) => (
@@ -121,13 +124,10 @@ export function EditableProductRow({ product, onProductUpdated }: { product: Wit
                             </FormItem>
                         )}/>
                     </TableCell>
-                    <TableCell className="text-left">
-                        <div className="flex gap-2">
-                            <Button size="icon" variant="ghost" onClick={form.handleSubmit(handleSave)} disabled={isSaving}>
-                                {isSaving ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="h-4 w-4 text-primary"/>}
-                            </Button>
-                            <Button size="icon" variant="ghost" onClick={() => setIsEditing(false)}><X className="h-4 w-4 text-muted-foreground"/></Button>
-                        </div>
+                     <TableCell>
+                        <FormField control={form.control} name="productName" render={({ field }) => (
+                            <FormItem><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                        )}/>
                     </TableCell>
                 </TableRow>
             </Form>
@@ -136,9 +136,7 @@ export function EditableProductRow({ product, onProductUpdated }: { product: Wit
 
     return (
         <TableRow key={product.id}>
-            <TableCell className="font-medium text-right">{product.productName}</TableCell>
-            <TableCell className="text-right">{categoryTranslations[product.category] || product.category}</TableCell>
-            <TableCell className="text-left">
+             <TableCell className="text-right">
                 <div className="flex gap-2">
                     <Button size="icon" variant="ghost" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4 text-blue-500"/></Button>
                     <AlertDialog>
@@ -155,6 +153,8 @@ export function EditableProductRow({ product, onProductUpdated }: { product: Wit
                     </AlertDialog>
                 </div>
             </TableCell>
+            <TableCell className="text-right">{categoryTranslations[product.category] || product.category}</TableCell>
+            <TableCell className="font-medium text-left">{product.productName}</TableCell>
         </TableRow>
     );
 }
