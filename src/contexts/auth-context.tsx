@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useFirestore, collection, query, where, getDocs } from '@/firebase';
+import { useFirestore, collection, query, where, getDocs, limit, setDoc, doc } from '@/firebase';
 
 type Role = 'Admin' | 'Data Manager' | 'Salesman';
 type User = {
@@ -31,6 +31,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const firestore = useFirestore();
+
+  useEffect(() => {
+    // This effect runs once to bootstrap the first admin user if the users collection is empty.
+    const bootstrapAdmin = async () => {
+      if (!firestore) return;
+      try {
+        const usersRef = collection(firestore, 'users');
+        const q = query(usersRef, limit(1));
+        const snapshot = await getDocs(q);
+        if (snapshot.empty) {
+          console.log("No users found. Bootstrapping default admin user.");
+          const adminId = 'default-admin'; // Use a predictable ID
+          const adminRef = doc(firestore, 'users', adminId);
+          await setDoc(adminRef, {
+            id: adminId,
+            name: 'admin',
+            role: 'Admin',
+            code: 'Rawezh1818'
+          });
+          console.log("Default admin user created successfully.");
+        }
+      } catch (error) {
+          console.error("Failed to bootstrap admin user:", error);
+      }
+    };
+
+    bootstrapAdmin();
+  }, [firestore]);
+
 
   useEffect(() => {
     try {
