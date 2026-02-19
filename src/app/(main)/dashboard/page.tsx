@@ -537,7 +537,7 @@ function RecentActivityChart({ data }: { data: any[] }) {
 
 export default function DashboardPage() {
     const [dateRange, setDateRange] = useState<{ from: Date, to: Date }>({ 
-        from: subDays(new Date(), 29), 
+        from: new Date('2018-01-01'), 
         to: new Date() 
     });
 
