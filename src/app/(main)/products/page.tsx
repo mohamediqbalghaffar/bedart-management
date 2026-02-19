@@ -13,7 +13,6 @@ import { AddProductForm } from './components/add-product-form';
 import { EditableProductRow } from './components/editable-product-row';
 import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
-import { categorizeProducts } from '@/ai/flows/categorize-products';
 
 export type ProductDefinition = {
     productName: string;
@@ -94,19 +93,13 @@ function UploadItemsButton({ onUploadSuccess, existingProducts }: { onUploadSucc
                         return;
                     }
                     
-                    toast({ title: '...پۆلێنکردنی کاڵاکان', description: 'AI خەریکی دیاریکردنی پۆلەکانە.' });
-
-                    const productNames = productsFromSheet.map(p => p.productName);
-                    const categorizedProducts = await categorizeProducts(productNames);
-
-                    const categorizedMap = new Map(categorizedProducts.map(p => [p.productName, p.category]));
                     const existingProductNames = new Set((existingProducts || []).map(p => p.productName.toLowerCase()));
 
                     const productsToUpload = productsFromSheet
                         .map(p => ({
                             productName: p.productName,
                             sellingPrice: p.sellingPrice,
-                            category: categorizedMap.get(p.productName) || 'Mattress', // Default to Mattress if AI fails for one
+                            category: 'Mattress', // Default category
                         }))
                         .filter(p => p.productName && !existingProductNames.has(p.productName.toLowerCase())) as ProductDefinition[];
 
@@ -118,8 +111,8 @@ function UploadItemsButton({ onUploadSuccess, existingProducts }: { onUploadSucc
                         toast({ variant: 'default', title: "هیچ کاڵایەکی نوێ نەدۆزرایەوە", description: "هەموو کاڵاکانی ناو فایلەکە پێشتر بوونیان هەیە." });
                     }
                 } catch (parseError) {
-                    console.error("AI or parsing error:", parseError);
-                    toast({ variant: "destructive", title: "هەڵە لە شیکردنەوە", description: "نەتوانرا فایلەکە بخوێنرێتەوە یان AI هەڵەی کرد." });
+                    console.error("Parsing error:", parseError);
+                    toast({ variant: "destructive", title: "هەڵە لە شیکردنەوە", description: "نەتوانرا فایلەکە بخوێنرێتەوە." });
                 } finally {
                     setIsParsing(false);
                     if (fileInputRef.current) fileInputRef.current.value = "";
