@@ -5,7 +5,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Loader2, FileSpreadsheet, Trash2, Edit, ArrowUpDown, Search, Printer } from "lucide-react";
+import { PlusCircle, Loader2, FileSpreadsheet, Trash2, Edit, ArrowUpDown, Search, Printer, FileDown } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -21,6 +21,7 @@ import { PaymentStatus, PaymentType } from '@/lib/types';
 import { PrintableReceipt } from './components/printable-receipt';
 import './printable-receipt.css';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import html2canvas from 'html2canvas';
 
 
 // Matches the structure in backend.json for SellingForm
@@ -171,9 +172,9 @@ function ReceiptPreview({ formId }: { formId: string }) {
     const firestore = useFirestore();
     const [printData, setPrintData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [isPrinting, setIsPrinting] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
     const { toast } = useToast();
-    const receiptRef = useRef(null);
+    const receiptRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const fetchPrintData = async () => {
@@ -220,18 +221,32 @@ function ReceiptPreview({ formId }: { formId: string }) {
         fetchPrintData();
     }, [formId, firestore, toast]);
 
-    useEffect(() => {
-        if (isPrinting) {
-            const timer = setTimeout(() => {
-                window.print();
-                setIsPrinting(false);
-            }, 300);
-            return () => clearTimeout(timer);
+    const handleDownloadAsJPEG = async () => {
+        if (!receiptRef.current) {
+            toast({ variant: 'destructive', title: 'هەڵە', description: 'نەتوانرا وێنەی پسوولە دروستبکرێت.' });
+            return;
         }
-    }, [isPrinting]);
-
-    const handlePrint = () => {
-        setIsPrinting(true);
+        setIsDownloading(true);
+        toast({ title: '...ئامادەکردنی وێنە' });
+        try {
+            const canvas = await html2canvas(receiptRef.current, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+            });
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL('image/jpeg', 0.95);
+            link.download = `receipt-${printData.formData.formNumber}.jpeg`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            toast({ title: 'سەرکەوتوو بوو', description: 'پسوولەکە وەک وێنە دابەزێنرا.', className: 'bg-accent text-accent-foreground' });
+        } catch (error) {
+            console.error('Error downloading as JPEG:', error);
+            toast({ variant: 'destructive', title: 'هەڵەیەک ڕوویدا', description: 'دابەزاندنی وێنەکە سەرکەوتوو نەبوو.' });
+        } finally {
+            setIsDownloading(false);
+        }
     };
 
     if (isLoading) {
@@ -242,34 +257,25 @@ function ReceiptPreview({ formId }: { formId: string }) {
         return <div className="text-center p-8 text-muted-foreground">داتا بۆ ئەم پسوولەیە نەدۆزرایەوە.</div>
     }
 
-    const receiptComponent = (
-        <PrintableReceipt
-            ref={receiptRef}
-            formData={printData.formData}
-            products={printData.products}
-            payments={printData.payments}
-            companyInfo={printData.companyInfo}
-        />
-    );
-
     return (
         <>
             <div className="bg-gray-200/80 dark:bg-gray-800/50 p-4 rounded-lg overflow-auto">
                  <div className="bg-white mx-auto max-w-[800px]">
-                    {receiptComponent}
+                    <PrintableReceipt
+                        ref={receiptRef}
+                        formData={printData.formData}
+                        products={printData.products}
+                        payments={printData.payments}
+                        companyInfo={printData.companyInfo}
+                    />
                 </div>
             </div>
             <DialogFooter className="pt-4 sm:justify-start">
-                 <Button onClick={handlePrint} disabled={isPrinting}>
-                    {isPrinting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
-                    چاپکردن / دابەزاندن
+                 <Button onClick={handleDownloadAsJPEG} disabled={isDownloading}>
+                    {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
+                    دابەزاندن وەک وێنە
                 </Button>
             </DialogFooter>
-            {isPrinting && (
-                 <div id="printable-area">
-                    {receiptComponent}
-                </div>
-            )}
         </>
     );
 }
