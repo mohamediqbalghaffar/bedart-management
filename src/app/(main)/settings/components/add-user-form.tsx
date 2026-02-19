@@ -12,8 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2 } from "lucide-react";
 
 const userSchema = z.object({
-  username: z.string().email({ message: "پێویستە ئیمەیڵێکی دروست بێت." }),
-  password: z.string().min(6, { message: "وشەی نهێنی پێویستە لانیکەم 6 پیت بێت." }),
+  name: z.string().min(1, { message: "ناوی بەکارهێنەر پێویستە." }),
   role: z.enum(['Admin', 'Data Manager', 'Salesman'], { required_error: "ڕۆڵ پێویستە."}),
 });
 
@@ -26,8 +25,7 @@ export function AddUserForm({ onUserAdded }: { onUserAdded?: () => void }) {
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
     defaultValues: {
-      username: "",
-      password: "",
+      name: "",
       role: "Salesman",
     },
   });
@@ -77,25 +75,12 @@ export function AddUserForm({ onUserAdded }: { onUserAdded?: () => void }) {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" dir="rtl">
         <FormField
           control={form.control}
-          name="username"
+          name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>ئیمەیڵ (ناوی بەکارهێنەر)</FormLabel>
+              <FormLabel>ناوی بەکارهێنەر</FormLabel>
               <FormControl>
-                <Input placeholder="user@example.com" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>وشەی نهێنی</FormLabel>
-              <FormControl>
-                <Input type="password" {...field} />
+                <Input placeholder="ناوی تەواو" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

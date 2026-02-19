@@ -171,11 +171,10 @@
       "description": "Represents an application user.",
       "properties": {
         "id": { "type": "string", "description": "Unique identifier for the User entity." },
-        "username": { "type": "string", "description": "The user's login name (email format recommended)." },
-        "password": { "type": "string", "description": "The user's password." },
+        "name": { "type": "string", "description": "The user's name." },
         "role": { "type": "string", "description": "The user's role.", "enum": ["Admin", "Data Manager", "Salesman"] }
       },
-      "required": ["id", "username", "password", "role"]
+      "required": ["id", "name", "role"]
     }
   },
   "firestore": {

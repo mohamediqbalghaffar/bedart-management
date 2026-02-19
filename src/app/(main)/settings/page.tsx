@@ -119,7 +119,7 @@ function AddUserDialog({ onUserAdded }: { onUserAdded: () => void }) {
 // User Management Component
 type User = {
     id: string;
-    username: string;
+    name: string;
     role: 'Admin' | 'Data Manager' | 'Salesman';
 };
 
@@ -191,7 +191,7 @@ function UserManagement() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="text-right">ئیمەیڵ (ناوی بەکارهێنەر)</TableHead>
+                            <TableHead className="text-right">ناو</TableHead>
                             <TableHead className="text-right w-[200px]">ڕۆڵ</TableHead>
                             <TableHead className="text-left w-[100px]">کردارەکان</TableHead>
                         </TableRow>
@@ -203,7 +203,7 @@ function UserManagement() {
                             <TableRow><TableCell colSpan={3} className="h-24 text-center text-muted-foreground">هیچ بەکارهێنەرێک نییە.</TableCell></TableRow>
                         ) : users?.map(user => (
                             <TableRow key={user.id}>
-                                <TableCell className="font-medium text-right">{user.username}</TableCell>
+                                <TableCell className="font-medium text-right">{user.name}</TableCell>
                                 <TableCell>
                                     <Select value={user.role} onValueChange={(value) => handleRoleChange(user.id, value as User['role'])}>
                                         <SelectTrigger><SelectValue /></SelectTrigger>
