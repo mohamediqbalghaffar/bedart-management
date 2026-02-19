@@ -257,19 +257,12 @@ function ProductDefinitionsList({ products, isLoading, onProductUpdated, onBulkU
                 </div>
             </CardHeader>
             <CardContent>
-                 <div dir="ltr">
+                 <div>
                     <ScrollArea className="h-[60vh] border rounded-lg">
                         <Table dir="rtl">
                             <TableHeader className="sticky top-0 bg-card z-10">
                                 <TableRow>
-                                    <TableHead className="w-[50px] text-center">
-                                         <Checkbox
-                                            checked={filteredProducts.length > 0 && selectedProducts.size === filteredProducts.length}
-                                            onCheckedChange={handleSelectAll}
-                                            aria-label="Select all rows"
-                                        />
-                                    </TableHead>
-                                    <TableHead className="text-right w-[20%]">کردارەکان</TableHead>
+                                    <TableHead className="text-right w-[50%]">ناوی کاڵا</TableHead>
                                     <TableHead className="text-right w-[30%]">
                                         <div className="flex items-center gap-2 justify-end">
                                             {selectedProducts.size > 0 ? (
@@ -288,7 +281,14 @@ function ProductDefinitionsList({ products, isLoading, onProductUpdated, onBulkU
                                             )}
                                         </div>
                                     </TableHead>
-                                    <TableHead className="text-left w-[50%]">ناوی کاڵا</TableHead>
+                                    <TableHead className="text-left w-[20%]">کردارەکان</TableHead>
+                                    <TableHead className="w-[50px] text-center">
+                                         <Checkbox
+                                            checked={filteredProducts.length > 0 && selectedProducts.size === filteredProducts.length}
+                                            onCheckedChange={handleSelectAll}
+                                            aria-label="Select all rows"
+                                        />
+                                    </TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -333,7 +333,7 @@ export default function ProductsPage() {
     const handleBulkUpdateCategory = async (ids: string[], newCategory: ProductCategory) => {
         if (!firestore || ids.length === 0) return;
 
-        const { update: updateToast } = toast({ title: '...نوێکردنەوەی پۆلەکان', description: `Updating ${ids.length} products.` });
+        const { id: toastId, update: updateToast } = toast({ title: '...نوێکردنەوەی پۆلەکان', description: `Updating ${ids.length} products.` });
         
         try {
             const batch = writeBatch(firestore);
@@ -363,11 +363,11 @@ export default function ProductsPage() {
             }
 
             await batch.commit();
-            updateToast({ title: 'سەرکەوتوو بوو', description: 'پۆلەکان بە سەرکەوتوویی نوێکرانەوە.', className: 'bg-accent text-accent-foreground' });
+            updateToast(toastId, { title: 'سەرکەوتوو بوو', description: 'پۆلەکان بە سەرکەوتوویی نوێکرانەوە.', className: 'bg-accent text-accent-foreground' });
             handleSave();
         } catch (error) {
             console.error("Error during bulk category update:", error);
-            updateToast({ variant: "destructive", title: "هەڵەیەک ڕوویدا", description: "نوێکردنەوەی پۆلەکان سەرکەوتوو نەبوو." });
+            updateToast(toastId, { variant: "destructive", title: "هەڵەیەک ڕوویدا", description: "نوێکردنەوەی پۆلەکان سەرکەوتوو نەبوو." });
         }
     };
 
