@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useFirestore, useCollection, useMemoFirebase, collection, doc, getDoc, setDoc } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, collection, doc, getDoc, setDoc, getDocs, deleteDoc } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, FileDown, AlertTriangle, PlusCircle, FileUp } from 'lucide-react';
@@ -168,21 +168,250 @@ function UserManagement() {
     );
 }
 
+
+// Data Management Component
+function DataManagement() {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const [isExporting, setIsExporting] = useState(false);
+    const [isImporting, setIsImporting] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const collectionsToBackup = ['customers', 'selling_forms', 'buying_forms', 'expenses', 'products', 'stock_movements', 'suppliers', 'users'];
+
+    const exportAllData = async () => {
+        if (!firestore) return;
+        setIsExporting(true);
+        toast({ title: '...هەناردەکردن', description: 'هەموو داتاکان خەریکی هەناردەکردنن' });
+
+        try {
+            const workbook = XLSX.utils.book_new();
+
+            for (const collectionName of collectionsToBackup) {
+                const querySnapshot = await getDocs(collection(firestore, collectionName));
+                let data = querySnapshot.docs.map(doc => doc.data());
+
+                if (collectionName === 'users') {
+                    data = data.map(({ code, ...rest }) => rest); // Exclude 'code' field
+                }
+
+                if (data.length > 0) {
+                    const worksheet = XLSX.utils.json_to_sheet(data);
+                    XLSX.utils.book_append_sheet(workbook, worksheet, collectionName);
+                }
+            }
+
+            const subcollectionMappings = [
+                { parent: 'selling_forms', sub: 'selling_form_products', sheetPrefix: 'selling_products_' },
+                { parent: 'selling_forms', sub: 'payments', sheetPrefix: 'selling_payments_' },
+                { parent: 'buying_forms', sub: 'buying_form_products', sheetPrefix: 'buying_products_' },
+            ];
+
+            for (const mapping of subcollectionMappings) {
+                const parentSnap = await getDocs(collection(firestore, mapping.parent));
+                for (const formDoc of parentSnap.docs) {
+                    const subSnap = await getDocs(collection(firestore, `${mapping.parent}/${formDoc.id}/${mapping.sub}`));
+                    const subData = subSnap.docs.map(d => d.data());
+                    if (subData.length > 0) {
+                        const ws = XLSX.utils.json_to_sheet(subData);
+                        XLSX.utils.book_append_sheet(workbook, ws, `${mapping.sheetPrefix}${formDoc.id}`);
+                    }
+                }
+            }
+
+            XLSX.writeFile(workbook, 'BedArt_Backup.xlsx');
+            toast({ title: 'سەرکەوتوو بوو', description: 'هەموو داتاکان بە سەرکەوتوویی هەناردەکران.', className: 'bg-accent text-accent-foreground' });
+
+        } catch (error) {
+            console.error("Error exporting data: ", error);
+            toast({ variant: 'destructive', title: 'هەڵەیەک ڕوویدا', description: 'هەناردەکردن سەرکەوتوو نەبوو.' });
+        } finally {
+            setIsExporting(false);
+        }
+    };
+    
+    const downloadTemplate = () => {
+        try {
+            const workbook = XLSX.utils.book_new();
+            const templateCollections = {
+                products: [{ productName: "Sample Product", category: "Mattress", sizeModel: "King", stockLocation: "Warehouse", currentQuantity: 10, sellingPrice: 500, unitPrice: 300 }],
+                customers: [{ customerName: "Sample Customer", customerPhoneNumber: "07701234567", customerAddress: "Suli" }],
+                suppliers: [{ supplierName: "Sample Supplier", contactInformation: "07501234567" }],
+                expenses: [{ name: "Sample Expense", date: new Date().toISOString().split('T')[0], amount: 100, currency: "USD", category: "Daily", note: "Misc" }],
+            };
+            
+            for (const [sheetName, data] of Object.entries(templateCollections)) {
+                const worksheet = XLSX.utils.json_to_sheet(data);
+                XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+            }
+
+            XLSX.writeFile(workbook, 'Import_Template.xlsx');
+            toast({ title: 'سەرکەوتوو بوو', description: 'نموونەی فایل بە سەرکەوتوویی دابەزێنرا.', className: 'bg-accent text-accent-foreground' });
+        } catch (error) {
+             console.error("Template download error:", error);
+             toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "دابەزاندنی نموونەکە سەرکەوتوو نەبوو." });
+        }
+    };
+    
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !firestore) return;
+        
+        setIsImporting(true);
+        toast({ title: '...هاوردەکردن', description: 'داتاکان خەریکی هاوردەکردنن' });
+
+        try {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const data = e.target?.result;
+                const workbook = XLSX.read(data, { type: 'array' });
+                
+                let changesCount = 0;
+                for (const sheetName of workbook.SheetNames) {
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                    if (collectionsToBackup.includes(sheetName) && jsonData.length > 0) {
+                        for (const row of jsonData as any[]) {
+                            const docRef = doc(collection(firestore, sheetName));
+                            let docData: any = { ...row, id: docRef.id };
+
+                            if (sheetName === 'products' && row.productName && row.stockLocation) {
+                                const productId = `${row.productName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${row.stockLocation.toLowerCase().replace(/\s/g, '')}`;
+                                const specificDocRef = doc(firestore, sheetName, productId);
+                                docData = { ...row, id: productId };
+                                await setDoc(specificDocRef, docData, { merge: true });
+                            } else {
+                                await setDoc(docRef, docData);
+                            }
+                            changesCount++;
+                        }
+                    }
+                }
+                toast({ title: 'سەرکەوتوو بوو', description: `${changesCount} تۆمار بە سەرکەوتوویی هاوردەکران.`, className: 'bg-accent text-accent-foreground' });
+            };
+            reader.readAsArrayBuffer(file);
+        } catch (error) {
+            console.error("Error importing data: ", error);
+            toast({ variant: 'destructive', title: 'هەڵەیەک ڕوویدا', description: 'هاوردەکردن سەرکەوتوو نەبوو.' });
+        } finally {
+            setIsImporting(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
+        }
+    };
+
+    const deleteAllData = async () => {
+        if (!firestore) return;
+        setIsDeleting(true);
+        toast({ title: '...سڕینەوە', description: 'هەموو داتاکان خەریکی سڕینەوەن. تکایە چاوەڕوان بە.' });
+        
+        try {
+            for (const collectionName of collectionsToBackup) {
+                const querySnapshot = await getDocs(collection(firestore, collectionName));
+                for (const docSnapshot of querySnapshot.docs) {
+                    if (collectionName === 'selling_forms' || collectionName === 'buying_forms') {
+                        const subcollections = ['selling_form_products', 'payments', 'buying_form_products'];
+                        for (const sub of subcollections) {
+                             if(sub.startsWith(collectionName.slice(0, -1))) {
+                                const subSnap = await getDocs(collection(firestore, `${collectionName}/${docSnapshot.id}/${sub}`));
+                                for (const subDoc of subSnap.docs) {
+                                    await deleteDoc(subDoc.ref);
+                                }
+                             }
+                        }
+                    }
+                    await deleteDoc(docSnapshot.ref);
+                }
+            }
+            toast({ title: 'سەرکەوتوو بوو!', description: 'هەموو داتاکان سڕانەوە. تکایە لاپەڕەکە نوێ بکەرەوە.', className: 'bg-accent text-accent-foreground' });
+        } catch (error) {
+             console.error("Error deleting data: ", error);
+            toast({ variant: 'destructive', title: 'هەڵەیەک ڕوویدا', description: 'سڕینەوەی داتاکان سەرکەوتوو نەبوو.' });
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>بەڕێوەبردنی داتا</CardTitle>
+                <CardDescription>هەناردەکردن، هاوردەکردن، یان سڕینەوەی هەموو داتاکانی سیستەم.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-wrap items-center gap-4">
+                 <Button variant="outline" onClick={exportAllData} disabled={isExporting}>
+                    {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
+                    هەناردەکردنی هەموو داتاکان
+                </Button>
+                <Button variant="outline" onClick={downloadTemplate}>
+                    <FileDown className="mr-2 h-4 w-4" />
+                    دابەزاندنی نموونە
+                </Button>
+                 <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    accept=".xlsx, .xls"
+                />
+                <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isImporting}>
+                     {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileUp className="mr-2 h-4 w-4" />}
+                    هاوردەکردنی داتا
+                </Button>
+            </CardContent>
+            <CardFooter className="border-t border-destructive/20 pt-6 mt-6">
+                 <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive" disabled={isDeleting}>
+                            <AlertTriangle className="mr-2 h-4 w-4" />
+                            سڕینەوەی هەموو داتاکان
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent dir="rtl">
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>ئاگاداربە! کردارێکی مەترسیدارە</AlertDialogTitle>
+                            <AlertDialogDescription>
+                               ئەم کردارە هەموو داتاکانی ناو سیستەمەکەت دەسڕێتەوە، وەک کاڵاکان، کڕیارەکان، فرۆشتنەکان و هەموو شتێکی تر. ئەم کارە پاشگەزبوونەوەی نییە.
+                               <br/><br/>
+                               ئایا دڵنیایت دەتەوێت بەردەوام بیت؟
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
+                            <AlertDialogAction onClick={deleteAllData} className="bg-destructive hover:bg-destructive/90">
+                                بەڵێ، هەمووی بسڕەوە
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </CardFooter>
+        </Card>
+    );
+}
+
+
 export default function SettingsPage() {
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <PageHeader title="ڕێکخستنەکانی سیستەم" description="بەڕێوەبردنی بەکارهێنەران، پۆلەکان، و داتاکان." />
             
             <Tabs defaultValue="users" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="general">گشتی</TabsTrigger>
                     <TabsTrigger value="users">بەکارهێنەران</TabsTrigger>
+                    <TabsTrigger value="data">بەڕێوەبردنی داتا</TabsTrigger>
                 </TabsList>
                 <TabsContent value="general" className="mt-6">
                     <GeneralSettings />
                 </TabsContent>
                 <TabsContent value="users" className="mt-6">
                     <UserManagement />
+                </TabsContent>
+                <TabsContent value="data" className="mt-6">
+                    <DataManagement />
                 </TabsContent>
             </Tabs>
         </div>
