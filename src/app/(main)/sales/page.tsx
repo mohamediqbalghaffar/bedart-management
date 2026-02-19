@@ -5,7 +5,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Loader2, FileSpreadsheet, Trash2, Edit, ArrowUpDown, Search, Printer, FileDown } from "lucide-react";
+import { PlusCircle, Loader2, FileSpreadsheet, Trash2, Edit, ArrowUpDown, Search, Printer, FileDown, FileUp } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -22,6 +22,7 @@ import { PrintableReceipt } from './components/printable-receipt';
 import './printable-receipt.css';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import html2canvas from 'html2canvas';
+import { analyzePurchaseExcel } from '@/ai/flows/analyze-purchase-excel';
 
 
 // Matches the structure in backend.json for SellingForm
@@ -89,6 +90,122 @@ function SalesFormDialog({ formId, onSave, trigger }: { formId: string | null, o
                 </div>
             </DialogContent>
         </Dialog>
+    );
+}
+
+function UploadSalesFormButton({ onSave }: { onSave: () => void }) {
+    const [isParsing, setIsParsing] = useState(false);
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [initialItems, setInitialItems] = useState<any[] | undefined>(undefined);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const { toast } = useToast();
+    const firestore = useFirestore();
+
+    const productsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return collection(firestore, 'products');
+    }, [firestore]);
+    
+    type ProductForContext = {
+        productName: string;
+    };
+    const { data: allProducts } = useCollection<ProductForContext>(productsQuery);
+
+
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setIsParsing(true);
+        toast({ title: '...شیکردنەوەی فایل' });
+
+        try {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const dataUri = e.target?.result;
+                if (typeof dataUri !== 'string') {
+                    toast({ variant: 'destructive', title: "هەڵە لە خوێندنەوەی فایل" });
+                    setIsParsing(false);
+                    return;
+                }
+                
+                try {
+                    const existingProductNames = allProducts?.map(p => p.productName) || [];
+                    const result = await analyzePurchaseExcel({ documentDataUri: dataUri, existingProductNames });
+                    
+                    const newItems = result.map(item => ({
+                        product: item.product,
+                        quantity: item.quantity,
+                        unitPrice: item.unitPrice, // AI extracts price, we use it as selling price
+                        category: item.category,
+                    }));
+
+                    if (newItems.length > 0) {
+                        setInitialItems(newItems);
+                        setDialogOpen(true);
+                    } else {
+                        toast({ variant: 'destructive', title: "هیچ کاڵایەک نەدۆزرایەوە", description: "AI نەیتوانی هیچ کاڵایەک لەم فایلە دەربهێنێت." });
+                    }
+
+                } catch (aiError: any) {
+                     console.error("AI analysis failed:", aiError);
+                     if (aiError.message && aiError.message.includes('503')) {
+                        toast({ variant: 'destructive', title: "خزمەتگوزاری سەرقاڵە", description: "مۆدێلی AI لەکارکەوتووە. تکایە چەند خولەکێکی تر هەوڵبدەرەوە." });
+                     } else {
+                        toast({ variant: 'destructive', title: "هەڵە لە شیکردنەوەی فایل", description: "AI نەیتوانی داتاکان دەربهێنێت." });
+                     }
+                } finally {
+                    setIsParsing(false);
+                     if (fileInputRef.current) {
+                        fileInputRef.current.value = "";
+                    }
+                }
+            };
+            reader.readAsDataURL(file);
+
+        } catch (error) {
+            console.error("File processing error:", error);
+            toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "پرۆسێسی فایلەکە سەرکەوتوو نەبوو." });
+            setIsParsing(false);
+        }
+    };
+    
+    const triggerUpload = () => fileInputRef.current?.click();
+
+    return (
+        <>
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+                accept="image/jpeg, image/png, application/pdf"
+            />
+            <Button onClick={triggerUpload} disabled={isParsing} variant="outline">
+                {isParsing ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <FileUp />}
+                هاوردەکردنی پسوولە
+            </Button>
+
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogContent className="sm:max-w-4xl" dir="rtl">
+                    <DialogHeader>
+                        <div className="text-center p-4">
+                            <DialogTitle className="text-2xl font-bold">BedArt Group</DialogTitle>
+                            <DialogDescription className="text-sm">
+                               وردبینی زانیارییەکان بکە و پاشەکەوتی بکە.
+                            </DialogDescription>
+                        </div>
+                    </DialogHeader>
+                    <div className="max-h-[80vh] overflow-y-auto p-2">
+                        <SalesForm 
+                            formId={null} 
+                            onSave={() => { onSave(); setDialogOpen(false); }} 
+                            initialItems={initialItems} 
+                        />
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }
 
@@ -412,16 +529,19 @@ function SalesList() {
     return (
         <>
             <PageHeader title="بەڕێوەبردنی فرۆشتن" description="تۆماری فۆڕمەکانی فرۆشتن لێرە ببینە و زیاد بکە.">
-                 <SalesFormDialog
-                    formId={null}
-                    onSave={handleFormSave}
-                    trigger={
-                        <Button>
-                            <PlusCircle />
-                            دروستکردنی فۆڕمی فرۆشتن
-                        </Button>
-                    }
-                />
+                 <div className="flex items-center gap-2">
+                    <SalesFormDialog
+                        formId={null}
+                        onSave={handleFormSave}
+                        trigger={
+                            <Button>
+                                <PlusCircle />
+                                دروستکردنی فۆڕمی فرۆشتن
+                            </Button>
+                        }
+                    />
+                    <UploadSalesFormButton onSave={handleFormSave} />
+                </div>
             </PageHeader>
             <Card>
                 <CardHeader>

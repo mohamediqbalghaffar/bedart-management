@@ -61,6 +61,7 @@ type SalesFormValues = z.infer<typeof salesFormSchema>;
 type SalesFormProps = {
     formId?: string | null;
     onSave?: () => void;
+    initialItems?: any[];
 };
 
 
@@ -131,7 +132,7 @@ function SalesFormItemRow({
     );
 }
 
-export function SalesForm({ formId, onSave }: SalesFormProps) {
+export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -147,7 +148,7 @@ export function SalesForm({ formId, onSave }: SalesFormProps) {
       customerPhone: "",
       customerAddress: "",
       issueDate: format(new Date(), "yyyy-MM-dd"),
-      items: [{ product: "", quantity: 1, unitPrice: 0, category: 'Mattress' }],
+      items: initialItems || [{ product: "", quantity: 1, unitPrice: 0, category: 'Mattress' }],
       deliveryCost: 0,
       discountValue: 0,
       paymentStatus: "Fully Paid",
