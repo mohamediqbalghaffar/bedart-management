@@ -10,13 +10,13 @@ import { useAuth } from '@/contexts/auth-context';
 import { Button } from '../ui/button';
 
 const allNavLinks = [
-  { href: '/dashboard', label: 'داشبۆرد', icon: Home, roles: ['admin'] },
-  { href: '/sales', label: 'فرۆشتنەکان', icon: ShoppingCart, roles: ['admin', 'salesman'] },
-  { href: '/purchases', label: 'کڕینەکان', icon: Package, roles: ['admin'] },
-  { href: '/stock', label: 'کۆگا', icon: Archive, roles: ['admin', 'salesman'] },
-  { href: '/customers', label: 'کڕیارەکان', icon: Users, roles: ['admin'] },
-  { href: '/suppliers', label: 'دابینکەران', icon: Building, roles: ['admin'] },
-  { href: '/expenses', label: 'خەرجییەکان', icon: DollarSign, roles: ['admin'] },
+  { href: '/dashboard', label: 'داشبۆرد', icon: Home, roles: ['admin', 'data manager', 'salesman'] },
+  { href: '/sales', label: 'فرۆشتنەکان', icon: ShoppingCart, roles: ['admin', 'data manager', 'salesman'] },
+  { href: '/purchases', label: 'کڕینەکان', icon: Package, roles: ['admin', 'data manager'] },
+  { href: '/stock', label: 'کۆگا', icon: Archive, roles: ['admin', 'data manager', 'salesman'] },
+  { href: '/customers', label: 'کڕیارەکان', icon: Users, roles: ['admin', 'data manager', 'salesman'] },
+  { href: '/suppliers', label: 'دابینکەران', icon: Building, roles: ['admin', 'data manager'] },
+  { href: '/expenses', label: 'خەرجییەکان', icon: DollarSign, roles: ['admin', 'data manager'] },
 ];
 
 const settingsLink = { href: '/settings', label: 'ڕێکخستنەکان', icon: Settings, roles: ['admin'] };
@@ -26,7 +26,7 @@ export function SidebarNav() {
   const pathname = usePathname();
   const { role, logout } = useAuth();
 
-  const navLinks = allNavLinks.filter(link => role && link.roles.includes(role));
+  const navLinks = allNavLinks.filter(link => role && link.roles.includes(role.toLowerCase()));
 
   return (
     <div className="hidden border-r bg-muted/40 md:block">
@@ -56,7 +56,7 @@ export function SidebarNav() {
         </div>
         <div className="mt-auto p-4 space-y-4">
             <Separator />
-            {role === 'admin' && (
+            {role?.toLowerCase() === 'admin' && (
                  <Link
                     href={settingsLink.href}
                     className={cn(
