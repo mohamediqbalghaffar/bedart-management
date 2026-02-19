@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle, Loader2, FileSpreadsheet, Trash2, Edit, ArrowUpDown, Search, Printer } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { SalesForm } from "./components/sales-form";
 import { useFirestore, useCollection, useMemoFirebase, collection, deleteDoc, doc, getDocs, runTransaction, getDoc } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
@@ -171,7 +171,9 @@ function ReceiptPreview({ formId }: { formId: string }) {
     const firestore = useFirestore();
     const [printData, setPrintData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isPrinting, setIsPrinting] = useState(false);
     const { toast } = useToast();
+    const receiptRef = useRef(null);
 
     useEffect(() => {
         const fetchPrintData = async () => {
@@ -218,6 +220,20 @@ function ReceiptPreview({ formId }: { formId: string }) {
         fetchPrintData();
     }, [formId, firestore, toast]);
 
+    useEffect(() => {
+        if (isPrinting) {
+            const timer = setTimeout(() => {
+                window.print();
+                setIsPrinting(false);
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, [isPrinting]);
+
+    const handlePrint = () => {
+        setIsPrinting(true);
+    };
+
     if (isLoading) {
         return <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
     }
@@ -226,17 +242,35 @@ function ReceiptPreview({ formId }: { formId: string }) {
         return <div className="text-center p-8 text-muted-foreground">داتا بۆ ئەم پسوولەیە نەدۆزرایەوە.</div>
     }
 
+    const receiptComponent = (
+        <PrintableReceipt
+            ref={receiptRef}
+            formData={printData.formData}
+            products={printData.products}
+            payments={printData.payments}
+            companyInfo={printData.companyInfo}
+        />
+    );
+
     return (
-        <div className="bg-gray-200/80 dark:bg-gray-800/50 p-4 rounded-lg overflow-auto">
-             <div className="bg-white mx-auto max-w-[800px]">
-                <PrintableReceipt
-                    formData={printData.formData}
-                    products={printData.products}
-                    payments={printData.payments}
-                    companyInfo={printData.companyInfo}
-                />
+        <>
+            <div className="bg-gray-200/80 dark:bg-gray-800/50 p-4 rounded-lg overflow-auto">
+                 <div className="bg-white mx-auto max-w-[800px]">
+                    {receiptComponent}
+                </div>
             </div>
-        </div>
+            <DialogFooter className="pt-4 sm:justify-start">
+                 <Button onClick={handlePrint} disabled={isPrinting}>
+                    {isPrinting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
+                    چاپکردن / دابەزاندن
+                </Button>
+            </DialogFooter>
+            {isPrinting && (
+                 <div id="printable-area">
+                    {receiptComponent}
+                </div>
+            )}
+        </>
     );
 }
 
