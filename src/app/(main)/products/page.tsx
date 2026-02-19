@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle, Loader2, FileDown, FileUp, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { useFirestore, useCollection, useMemoFirebase, collection, writeBatch, doc } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, collection, writeBatch, doc, getDocs, query, where } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AddProductForm } from './components/add-product-form';
@@ -15,11 +15,22 @@ import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { ProductCategory } from '@/lib/types';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export type ProductDefinition = {
     productName: string;
     category: 'Mattress' | 'Bed' | 'Pillow' | 'Cover';
     sellingPrice?: number;
+};
+
+const productCategories: ProductCategory[] = ["Mattress", "Bed", "Pillow", "Cover"];
+const categoryTranslations: Record<ProductCategory, string> = {
+  Mattress: "دۆشەک",
+  Bed: "تەخت",
+  Pillow: "سەرین",
+  Cover: "بەرگ",
 };
 
 // Component to add a new product definition
@@ -162,7 +173,7 @@ function UploadItemsButton({ onUploadSuccess, existingProducts }: { onUploadSucc
                     <div className="max-h-96 overflow-auto">
                         <Table>
                             <TableHeader><TableRow><TableHead>ناوی کاڵا</TableHead><TableHead>پۆل</TableHead><TableHead>نرخی فرۆشتن</TableHead></TableRow></TableHeader>
-                            <TableBody>{newProducts.map((p, i) => ( <TableRow key={i}><TableCell>{p.productName}</TableCell><TableCell>{p.category}</TableCell><TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(p.sellingPrice || 0)}</TableCell></TableRow>))}</TableBody>
+                            <TableBody>{newProducts.map((p, i) => ( <TableRow key={i}><TableCell>{p.productName}</TableCell><TableCell>{categoryTranslations[p.category]}</TableCell><TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(p.sellingPrice || 0)}</TableCell></TableRow>))}</TableBody>
                         </Table>
                     </div>
                     <DialogFooter>
@@ -176,14 +187,17 @@ function UploadItemsButton({ onUploadSuccess, existingProducts }: { onUploadSucc
 }
 
 // Component to display the list of product definitions
-function ProductDefinitionsList({ products, isLoading, onProductUpdated, onSearchTermChange, searchTerm }: {
+function ProductDefinitionsList({ products, isLoading, onProductUpdated, onBulkUpdate, searchTerm, onSearchTermChange }: {
     products: WithId<ProductDefinition>[] | null,
     isLoading: boolean,
     onProductUpdated: () => void,
-    onSearchTermChange: (value: string) => void,
-    searchTerm: string
+    onBulkUpdate: (ids: string[], newCategory: ProductCategory) => Promise<void>,
+    searchTerm: string,
+    onSearchTermChange: (value: string) => void
 }) {
     
+    const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
+
     const filteredProducts = useMemo(() => {
         if (!products) return [];
         if (!searchTerm) return products;
@@ -193,18 +207,53 @@ function ProductDefinitionsList({ products, isLoading, onProductUpdated, onSearc
         );
     }, [products, searchTerm]);
 
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            setSelectedProducts(new Set(filteredProducts.map(p => p.id)));
+        } else {
+            setSelectedProducts(new Set());
+        }
+    };
+
+    const handleSelectionChange = (id: string, isSelected: boolean) => {
+        setSelectedProducts(prev => {
+            const newSet = new Set(prev);
+            if (isSelected) {
+                newSet.add(id);
+            } else {
+                newSet.delete(id);
+            }
+            return newSet;
+        });
+    };
+
+    const handleApplyBulkChange = (newCategory: ProductCategory) => {
+        if (selectedProducts.size === 0) return;
+        onBulkUpdate(Array.from(selectedProducts), newCategory).then(() => {
+            setSelectedProducts(new Set());
+        });
+    };
+
     return (
         <Card>
             <CardHeader>
                 <CardTitle>لیستی پێناسەی کاڵاکان</CardTitle>
-                <div className="relative w-full max-w-sm mt-4">
-                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="...گەڕان"
-                        className="pr-10"
-                        value={searchTerm}
-                        onChange={(e) => onSearchTermChange(e.target.value)}
-                    />
+                 <div className="flex justify-between items-center gap-4 mt-4">
+                    <div className="relative w-full max-w-sm">
+                        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="...گەڕان"
+                            className="pr-10"
+                            value={searchTerm}
+                            onChange={(e) => onSearchTermChange(e.target.value)}
+                        />
+                    </div>
+                    {selectedProducts.size > 0 && (
+                        <div className="flex items-center gap-2">
+                             <span>{selectedProducts.size} دانە هەڵبژێردراوە</span>
+                             <Button variant="ghost" size="sm" onClick={() => setSelectedProducts(new Set())}>هەڵوەشاندنەوە</Button>
+                        </div>
+                    )}
                 </div>
             </CardHeader>
             <CardContent>
@@ -213,18 +262,49 @@ function ProductDefinitionsList({ products, isLoading, onProductUpdated, onSearc
                         <Table dir="rtl">
                             <TableHeader className="sticky top-0 bg-card z-10">
                                 <TableRow>
+                                    <TableHead className="w-[50px] text-center">
+                                         <Checkbox
+                                            checked={filteredProducts.length > 0 && selectedProducts.size === filteredProducts.length}
+                                            onCheckedChange={handleSelectAll}
+                                            aria-label="Select all rows"
+                                        />
+                                    </TableHead>
                                     <TableHead className="text-right w-[20%]">کردارەکان</TableHead>
-                                    <TableHead className="text-right w-[30%]">پۆل</TableHead>
+                                    <TableHead className="text-right w-[30%]">
+                                        <div className="flex items-center gap-2 justify-end">
+                                            {selectedProducts.size > 0 ? (
+                                                <Select onValueChange={handleApplyBulkChange}>
+                                                    <SelectTrigger className="w-[200px] border-dashed h-8">
+                                                        <SelectValue placeholder="گۆڕینی پۆلی هەڵبژێردراو" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {productCategories.map(cat => (
+                                                            <SelectItem key={cat} value={cat}>{categoryTranslations[cat]}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            ) : (
+                                                <span>پۆل</span>
+                                            )}
+                                        </div>
+                                    </TableHead>
                                     <TableHead className="text-left w-[50%]">ناوی کاڵا</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {isLoading ? (
-                                    <TableRow><TableCell colSpan={3} className="h-24 text-center"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></TableCell></TableRow>
+                                    <TableRow><TableCell colSpan={4} className="h-24 text-center"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></TableCell></TableRow>
                                 ) : !filteredProducts || filteredProducts.length === 0 ? (
-                                    <TableRow><TableCell colSpan={3} className="py-8 text-center text-muted-foreground">هیچ پێناسەیەکی کاڵا تۆمار نەکراوە.</TableCell></TableRow>
+                                    <TableRow><TableCell colSpan={4} className="py-8 text-center text-muted-foreground">هیچ پێناسەیەکی کاڵا تۆمار نەکراوە.</TableCell></TableRow>
                                 ) : (
-                                    filteredProducts.map((product) => <EditableProductRow key={product.id} product={product} onProductUpdated={onProductUpdated} />)
+                                    filteredProducts.map((product) => 
+                                    <EditableProductRow 
+                                        key={product.id} 
+                                        product={product} 
+                                        onProductUpdated={onProductUpdated}
+                                        isSelected={selectedProducts.has(product.id)}
+                                        onSelectionChange={handleSelectionChange} 
+                                    />)
                                 )}
                             </TableBody>
                         </Table>
@@ -239,7 +319,7 @@ function ProductDefinitionsList({ products, isLoading, onProductUpdated, onSearc
 export default function ProductsPage() {
     const [refreshKey, setRefreshKey] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
-    const handleSave = () => setRefreshKey(prev => prev + 1);
+    const { toast } = useToast();
     
     const firestore = useFirestore();
     const definitionsQuery = useMemoFirebase(() => {
@@ -247,6 +327,49 @@ export default function ProductsPage() {
         return collection(firestore, 'product_definitions');
     }, [firestore, refreshKey]);
     const { data: products, isLoading } = useCollection<ProductDefinition>(definitionsQuery);
+
+    const handleSave = () => setRefreshKey(prev => prev + 1);
+
+    const handleBulkUpdateCategory = async (ids: string[], newCategory: ProductCategory) => {
+        if (!firestore || ids.length === 0) return;
+
+        const toastId = toast({ title: '...نوێکردنەوەی پۆلەکان', description: `Updating ${ids.length} products.` }).id;
+        
+        try {
+            const batch = writeBatch(firestore);
+            
+            const definitionsToUpdate = products?.filter(p => ids.includes(p.id)) || [];
+            if (definitionsToUpdate.length === 0) throw new Error("No products found to update.");
+
+            const productNamesToUpdate = [...new Set(definitionsToUpdate.map(p => p.productName))];
+
+            // 1. Update the product_definitions
+            definitionsToUpdate.forEach(def => {
+                const defRef = doc(firestore, 'product_definitions', def.id);
+                batch.update(defRef, { category: newCategory });
+            });
+
+            // 2. Query for all affected stock items in batches of 30 (Firestore 'in' query limit)
+            const CHUNK_SIZE = 30;
+            for (let i = 0; i < productNamesToUpdate.length; i += CHUNK_SIZE) {
+                const chunk = productNamesToUpdate.slice(i, i + CHUNK_SIZE);
+                if (chunk.length > 0) {
+                    const stockQuery = query(collection(firestore, 'products'), where('productName', 'in', chunk));
+                    const stockSnap = await getDocs(stockQuery);
+                    stockSnap.forEach(stockDoc => {
+                        batch.update(stockDoc.ref, { category: newCategory });
+                    });
+                }
+            }
+
+            await batch.commit();
+            toast.update(toastId, { title: 'سەرکەوتوو بوو', description: 'پۆلەکان بە سەرکەوتوویی نوێکرانەوە.', className: 'bg-accent text-accent-foreground' });
+            handleSave();
+        } catch (error) {
+            console.error("Error during bulk category update:", error);
+            toast.update(toastId, { variant: "destructive", title: "هەڵەیەک ڕوویدا", description: "نوێکردنەوەی پۆلەکان سەرکەوتوو نەبوو." });
+        }
+    };
 
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
@@ -261,6 +384,7 @@ export default function ProductsPage() {
                 products={products} 
                 isLoading={isLoading} 
                 onProductUpdated={handleSave} 
+                onBulkUpdate={handleBulkUpdateCategory}
                 searchTerm={searchTerm} 
                 onSearchTermChange={setSearchTerm} 
             />

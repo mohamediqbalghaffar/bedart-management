@@ -16,6 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { ProductDefinition } from '../page';
 import { ProductCategory } from '@/lib/types';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 const productSchema = z.object({
@@ -33,7 +34,7 @@ const categoryTranslations: Record<ProductCategory, string> = {
   Cover: "بەرگ",
 };
 
-export function EditableProductRow({ product, onProductUpdated }: { product: WithId<ProductDefinition>, onProductUpdated: () => void }) {
+export function EditableProductRow({ product, onProductUpdated, isSelected, onSelectionChange }: { product: WithId<ProductDefinition>, onProductUpdated: () => void, isSelected: boolean, onSelectionChange: (id: string, checked: boolean) => void }) {
     const firestore = useFirestore();
     const { toast } = useToast();
     const [isEditing, setIsEditing] = useState(false);
@@ -61,8 +62,8 @@ export function EditableProductRow({ product, onProductUpdated }: { product: Wit
             const definitionRef = doc(firestore, "product_definitions", product.id);
             batch.update(definitionRef, data);
 
-            // If product name changed, update all related stock items
-            if (oldProductName !== newProductName) {
+            // If product name or category changed, update all related stock items
+            if (oldProductName !== newProductName || product.category !== data.category) {
                 const stockQuery = query(collection(firestore, 'products'), where('productName', '==', oldProductName));
                 const stockSnap = await getDocs(stockQuery);
                 stockSnap.forEach(stockDoc => {
@@ -105,6 +106,13 @@ export function EditableProductRow({ product, onProductUpdated }: { product: Wit
         return (
             <Form {...form}>
                 <TableRow className="bg-secondary/20">
+                    <TableCell>
+                        <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={(checked) => onSelectionChange(product.id, !!checked)}
+                            disabled
+                        />
+                    </TableCell>
                      <TableCell className="text-right">
                         <div className="flex gap-2">
                             <Button size="icon" variant="ghost" onClick={form.handleSubmit(handleSave)} disabled={isSaving}>
@@ -136,6 +144,12 @@ export function EditableProductRow({ product, onProductUpdated }: { product: Wit
 
     return (
         <TableRow key={product.id}>
+             <TableCell>
+                <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={(checked) => onSelectionChange(product.id, !!checked)}
+                />
+            </TableCell>
              <TableCell className="text-right">
                 <div className="flex gap-2">
                     <Button size="icon" variant="ghost" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4 text-blue-500"/></Button>
