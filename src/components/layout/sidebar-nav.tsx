@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -19,7 +18,7 @@ const allNavLinks = [
   { href: '/expenses', label: 'خەرجییەکان', icon: DollarSign, roles: ['admin', 'data manager'] },
 ];
 
-const settingsLink = { href: '/settings', label: 'ڕێکخستنەکان', icon: Settings, roles: ['admin'] };
+const settingsLink = { href: '/settings', label: 'ڕێکخستنەکان', icon: Settings, roles: ['admin', 'data manager'] };
 
 
 export function SidebarNav() {
@@ -56,7 +55,7 @@ export function SidebarNav() {
         </div>
         <div className="mt-auto p-4 space-y-4">
             <Separator />
-            {role?.toLowerCase() === 'admin' && (
+            {role && settingsLink.roles.includes(role.toLowerCase()) && (
                  <Link
                     href={settingsLink.href}
                     className={cn(
@@ -77,5 +76,3 @@ export function SidebarNav() {
     </div>
   );
 }
-
-    

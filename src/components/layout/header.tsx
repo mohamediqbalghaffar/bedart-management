@@ -16,7 +16,7 @@ const allNavLinks = [
   { href: '/customers', label: 'کڕیارەکان', icon: Users, roles: ['admin', 'data manager', 'salesman'] },
   { href: '/suppliers', label: 'دابینکەران', icon: Building, roles: ['admin', 'data manager'] },
   { href: '/expenses', label: 'خەرجییەکان', icon: DollarSign, roles: ['admin', 'data manager'] },
-  { href: '/settings', label: 'ڕێکخستنەکان', icon: Settings, roles: ['admin'] },
+  { href: '/settings', label: 'ڕێکخستنەکان', icon: Settings, roles: ['admin', 'data manager'] },
 ];
 
 export function Header() {
