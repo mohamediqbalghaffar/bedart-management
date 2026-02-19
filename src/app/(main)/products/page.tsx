@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useRef } from 'react';
@@ -13,6 +14,7 @@ import { AddProductForm } from './components/add-product-form';
 import { EditableProductRow } from './components/editable-product-row';
 import { useToast } from '@/hooks/use-toast';
 import { analyzePurchaseExcel } from '@/ai/flows/analyze-purchase-excel';
+import { analyzeSqlExport } from '@/ai/flows/analyze-sql-export';
 
 export type ProductDefinition = {
     productName: string;
@@ -70,29 +72,70 @@ function UploadProductsButton({ onUploadComplete }: { onUploadComplete: () => vo
         toast({ title: '...شیکردنەوەی فایل' });
 
         try {
-            const dataUri = await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    if (typeof e.target?.result === 'string') {
-                        resolve(e.target.result);
-                    } else {
-                        reject(new Error("Failed to read file as data URI."));
-                    }
-                };
-                reader.onerror = (error) => reject(error);
-                reader.readAsDataURL(file);
-            });
+            let extractedRecords: { productName: string; category: any; }[] = [];
 
-            const result = await analyzePurchaseExcel({ documentDataUri: dataUri, existingProductNames: existingDefinitions?.map(d => d.productName) || [] });
+            if (file.type.startsWith('image/') || file.type === 'application/pdf') {
+                const dataUri = await new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => e.target?.result ? resolve(e.target.result as string) : reject(new Error("Failed to read file."));
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+                
+                const result = await analyzePurchaseExcel({ 
+                    documentDataUri: dataUri, 
+                    existingProductNames: existingDefinitions?.map(d => d.productName) || [] 
+                });
+                extractedRecords = result.map(item => ({
+                    productName: item.product,
+                    category: item.category,
+                }));
+
+            } else if (['text/plain', 'text/csv', 'application/json'].includes(file.type) || file.name.endsWith('.txt') || file.name.endsWith('.csv')) {
+                const textData = await file.text();
+                let csvData = textData;
+
+                if(file.type === 'application/json') {
+                    const jsonData = JSON.parse(textData);
+                    if (Array.isArray(jsonData) && jsonData.length > 0) {
+                        const headers = Object.keys(jsonData[0]);
+                        const csvHeader = headers.join(',');
+                        const csvRows = jsonData.map(row => headers.map(header => {
+                            const val = row[header];
+                            if (typeof val === 'string' && val.includes(',')) {
+                                return `"${val}"`;
+                            }
+                            return val;
+                        }).join(','));
+                        csvData = [csvHeader, ...csvRows].join('\n');
+                    } else {
+                        throw new Error("JSON فایلەکە دەبێت ئەڕایەک بێت لە ئۆبجێکت.");
+                    }
+                }
+                
+                const result = await analyzeSqlExport({ csvData: csvData });
+                
+                if (result.dataType !== 'products') {
+                    throw new Error(`AI داتاکانی وەک ${result.dataType} ناسییەوە، نەک وەک کاڵا.`);
+                }
+                extractedRecords = result.records;
+            } else {
+                throw new Error("جۆری فایلەکە پشتگیری نەکراوە.");
+            }
             
+            if (extractedRecords.length === 0) {
+                toast({ title: "هیچ کاڵایەکی نوێ نەدۆزرایەوە", description: "هیچ کاڵایەکی گونجاو لە فایلەکەدا نەبوو بۆ زیادکردن." });
+                return;
+            }
+
             const existingNames = new Set(existingDefinitions?.map(d => d.productName.toLowerCase()) || []);
             const uniqueNewProducts = new Map<string, any>();
 
-            result.forEach(item => {
-                const lowerCaseName = item.product.toLowerCase();
+            extractedRecords.forEach(item => {
+                const lowerCaseName = item.productName.toLowerCase();
                 if (!existingNames.has(lowerCaseName) && !uniqueNewProducts.has(lowerCaseName)) {
                     uniqueNewProducts.set(lowerCaseName, {
-                        productName: item.product,
+                        productName: item.productName,
                         category: item.category,
                         sellingPrice: 0,
                     });
@@ -110,9 +153,7 @@ function UploadProductsButton({ onUploadComplete }: { onUploadComplete: () => vo
 
         } catch (error: any) {
             console.error("File processing error:", error);
-            const errorMessage = error.message && error.message.includes('503') 
-                ? "خزمەتگوزاری سەرقاڵە، تکایە دواتر هەوڵبدەرەوە."
-                : "شیکردنەوەی فایلەکە سەرکەوتوو نەبوو.";
+            const errorMessage = error.message || "شیکردنەوەی فایلەکە سەرکەوتوو نەبوو.";
             toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: errorMessage });
         } finally {
             setIsParsing(false);
@@ -155,7 +196,7 @@ function UploadProductsButton({ onUploadComplete }: { onUploadComplete: () => vo
                 ref={fileInputRef}
                 onChange={handleFileChange}
                 className="hidden"
-                accept="image/jpeg, image/png, application/pdf"
+                accept="image/jpeg,image/png,application/pdf,text/plain,application/json,.csv,.txt"
             />
             <Button onClick={triggerUpload} disabled={isParsing} variant="outline">
                 {isParsing ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <FileUp />}
@@ -270,3 +311,5 @@ export default function ProductsPage() {
         </div>
     );
 }
+
+    
