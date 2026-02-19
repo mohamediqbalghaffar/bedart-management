@@ -83,7 +83,7 @@ function UploadProductsButton({ onUploadComplete }: { onUploadComplete: () => vo
                 reader.readAsDataURL(file);
             });
 
-            const result = await analyzePurchaseExcel({ documentDataUri: dataUri, existingProductNames: [] });
+            const result = await analyzePurchaseExcel({ documentDataUri: dataUri, existingProductNames: existingDefinitions?.map(d => d.productName) || [] });
             
             const existingNames = new Set(existingDefinitions?.map(d => d.productName.toLowerCase()) || []);
             const uniqueNewProducts = new Map<string, any>();
