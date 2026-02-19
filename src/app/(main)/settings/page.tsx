@@ -17,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogHeader, DialogDescription, DialogTitle, DialogTrigger, DialogContent } from '@/components/ui/dialog';
 import { AddUserForm } from './components/add-user-form';
 import { EditableUserRow } from './components/editable-user-row';
+import { analyzeSqlExport } from '@/ai/flows/analyze-sql-export';
 
 // General Settings Component
 type CompanyInfo = {
@@ -176,7 +177,8 @@ function DataManagement() {
     const [isExporting, setIsExporting] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const excelFileInputRef = useRef<HTMLInputElement>(null);
+    const csvFileInputRef = useRef<HTMLInputElement>(null);
 
     const collectionsToBackup = ['customers', 'selling_forms', 'buying_forms', 'expenses', 'products', 'stock_movements', 'suppliers', 'users'];
 
@@ -254,7 +256,7 @@ function DataManagement() {
         }
     };
     
-    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleExcelFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file || !firestore) return;
         
@@ -274,10 +276,12 @@ function DataManagement() {
 
                     if (collectionsToBackup.includes(sheetName) && jsonData.length > 0) {
                         for (const row of jsonData as any[]) {
+                            // Let Firestore generate ID
                             const docRef = doc(collection(firestore, sheetName));
                             let docData: any = { ...row, id: docRef.id };
 
-                            if (sheetName === 'products' && row.productName && row.stockLocation) {
+                             if (sheetName === 'products' && row.productName && row.stockLocation) {
+                                // Use composite ID for products
                                 const productId = `${row.productName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${row.stockLocation.toLowerCase().replace(/\s/g, '')}`;
                                 const specificDocRef = doc(firestore, sheetName, productId);
                                 docData = { ...row, id: productId };
@@ -297,11 +301,56 @@ function DataManagement() {
             toast({ variant: 'destructive', title: 'هەڵەیەک ڕوویدا', description: 'هاوردەکردن سەرکەوتوو نەبوو.' });
         } finally {
             setIsImporting(false);
-            if (fileInputRef.current) {
-                fileInputRef.current.value = "";
+            if (excelFileInputRef.current) {
+                excelFileInputRef.current.value = "";
             }
         }
     };
+
+    const handleCsvFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !firestore) return;
+        
+        setIsImporting(true);
+        toast({ title: '...شیکردنەوەی فایل', description: 'AI خەریکی شیکردنەوەی داتاکانە.' });
+        
+        try {
+            const text = await file.text();
+            const result = await analyzeSqlExport({ csvData: text });
+            
+            let count = 0;
+            toast({ title: '...هاوردەکردن', description: `AI داتاکانی وەک ${result.dataType} ناساندەوە. خەریکی هاوردەکردنە.` });
+
+            switch (result.dataType) {
+                case 'products':
+                    for (const record of result.records) {
+                        const productId = `${record.productName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${record.stockLocation.toLowerCase().replace(/\s/g, '')}`;
+                        const docRef = doc(firestore, 'products', productId);
+                        await setDoc(docRef, { ...record, id: productId }, { merge: true });
+                        count++;
+                    }
+                    break;
+                case 'customers':
+                case 'suppliers':
+                    for (const record of result.records) {
+                        const docRef = doc(collection(firestore, result.dataType));
+                        await setDoc(docRef, { ...record, id: docRef.id });
+                        count++;
+                    }
+                    break;
+            }
+             toast({ title: 'سەرکەوتوو بوو', description: `${count} تۆماری نوێ لە جۆری ${result.dataType} بە سەرکەوتوویی زیادکرا.`, className: 'bg-accent text-accent-foreground' });
+
+        } catch (error) {
+            console.error("Error importing from CSV with AI:", error);
+            toast({ variant: 'destructive', title: 'هەڵەیەک ڕوویدا', description: 'هاوردەکردن لە CSV سەرکەوتوو نەبوو.' });
+        } finally {
+             setIsImporting(false);
+            if (csvFileInputRef.current) {
+                csvFileInputRef.current.value = "";
+            }
+        }
+    }
 
     const deleteAllData = async () => {
         if (!firestore) return;
@@ -348,18 +397,29 @@ function DataManagement() {
                 </Button>
                 <Button variant="outline" onClick={downloadTemplate}>
                     <FileDown className="mr-2 h-4 w-4" />
-                    دابەزاندنی نموونە
+                    دابەزاندنی نموونە (Excel)
                 </Button>
                  <input
                     type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileUpload}
+                    ref={excelFileInputRef}
+                    onChange={handleExcelFileUpload}
                     className="hidden"
                     accept=".xlsx, .xls"
                 />
-                <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isImporting}>
+                <Button variant="outline" onClick={() => excelFileInputRef.current?.click()} disabled={isImporting}>
                      {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileUp className="mr-2 h-4 w-4" />}
-                    هاوردەکردنی داتا
+                    هاوردەکردن لە Excel
+                </Button>
+                 <input
+                    type="file"
+                    ref={csvFileInputRef}
+                    onChange={handleCsvFileUpload}
+                    className="hidden"
+                    accept=".csv"
+                />
+                 <Button variant="outline" onClick={() => csvFileInputRef.current?.click()} disabled={isImporting}>
+                     {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileUp className="mr-2 h-4 w-4" />}
+                    هاوردەکردن لە SQL (CSV)
                 </Button>
             </CardContent>
             <CardFooter className="border-t border-destructive/20 pt-6 mt-6">
