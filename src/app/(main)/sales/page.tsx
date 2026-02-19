@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
@@ -19,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PaymentStatus, PaymentType } from '@/lib/types';
 import { PrintableReceipt } from './components/printable-receipt';
 import './printable-receipt.css';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 
 // Matches the structure in backend.json for SellingForm
@@ -89,7 +91,7 @@ function SalesFormDialog({ formId, onSave, trigger }: { formId: string | null, o
     );
 }
 
-function DirectPrintButton({ formId }: { formId: string }) {
+function DirectPrintButton({ formId, id }: { formId: string, id?: string }) {
     const firestore = useFirestore();
     const { toast } = useToast();
     const [isPrinting, setIsPrinting] = useState(false);
@@ -147,7 +149,7 @@ function DirectPrintButton({ formId }: { formId: string }) {
 
     return (
         <>
-            <Button variant="ghost" size="icon" onClick={handlePrint} disabled={isPrinting}>
+            <Button id={id} variant="ghost" size="icon" onClick={handlePrint} disabled={isPrinting}>
                 {isPrinting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4 text-green-500" />}
             </Button>
             {isPrinting && printData && (
@@ -429,11 +431,26 @@ function SalesList() {
                                                 </AlertDialogContent>
                                             </AlertDialog>
                                             <Dialog>
-                                                <DialogTrigger asChild>
-                                                    <Button variant="ghost" size="icon">
-                                                        <FileSpreadsheet className="h-4 w-4" />
-                                                    </Button>
-                                                </DialogTrigger>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon">
+                                                            <FileSpreadsheet className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent>
+                                                        <DialogTrigger asChild>
+                                                            <DropdownMenuItem>
+                                                                بینینی فایل
+                                                            </DropdownMenuItem>
+                                                        </DialogTrigger>
+                                                        <DropdownMenuItem onSelect={(e) => {
+                                                            e.preventDefault();
+                                                            document.getElementById(`print-btn-${sale.id}`)?.click()
+                                                        }}>
+                                                            چاپکردنی فایل
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
                                                 <DialogContent className="sm:max-w-2xl" dir="rtl">
                                                     <DialogHeader>
                                                         <DialogTitle>وردەکارییەکانی فۆڕمی فرۆشتن</DialogTitle>
@@ -441,7 +458,9 @@ function SalesList() {
                                                     <SalesDetails formId={sale.id} />
                                                 </DialogContent>
                                             </Dialog>
-                                            <DirectPrintButton formId={sale.id} />
+                                            <div className="hidden">
+                                                <DirectPrintButton formId={sale.id} id={`print-btn-${sale.id}`} />
+                                            </div>
                                         </div>
                                     </TableCell>
                                 </TableRow>
