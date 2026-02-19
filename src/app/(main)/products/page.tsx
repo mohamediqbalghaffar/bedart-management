@@ -333,7 +333,7 @@ export default function ProductsPage() {
     const handleBulkUpdateCategory = async (ids: string[], newCategory: ProductCategory) => {
         if (!firestore || ids.length === 0) return;
 
-        const toastId = toast({ title: '...نوێکردنەوەی پۆلەکان', description: `Updating ${ids.length} products.` }).id;
+        const { update: updateToast } = toast({ title: '...نوێکردنەوەی پۆلەکان', description: `Updating ${ids.length} products.` });
         
         try {
             const batch = writeBatch(firestore);
@@ -363,11 +363,11 @@ export default function ProductsPage() {
             }
 
             await batch.commit();
-            toast.update(toastId, { title: 'سەرکەوتوو بوو', description: 'پۆلەکان بە سەرکەوتوویی نوێکرانەوە.', className: 'bg-accent text-accent-foreground' });
+            updateToast({ title: 'سەرکەوتوو بوو', description: 'پۆلەکان بە سەرکەوتوویی نوێکرانەوە.', className: 'bg-accent text-accent-foreground' });
             handleSave();
         } catch (error) {
             console.error("Error during bulk category update:", error);
-            toast.update(toastId, { variant: "destructive", title: "هەڵەیەک ڕوویدا", description: "نوێکردنەوەی پۆلەکان سەرکەوتوو نەبوو." });
+            updateToast({ variant: "destructive", title: "هەڵەیەک ڕوویدا", description: "نوێکردنەوەی پۆلەکان سەرکەوتوو نەبوو." });
         }
     };
 
