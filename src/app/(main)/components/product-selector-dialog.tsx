@@ -30,6 +30,7 @@ type EnrichedProduct = WithId<ProductDefinition> & {
 
 type ProductSelectorDialogProps = {
   onProductSelect: (product: { name: string; price: number, purchasePrice?: number, category: ProductCategory }) => void;
+  filterByStock?: boolean;
 };
 
 const productCategories: ProductCategory[] = ["Mattress", "Bed", "Pillow", "Cover"];
@@ -42,7 +43,7 @@ const categoryTranslations: Record<ProductCategory, string> = {
 };
 
 
-export function ProductSelectorDialog({ onProductSelect }: ProductSelectorDialogProps) {
+export function ProductSelectorDialog({ onProductSelect, filterByStock = true }: ProductSelectorDialogProps) {
   const firestore = useFirestore();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<ProductCategory | 'all'>('all');
@@ -61,17 +62,19 @@ export function ProductSelectorDialog({ onProductSelect }: ProductSelectorDialog
   const { data: stock, isLoading: isLoadingStock } = useCollection<ProductStock>(stockQuery);
 
   const enrichedProducts = useMemo(() => {
-    if (!definitions || !stock) return [];
+    if (!definitions) return [];
 
     const stockMap = new Map<string, { totalQuantity: number, lastPurchasePrice?: number }>();
-    stock.forEach(s => {
-        const current = stockMap.get(s.productName) || { totalQuantity: 0 };
-        current.totalQuantity += s.currentQuantity;
-        if(s.unitPrice) {
-            current.lastPurchasePrice = s.unitPrice;
-        }
-        stockMap.set(s.productName, current);
-    });
+    if (stock) {
+        stock.forEach(s => {
+            const current = stockMap.get(s.productName) || { totalQuantity: 0 };
+            current.totalQuantity += s.currentQuantity;
+            if(s.unitPrice) {
+                current.lastPurchasePrice = s.unitPrice;
+            }
+            stockMap.set(s.productName, current);
+        });
+    }
     
     let enriched: EnrichedProduct[] = definitions.map(def => {
         const stockInfo = stockMap.get(def.productName);
@@ -89,9 +92,13 @@ export function ProductSelectorDialog({ onProductSelect }: ProductSelectorDialog
       enriched = enriched.filter(p => p.productName.toLowerCase().includes(searchTerm.toLowerCase()));
     }
     
-    return enriched.filter(p => p.currentQuantity > 0);
+    if (filterByStock) {
+        return enriched.filter(p => p.currentQuantity > 0);
+    }
     
-  }, [definitions, stock, searchTerm, categoryFilter]);
+    return enriched;
+    
+  }, [definitions, stock, searchTerm, categoryFilter, filterByStock]);
   
   const isLoading = isLoadingDefs || isLoadingStock;
 

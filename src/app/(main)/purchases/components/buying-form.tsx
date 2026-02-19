@@ -104,12 +104,13 @@ function BuyingFormItemRow({
                                         <DialogHeader>
                                             <DialogTitle>لیستی کاڵاکان</DialogTitle>
                                         </DialogHeader>
-                                        <ProductSelectorDialog onProductSelect={({ name, price, purchasePrice }) => {
+                                        <ProductSelectorDialog onProductSelect={({ name, price, purchasePrice, category }) => {
                                             form.setValue(`items.${index}.product`, name);
                                             form.setValue(`items.${index}.sellingPrice`, price);
                                             form.setValue(`items.${index}.unitPrice`, purchasePrice || 0);
+                                            form.setValue(`items.${index}.category`, category);
                                             setDialogOpen(false);
-                                        }} />
+                                        }} filterByStock={false} />
                                     </DialogContent>
                                 </Dialog>
                             </div>
