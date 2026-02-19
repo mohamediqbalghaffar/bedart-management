@@ -167,6 +167,78 @@ function DirectPrintButton({ formId, id }: { formId: string, id?: string }) {
     );
 }
 
+function ReceiptPreview({ formId }: { formId: string }) {
+    const firestore = useFirestore();
+    const [printData, setPrintData] = useState<any>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const { toast } = useToast();
+
+    useEffect(() => {
+        const fetchPrintData = async () => {
+            if (!firestore) {
+                setIsLoading(false);
+                return;
+            };
+            setIsLoading(true);
+    
+            try {
+                const formRef = doc(firestore, 'selling_forms', formId);
+                const productsRef = collection(firestore, `selling_forms/${formId}/selling_form_products`);
+                const paymentsRef = collection(firestore, `selling_forms/${formId}/payments`);
+                const companyInfoRef = doc(firestore, 'app_settings', 'companyInfo');
+    
+                const [formSnap, productsSnap, paymentsSnap, companyInfoSnap] = await Promise.all([
+                    getDoc(formRef),
+                    getDocs(productsRef),
+                    getDocs(paymentsRef),
+                    getDoc(companyInfoRef),
+                ]);
+    
+                if (!formSnap.exists()) {
+                    toast({ variant: 'destructive', title: 'هەڵە', description: 'پسوولە نەدۆزرایەوە.' });
+                    setIsLoading(false);
+                    return;
+                }
+    
+                setPrintData({
+                    formData: formSnap.data(),
+                    products: productsSnap.docs.map(d => d.data()),
+                    payments: paymentsSnap.docs.map(d => d.data()),
+                    companyInfo: companyInfoSnap.exists() ? companyInfoSnap.data() : null,
+                });
+    
+            } catch (error) {
+                console.error("Error preparing print data:", error);
+                toast({ variant: 'destructive', title: 'هەڵەیەک ڕوویدا', description: 'ئامادەکردنی داتا بۆ بینین سەرکەوتوو نەبوو.' });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        
+        fetchPrintData();
+    }, [formId, firestore, toast]);
+
+    if (isLoading) {
+        return <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    }
+    
+    if (!printData) {
+        return <div className="text-center p-8 text-muted-foreground">داتا بۆ ئەم پسوولەیە نەدۆزرایەوە.</div>
+    }
+
+    return (
+        <div className="bg-gray-200/80 dark:bg-gray-800/50 p-4 rounded-lg overflow-auto">
+             <div className="bg-white mx-auto max-w-[800px]">
+                <PrintableReceipt
+                    formData={printData.formData}
+                    products={printData.products}
+                    payments={printData.payments}
+                    companyInfo={printData.companyInfo}
+                />
+            </div>
+        </div>
+    );
+}
 
 function SalesList() {
     const firestore = useFirestore();
@@ -451,11 +523,11 @@ function SalesList() {
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
-                                                <DialogContent className="sm:max-w-2xl" dir="rtl">
+                                                <DialogContent className="sm:max-w-3xl" dir="rtl">
                                                     <DialogHeader>
-                                                        <DialogTitle>وردەکارییەکانی فۆڕمی فرۆشتن</DialogTitle>
+                                                        <DialogTitle>پێشبینینی پسوولە</DialogTitle>
                                                     </DialogHeader>
-                                                    <SalesDetails formId={sale.id} />
+                                                    <ReceiptPreview formId={sale.id} />
                                                 </DialogContent>
                                             </Dialog>
                                             <div className="hidden">
