@@ -7,8 +7,6 @@ import { useAuth } from '@/contexts/auth-context';
 import { useRouter, usePathname } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
-const salesmanAllowedPaths = ['/sales', '/stock', '/dashboard'];
-
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
@@ -18,8 +16,14 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     if (!isLoading) {
       if (!user) {
         router.push('/login');
-      } else if (user.role === 'Salesman' && !salesmanAllowedPaths.some(p => pathname.startsWith(p))) {
-         router.push('/sales');
+      } else if (user.role === 'Salesman') {
+        const allowedPages = user.allowedPages || [];
+        // If the salesman has no pages allowed, or is trying to access an unallowed page
+        if (allowedPages.length === 0) {
+            router.push('/login'); // Or an access denied page
+        } else if (!allowedPages.some(p => pathname.startsWith(p))) {
+            router.push(allowedPages[0]); // Redirect to the first allowed page
+        }
       }
     }
   }, [user, isLoading, router, pathname]);

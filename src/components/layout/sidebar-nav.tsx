@@ -25,9 +25,22 @@ const settingsLink = { href: '/settings', label: 'ڕێکخستنەکان', icon:
 
 export function SidebarNav() {
   const pathname = usePathname();
-  const { role, logout, user } = useAuth();
+  const { user, logout } = useAuth();
 
-  const navLinks = allNavLinks.filter(link => role && link.roles.includes(role.toLowerCase()));
+  const navLinks = allNavLinks.filter(link => {
+    if (!user) return false;
+    const userRole = user.role.toLowerCase();
+
+    if (!link.roles.includes(userRole)) {
+        return false;
+    }
+    
+    if (userRole === 'salesman') {
+        return user.allowedPages?.includes(link.href);
+    }
+    
+    return true;
+  });
 
   return (
     <div className="hidden border-r bg-muted/40 md:block">
@@ -57,7 +70,7 @@ export function SidebarNav() {
         </div>
         <div className="mt-auto p-4 space-y-4">
             <Separator />
-            {role && settingsLink.roles.includes(role.toLowerCase()) && (
+            {user && settingsLink.roles.includes(user.role.toLowerCase()) && (
                  <Link
                     href={settingsLink.href}
                     className={cn(

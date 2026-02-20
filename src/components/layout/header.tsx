@@ -22,9 +22,22 @@ const allNavLinks = [
 
 export function Header() {
   const pathname = usePathname();
-  const { role, logout } = useAuth();
+  const { user, logout } = useAuth();
 
-  const navLinks = allNavLinks.filter(link => role && link.roles.includes(role.toLowerCase()));
+  const navLinks = allNavLinks.filter(link => {
+    if (!user) return false;
+    const userRole = user.role.toLowerCase();
+
+    if (!link.roles.includes(userRole)) {
+        return false;
+    }
+    
+    if (userRole === 'salesman') {
+        return user.allowedPages?.includes(link.href);
+    }
+    
+    return true;
+  });
 
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 md:hidden">

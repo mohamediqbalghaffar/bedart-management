@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Camera, Edit } from "lucide-react";
 import { WithId } from "@/firebase/firestore/use-collection";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
 
 
 type User = {
@@ -22,6 +23,7 @@ type User = {
     role: 'Admin' | 'Data Manager' | 'Salesman';
     code: string;
     photoURL?: string;
+    allowedPages?: string[];
 };
 
 const userSchema = z.object({
@@ -29,6 +31,7 @@ const userSchema = z.object({
   role: z.enum(['Admin', 'Data Manager', 'Salesman'], { required_error: "ڕۆڵ پێویستە."}),
   code: z.string().optional(),
   photoURL: z.string().optional(),
+  allowedPages: z.array(z.string()).optional(),
 });
 
 type UserFormValues = z.infer<typeof userSchema>;
@@ -37,6 +40,14 @@ type AddEditUserDialogProps = {
     children: React.ReactNode;
     user?: WithId<User>;
     onUserChanged: () => void;
+};
+
+const salesmanPages = ['/dashboard', '/sales', '/stock', '/customers'];
+const pageTranslations: Record<string, string> = {
+    '/dashboard': 'داشبۆرد',
+    '/sales': 'فرۆشتنەکان',
+    '/stock': 'کۆگا',
+    '/customers': 'کڕیارەکان',
 };
 
 
@@ -52,19 +63,22 @@ export function AddEditUserDialog({ children, user, onUserChanged }: AddEditUser
 
     const form = useForm<UserFormValues>({
         resolver: zodResolver(userSchema),
-        defaultValues: isEditMode ? { name: user.name, role: user.role, photoURL: user.photoURL } : {
+        defaultValues: isEditMode ? { ...user } : {
             name: "",
             role: "Salesman",
             code: "",
             photoURL: "",
+            allowedPages: salesmanPages,
         },
     });
+
+    const watchedRole = form.watch('role');
 
     useEffect(() => {
         if (open) {
             const defaultVals = isEditMode 
-                ? { name: user.name, role: user.role, photoURL: user.photoURL } 
-                : { name: "", role: "Salesman" as const, code: "", photoURL: "" };
+                ? { ...user } 
+                : { name: "", role: "Salesman" as const, code: "", photoURL: "", allowedPages: salesmanPages };
             form.reset(defaultVals);
             setImagePreview(isEditMode ? user.photoURL || null : null);
         }
@@ -98,12 +112,14 @@ export function AddEditUserDialog({ children, user, onUserChanged }: AddEditUser
         try {
             if (isEditMode) {
                 const userRef = doc(firestore, 'users', user.id);
-                const updateData: Partial<User> = { name: data.name, role: data.role };
+                const updateData: Partial<User> = { name: data.name, role: data.role, photoURL: data.photoURL };
                 if (data.code) {
                     updateData.code = data.code;
                 }
-                if (data.photoURL) {
-                    updateData.photoURL = data.photoURL;
+                if (data.role === 'Salesman') {
+                    updateData.allowedPages = data.allowedPages || [];
+                } else {
+                    updateData.allowedPages = [];
                 }
                 await updateDoc(userRef, updateData);
                 toast({ title: "سەرکەوتوو بوو!", description: "بەکارهێنەر نوێکرایەوە.", className: "bg-accent text-accent-foreground" });
@@ -113,7 +129,13 @@ export function AddEditUserDialog({ children, user, onUserChanged }: AddEditUser
                     return;
                 }
                 const userRef = doc(collection(firestore, 'users'));
-                const newUserData = { ...data, id: userRef.id, photoURL: form.getValues('photoURL') || "" };
+                const newUserData: User = { 
+                    ...data,
+                    id: userRef.id,
+                    photoURL: form.getValues('photoURL') || "",
+                    allowedPages: data.role === 'Salesman' ? data.allowedPages : [],
+                    code: data.code,
+                };
                 await setDoc(userRef, newUserData);
                 toast({ title: "سەرکەوتوو بوو!", description: "بەکارهێنەری نوێ زیادکرا.", className: "bg-accent text-accent-foreground" });
             }
@@ -222,6 +244,46 @@ export function AddEditUserDialog({ children, user, onUserChanged }: AddEditUser
                             </FormItem>
                         )}
                         />
+
+                        {watchedRole === 'Salesman' && (
+                            <div className="space-y-3 rounded-lg border p-4">
+                                <FormLabel>دەسەڵاتی لاپەڕەکان</FormLabel>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {salesmanPages.map((page) => (
+                                        <FormField
+                                            key={page}
+                                            control={form.control}
+                                            name="allowedPages"
+                                            render={({ field }) => {
+                                                return (
+                                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 space-x-reverse">
+                                                        <FormControl>
+                                                            <Checkbox
+                                                                checked={field.value?.includes(page)}
+                                                                onCheckedChange={(checked) => {
+                                                                    return checked
+                                                                        ? field.onChange([...(field.value || []), page])
+                                                                        : field.onChange(
+                                                                            field.value?.filter(
+                                                                                (value) => value !== page
+                                                                            )
+                                                                        )
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormLabel className="font-normal text-sm">
+                                                            {pageTranslations[page]}
+                                                        </FormLabel>
+                                                    </FormItem>
+                                                )
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                                <FormMessage />
+                            </div>
+                        )}
+
                         <div className="flex justify-end pt-4">
                             <Button type="submit" disabled={form.formState.isSubmitting || isUploading}>
                             {form.formState.isSubmitting ? <><Loader2 className="ml-2 h-4 w-4 animate-spin" />...پاشەکەوت دەکرێت</> : (isEditMode ? 'پاشەکەوتکردنی گۆڕانکاری' : 'دروستکردنی بەکارهێنەر')}

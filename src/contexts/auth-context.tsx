@@ -13,6 +13,7 @@ type User = {
     code: string;
     photoURL?: string;
     status?: 'online' | 'offline';
+    allowedPages?: string[];
 };
 
 type AuthUser = {
@@ -20,6 +21,7 @@ type AuthUser = {
     name: string;
     role: Role;
     photoURL?: string;
+    allowedPages?: string[];
 };
 
 interface AuthContextType {
@@ -107,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userData = userDoc.data() as User;
 
         if (userData.code === code) {
-            const authUser: AuthUser = { id: userDoc.id, name: userData.name, role: userData.role, photoURL: userData.photoURL };
+            const authUser: AuthUser = { id: userDoc.id, name: userData.name, role: userData.role, photoURL: userData.photoURL, allowedPages: userData.allowedPages || [] };
             
             await updateDoc(userDoc.ref, { status: 'online' });
             
@@ -160,6 +162,5 @@ export function useAuth() {
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
-  const { user } = context;
-  return { ...context, role: user?.role || null };
+  return context;
 }
