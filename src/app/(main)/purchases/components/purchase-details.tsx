@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -8,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type BuyingFormType = {
     id: string;
@@ -85,32 +85,34 @@ export function PurchaseDetails({ formId }: { formId: string }) {
                     <CardTitle>لیستی کاڵا کڕاوەکان</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="text-right">کاڵا</TableHead>
-                                <TableHead className="text-right">دانە</TableHead>
-                                <TableHead className="text-right">نرخی تاک (USD)</TableHead>
-                                <TableHead className="text-left">نرخی کۆ (USD)</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {products && products.length > 0 ? (
-                                products.map((item, index) => (
-                                    <TableRow key={index}>
-                                        <TableCell className="text-right">{item.productName}</TableCell>
-                                        <TableCell className="text-right">{item.quantity}</TableCell>
-                                        <TableCell className="text-right">{currencyFormatter.format(item.unitPrice)}</TableCell>
-                                        <TableCell className="text-left font-semibold">{currencyFormatter.format(item.quantity * item.unitPrice)}</TableCell>
-                                    </TableRow>
-                                ))
-                            ) : (
+                    <ScrollArea className="h-[300px]">
+                        <Table>
+                            <TableHeader>
                                 <TableRow>
-                                    <TableCell colSpan={4} className="text-center">هیچ کاڵایەک بۆ ئەم پسوولەیە تۆمار نەکراوە.</TableCell>
+                                    <TableHead className="text-right">کاڵا</TableHead>
+                                    <TableHead className="text-right">دانە</TableHead>
+                                    <TableHead className="text-right">نرخی تاک (USD)</TableHead>
+                                    <TableHead className="text-left">نرخی کۆ (USD)</TableHead>
                                 </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {products && products.length > 0 ? (
+                                    products.map((item, index) => (
+                                        <TableRow key={index}>
+                                            <TableCell className="text-right">{item.productName}</TableCell>
+                                            <TableCell className="text-right">{item.quantity}</TableCell>
+                                            <TableCell className="text-right">{currencyFormatter.format(item.unitPrice)}</TableCell>
+                                            <TableCell className="text-left font-semibold">{currencyFormatter.format(item.quantity * item.unitPrice)}</TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="text-center">هیچ کاڵایەک بۆ ئەم پسوولەیە تۆمار نەکراوە.</TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </ScrollArea>
                     <div className="mt-4 space-y-2 text-left p-4 border-t">
                          <div className="flex justify-between"><span>کۆی کاڵاکان:</span><span className="font-medium">{currencyFormatter.format(subTotal)}</span></div>
                         <div className="flex justify-between"><span>تێچووی گومرگ:</span><span className="font-medium">{currencyFormatter.format(formData.customsFee || 0)}</span></div>
@@ -121,5 +123,3 @@ export function PurchaseDetails({ formId }: { formId: string }) {
         </div>
     );
 }
-
-    
