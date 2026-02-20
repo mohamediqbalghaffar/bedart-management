@@ -167,20 +167,21 @@ function ImportActions({ onSave }: { onSave: () => void }) {
             const range = XLSX.utils.decode_range(worksheet['!ref']!);
             for (let C = range.s.c; C <= range.e.c; ++C) {
                 const cell = worksheet[XLSX.utils.encode_cell({ c: C, r: range.s.r })];
-                headers[C] = cell ? String(cell.v).trim() : `UNKNOWN_${C}`;
+                const headerText = cell ? String(cell.v).trim() : `UNKNOWN_${C}`;
+                headers[C] = headerText;
             }
 
-            const nameIdx = headers.findIndex(h => h.includes('ناوی کاڵا'));
-            const qtyIdx = headers.findIndex(h => h.includes('دانە'));
-            const purchasePriceIdx = headers.findIndex(h => h.includes('نرخی کڕین'));
+            const nameIdx = headers.findIndex(h => h.includes('ناو'));
+            const purchasePriceIdx = headers.findIndex(h => h.includes('نرخی کر'));
+            const qtyIdx = headers.findIndex(h => h.includes('دانە') || h.includes('دانه'));
             const sellingPriceIdx = headers.findIndex(h => h.includes('نرخی فرۆشتن'));
 
             if (nameIdx === -1) {
-                toast({ variant: 'destructive', title: "ستوونی پێویست نەدۆزرایەوە", description: "پێویستە فایلەکە ستوونی 'ناوی کاڵا'ی تێدابێت." });
+                toast({ variant: 'destructive', title: "ستوونی پێویست نەدۆزرایەوە", description: "پێویستە فایلەکە ستوونی 'ناو'ی تێدابێت." });
                 return;
             }
 
-            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }).slice(1) as any[][];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" }).slice(1) as any[][];
             const productDefMap = new Map(allProductDefinitions?.map(p => [p.productName.toLowerCase().trim(), p]));
 
             const newItems = jsonData.map(row => {
@@ -195,7 +196,7 @@ function ImportActions({ onSave }: { onSave: () => void }) {
                     quantity: Number(row[qtyIdx] || 1),
                     unitPrice: Number(row[purchasePriceIdx] || 0),
                     sellingPrice: Number(row[sellingPriceIdx] || (existingDef?.sellingPrice || 0)),
-                    category: existingDef ? existingDef.category : 'Mattress',
+                    category: existingDef ? existingDef.category : 'Mattress', // Default category if new
                     sizeModel: '',
                 };
             }).filter((item): item is NonNullable<typeof item> => item !== null);
@@ -458,5 +459,3 @@ export default function PurchasesPage() {
         </div>
     );
 }
-
-    
