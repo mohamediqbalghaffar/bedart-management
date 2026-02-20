@@ -20,14 +20,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
 import { PurchaseDetails } from './components/purchase-details';
 import * as XLSX from 'xlsx';
-import { analyzePurchaseExcel } from '@/ai/flows/analyze-purchase-excel';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-
 
 // Matches the structure in backend.json
 type BuyingFormType = {
@@ -79,11 +75,10 @@ function PurchaseFormDialog({ formId, onSave, trigger, initialItems }: { formId:
     );
 }
 
-function ImportActionsDropdown({ onSave }: { onSave: () => void }) {
+function ImportFromExcelButton({ onSave }: { onSave: () => void }) {
     const [isProcessing, setIsProcessing] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [initialItems, setInitialItems] = useState<any[] | undefined>(undefined);
-    const [importMethod, setImportMethod] = useState<'ai' | 'standard' | null>(null);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const { toast } = useToast();
     const firestore = useFirestore();
@@ -94,8 +89,7 @@ function ImportActionsDropdown({ onSave }: { onSave: () => void }) {
     }, [firestore]);
     const { data: allProductDefinitions } = useCollection<ProductDefinition>(productDefinitionsQuery);
 
-    const triggerUpload = (method: 'ai' | 'standard') => {
-        setImportMethod(method);
+    const triggerUpload = () => {
         fileInputRef.current?.click();
     };
 
@@ -122,52 +116,25 @@ function ImportActionsDropdown({ onSave }: { onSave: () => void }) {
                     const worksheet = workbook.Sheets[sheetName];
                     const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
 
-                    let newItems: any[] = [];
+                    const productDefMap = new Map(allProductDefinitions?.map(p => [p.productName.toLowerCase().trim(), p]));
 
-                    if (importMethod === 'ai') {
-                        toast({ title: 'AI خەریکی شیکردنەوەیە...', description: 'تکایە چاوەڕوان بە.' });
-                        const csvData = XLSX.utils.sheet_to_csv(worksheet);
-                        if (!csvData) {
-                            throw new Error("فایل بەتاڵە یان ستوونی پێویستی تێدا نییە.");
-                        }
+                    const newItems = jsonData.map(row => {
+                        const productNameFromSheet = String(row['ناوی کاڵا'] || '');
+                        if (!productNameFromSheet) return null;
 
-                        const existingProductNames = allProductDefinitions?.map(p => p.productName) || [];
-                        
-                        const result = await analyzePurchaseExcel({ csvData, existingProductNames });
+                        const normalizedName = productNameFromSheet.toLowerCase().trim();
+                        const existingDef = productDefMap.get(normalizedName);
+                        const sellingPriceFromSheet = Number(row['نرخی فرۆشتن'] || 0);
 
-                        if (!result || result.length === 0) {
-                            throw new Error("AI نەیتوانی هیچ کاڵایەک لەم فایلە دەربهێنێت.");
-                        }
-                        
-                        newItems = result.map(item => ({
-                            product: item.product,
-                            quantity: item.quantity,
-                            unitPrice: item.unitPrice,
-                            sellingPrice: item.sellingPrice || 0,
-                            category: item.category,
+                        return {
+                            product: existingDef ? existingDef.productName : productNameFromSheet,
+                            quantity: Number(row['دانە'] || 1),
+                            unitPrice: Number(row['نرخی کڕین'] || 0),
+                            sellingPrice: sellingPriceFromSheet > 0 ? sellingPriceFromSheet : (existingDef?.sellingPrice || 0),
+                            category: existingDef ? existingDef.category : 'Mattress', // default
                             sizeModel: '',
-                        }));
-                    } else { // standard import
-                        const productDefMap = new Map(allProductDefinitions?.map(p => [p.productName.toLowerCase().trim(), p]));
-
-                        newItems = jsonData.map(row => {
-                            const productNameFromSheet = String(row['ناوی کاڵا'] || '');
-                            if (!productNameFromSheet) return null;
-
-                            const normalizedName = productNameFromSheet.toLowerCase().trim();
-                            const existingDef = productDefMap.get(normalizedName);
-                            const sellingPriceFromSheet = Number(row['نرخی فرۆشتن'] || 0);
-
-                            return {
-                                product: existingDef ? existingDef.productName : productNameFromSheet,
-                                quantity: Number(row['دانە'] || 1),
-                                unitPrice: Number(row['نرخی کڕین'] || 0),
-                                sellingPrice: sellingPriceFromSheet > 0 ? sellingPriceFromSheet : (existingDef?.sellingPrice || 0),
-                                category: existingDef ? existingDef.category : 'Mattress', // default
-                                sizeModel: '',
-                            };
-                        }).filter((item): item is NonNullable<typeof item> => item !== null);
-                    }
+                        };
+                    }).filter((item): item is NonNullable<typeof item> => item !== null);
                     
                     if (newItems.length > 0) {
                         setInitialItems(newItems);
@@ -184,7 +151,6 @@ function ImportActionsDropdown({ onSave }: { onSave: () => void }) {
                     if (fileInputRef.current) {
                         fileInputRef.current.value = "";
                     }
-                    setImportMethod(null);
                 }
             };
             reader.readAsArrayBuffer(file);
@@ -204,18 +170,10 @@ function ImportActionsDropdown({ onSave }: { onSave: () => void }) {
                 className="hidden"
                 accept=".xlsx, .xls"
             />
-             <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="outline" disabled={isProcessing}>
-                        {isProcessing ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <FileUp className="ml-2 h-4 w-4" />}
-                        هاوردەکردنی پسوولە
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                    <DropdownMenuItem onSelect={() => triggerUpload('ai')}>هاوردەکردن بە زیرەکی دەستکرد</DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => triggerUpload('standard')}>هاوردەکردنی ستاندارد</DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
+            <Button variant="outline" onClick={triggerUpload} disabled={isProcessing}>
+                {isProcessing ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <FileUp className="ml-2 h-4 w-4" />}
+                هاوردەکردنی پسوولە
+            </Button>
 
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogContent className="sm:max-w-7xl" dir="rtl">
@@ -492,7 +450,7 @@ export default function PurchasesPage() {
                             پسوولەی کڕینی نوێ
                         </Button>
                     }/>
-                    <ImportActionsDropdown onSave={handleSave} />
+                    <ImportFromExcelButton onSave={handleSave} />
                     <DownloadTemplateButton />
                 </div>
             </PageHeader>
