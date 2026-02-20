@@ -4,23 +4,22 @@ import React, { useState, useRef } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useFirestore, useCollection, useMemoFirebase, collection, doc, getDoc, setDoc, getDocs, deleteDoc } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, collection, doc, getDoc, setDoc, getDocs, deleteDoc, updateDoc } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, FileDown, AlertTriangle, PlusCircle, FileUp, EyeOff } from 'lucide-react';
+import { Loader2, FileDown, AlertTriangle, PlusCircle, FileUp, EyeOff, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import * as XLSX from 'xlsx';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogHeader, DialogDescription, DialogTitle, DialogTrigger, DialogContent } from '@/components/ui/dialog';
-import { AddUserForm } from './components/add-user-form';
-import { EditableUserRow } from './components/editable-user-row';
-import { analyzePurchaseExcel } from '@/ai/flows/analyze-purchase-excel';
+import { AddEditUserDialog } from './components/add-edit-user-dialog';
 import { useConfidentialMode } from '@/contexts/confidential-mode-context';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { analyzeSqlExport } from '@/ai/flows/analyze-sql-export';
+
 
 // General Settings Component
 type CompanyInfo = {
@@ -110,34 +109,6 @@ function GeneralSettings() {
     );
 }
 
-// Add User Dialog
-function AddUserDialog({ onUserAdded }: { onUserAdded: () => void }) {
-    const [open, setOpen] = React.useState(false);
-
-    return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button variant="outline">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    زیادکردنی بەکارهێنەر
-                </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md" dir="rtl">
-                <DialogHeader>
-                    <DialogTitle>بەکارهێنەری نوێ</DialogTitle>
-                    <DialogDescription>
-                        زانیارییەکانی بەکارهێنەری نوێ بنووسە.
-                    </DialogDescription>
-                </DialogHeader>
-                <AddUserForm onUserAdded={() => {
-                    onUserAdded();
-                    setOpen(false);
-                }} />
-            </DialogContent>
-        </Dialog>
-    );
-}
-
 // User Management Component
 type User = {
     id: string;
@@ -145,6 +116,71 @@ type User = {
     role: 'Admin' | 'Data Manager' | 'Salesman';
     code: string;
 };
+
+
+function UserCard({ user, onUserChanged }: { user: WithId<User>, onUserChanged: () => void }) {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleDelete = async () => {
+        if (!firestore) return;
+        setIsDeleting(true);
+        try {
+            await deleteDoc(doc(firestore, "users", user.id));
+            toast({ title: "سەرکەوتوو بوو", description: "بەکارهێنەرەکە سڕایەوە.", className: "bg-accent text-accent-foreground" });
+            onUserChanged();
+        } catch (error) {
+            console.error("Error deleting user:", error);
+            toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "سڕینەوەکە سەرکەوتوو نەبوو." });
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const getInitials = (name: string) => {
+        return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    }
+    
+    const roleTranslations: Record<User['role'], string> = {
+        'Admin': 'بەڕێوەبەر',
+        'Data Manager': 'داتا مانجەر',
+        'Salesman': 'فرۆشیار'
+    };
+
+    return (
+        <Card className="flex flex-col">
+            <CardHeader className="flex flex-row items-center gap-4">
+                 <Avatar className="h-12 w-12">
+                    <AvatarFallback className="text-lg bg-secondary text-secondary-foreground">
+                        {getInitials(user.name)}
+                    </AvatarFallback>
+                </Avatar>
+                <div>
+                    <CardTitle>{user.name}</CardTitle>
+                    <CardDescription>{roleTranslations[user.role]}</CardDescription>
+                </div>
+            </CardHeader>
+            <CardFooter className="mt-auto flex justify-end gap-2">
+                 <AddEditUserDialog user={user} onUserChanged={onUserChanged}>
+                    <Button variant="ghost" size="icon"><Edit className="h-4 w-4 text-blue-500" /></Button>
+                </AddEditUserDialog>
+                 <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button size="icon" variant="ghost" disabled={isDeleting}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent dir="rtl">
+                        <AlertDialogHeader><AlertDialogTitle>ئایا دڵنیایت لە سڕینەوەی ئەم بەکارهێنەرە؟</AlertDialogTitle><AlertDialogDescription>ئەم کردارە پاشگەزبوونەوەی نییە.</AlertDialogDescription></AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">بەڵێ, بسڕەوە</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </CardFooter>
+        </Card>
+    );
+}
 
 function UserManagement() {
     const firestore = useFirestore();
@@ -164,27 +200,22 @@ function UserManagement() {
                     <CardTitle>بەڕێوەبردنی بەکارهێنەران</CardTitle>
                     <CardDescription>ڕۆڵ و دەسەڵاتی بەکارهێنەرانی سیستەم بگۆڕە.</CardDescription>
                 </div>
-                <AddUserDialog onUserAdded={handleUserChange} />
+                 <AddEditUserDialog onUserChanged={handleUserChange}>
+                    <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" />زیادکردنی بەکارهێنەر</Button>
+                </AddEditUserDialog>
             </CardHeader>
             <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="text-right">ناو</TableHead>
-                            <TableHead className="text-right">ڕۆڵ</TableHead>
-                            <TableHead className="text-left">کردارەکان</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoading ? (
-                            <TableRow><TableCell colSpan={3} className="h-24 text-center"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></TableCell></TableRow>
-                        ) : !users || users.length === 0 ? (
-                            <TableRow><TableCell colSpan={3} className="h-24 text-center text-muted-foreground">هیچ بەکارهێنەرێک نییە.</TableCell></TableRow>
-                        ) : users?.map(user => (
-                            <EditableUserRow key={user.id} user={user} onUserChanged={handleUserChange} />
+                 {isLoading ? (
+                    <div className="flex justify-center items-center h-48"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></div>
+                ) : !users || users.length === 0 ? (
+                    <div className="h-24 text-center text-muted-foreground flex items-center justify-center">هیچ بەکارهێنەرێک نییە.</div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {users?.map(user => (
+                            <UserCard key={user.id} user={user} onUserChanged={handleUserChange} />
                         ))}
-                    </TableBody>
-                </Table>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );
@@ -201,7 +232,7 @@ function DataManagement() {
     const excelFileInputRef = useRef<HTMLInputElement>(null);
     const csvFileInputRef = useRef<HTMLInputElement>(null);
 
-    const collectionsToBackup = ['customers', 'selling_forms', 'buying_forms', 'expenses', 'products', 'stock_movements', 'suppliers', 'users'];
+    const collectionsToBackup = ['customers', 'selling_forms', 'buying_forms', 'expenses', 'products', 'product_definitions', 'stock_movements', 'suppliers', 'users'];
 
     const exportAllData = async () => {
         if (!firestore) return;
@@ -336,8 +367,8 @@ function DataManagement() {
         toast({ title: '...شیکردنەوەی فایل', description: 'AI خەریکی شیکردنەوەی داتاکانە.' });
         
         try {
-            const text = await file.text();
-            const result = await analyzePurchaseExcel({ csvData: text });
+            const csvData = await file.text();
+            const result = await analyzeSqlExport({ csvData });
             
             let count = 0;
             const dataType = result.dataType;
