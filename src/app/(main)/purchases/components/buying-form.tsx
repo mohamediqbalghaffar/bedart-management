@@ -8,7 +8,7 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Loader2, PlusCircle, Trash2, List } from "lucide-react";
+import { Loader2, PlusCircle, Trash2, List, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -19,6 +19,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ProductSelectorDialog } from "../../components/product-selector-dialog";
 import { useDebounce } from "@/hooks/use-debounce";
 import { DocumentData } from "firebase/firestore";
+import { ProductCategory } from "@/lib/types";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 
 // Define types based on your Firestore structure
@@ -27,10 +29,10 @@ type Supplier = {
   supplierName: string;
 };
 
-type Product = {
+type ProductDefinition = {
     productName: string;
     sellingPrice?: number;
-    unitPrice?: number;
+    category: ProductCategory;
 }
 
 const buyingFormSchema = z.object({
@@ -61,29 +63,67 @@ function BuyingFormItemRow({
     index,
     remove,
     fieldId,
-    products
+    productDefinitions
 }: {
     form: UseFormReturn<BuyingFormValues>;
     index: number;
     remove: (index: number) => void;
     fieldId: string;
-    products: WithId<Product>[] | null
+    productDefinitions: WithId<ProductDefinition>[] | null
 }) {
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [suggestion, setSuggestion] = useState<WithId<ProductDefinition> | null>(null);
+    const [showSuggestion, setShowSuggestion] = useState(false);
+    
     const watchedItem = form.watch(`items.${index}`);
     const debouncedProductName = useDebounce(watchedItem.product, 500);
 
     useEffect(() => {
-        if (debouncedProductName && products) {
-            const foundProduct = products.find(p => p.productName.toLowerCase() === debouncedProductName.toLowerCase());
-            if (foundProduct) {
-                form.setValue(`items.${index}.sellingPrice`, foundProduct.sellingPrice || 0);
+        if (debouncedProductName && productDefinitions) {
+            const exactMatch = productDefinitions.find(p => p.productName.toLowerCase() === debouncedProductName.toLowerCase());
+
+            if (exactMatch) {
+                form.setValue(`items.${index}.sellingPrice`, exactMatch.sellingPrice || 0);
+                form.setValue(`items.${index}.category`, exactMatch.category);
+                setSuggestion(null);
+                setShowSuggestion(false);
             } else {
-                form.setValue(`items.${index}.sellingPrice`, 0);
+                let bestMatch: WithId<ProductDefinition> | undefined;
+                let longestMatchLength = 0;
+
+                for (const def of productDefinitions) {
+                    if (debouncedProductName.toLowerCase().includes(def.productName.toLowerCase())) {
+                        if (def.productName.length > longestMatchLength) {
+                            bestMatch = def;
+                            longestMatchLength = def.productName.length;
+                        }
+                    }
+                }
+
+                if (bestMatch) {
+                    setSuggestion(bestMatch);
+                    setShowSuggestion(true);
+                } else {
+                    setSuggestion(null);
+                    setShowSuggestion(false);
+                }
             }
+        } else {
+            setSuggestion(null);
+            setShowSuggestion(false);
         }
-    }, [debouncedProductName, products, form, index]);
+    }, [debouncedProductName, productDefinitions, form, index]);
     
+    const handleSuggestionSelect = () => {
+        if (suggestion) {
+            form.setValue(`items.${index}.product`, suggestion.productName);
+            form.setValue(`items.${index}.category`, suggestion.category);
+            form.setValue(`items.${index}.sellingPrice`, suggestion.sellingPrice || 0);
+            setShowSuggestion(false);
+            setSuggestion(null);
+        }
+    };
+
     return (
         <TableRow key={fieldId}>
             <TableCell className="align-top">
@@ -92,9 +132,33 @@ function BuyingFormItemRow({
                     name={`items.${index}.product`}
                     render={({ field }) => (
                         <FormItem>
-                            <div className="flex gap-2">
+                            <div className="flex items-center gap-2">
                                 <FormControl>
-                                    <Input placeholder="ناوی کاڵا..." {...field} />
+                                    <div className="relative w-full">
+                                        <Input placeholder="ناوی کاڵا..." {...field} />
+                                        {showSuggestion && suggestion && (
+                                            <Popover open={showSuggestion} onOpenChange={setShowSuggestion}>
+                                                <PopoverTrigger asChild>
+                                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer">
+                                                        <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                                                    </span>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-2" align="start">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm text-muted-foreground">وات لێ بوو:</span>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={handleSuggestionSelect}
+                                                            className="text-primary hover:text-primary"
+                                                        >
+                                                            {suggestion.productName}؟
+                                                        </Button>
+                                                    </div>
+                                                </PopoverContent>
+                                            </Popover>
+                                        )}
+                                    </div>
                                 </FormControl>
                                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                                     <DialogTrigger asChild>
@@ -176,11 +240,11 @@ export function BuyingForm({ onSave, formId, initialItems }: BuyingFormProps) {
   }, [firestore]);
   const { data: suppliers, isLoading: isLoadingSuppliers } = useCollection<Supplier>(suppliersQuery);
   
-  const productsQuery = useMemoFirebase(() => {
+  const productDefsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return collection(firestore, 'products');
+    return collection(firestore, 'product_definitions');
   }, [firestore]);
-  const { data: products } = useCollection<Product>(productsQuery);
+  const { data: productDefinitions } = useCollection<ProductDefinition>(productDefsQuery);
 
   const form = useForm<BuyingFormValues>({
     resolver: zodResolver(buyingFormSchema),
@@ -474,7 +538,7 @@ export function BuyingForm({ onSave, formId, initialItems }: BuyingFormProps) {
                             form={form}
                             index={index}
                             remove={() => fields.length > 1 && remove(index)}
-                            products={products}
+                            productDefinitions={productDefinitions}
                         />
                     ))}
                 </TableBody>
