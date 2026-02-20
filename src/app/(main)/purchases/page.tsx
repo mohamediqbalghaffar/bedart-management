@@ -28,6 +28,7 @@ import * as XLSX from 'xlsx';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { analyzePurchaseExcel } from '@/ai/flows/analyze-purchase-excel';
 import { ConfidentialBlur } from '@/components/shared/confidential-blur';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 // Matches the structure in backend.json
 type BuyingFormType = {
@@ -396,89 +397,91 @@ function PurchasesList() {
                 <CardTitle>لیستی کڕینەکان</CardTitle>
             </CardHeader>
             <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="text-right">دابینکەر</TableHead>
-                            <TableHead className="text-right">بەروار</TableHead>
-                            <TableHead className="text-right">کۆی گشتی</TableHead>
-                            <TableHead className="text-left">کردارەکان</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoading ? (
+                <ScrollArea className="h-[60vh]">
+                    <Table>
+                        <TableHeader>
                             <TableRow>
-                                <TableCell colSpan={4} className="h-24 text-center">
-                                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-                                </TableCell>
+                                <TableHead className="text-right">دابینکەر</TableHead>
+                                <TableHead className="text-right">بەروار</TableHead>
+                                <TableHead className="text-right">کۆی گشتی</TableHead>
+                                <TableHead className="text-left">کردارەکان</TableHead>
                             </TableRow>
-                        ) : enrichedForms.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">هیچ کڕینێک تۆمار نەکراوە.</TableCell>
-                            </TableRow>
-                        ) : (
-                            enrichedForms.map((form) => (
-                            <TableRow key={form.id}>
-                                <TableCell className="font-medium text-right">{form.supplierName}</TableCell>
-                                <TableCell className="text-right">{form.issueDate}</TableCell>
-                                <TableCell className="text-right">
-                                    <Badge variant="secondary">
-                                      <ConfidentialBlur>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(form.totalAmount || 0)}</ConfidentialBlur>
-                                    </Badge>
-                                </TableCell>
-                                <TableCell className="text-left">
-                                    <div className="flex items-center justify-start gap-2">
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon">
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                                </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent dir="rtl">
-                                                <AlertDialogHeader>
-                                                <AlertDialogTitle>دڵنیایت لە سڕینەوەی ئەم پسوولەیە؟</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    ئەم کردارە پاشگەزبوونەوەی نییە. کاڵاکان لە کۆگا کەم دەکرێنەوە و پسوولەکە بە هەمیشەیی دەسڕێتەوە.
-                                                </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => handleDelete(form.id)} className="bg-destructive hover:bg-destructive/90">
-                                                    بەڵێ، بسڕەوە
-                                                </AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
+                        </TableHeader>
+                        <TableBody>
+                            {isLoading ? (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="h-24 text-center">
+                                        <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+                                    </TableCell>
+                                </TableRow>
+                            ) : enrichedForms.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">هیچ کڕینێک تۆمار نەکراوە.</TableCell>
+                                </TableRow>
+                            ) : (
+                                enrichedForms.map((form) => (
+                                <TableRow key={form.id}>
+                                    <TableCell className="font-medium text-right">{form.supplierName}</TableCell>
+                                    <TableCell className="text-right">{form.issueDate}</TableCell>
+                                    <TableCell className="text-right">
+                                        <Badge variant="secondary">
+                                          <ConfidentialBlur>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(form.totalAmount || 0)}</ConfidentialBlur>
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-left">
+                                        <div className="flex items-center justify-start gap-2">
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="ghost" size="icon">
+                                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent dir="rtl">
+                                                    <AlertDialogHeader>
+                                                    <AlertDialogTitle>دڵنیایت لە سڕینەوەی ئەم پسوولەیە؟</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        ئەم کردارە پاشگەزبوونەوەی نییە. کاڵاکان لە کۆگا کەم دەکرێنەوە و پسوولەکە بە هەمیشەیی دەسڕێتەوە.
+                                                    </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                    <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDelete(form.id)} className="bg-destructive hover:bg-destructive/90">
+                                                        بەڵێ، بسڕەوە
+                                                    </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
 
-                                        <PurchaseFormDialog 
-                                            formId={form.id} 
-                                            onSave={handleFormSave}
-                                            trigger={
-                                                <Button variant="ghost" size="icon">
-                                                    <Edit className="h-4 w-4 text-blue-500" />
-                                                </Button>
-                                            }
-                                        />
+                                            <PurchaseFormDialog 
+                                                formId={form.id} 
+                                                onSave={handleFormSave}
+                                                trigger={
+                                                    <Button variant="ghost" size="icon">
+                                                        <Edit className="h-4 w-4 text-blue-500" />
+                                                    </Button>
+                                                }
+                                            />
 
-                                        <Dialog>
-                                            <DialogTrigger asChild>
-                                                <Button variant="ghost" size="icon">
-                                                    <FileSpreadsheet className="h-4 w-4" />
-                                                </Button>
-                                            </DialogTrigger>
-                                            <DialogContent className="sm:max-w-2xl" dir="rtl">
-                                                <DialogHeader>
-                                                    <DialogTitle>وردەکارییەکانی پسوولەی کڕین</DialogTitle>
-                                                </DialogHeader>
-                                                <PurchaseDetails formId={form.id} />
-                                            </DialogContent>
-                                        </Dialog>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        )))}
-                    </TableBody>
-                </Table>
+                                            <Dialog>
+                                                <DialogTrigger asChild>
+                                                    <Button variant="ghost" size="icon">
+                                                        <FileSpreadsheet className="h-4 w-4" />
+                                                    </Button>
+                                                </DialogTrigger>
+                                                <DialogContent className="sm:max-w-2xl" dir="rtl">
+                                                    <DialogHeader>
+                                                        <DialogTitle>وردەکارییەکانی پسوولەی کڕین</DialogTitle>
+                                                    </DialogHeader>
+                                                    <PurchaseDetails formId={form.id} />
+                                                </DialogContent>
+                                            </Dialog>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            )))}
+                        </TableBody>
+                    </Table>
+                </ScrollArea>
             </CardContent>
         </Card>
     );
@@ -498,3 +501,5 @@ export default function PurchasesPage() {
         </div>
     );
 }
+
+    
