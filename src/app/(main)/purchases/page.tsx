@@ -126,14 +126,26 @@ function ImportActions({ onSave }: { onSave: () => void }) {
     const handleAiImport = async (file: File) => {
         const reader = new FileReader();
         reader.onload = async (e) => {
-            const dataUri = e.target?.result;
-            if (typeof dataUri !== 'string') {
+            const data = e.target?.result;
+            if (!data) {
                 toast({ variant: 'destructive', title: "هەڵە لە خوێندنەوەی فایل" });
                 return;
             }
+
             try {
+                // Read file as array buffer and convert to CSV
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const csvString = XLSX.utils.sheet_to_csv(worksheet);
+
+                if (!csvString) {
+                    toast({ variant: 'destructive', title: "فایل بەتاڵە", description: "نەتوانرا هیچ داتایەک لە فایلەکە بخوێنرێتەوە." });
+                    return;
+                }
+
                 const existingProductNames = allProductDefinitions?.map(p => p.productName) || [];
-                const result = await analyzePurchaseExcel({ documentDataUri: dataUri, existingProductNames });
+                const result = await analyzePurchaseExcel({ purchaseDataAsCsv: csvString, existingProductNames });
                 
                 if (result && result.length > 0) {
                     setInitialItems(result);
@@ -146,11 +158,11 @@ function ImportActions({ onSave }: { onSave: () => void }) {
                  if (aiError.message && (aiError.message.includes('429') || aiError.message.includes('503'))) {
                     toast({ variant: 'destructive', title: "خزمەتگوزاری سەرقاڵە", description: "بەکارهێنانی API زیاد لە سنووری خۆی تێپەڕاندووە یان کاتییە لەکارکەوتووە. تکایە دواتر هەوڵبدەرەوە." });
                  } else {
-                    toast({ variant: 'destructive', title: "هەڵە لە شیکردنەوەی AI", description: "AI نەیتوانی داتاکان دەربهێنێت." });
+                    toast({ variant: 'destructive', title: "هەڵە لە شیکردنەوەی AI", description: aiError.message || "AI نەیتوانی داتاکان دەربهێنێت." });
                  }
             }
         };
-        reader.readAsDataURL(file);
+        reader.readAsArrayBuffer(file);
     };
 
     const handleStandardImport = async (file: File) => {

@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI agent for analyzing purchase receipts from Excel files.
@@ -12,10 +11,10 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const AnalyzePurchaseExcelInputSchema = z.object({
-  documentDataUri: z
+  purchaseDataAsCsv: z
     .string()
     .describe(
-      "An Excel file (.xlsx) containing purchase data, encoded as a data URI. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+      "A CSV string representing the purchased products, extracted from a spreadsheet."
     ),
   existingProductNames: z.array(z.string()).describe("A list of existing product names in the database for fuzzy matching and normalization."),
 });
@@ -41,15 +40,17 @@ const prompt = ai.definePrompt({
   name: 'analyzePurchaseExcelPrompt',
   input: {schema: AnalyzePurchaseExcelInputSchema},
   output: {schema: AnalyzePurchaseExcelOutputSchema},
-  prompt: `You are an expert data entry assistant for a mattress and bedding store. Your task is to analyze an uploaded document (Excel file) that contains a list of purchased products and extract the data into a structured format.
+  prompt: `You are an expert data entry assistant for a mattress and bedding store. Your task is to analyze the provided CSV data that contains a list of purchased products and extract the data into a structured format.
 
-You will be given the document as a data URI and a list of official product names currently in the store's database.
+You will be given the data as a CSV string and a list of official product names currently in the store's database.
 
 Your tasks are:
-1.  **Analyze the Document**: Read the document: {{media url=documentDataUri}}. The columns might be in any order and the headers could be in Kurdish or English. Identify columns that correspond to:
-    *   Product Name (e.g., 'ناوی کاڵا', 'Product')
+1.  **Analyze the CSV Data**: Read the following CSV data:
+    {{{purchaseDataAsCsv}}}
+    The columns might be in any order and the headers could be in Kurdish or English. Identify columns that correspond to:
+    *   Product Name (e.g., 'ناوی کاڵا', 'Product', 'ناو')
     *   Quantity (e.g., 'دانە', 'Qty')
-    *   Purchase Price (e.g., 'نرخی کڕین', 'Purchase Price')
+    *   Purchase Price (e.g., 'نرخی کڕین', 'Purchase Price', 'نرخی کرین')
     *   Selling Price (e.g., 'نرخی فرۆشتن', 'Selling Price')
 
 2.  **Extract Row Data**: For each row that represents a product, extract the values.
@@ -79,5 +80,3 @@ const analyzePurchaseExcelFlow = ai.defineFlow(
     return output!;
   }
 );
-
-    
