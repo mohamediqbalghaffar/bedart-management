@@ -195,14 +195,27 @@ function ImportActions({ onSave }: { onSave: () => void }) {
             }
 
             const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" }).slice(1) as any[][];
-            const productDefMap = new Map(allProductDefinitions?.map(p => [p.productName.toLowerCase().trim(), p]));
-
+            
             const newItems = jsonData.map(row => {
                 const productNameFromSheet = String(row[nameIdx] || '').trim();
                 if (!productNameFromSheet) return null;
 
-                const normalizedName = productNameFromSheet.toLowerCase();
-                const existingDef = productDefMap.get(normalizedName);
+                let bestMatch: ProductDefinition | undefined;
+                let longestMatchLength = 0;
+
+                if (allProductDefinitions) {
+                    for (const def of allProductDefinitions) {
+                        // Check if the definition name is a substring of the sheet name
+                        if (productNameFromSheet.toLowerCase().includes(def.productName.toLowerCase().trim())) {
+                            if (def.productName.length > longestMatchLength) {
+                                bestMatch = def;
+                                longestMatchLength = def.productName.length;
+                            }
+                        }
+                    }
+                }
+                
+                const existingDef = bestMatch;
 
                 return {
                     product: existingDef ? existingDef.productName : productNameFromSheet,
@@ -213,6 +226,7 @@ function ImportActions({ onSave }: { onSave: () => void }) {
                     sizeModel: '',
                 };
             }).filter((item): item is NonNullable<typeof item> => item !== null);
+
 
             if (newItems.length > 0) {
                 setInitialItems(newItems);
