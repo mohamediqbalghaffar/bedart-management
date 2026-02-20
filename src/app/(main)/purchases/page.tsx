@@ -143,8 +143,8 @@ function ImportActions({ onSave }: { onSave: () => void }) {
                 }
             } catch (aiError: any) {
                 console.error("AI analysis failed:", aiError);
-                 if (aiError.message && aiError.message.includes('429')) {
-                    toast({ variant: 'destructive', title: "خزمەتگوزاری سەرقاڵە", description: "بەکارهێنانی API زیاد لە سنووری خۆی تێپەڕاندووە. تکایە پلانی بەکارهێنانت بپشکنە." });
+                 if (aiError.message && (aiError.message.includes('429') || aiError.message.includes('503'))) {
+                    toast({ variant: 'destructive', title: "خزمەتگوزاری سەرقاڵە", description: "بەکارهێنانی API زیاد لە سنووری خۆی تێپەڕاندووە یان کاتییە لەکارکەوتووە. تکایە دواتر هەوڵبدەرەوە." });
                  } else {
                     toast({ variant: 'destructive', title: "هەڵە لە شیکردنەوەی AI", description: "AI نەیتوانی داتاکان دەربهێنێت." });
                  }
@@ -171,13 +171,26 @@ function ImportActions({ onSave }: { onSave: () => void }) {
                 headers[C] = headerText;
             }
 
-            const nameIdx = headers.findIndex(h => h.includes('ناو'));
-            const purchasePriceIdx = headers.findIndex(h => h.includes('نرخی کر'));
-            const qtyIdx = headers.findIndex(h => h.includes('دانە') || h.includes('دانه'));
-            const sellingPriceIdx = headers.findIndex(h => h.includes('نرخی فرۆشتن'));
+            const findHeaderIndex = (possibleNames: string[]): number => {
+                for (const name of possibleNames) {
+                    const index = headers.findIndex(h => h.trim() === name);
+                    if (index !== -1) return index;
+                }
+                 for (const name of possibleNames) {
+                    const index = headers.findIndex(h => h.includes(name));
+                    if (index !== -1) return index;
+                }
+                return -1;
+            };
+
+            const nameIdx = findHeaderIndex(['ناوی کاڵا', 'ناو']);
+            const purchasePriceIdx = findHeaderIndex(['نرخی کڕین', 'نرخی کرین']);
+            const qtyIdx = findHeaderIndex(['دانە', 'دانه']);
+            const sellingPriceIdx = findHeaderIndex(['نرخی فرۆشتنی تاک', 'نرخی فرۆشتن']);
+
 
             if (nameIdx === -1) {
-                toast({ variant: 'destructive', title: "ستوونی پێویست نەدۆزرایەوە", description: "پێویستە فایلەکە ستوونی 'ناو'ی تێدابێت." });
+                toast({ variant: 'destructive', title: "ستوونی پێویست نەدۆزرایەوە", description: "پێویستە فایلەکە ستوونی 'ناو' یان 'ناوی کاڵا'ی تێدابێت." });
                 return;
             }
 
