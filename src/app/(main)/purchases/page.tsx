@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useEffect, useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +26,8 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { PurchaseDetails } from './components/purchase-details';
 import * as XLSX from 'xlsx';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { analyzePurchaseExcel } from '@/ai/flows/analyze-purchase-excel';
 
 // Matches the structure in backend.json
 type BuyingFormType = {
@@ -76,10 +79,11 @@ function PurchaseFormDialog({ formId, onSave, trigger, initialItems }: { formId:
     );
 }
 
-function ImportFromExcelButton({ onSave }: { onSave: () => void }) {
+function ImportActions({ onSave }: { onSave: () => void }) {
     const [isProcessing, setIsProcessing] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [initialItems, setInitialItems] = useState<any[] | undefined>(undefined);
+    const [importType, setImportType] = useState<'ai' | 'standard' | null>(null);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const { toast } = useToast();
     const firestore = useFirestore();
@@ -90,7 +94,8 @@ function ImportFromExcelButton({ onSave }: { onSave: () => void }) {
     }, [firestore]);
     const { data: allProductDefinitions } = useCollection<ProductDefinition>(productDefinitionsQuery);
 
-    const triggerUpload = () => {
+    const triggerUpload = (type: 'ai' | 'standard') => {
+        setImportType(type);
         fileInputRef.current?.click();
     };
 
@@ -99,156 +104,162 @@ function ImportFromExcelButton({ onSave }: { onSave: () => void }) {
         if (!file) return;
 
         setIsProcessing(true);
-        toast({ title: '...شیکردنەوەی فایل' });
+        toast({ title: `...شیکردنەوەی فایل (${importType === 'ai' ? 'AI' : 'ستاندارد'})` });
 
         try {
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const data = e.target?.result;
-                if (!data) {
-                     toast({ variant: 'destructive', title: "هەڵە لە خوێندنەوەی فایل" });
-                     setIsProcessing(false);
-                     return;
-                }
-                
-                try {
-                    const workbook = XLSX.read(data, { type: "array" });
-                    const sheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[sheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
-
-                    const productDefMap = new Map(allProductDefinitions?.map(p => [p.productName.toLowerCase().trim(), p]));
-
-                    const newItems = jsonData.map(row => {
-                        const productNameFromSheet = String(row['ناوی کاڵا'] || '');
-                        if (!productNameFromSheet) return null;
-
-                        const normalizedName = productNameFromSheet.toLowerCase().trim();
-                        const existingDef = productDefMap.get(normalizedName);
-                        const sellingPriceFromSheet = Number(row['نرخی فرۆشتن'] || 0);
-
-                        return {
-                            product: existingDef ? existingDef.productName : productNameFromSheet,
-                            quantity: Number(row['دانە'] || 1),
-                            unitPrice: Number(row['نرخی کڕین'] || 0),
-                            sellingPrice: sellingPriceFromSheet > 0 ? sellingPriceFromSheet : (existingDef?.sellingPrice || 0),
-                            category: existingDef ? existingDef.category : 'Mattress', // default
-                            sizeModel: '',
-                        };
-                    }).filter((item): item is NonNullable<typeof item> => item !== null);
-                    
-                    if (newItems.length > 0) {
-                        setInitialItems(newItems);
-                        setDialogOpen(true);
-                    } else {
-                        toast({ variant: 'destructive', title: "هیچ کاڵایەک نەدۆزرایەوە", description: "هیچ کاڵایەکی گونجاو لە فایلەکەدا نەبوو بۆ هاوردەکردن." });
-                    }
-
-                } catch (err: any) {
-                     console.error("Import failed:", err);
-                     toast({ variant: 'destructive', title: "هاوردەکردن سەرکەوتوو نەبوو", description: err.message });
-                } finally {
-                    setIsProcessing(false);
-                    if (fileInputRef.current) {
-                        fileInputRef.current.value = "";
-                    }
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        } catch (error) {
-            console.error("File processing error:", error);
-            toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "پرۆسێسی فایلەکە سەرکەوتوو نەبوو." });
+            if (importType === 'ai') {
+                await handleAiImport(file);
+            } else {
+                await handleStandardImport(file);
+            }
+        } catch (error: any) {
+             console.error("Import failed:", error);
+             toast({ variant: 'destructive', title: "هاوردەکردن سەرکەوتوو نەبوو", description: error.message });
+        } finally {
             setIsProcessing(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
         }
     };
     
+    const handleAiImport = async (file: File) => {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const dataUri = e.target?.result;
+            if (typeof dataUri !== 'string') {
+                toast({ variant: 'destructive', title: "هەڵە لە خوێندنەوەی فایل" });
+                return;
+            }
+            try {
+                const existingProductNames = allProductDefinitions?.map(p => p.productName) || [];
+                const result = await analyzePurchaseExcel({ documentDataUri: dataUri, existingProductNames });
+                
+                if (result && result.length > 0) {
+                    setInitialItems(result);
+                    setDialogOpen(true);
+                } else {
+                    toast({ variant: 'destructive', title: "هیچ کاڵایەک نەدۆزرایەوە", description: "AI نەیتوانی هیچ کاڵایەک لەم فایلە دەربهێنێت." });
+                }
+            } catch (aiError: any) {
+                console.error("AI analysis failed:", aiError);
+                 if (aiError.message && aiError.message.includes('429')) {
+                    toast({ variant: 'destructive', title: "خزمەتگوزاری سەرقاڵە", description: "بەکارهێنانی API زیاد لە سنووری خۆی تێپەڕاندووە. تکایە پلانی بەکارهێنانت بپشکنە." });
+                 } else {
+                    toast({ variant: 'destructive', title: "هەڵە لە شیکردنەوەی AI", description: "AI نەیتوانی داتاکان دەربهێنێت." });
+                 }
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleStandardImport = async (file: File) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const data = e.target?.result;
+            if (!data) return;
+            
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            
+            const headers: string[] = [];
+            const range = XLSX.utils.decode_range(worksheet['!ref']!);
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                const cell = worksheet[XLSX.utils.encode_cell({ c: C, r: range.s.r })];
+                headers[C] = cell ? String(cell.v).trim() : `UNKNOWN_${C}`;
+            }
+
+            const nameIdx = headers.findIndex(h => h.includes('ناوی کاڵا'));
+            const qtyIdx = headers.findIndex(h => h.includes('دانە'));
+            const purchasePriceIdx = headers.findIndex(h => h.includes('نرخی کڕین'));
+            const sellingPriceIdx = headers.findIndex(h => h.includes('نرخی فرۆشتن'));
+
+            if (nameIdx === -1) {
+                toast({ variant: 'destructive', title: "ستوونی پێویست نەدۆزرایەوە", description: "پێویستە فایلەکە ستوونی 'ناوی کاڵا'ی تێدابێت." });
+                return;
+            }
+
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }).slice(1) as any[][];
+            const productDefMap = new Map(allProductDefinitions?.map(p => [p.productName.toLowerCase().trim(), p]));
+
+            const newItems = jsonData.map(row => {
+                const productNameFromSheet = String(row[nameIdx] || '').trim();
+                if (!productNameFromSheet) return null;
+
+                const normalizedName = productNameFromSheet.toLowerCase();
+                const existingDef = productDefMap.get(normalizedName);
+
+                return {
+                    product: existingDef ? existingDef.productName : productNameFromSheet,
+                    quantity: Number(row[qtyIdx] || 1),
+                    unitPrice: Number(row[purchasePriceIdx] || 0),
+                    sellingPrice: Number(row[sellingPriceIdx] || (existingDef?.sellingPrice || 0)),
+                    category: existingDef ? existingDef.category : 'Mattress',
+                    sizeModel: '',
+                };
+            }).filter((item): item is NonNullable<typeof item> => item !== null);
+
+            if (newItems.length > 0) {
+                setInitialItems(newItems);
+                setDialogOpen(true);
+            } else {
+                toast({ variant: 'default', title: "هیچ کاڵایەک نەدۆزرایەوە", description: "هیچ کاڵایەکی گونجاو لە فایلەکەدا نەبوو بۆ هاوردەکردن." });
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    };
+
+    const downloadTemplate = () => {
+        try {
+            const sampleData = [{"ناوی کاڵا": "دۆشەکی نموونە", "دانە": 10, "نرخی کڕین": 150, "نرخی فرۆشتن": 250 }];
+            const worksheet = XLSX.utils.json_to_sheet(sampleData);
+            worksheet['!cols'] = [ { wch: 25 }, { wch: 10 }, { wch: 15 }, { wch: 15 } ];
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Purchase Template");
+            XLSX.writeFile(workbook, "Purchase_Import_Template.xlsx");
+            toast({ title: "سەرکەوتوو بوو", description: "فایلی نموونەی کڕین بە سەرکەوتوویی دابەزێنرا.", className: "bg-accent text-accent-foreground" });
+        } catch (error) {
+            toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "دابەزاندنی فایلی نموونە سەرکەوتوو نەبوو." });
+        }
+    };
+
     return (
         <>
-            <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                className="hidden"
-                accept=".xlsx, .xls"
-            />
-            <Button variant="outline" onClick={triggerUpload} disabled={isProcessing}>
-                {isProcessing ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <FileUp className="ml-2 h-4 w-4" />}
-                هاوردەکردنی پسوولە
-            </Button>
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".xlsx, .xls"/>
+             <div className="flex items-center gap-2">
+                <PurchaseFormDialog formId={null} onSave={onSave} trigger={
+                    <Button><PlusCircle /> پسوولەی کڕینی نوێ</Button>
+                }/>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" disabled={isProcessing}>
+                            {isProcessing ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <FileUp className="ml-2 h-4 w-4" />}
+                            هاوردەکردنی پسوولە
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuItem onSelect={() => triggerUpload('ai')}>هاوردەکردنی زیرەک (AI)</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => triggerUpload('standard')}>هاوردەکردنی ستاندارد</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                <Button onClick={downloadTemplate} variant="outline"><FileDown className="ml-2 h-4 w-4" />دابەزاندنی نموونە</Button>
+             </div>
 
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogContent className="sm:max-w-7xl" dir="rtl">
                     <DialogHeader>
                         <DialogTitle>دروستکردنی پسوولەی کڕین لە فایل</DialogTitle>
-                        <DialogDescription>
-                           وردبینی زانیارییەکان بکە و دابینکەر هەڵبژێرە، پاشان پاشەکەوتی بکە.
-                        </DialogDescription>
+                        <DialogDescription>وردبینی زانیارییەکان بکە و دابینکەر هەڵبژێرە، پاشان پاشەکەوتی بکە.</DialogDescription>
                     </DialogHeader>
                     <div className="max-h-[80vh] overflow-y-auto p-2">
-                        <BuyingForm 
-                            formId={null} 
-                            onSave={() => { onSave(); setDialogOpen(false); }} 
-                            initialItems={initialItems} 
-                        />
+                        <BuyingForm formId={null} onSave={() => { onSave(); setDialogOpen(false); }} initialItems={initialItems} />
                     </div>
                 </DialogContent>
             </Dialog>
         </>
     );
 }
-
-function DownloadTemplateButton() {
-    const { toast } = useToast();
-
-    const handleDownload = () => {
-        try {
-            const sampleData = [
-                {
-                    "ناوی کاڵا": "دۆشەکی نموونە",
-                    "دانە": 10,
-                    "نرخی کڕین": 150,
-                    "نرخی فرۆشتن": 250,
-                }
-            ];
-            
-            const worksheet = XLSX.utils.json_to_sheet(sampleData);
-
-            // Set column widths
-            worksheet['!cols'] = [
-                { wch: 25 }, // ناوی کاڵا
-                { wch: 10 }, // دانە
-                { wch: 15 }, // نرخی کڕین
-                { wch: 15 }, // نرخی فرۆشتن
-            ];
-
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Purchase Template");
-            XLSX.writeFile(workbook, "Purchase_Import_Template.xlsx");
-
-            toast({
-                title: "سەرکەوتوو بوو",
-                description: "فایلی نموونەی کڕین بە سەرکەوتوویی دابەزێنرا.",
-                className: "bg-accent text-accent-foreground",
-            });
-
-        } catch (error) {
-            console.error("Error downloading template:", error);
-            toast({
-                variant: 'destructive',
-                title: "هەڵەیەک ڕوویدا",
-                description: "دابەزاندنی فایلی نموونە سەرکەوتوو نەبوو.",
-            });
-        }
-    };
-
-    return (
-        <Button onClick={handleDownload} variant="outline">
-            <FileDown className="ml-2 h-4 w-4" />
-            دابەزاندنی نموونە
-        </Button>
-    );
-}
-
 
 function PurchasesList() {
     const firestore = useFirestore();
@@ -293,7 +304,6 @@ function PurchasesList() {
                 
                 const productRefsToUpdate: { ref: any; newQuantity: number }[] = [];
                 
-                // Phase 1: Read all product documents within the transaction
                 const productSnapshots = await Promise.all(
                     productsPurchasedSnapshot.docs.map(productDoc => {
                         const item = productDoc.data() as BuyingFormProduct;
@@ -302,7 +312,6 @@ function PurchasesList() {
                     })
                 );
 
-                // Phase 2: Calculate new quantities (no reads or writes)
                 for (const { snap, item } of productSnapshots) {
                      if (snap.exists()) {
                         const newQuantity = (snap.data().currentQuantity || 0) - item.quantity;
@@ -310,7 +319,6 @@ function PurchasesList() {
                     }
                 }
 
-                // Phase 3: Perform all writes
                 productRefsToUpdate.forEach(({ ref, newQuantity }) => {
                     transaction.update(ref, { currentQuantity: newQuantity });
                 });
@@ -444,18 +452,11 @@ export default function PurchasesPage() {
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <PageHeader title="بەڕێوەبردنی کڕینەکان" description="تۆماری پسوولەکانی کڕین لێرە ببینە و زیاد بکە.">
-                <div className="flex items-center gap-2">
-                    <PurchaseFormDialog formId={null} onSave={handleSave} trigger={
-                        <Button>
-                            <PlusCircle />
-                            پسوولەی کڕینی نوێ
-                        </Button>
-                    }/>
-                    <ImportFromExcelButton onSave={handleSave} />
-                    <DownloadTemplateButton />
-                </div>
+                <ImportActions onSave={handleSave} />
             </PageHeader>
             <PurchasesList />
         </div>
     );
 }
+
+    
