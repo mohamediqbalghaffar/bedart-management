@@ -25,6 +25,7 @@ const ProductSchema = z.object({
     product: z.string().describe('The name of the product, translated into Central Kurdish. If a similar product exists in the provided list, use the existing name.'),
     quantity: z.number().describe('The quantity of the product.'),
     unitPrice: z.number().describe('The price of a single unit of the product.'),
+    sellingPrice: z.number().describe('The selling price of a single unit of the product.'),
     category: z.string().describe('The category of the product, must be one of: Mattress, Bed, Pillow, Cover.'),
 });
 
@@ -48,11 +49,11 @@ You will extract data from the CSV. The user will provide the CSV data and a lis
 The CSV has the following columns, although the names might vary slightly: 'ناوی کاڵا' (Product Name), 'دانە' (Quantity), 'نرخی کڕین' (Purchase Price), and 'نرخی فرۆشتن' (Selling Price).
 
 Your tasks are:
-1.  **Parse the CSV**: Identify and extract the product name, quantity, and purchase price ('unitPrice') for each row. Ignore the selling price column.
+1.  **Parse the CSV**: Identify and extract the product name, quantity, purchase price ('unitPrice'), and selling price ('sellingPrice') for each row.
 2.  **Translate to Central Kurdish**: If the product names are not in Kurdish, translate them into natural and correct Central Kurdish (Sorani).
 3.  **Check for Duplicates/Similarities**: Compare the extracted product name with the 'existingProductNames' list. If a very similar product already exists, you MUST use the existing name from the list to maintain consistency.
 4.  **Categorize Product**: Based on the product name, determine its category. The category must be one of the following (in English): "Mattress", "Bed", "Pillow", "Cover".
-5.  **Structure Output**: Return a structured JSON array. Each object must contain 'product' (the final standardized name), 'quantity', 'unitPrice', and 'category'.
+5.  **Structure Output**: Return a structured JSON array. Each object must contain 'product' (the final standardized name), 'quantity', 'unitPrice', 'sellingPrice', and 'category'.
 6.  **Filter Rows**: Ignore the header row and any empty or invalid rows in the CSV.
 
 Existing Product Names:
