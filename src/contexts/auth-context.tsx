@@ -2,19 +2,25 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useFirestore, collection, query, where, getDocs, limit, setDoc, doc } from '@/firebase';
+import { useFirestore, collection, query, where, getDocs, limit, setDoc, doc, updateDoc } from '@/firebase';
 
 type Role = 'Admin' | 'Data Manager' | 'Salesman';
+
 type User = {
     id: string;
     name: string;
     role: Role;
     code: string;
-}
+    photoURL?: string;
+    status?: 'online' | 'offline';
+};
+
 type AuthUser = {
+    id: string;
     name: string;
     role: Role;
-}
+    photoURL?: string;
+};
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -48,7 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             id: adminId,
             name: 'admin',
             role: 'Admin',
-            code: 'Rawezh1818'
+            code: 'Rawezh1818',
+            status: 'offline'
           });
           console.log("Default admin user created successfully.");
         }
@@ -100,7 +107,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userData = userDoc.data() as User;
 
         if (userData.code === code) {
-            const authUser: AuthUser = { name: userData.name, role: userData.role };
+            const authUser: AuthUser = { id: userDoc.id, name: userData.name, role: userData.role, photoURL: userData.photoURL };
+            
+            await updateDoc(userDoc.ref, { status: 'online' });
+            
             setUser(authUser);
             try {
                 localStorage.setItem('authUser', JSON.stringify(authUser));
@@ -119,7 +129,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    if (user && firestore) {
+        try {
+            const userRef = doc(firestore, 'users', user.id);
+            await updateDoc(userRef, { status: 'offline' });
+        } catch (error) {
+            console.error("Failed to update user status on logout", error);
+        }
+    }
+
     setUser(null);
     try {
       localStorage.removeItem('authUser');

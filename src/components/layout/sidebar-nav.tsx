@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { Separator } from '../ui/separator';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '../ui/button';
+import { ActiveUsers } from './active-users';
 
 const allNavLinks = [
   { href: '/dashboard', label: 'داشبۆرد', icon: Home, roles: ['admin', 'data manager', 'salesman'] },
@@ -24,7 +25,7 @@ const settingsLink = { href: '/settings', label: 'ڕێکخستنەکان', icon:
 
 export function SidebarNav() {
   const pathname = usePathname();
-  const { role, logout } = useAuth();
+  const { role, logout, user } = useAuth();
 
   const navLinks = allNavLinks.filter(link => role && link.roles.includes(role.toLowerCase()));
 
@@ -68,6 +69,9 @@ export function SidebarNav() {
                     {settingsLink.label}
                 </Link>
             )}
+            
+            <ActiveUsers currentUser={user} />
+
             <Button variant="ghost" className="w-full justify-start" onClick={logout}>
                 <LogOut className="h-4 w-4 mr-3" />
                 چوونەدەرەوە
