@@ -12,7 +12,15 @@ export function ConfidentialBlur({ children, className }: ConfidentialBlurProps)
   const { isConfidential } = useConfidentialMode();
 
   return (
-    <span className={cn(isConfidential ? 'bg-muted text-transparent select-none rounded' : '', className)}>
+    <span
+      className={cn(
+        'transition-all duration-300',
+        isConfidential
+          ? 'blur-md text-transparent select-none'
+          : '',
+        className
+      )}
+    >
       {children}
     </span>
   );
