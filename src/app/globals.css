@@ -97,3 +97,21 @@
     --rdp-selected-color: hsl(var(--primary-foreground));
   }
 }
+
+@layer utilities {
+  @keyframes move-gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .animated-gradient-border {
+    -webkit-text-stroke: 1px transparent;
+    background-image: linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--primary)));
+    background-size: 200% auto;
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    animation: move-gradient 4s ease-in-out infinite;
+  }
+}

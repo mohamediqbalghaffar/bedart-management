@@ -57,7 +57,7 @@ export function Header() {
                  </nav>
             </SheetContent>
         </Sheet>
-         <div className="flex-1 text-center text-lg font-semibold">BedArt Group</div>
+         <div className="flex-1 text-center text-lg font-semibold animated-gradient-border">BedArt Group</div>
          <Button size="icon" variant="ghost" onClick={logout}>
             <LogOut className="h-5 w-5" />
             <span className="sr-only">Logout</span>
