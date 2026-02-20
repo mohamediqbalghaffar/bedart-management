@@ -50,13 +50,12 @@ export function Header() {
             </SheetTrigger>
             <SheetContent side="right" className="sm:max-w-xs">
                  <nav className="grid gap-6 text-lg font-medium">
-                    <Link
-                        href="#"
+                    <div
                         className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:text-base"
                     >
                         <BedDouble className="h-5 w-5 transition-all group-hover:scale-110" />
                         <span className="sr-only">BedArt Group</span>
-                    </Link>
+                    </div>
                      {navLinks.map((link) => (
                         <Link
                             key={link.href}
