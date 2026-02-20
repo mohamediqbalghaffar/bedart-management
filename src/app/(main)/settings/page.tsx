@@ -17,7 +17,7 @@ import { AddEditUserDialog } from './components/add-edit-user-dialog';
 import { useConfidentialMode } from '@/contexts/confidential-mode-context';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { analyzeSqlExport } from '@/ai/flows/analyze-sql-export';
 
 
@@ -115,6 +115,7 @@ type User = {
     name: string;
     role: 'Admin' | 'Data Manager' | 'Salesman';
     code: string;
+    photoURL?: string;
 };
 
 
@@ -152,6 +153,7 @@ function UserCard({ user, onUserChanged }: { user: WithId<User>, onUserChanged: 
         <Card className="flex flex-col">
             <CardHeader className="flex flex-row items-center gap-4">
                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={user.photoURL} alt={user.name} />
                     <AvatarFallback className="text-lg bg-secondary text-secondary-foreground">
                         {getInitials(user.name)}
                     </AvatarFallback>

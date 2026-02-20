@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -11,8 +11,9 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore, doc, collection, setDoc, updateDoc } from "@/firebase";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { Loader2, Camera, Edit } from "lucide-react";
 import { WithId } from "@/firebase/firestore/use-collection";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 
 type User = {
@@ -20,12 +21,14 @@ type User = {
     name: string;
     role: 'Admin' | 'Data Manager' | 'Salesman';
     code: string;
+    photoURL?: string;
 };
 
 const userSchema = z.object({
   name: z.string().min(1, { message: "ناوی بەکارهێنەر پێویستە." }),
   role: z.enum(['Admin', 'Data Manager', 'Salesman'], { required_error: "ڕۆڵ پێویستە."}),
   code: z.string().optional(),
+  photoURL: z.string().optional(),
 });
 
 type UserFormValues = z.infer<typeof userSchema>;
@@ -43,14 +46,44 @@ export function AddEditUserDialog({ children, user, onUserChanged }: AddEditUser
     const { toast } = useToast();
     const isEditMode = !!user;
 
+    const [imagePreview, setImagePreview] = useState<string | null>(isEditMode ? user.photoURL || null : null);
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     const form = useForm<UserFormValues>({
         resolver: zodResolver(userSchema),
-        defaultValues: isEditMode ? { name: user.name, role: user.role } : {
+        defaultValues: isEditMode ? { name: user.name, role: user.role, photoURL: user.photoURL } : {
             name: "",
             role: "Salesman",
             code: "",
+            photoURL: "",
         },
     });
+
+    useEffect(() => {
+        if (open) {
+            const defaultVals = isEditMode 
+                ? { name: user.name, role: user.role, photoURL: user.photoURL } 
+                : { name: "", role: "Salesman" as const, code: "", photoURL: "" };
+            form.reset(defaultVals);
+            setImagePreview(isEditMode ? user.photoURL || null : null);
+        }
+    }, [open, user, isEditMode, form]);
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadstart = () => setIsUploading(true);
+            reader.onloadend = () => {
+                setImagePreview(reader.result as string);
+                form.setValue('photoURL', reader.result as string);
+                setIsUploading(false);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
 
     async function onSubmit(data: UserFormValues) {
         if (!firestore) {
@@ -69,6 +102,9 @@ export function AddEditUserDialog({ children, user, onUserChanged }: AddEditUser
                 if (data.code) {
                     updateData.code = data.code;
                 }
+                if (data.photoURL) {
+                    updateData.photoURL = data.photoURL;
+                }
                 await updateDoc(userRef, updateData);
                 toast({ title: "سەرکەوتوو بوو!", description: "بەکارهێنەر نوێکرایەوە.", className: "bg-accent text-accent-foreground" });
             } else {
@@ -77,7 +113,8 @@ export function AddEditUserDialog({ children, user, onUserChanged }: AddEditUser
                     return;
                 }
                 const userRef = doc(collection(firestore, 'users'));
-                await setDoc(userRef, { ...data, id: userRef.id });
+                const newUserData = { ...data, id: userRef.id, photoURL: form.getValues('photoURL') || "" };
+                await setDoc(userRef, newUserData);
                 toast({ title: "سەرکەوتوو بوو!", description: "بەکارهێنەری نوێ زیادکرا.", className: "bg-accent text-accent-foreground" });
             }
             form.reset();
@@ -95,6 +132,11 @@ export function AddEditUserDialog({ children, user, onUserChanged }: AddEditUser
         'Data Manager': 'داتا مانجەر',
         'Salesman': 'فرۆشیار'
     };
+    
+    const getInitials = (name: string) => {
+        return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    }
+
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -108,6 +150,30 @@ export function AddEditUserDialog({ children, user, onUserChanged }: AddEditUser
                 </DialogHeader>
                  <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" dir="rtl">
+                         <div className="flex justify-center pt-4">
+                            <div className="relative">
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileChange}
+                                    className="hidden"
+                                    accept="image/*"
+                                />
+                                <Avatar className="h-24 w-24 cursor-pointer border-2 border-dashed border-muted-foreground/50" onClick={() => fileInputRef.current?.click()}>
+                                    <AvatarImage src={imagePreview || undefined} alt={form.getValues('name')} />
+                                    <AvatarFallback className="text-3xl bg-secondary">
+                                        {isUploading ? <Loader2 className="h-8 w-8 animate-spin"/> : getInitials(form.watch('name')) || <Camera />}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div
+                                    className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground cursor-pointer"
+                                    onClick={() => fileInputRef.current?.click()}
+                                >
+                                    <Edit className="h-4 w-4" />
+                                </div>
+                            </div>
+                        </div>
+
                         <FormField
                         control={form.control}
                         name="name"
@@ -157,7 +223,7 @@ export function AddEditUserDialog({ children, user, onUserChanged }: AddEditUser
                         )}
                         />
                         <div className="flex justify-end pt-4">
-                            <Button type="submit" disabled={form.formState.isSubmitting}>
+                            <Button type="submit" disabled={form.formState.isSubmitting || isUploading}>
                             {form.formState.isSubmitting ? <><Loader2 className="ml-2 h-4 w-4 animate-spin" />...پاشەکەوت دەکرێت</> : (isEditMode ? 'پاشەکەوتکردنی گۆڕانکاری' : 'دروستکردنی بەکارهێنەر')}
                             </Button>
                         </div>
