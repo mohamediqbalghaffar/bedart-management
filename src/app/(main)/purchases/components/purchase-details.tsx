@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { ConfidentialBlur } from '@/components/shared/confidential-blur';
 
 type BuyingFormType = {
     id: string;
@@ -100,9 +101,9 @@ export function PurchaseDetails({ formId }: { formId: string }) {
                                     products.map((item, index) => (
                                         <TableRow key={index}>
                                             <TableCell className="text-right">{item.productName}</TableCell>
-                                            <TableCell className="text-right">{item.quantity}</TableCell>
-                                            <TableCell className="text-right">{currencyFormatter.format(item.unitPrice)}</TableCell>
-                                            <TableCell className="text-left font-semibold">{currencyFormatter.format(item.quantity * item.unitPrice)}</TableCell>
+                                            <TableCell className="text-right"><ConfidentialBlur>{item.quantity}</ConfidentialBlur></TableCell>
+                                            <TableCell className="text-right"><ConfidentialBlur>{currencyFormatter.format(item.unitPrice)}</ConfidentialBlur></TableCell>
+                                            <TableCell className="text-left font-semibold"><ConfidentialBlur>{currencyFormatter.format(item.quantity * item.unitPrice)}</ConfidentialBlur></TableCell>
                                         </TableRow>
                                     ))
                                 ) : (
@@ -114,9 +115,9 @@ export function PurchaseDetails({ formId }: { formId: string }) {
                         </Table>
                     </ScrollArea>
                     <div className="mt-4 space-y-2 text-left p-4 border-t">
-                         <div className="flex justify-between"><span>کۆی کاڵاکان:</span><span className="font-medium">{currencyFormatter.format(subTotal)}</span></div>
-                        <div className="flex justify-between"><span>تێچووی گومرگ:</span><span className="font-medium">{currencyFormatter.format(formData.customsFee || 0)}</span></div>
-                        <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2"><span>کۆی گشتی:</span><span>{currencyFormatter.format(totalAmount)}</span></div>
+                         <div className="flex justify-between"><span>کۆی کاڵاکان:</span><ConfidentialBlur><span className="font-medium">{currencyFormatter.format(subTotal)}</span></ConfidentialBlur></div>
+                        <div className="flex justify-between"><span>تێچووی گومرگ:</span><ConfidentialBlur><span className="font-medium">{currencyFormatter.format(formData.customsFee || 0)}</span></ConfidentialBlur></div>
+                        <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2"><span>کۆی گشتی:</span><ConfidentialBlur><span>{currencyFormatter.format(totalAmount)}</span></ConfidentialBlur></div>
                     </div>
                 </CardContent>
             </Card>

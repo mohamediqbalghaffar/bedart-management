@@ -10,6 +10,7 @@ import { PaymentStatus, PaymentType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { PrintableReceipt } from './printable-receipt';
 import '../printable-receipt.css';
+import { ConfidentialBlur } from '@/components/shared/confidential-blur';
 
 type SellingFormType = {
     id: string;
@@ -137,7 +138,7 @@ export function SalesDetails({ formId }: { formId: string }) {
                     <CardHeader>
                         <div className="flex justify-between items-start">
                             <div>
-                                <CardTitle>فۆڕمی فرۆشتن #{formData.formNumber}</CardTitle>
+                                <CardTitle>فۆڕمی فرۆشتن #<ConfidentialBlur>{formData.formNumber}</ConfidentialBlur></CardTitle>
                                 <CardDescription>بەروار: {formData.issueDate}</CardDescription>
                             </div>
                             <div className="flex gap-2 items-center">
@@ -154,7 +155,7 @@ export function SalesDetails({ formId }: { formId: string }) {
                     <CardContent>
                         <div className="grid grid-cols-2 gap-4 text-sm">
                             <div><span className="font-semibold">کڕیار:</span><p className="text-muted-foreground">{formData.customerName}</p></div>
-                            <div><span className="font-semibold">ژ. مۆبایل:</span><p className="text-muted-foreground">{formData.customerPhoneNumber || 'نەزانراو'}</p></div>
+                            <div><span className="font-semibold">ژ. مۆبایل:</span><p className="text-muted-foreground"><ConfidentialBlur>{formData.customerPhoneNumber || 'نەزانراو'}</ConfidentialBlur></p></div>
                             <div className="col-span-2"><span className="font-semibold">ناونیشان:</span><p className="text-muted-foreground">{formData.customerAddress || 'نەزانراو'}</p></div>
                              <div className="col-span-2"><span className="font-semibold">فرۆشیار:</span><p className="text-muted-foreground">{formData.creatorName || 'نەزانراو'}</p></div>
                             <div className="col-span-2"><span className="font-semibold">جۆری پارەدان:</span><p className="text-muted-foreground">{paymentTypeTranslations[formData.paymentType] || formData.paymentType}</p></div>
@@ -172,9 +173,9 @@ export function SalesDetails({ formId }: { formId: string }) {
                                     products.map((item, index) => (
                                         <TableRow key={index}>
                                             <TableCell className="text-right">{item.productName}</TableCell>
-                                            <TableCell className="text-right">{item.quantity}</TableCell>
-                                            <TableCell className="text-right">{currencyFormatter.format(item.unitPrice)}</TableCell>
-                                            <TableCell className="text-left font-semibold">{currencyFormatter.format(item.lineTotal)}</TableCell>
+                                            <TableCell className="text-right"><ConfidentialBlur>{item.quantity}</ConfidentialBlur></TableCell>
+                                            <TableCell className="text-right"><ConfidentialBlur>{currencyFormatter.format(item.unitPrice)}</ConfidentialBlur></TableCell>
+                                            <TableCell className="text-left font-semibold"><ConfidentialBlur>{currencyFormatter.format(item.lineTotal)}</ConfidentialBlur></TableCell>
                                         </TableRow>
                                     ))
                                 ) : (
@@ -183,10 +184,10 @@ export function SalesDetails({ formId }: { formId: string }) {
                             </TableBody>
                         </Table>
                         <div className="mt-4 space-y-2 text-left p-4 border-t">
-                            <div className="flex justify-between"><span>کۆی کاڵاکان:</span><span className="font-medium">{currencyFormatter.format(subTotal)}</span></div>
-                            {discountAmount > 0 && <div className="flex justify-between text-destructive"><span>داشکاندن:</span><span className="font-medium">-{currencyFormatter.format(discountAmount)}</span></div>}
-                            <div className="flex justify-between"><span>تێچووی گەیاندن:</span><span className="font-medium">{currencyFormatter.format(formData.deliveryCost || 0)}</span></div>
-                            <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2"><span>کۆی گشتی:</span><span>{currencyFormatter.format(formData.totalPrice)}</span></div>
+                            <div className="flex justify-between"><span>کۆی کاڵاکان:</span><ConfidentialBlur><span className="font-medium">{currencyFormatter.format(subTotal)}</span></ConfidentialBlur></div>
+                            {discountAmount > 0 && <div className="flex justify-between text-destructive"><span>داشکاندن:</span><ConfidentialBlur><span className="font-medium">-{currencyFormatter.format(discountAmount)}</span></ConfidentialBlur></div>}
+                            <div className="flex justify-between"><span>تێچووی گەیاندن:</span><ConfidentialBlur><span className="font-medium">{currencyFormatter.format(formData.deliveryCost || 0)}</span></ConfidentialBlur></div>
+                            <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2"><span>کۆی گشتی:</span><ConfidentialBlur><span>{currencyFormatter.format(formData.totalPrice)}</span></ConfidentialBlur></div>
                         </div>
                     </CardContent>
                 </Card>
@@ -202,7 +203,7 @@ export function SalesDetails({ formId }: { formId: string }) {
                                         payments.map((p) => (
                                             <TableRow key={p.id}>
                                                 <TableCell className="text-right">{p.paymentDate}</TableCell>
-                                                <TableCell className="text-right font-semibold">{currencyFormatter.format(p.amountPaid)}</TableCell>
+                                                <TableCell className="text-right font-semibold"><ConfidentialBlur>{currencyFormatter.format(p.amountPaid)}</ConfidentialBlur></TableCell>
                                                 <TableCell className="text-right">{p.paymentMethod === 'Cash' ? 'کاش' : 'حەواڵە'}</TableCell>
                                                 <TableCell className="text-right">{p.note || 'نەزانراو'}</TableCell>
                                             </TableRow>
@@ -213,12 +214,12 @@ export function SalesDetails({ formId }: { formId: string }) {
                                 </TableBody>
                             </Table>
                             <div className="mt-4 space-y-2 text-left p-4 border-t">
-                                <div className="flex justify-between"><span>کۆی دراوە:</span><span className="font-medium text-green-500">{currencyFormatter.format(totalPaid)}</span></div>
-                                <div className="flex justify-between font-bold text-lg text-destructive"><span>ماوە:</span><span>{currencyFormatter.format(calculatedRemaining)}</span></div>
+                                <div className="flex justify-between"><span>کۆی دراوە:</span><ConfidentialBlur><span className="font-medium text-green-500">{currencyFormatter.format(totalPaid)}</span></ConfidentialBlur></div>
+                                <div className="flex justify-between font-bold text-lg text-destructive"><span>ماوە:</span><ConfidentialBlur><span>{currencyFormatter.format(calculatedRemaining)}</span></ConfidentialBlur></div>
                                 {overpayment > 0 && (
                                     <div className="flex justify-between font-bold text-lg text-green-500">
                                         <span>بڕی زیادە:</span>
-                                        <span>{currencyFormatter.format(overpayment)}</span>
+                                        <ConfidentialBlur><span>{currencyFormatter.format(overpayment)}</span></ConfidentialBlur>
                                     </div>
                                 )}
                             </div>

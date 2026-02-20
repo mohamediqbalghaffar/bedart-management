@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useRef } from 'react';
@@ -21,13 +20,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
 import { PurchaseDetails } from './components/purchase-details';
 import * as XLSX from 'xlsx';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { analyzePurchaseExcel } from '@/ai/flows/analyze-purchase-excel';
+import { ConfidentialBlur } from '@/components/shared/confidential-blur';
 
 // Matches the structure in backend.json
 type BuyingFormType = {
@@ -423,7 +422,7 @@ function PurchasesList() {
                                 <TableCell className="text-right">{form.issueDate}</TableCell>
                                 <TableCell className="text-right">
                                     <Badge variant="secondary">
-                                      {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(form.totalAmount || 0)}
+                                      <ConfidentialBlur>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(form.totalAmount || 0)}</ConfidentialBlur>
                                     </Badge>
                                 </TableCell>
                                 <TableCell className="text-left">

@@ -23,6 +23,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { WithId } from "@/firebase/firestore/use-collection";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/auth-context";
+import { ConfidentialBlur } from "@/components/shared/confidential-blur";
 
 type Customer = {
   customerName: string;
@@ -121,7 +122,7 @@ function SalesFormItemRow({
                 <FormField control={form.control} name={`items.${index}.unitPrice`} render={({ field }) => (<FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
             </TableCell>
              <TableCell className="align-top pt-5 font-semibold text-left">
-                {currencyFormatter.format(watchedItem?.quantity * watchedItem?.unitPrice || 0)}
+                <ConfidentialBlur>{currencyFormatter.format(watchedItem?.quantity * watchedItem?.unitPrice || 0)}</ConfidentialBlur>
             </TableCell>
             <TableCell className="align-top">
                 <Button variant="ghost" size="icon" onClick={() => remove(index)}>
@@ -675,34 +676,34 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                 <CardContent className="space-y-2 text-left">
                     <div className="flex items-center justify-between gap-4 p-2 rounded-md">
                         <span className="text-muted-foreground">کۆی کاڵاکان:</span>
-                        <span className="font-semibold">{currencyFormatter.format(subTotal)}</span>
+                        <ConfidentialBlur><span className="font-semibold">{currencyFormatter.format(subTotal)}</span></ConfidentialBlur>
                     </div>
                      <div className="flex items-center justify-between gap-4 p-2 rounded-md">
                         <span className="text-muted-foreground">داشکاندن:</span>
-                        <span className="font-semibold text-destructive">-{currencyFormatter.format(discountAmount)}</span>
+                        <ConfidentialBlur><span className="font-semibold text-destructive">-{currencyFormatter.format(discountAmount)}</span></ConfidentialBlur>
                     </div>
                     <div className="flex items-center justify-between gap-4 p-2 rounded-md">
                         <span className="text-muted-foreground">تێچووی گەیاندن:</span>
-                        <span className="font-semibold">{currencyFormatter.format(Number(deliveryCost) || 0)}</span>
+                        <ConfidentialBlur><span className="font-semibold">{currencyFormatter.format(Number(deliveryCost) || 0)}</span></ConfidentialBlur>
                     </div>
                     <div className="flex items-center justify-between gap-4 p-2 rounded-md bg-secondary/80 text-lg">
                         <span className="font-bold">کۆی گشتی:</span>
-                        <span className="font-bold">{currencyFormatter.format(totalAmount)}</span>
+                        <ConfidentialBlur><span className="font-bold">{currencyFormatter.format(totalAmount)}</span></ConfidentialBlur>
                     </div>
                     {paymentType === 'Installments' && (
                         <>
                             <div className="flex items-center justify-between gap-4 p-2 rounded-md">
                                 <span className="text-muted-foreground">کۆی دراوە:</span>
-                                <span className="font-semibold text-green-500">{currencyFormatter.format(totalPaid)}</span>
+                                <ConfidentialBlur><span className="font-semibold text-green-500">{currencyFormatter.format(totalPaid)}</span></ConfidentialBlur>
                             </div>
                             <div className="flex items-center justify-between gap-4 p-2 rounded-md bg-destructive/10 text-destructive text-lg">
                                 <span className="font-bold">ماوە:</span>
-                                <span className="font-bold">{currencyFormatter.format(remainingBalance)}</span>
+                                <ConfidentialBlur><span className="font-bold">{currencyFormatter.format(remainingBalance)}</span></ConfidentialBlur>
                             </div>
                              {overpayment > 0 && (
                                 <div className="flex items-center justify-between gap-4 p-2 rounded-md bg-green-500/10 text-green-500 text-lg">
                                     <span className="font-bold">بڕی زیادە:</span>
-                                    <span className="font-bold">{currencyFormatter.format(overpayment)}</span>
+                                    <ConfidentialBlur><span className="font-bold">{currencyFormatter.format(overpayment)}</span></ConfidentialBlur>
                                 </div>
                             )}
                         </>

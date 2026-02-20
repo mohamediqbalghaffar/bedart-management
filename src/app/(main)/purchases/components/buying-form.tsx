@@ -21,6 +21,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { DocumentData } from "firebase/firestore";
 import { ProductCategory } from "@/lib/types";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ConfidentialBlur } from "@/components/shared/confidential-blur";
 
 
 // Define types based on your Firestore structure
@@ -216,7 +217,7 @@ function BuyingFormItemRow({
                 <FormField control={form.control} name={`items.${index}.sellingPrice`} render={({ field }) => (<FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
             </TableCell>
             <TableCell className="align-top pt-5 font-semibold text-left">
-                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(watchedItem?.quantity * watchedItem?.unitPrice || 0)}
+                <ConfidentialBlur>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(watchedItem?.quantity * watchedItem?.unitPrice || 0)}</ConfidentialBlur>
             </TableCell>
             <TableCell className="align-top text-left">
                 <Button variant="ghost" size="icon" onClick={() => remove(index)}>
@@ -554,7 +555,7 @@ export function BuyingForm({ onSave, formId, initialItems }: BuyingFormProps) {
             <div className="space-y-2 text-left min-w-[280px]">
                 <div className="flex items-center justify-between gap-4 p-2 rounded-md">
                     <span className="text-muted-foreground">:کۆی کاڵاکان</span>
-                    <span className="font-semibold">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(subTotal)}</span>
+                    <ConfidentialBlur><span className="font-semibold">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(subTotal)}</span></ConfidentialBlur>
                 </div>
                  <div className="flex items-center justify-between gap-4 p-2 rounded-md">
                     <FormField
@@ -573,7 +574,7 @@ export function BuyingForm({ onSave, formId, initialItems }: BuyingFormProps) {
                 </div>
                  <div className="flex items-center justify-between gap-4 p-2 rounded-md bg-secondary/80">
                     <span className="font-bold">:کۆی گشتی (USD)</span>
-                    <span className="font-bold text-lg">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalAmount)}</span>
+                    <ConfidentialBlur><span className="font-bold text-lg">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalAmount)}</span></ConfidentialBlur>
                 </div>
             </div>
         </div>

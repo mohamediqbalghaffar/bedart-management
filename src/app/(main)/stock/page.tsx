@@ -16,6 +16,7 @@ import * as XLSX from 'xlsx';
 import { useToast } from '@/hooks/use-toast';
 import { StockTransferDialog } from './components/stock-transfer-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { ConfidentialBlur } from '@/components/shared/confidential-blur';
 
 type Product = {
     productName: string;
@@ -218,11 +219,11 @@ function StockPageContent() {
                                             <TableCell className="text-right">{product.supplierName}</TableCell>
                                             <TableCell className="text-center">
                                                 <Badge variant={product.totalQuantity < 5 ? "destructive" : "secondary"}>
-                                                    {product.totalQuantity}
+                                                    <ConfidentialBlur>{product.totalQuantity}</ConfidentialBlur>
                                                 </Badge>
                                             </TableCell>
-                                            <TableCell className="text-center">{product.locations['Shop Showroom']?.currentQuantity || 0}</TableCell>
-                                            <TableCell className="text-center">{product.locations.Warehouse?.currentQuantity || 0}</TableCell>
+                                            <TableCell className="text-center"><ConfidentialBlur>{product.locations['Shop Showroom']?.currentQuantity || 0}</ConfidentialBlur></TableCell>
+                                            <TableCell className="text-center"><ConfidentialBlur>{product.locations.Warehouse?.currentQuantity || 0}</ConfidentialBlur></TableCell>
                                             <TableCell className="text-right">{product.category}</TableCell>
                                             <TableCell className="font-medium text-right">{product.productName} {product.sizeModel && `(${product.sizeModel})`}</TableCell>
                                         </TableRow>

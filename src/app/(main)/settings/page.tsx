@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useRef } from 'react';
@@ -8,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFirestore, useCollection, useMemoFirebase, collection, doc, getDoc, setDoc, getDocs, deleteDoc } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, FileDown, AlertTriangle, PlusCircle, FileUp } from 'lucide-react';
+import { Loader2, FileDown, AlertTriangle, PlusCircle, FileUp, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
@@ -18,7 +17,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogHeader, DialogDescription, DialogTitle, DialogTrigger, DialogContent } from '@/components/ui/dialog';
 import { AddUserForm } from './components/add-user-form';
 import { EditableUserRow } from './components/editable-user-row';
-import { analyzeSqlExport } from '@/ai/flows/analyze-sql-export';
+import { analyzePurchaseExcel } from '@/ai/flows/analyze-purchase-excel';
+import { useConfidentialMode } from '@/contexts/confidential-mode-context';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 // General Settings Component
 type CompanyInfo = {
@@ -31,6 +33,8 @@ function GeneralSettings() {
     const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({ name: '', contact: '' });
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const { isConfidential, toggleConfidentialMode } = useConfidentialMode();
+
 
     const infoRef = useMemoFirebase(() => firestore ? doc(firestore, 'app_settings', 'companyInfo') : null, [firestore]);
 
@@ -67,23 +71,39 @@ function GeneralSettings() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>زانیاری گشتی کۆمپانیا</CardTitle>
-                <CardDescription>ئەم زانیاریانە لەسەر پسوولە و ڕاپۆرتەکان بەکاردەهێنرێن.</CardDescription>
+                <CardTitle>زانیاری گشتی</CardTitle>
+                <CardDescription>ڕێکخستنە گشتییەکانی سیستەمەکە.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="space-y-2">
-                    <label htmlFor="companyName">ناوی کۆمپانیا</label>
-                    <Input id="companyName" value={companyInfo.name} onChange={(e) => setCompanyInfo(p => ({...p, name: e.target.value}))} placeholder="BedArt Group" />
+            <CardContent className="space-y-6">
+                 <div className="space-y-4 p-4 border rounded-lg">
+                    <h3 className="font-semibold">زانیاری کۆمپانیا</h3>
+                    <div className="space-y-2">
+                        <label htmlFor="companyName">ناوی کۆمپانیا</label>
+                        <Input id="companyName" value={companyInfo.name} onChange={(e) => setCompanyInfo(p => ({...p, name: e.target.value}))} placeholder="BedArt Group" />
+                    </div>
+                    <div className="space-y-2">
+                        <label htmlFor="companyContact">زانیاری پەیوەندی</label>
+                        <Textarea id="companyContact" value={companyInfo.contact} onChange={(e) => setCompanyInfo(p => ({...p, contact: e.target.value}))} placeholder="ژ. تەلەفۆن, ناونیشان, هتد" />
+                    </div>
                 </div>
-                <div className="space-y-2">
-                    <label htmlFor="companyContact">زانیاری پەیوەندی</label>
-                    <Textarea id="companyContact" value={companyInfo.contact} onChange={(e) => setCompanyInfo(p => ({...p, contact: e.target.value}))} placeholder="ژ. تەلەفۆن, ناونیشان, هتد" />
-                </div>
+                 <div className="space-y-4 p-4 border rounded-lg">
+                     <h3 className="font-semibold">دۆخی نهێنی</h3>
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                        <Switch id="confidential-mode" checked={isConfidential} onCheckedChange={toggleConfidentialMode} />
+                        <Label htmlFor="confidential-mode" className="flex items-center gap-2">
+                            <EyeOff className="h-4 w-4" />
+                           شاردنەوەی داتا هەستیارەکان (بۆ نمایشکردن)
+                        </Label>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                        ئەم دۆخە هەموو ژمارە و داتا هەستیارەکان لە داشبۆرد و لاپەڕەکانی تردا دەشارێتەوە، بۆ ئەوەی بتوانیت سیستەمەکە بەبێ پیشاندانی زانیاری نهێنی نمایش بکەیت.
+                    </p>
+                 </div>
             </CardContent>
             <CardFooter>
                  <Button onClick={handleSave} disabled={isSaving}>
                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    پاشەکەوتکردن
+                    پاشەکەوتکردنی زانیاری کۆمپانیا
                 </Button>
             </CardFooter>
         </Card>
@@ -317,7 +337,7 @@ function DataManagement() {
         
         try {
             const text = await file.text();
-            const result = await analyzeSqlExport({ csvData: text });
+            const result = await analyzePurchaseExcel({ csvData: text });
             
             let count = 0;
             const dataType = result.dataType;

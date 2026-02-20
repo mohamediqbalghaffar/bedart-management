@@ -16,6 +16,7 @@ import { WithId } from '@/firebase/firestore/use-collection';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { format, parseISO } from 'date-fns';
+import { ConfidentialBlur } from '@/components/shared/confidential-blur';
 
 type Expense = {
     name: string;
@@ -137,7 +138,7 @@ export function EditableExpenseRow({ expense, onExpenseUpdated }: { expense: Wit
         <TableRow key={expense.id}>
             <TableCell className="font-medium text-right">{expense.name}</TableCell>
             <TableCell className="text-right">{expense.note || '---'}</TableCell>
-            <TableCell className="text-right">{currencyFormatter.format(expense.amount)}</TableCell>
+            <TableCell className="text-right"><ConfidentialBlur>{currencyFormatter.format(expense.amount)}</ConfidentialBlur></TableCell>
             <TableCell className="text-right"><Badge variant="outline">{categoryTranslations[expense.category] || expense.category}</Badge></TableCell>
             <TableCell className="text-right">{format(parseISO(expense.date), "yyyy-MM-dd")}</TableCell>
             <TableCell className="text-left">

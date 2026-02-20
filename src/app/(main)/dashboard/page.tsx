@@ -22,6 +22,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ConfidentialBlur } from '@/components/shared/confidential-blur';
 
 
 // --- TYPE DEFINITIONS ---
@@ -277,11 +278,11 @@ function SalesDetailDialog({ data }: { data: any }) {
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <p className="text-sm text-muted-foreground">کۆی ژمارەی کاڵا فرۆشراوەکان</p>
-                                <p className="text-2xl font-bold">{filteredData.totalQuantity}</p>
+                                <ConfidentialBlur><p className="text-2xl font-bold">{filteredData.totalQuantity}</p></ConfidentialBlur>
                             </div>
                             <div>
                                 <p className="text-sm text-muted-foreground">کۆی داهاتی کاڵا فرۆشراوەکان</p>
-                                <p className="text-2xl font-bold">{currencyFormatter.format(filteredData.totalRevenue)}</p>
+                                <ConfidentialBlur><p className="text-2xl font-bold">{currencyFormatter.format(filteredData.totalRevenue)}</p></ConfidentialBlur>
                             </div>
                         </div>
                     </AccordionContent>
@@ -291,7 +292,7 @@ function SalesDetailDialog({ data }: { data: any }) {
                     <AccordionContent className="px-6 pb-6">
                         <Table><TableHeader><TableRow><TableHead className="text-right">ناوی کاڵا</TableHead><TableHead className="text-right">کۆی دانە</TableHead><TableHead className="text-right">کۆی داهات</TableHead></TableRow></TableHeader>
                             <TableBody>
-                                {filteredData.perProduct.map((item: any) => ( <TableRow key={item.productName}><TableCell>{item.productName}</TableCell><TableCell>{item.totalQuantity}</TableCell><TableCell>{currencyFormatter.format(item.totalRevenue)}</TableCell></TableRow> ))}
+                                {filteredData.perProduct.map((item: any) => ( <TableRow key={item.productName}><TableCell>{item.productName}</TableCell><TableCell><ConfidentialBlur>{item.totalQuantity}</ConfidentialBlur></TableCell><TableCell><ConfidentialBlur>{currencyFormatter.format(item.totalRevenue)}</ConfidentialBlur></TableCell></TableRow> ))}
                             </TableBody>
                         </Table>
                     </AccordionContent>
@@ -301,7 +302,7 @@ function SalesDetailDialog({ data }: { data: any }) {
                     <AccordionContent className="px-6 pb-6">
                         <Table><TableHeader><TableRow><TableHead className="text-right">کڕیار</TableHead><TableHead className="text-right">بەروار</TableHead><TableHead className="text-right">کۆی گشتی</TableHead></TableRow></TableHeader>
                             <TableBody>
-                                {filteredData.sales?.map((sale: any) => ( <TableRow key={sale.id}><TableCell>{sale.customerName}</TableCell><TableCell>{formatDate(parseISO(sale.issueDate), 'dd/MM/yyyy')}</TableCell><TableCell>{currencyFormatter.format(sale.totalPrice)}</TableCell></TableRow> ))}
+                                {filteredData.sales?.map((sale: any) => ( <TableRow key={sale.id}><TableCell>{sale.customerName}</TableCell><TableCell>{formatDate(parseISO(sale.issueDate), 'dd/MM/yyyy')}</TableCell><TableCell><ConfidentialBlur>{currencyFormatter.format(sale.totalPrice)}</ConfidentialBlur></TableCell></TableRow> ))}
                             </TableBody>
                         </Table>
                     </AccordionContent>
@@ -316,7 +317,7 @@ function ExpensesDetailDialog({ expenses }: { expenses: WithId<Expense>[] | null
         <div className="max-h-[60vh] overflow-y-auto">
             <Table><TableHeader><TableRow><TableHead className="text-right">خەرجی</TableHead><TableHead className="text-right">بەروار</TableHead><TableHead className="text-right">بڕ</TableHead></TableRow></TableHeader>
                 <TableBody>
-                    {expenses?.map(expense => ( <TableRow key={expense.id}><TableCell>{expense.name}</TableCell><TableCell>{formatDate(parseISO(expense.date), 'dd/MM/yyyy')}</TableCell><TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: expense.currency || 'USD' }).format(expense.amount)}</TableCell></TableRow> ))}
+                    {expenses?.map(expense => ( <TableRow key={expense.id}><TableCell>{expense.name}</TableCell><TableCell>{formatDate(parseISO(expense.date), 'dd/MM/yyyy')}</TableCell><TableCell><ConfidentialBlur>{new Intl.NumberFormat('en-US', { style: 'currency', currency: expense.currency || 'USD' }).format(expense.amount)}</ConfidentialBlur></TableCell></TableRow> ))}
                 </TableBody>
             </Table>
         </div>
@@ -349,7 +350,7 @@ function CombinedExpensesDetailDialog({ expenses, purchases }: { expenses: WithI
                                 <TableRow key={purchase.id}>
                                     <TableCell>{purchase.supplierName}</TableCell>
                                     <TableCell>{formatDate(parseISO(purchase.issueDate), 'dd/MM/yyyy')}</TableCell>
-                                    <TableCell>{currencyFormatter.format(purchase.totalAmount || 0)}</TableCell>
+                                    <TableCell><ConfidentialBlur>{currencyFormatter.format(purchase.totalAmount || 0)}</ConfidentialBlur></TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -373,11 +374,11 @@ function PurchasesDetailDialog({ data }: { data: any }) {
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <p className="text-sm text-muted-foreground">کۆی ژمارەی کاڵا کڕاوەکان</p>
-                                <p className="text-2xl font-bold">{totalQuantity}</p>
+                                <ConfidentialBlur><p className="text-2xl font-bold">{totalQuantity}</p></ConfidentialBlur>
                             </div>
                             <div>
                                 <p className="text-sm text-muted-foreground">کۆی نرخی کاڵا کڕاوەکان</p>
-                                <p className="text-2xl font-bold">{currencyFormatter.format(totalCost)}</p>
+                                <ConfidentialBlur><p className="text-2xl font-bold">{currencyFormatter.format(totalCost)}</p></ConfidentialBlur>
                             </div>
                         </div>
                     </AccordionContent>
@@ -387,7 +388,7 @@ function PurchasesDetailDialog({ data }: { data: any }) {
                     <AccordionContent className="px-6 pb-6">
                         <Table><TableHeader><TableRow><TableHead className="text-right">ناوی کاڵا</TableHead><TableHead className="text-right">کۆی دانە</TableHead><TableHead className="text-right">کۆی نرخ</TableHead></TableRow></TableHeader>
                             <TableBody>
-                                {perProduct.map((item: any) => ( <TableRow key={item.productName}><TableCell>{item.productName}</TableCell><TableCell>{item.totalQuantity}</TableCell><TableCell>{currencyFormatter.format(item.totalCost)}</TableCell></TableRow> ))}
+                                {perProduct.map((item: any) => ( <TableRow key={item.productName}><TableCell>{item.productName}</TableCell><TableCell><ConfidentialBlur>{item.totalQuantity}</ConfidentialBlur></TableCell><TableCell><ConfidentialBlur>{currencyFormatter.format(item.totalCost)}</ConfidentialBlur></TableCell></TableRow> ))}
                             </TableBody>
                         </Table>
                     </AccordionContent>
@@ -397,7 +398,7 @@ function PurchasesDetailDialog({ data }: { data: any }) {
                     <AccordionContent className="px-6 pb-6">
                         <Table><TableHeader><TableRow><TableHead className="text-right">دابینکەر</TableHead><TableHead className="text-right">بەروار</TableHead><TableHead className="text-right">کۆی گشتی پسوولە</TableHead></TableRow></TableHeader>
                             <TableBody>
-                                {purchases?.map((purchase: any) => ( <TableRow key={purchase.id}><TableCell>{purchase.supplierName}</TableCell><TableCell>{formatDate(parseISO(purchase.issueDate), 'dd/MM/yyyy')}</TableCell><TableCell>{currencyFormatter.format(purchase.totalAmount || 0)}</TableCell></TableRow> ))}
+                                {purchases?.map((purchase: any) => ( <TableRow key={purchase.id}><TableCell>{purchase.supplierName}</TableCell><TableCell>{formatDate(parseISO(purchase.issueDate), 'dd/MM/yyyy')}</TableCell><TableCell><ConfidentialBlur>{currencyFormatter.format(purchase.totalAmount || 0)}</ConfidentialBlur></TableCell></TableRow> ))}
                             </TableBody>
                         </Table>
                     </AccordionContent>
@@ -415,7 +416,7 @@ function LowStockDetailDialog({ products }: { products: GroupedProduct[] }) {
         <div className="max-h-[60vh] overflow-y-auto">
             <Table><TableHeader><TableRow><TableHead className="text-right">ناوی کاڵا</TableHead><TableHead className="text-right">بڕی ماوە</TableHead></TableRow></TableHeader>
                 <TableBody>
-                    {products?.map(product => ( <TableRow key={product.productName} onClick={() => handleRowClick(product.productName)} className="cursor-pointer"><TableCell>{product.productName}</TableCell><TableCell>{product.totalQuantity}</TableCell></TableRow> ))}
+                    {products?.map(product => ( <TableRow key={product.productName} onClick={() => handleRowClick(product.productName)} className="cursor-pointer"><TableCell>{product.productName}</TableCell><TableCell><ConfidentialBlur>{product.totalQuantity}</ConfidentialBlur></TableCell></TableRow> ))}
                 </TableBody>
             </Table>
         </div>
@@ -432,7 +433,7 @@ function DashboardStats({ stats, dialogData }: { stats: any, dialogData: any }) 
 
     return (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-             <Dialog><DialogTrigger asChild><div className="cursor-pointer"><StatCard title="کۆی فرۆش" value={currencyFormatter.format(stats.totalRevenue)} icon={ShoppingCart} description="کۆی گشتی فرۆشتن لە ماوەی دیاریکراودا." /></div></DialogTrigger>
+             <Dialog><DialogTrigger asChild><div className="cursor-pointer"><StatCard title="کۆی فرۆش" value={<ConfidentialBlur>{currencyFormatter.format(stats.totalRevenue)}</ConfidentialBlur>} icon={ShoppingCart} description="کۆی گشتی فرۆشتن لە ماوەی دیاریکراودا." /></div></DialogTrigger>
                 <DialogContent className="sm:max-w-4xl" dir="rtl"><DialogHeader><DialogTitle>وردەکاریی فرۆشتن</DialogTitle><DialogDescription>پوختەی فرۆشتنەکان لە ماوەی دیاریکراودا.</DialogDescription></DialogHeader><SalesDetailDialog data={dialogData.sales} /></DialogContent>
             </Dialog>
 
@@ -441,7 +442,7 @@ function DashboardStats({ stats, dialogData }: { stats: any, dialogData: any }) 
                     <div className="cursor-pointer">
                         <StatCard 
                             title="کۆی خەرجی" 
-                            value={currencyFormatter.format(stats.totalExpensesUSD)} 
+                            value={<ConfidentialBlur>{currencyFormatter.format(stats.totalExpensesUSD)}</ConfidentialBlur>} 
                             icon={DollarSign} 
                             description={expenseDescription}
                         />
@@ -456,11 +457,11 @@ function DashboardStats({ stats, dialogData }: { stats: any, dialogData: any }) 
                 </DialogContent>
             </Dialog>
 
-            <Dialog><DialogTrigger asChild><div className="cursor-pointer"><StatCard title="ژمارەی پسوولەی کڕین" value={stats.buyingFormsCount.toString()} icon={Package} description="کۆی گشتی پسوولەی کڕین لە ماوەی دیاریکراودا." /></div></DialogTrigger>
+            <Dialog><DialogTrigger asChild><div className="cursor-pointer"><StatCard title="ژمارەی پسوولەی کڕین" value={<ConfidentialBlur>{stats.buyingFormsCount.toString()}</ConfidentialBlur>} icon={Package} description="کۆی گشتی پسوولەی کڕین لە ماوەی دیاریکراودا." /></div></DialogTrigger>
                 <DialogContent className="sm:max-w-4xl" dir="rtl"><DialogHeader><DialogTitle>وردەکاریی کڕینەکان</DialogTitle><DialogDescription>پوختەی کڕینەکان لە ماوەی دیاریکراودا.</DialogDescription></DialogHeader><PurchasesDetailDialog data={dialogData.purchases} /></DialogContent>
             </Dialog>
             
-            <Dialog><DialogTrigger asChild><div className="cursor-pointer"><StatCard title="کاڵای کەم لە کۆگا" value={stats.lowStockCount.toString()} icon={Archive} description="کاڵاکان کە بڕیان لەنێوان 1 بۆ 4 دانەیە" isNegative={stats.lowStockCount > 0} /></div></DialogTrigger>
+            <Dialog><DialogTrigger asChild><div className="cursor-pointer"><StatCard title="کاڵای کەم لە کۆگا" value={<ConfidentialBlur>{stats.lowStockCount.toString()}</ConfidentialBlur>} icon={Archive} description="کاڵاکان کە بڕیان لەنێوان 1 بۆ 4 دانەیە" isNegative={stats.lowStockCount > 0} /></div></DialogTrigger>
                 <DialogContent className="sm:max-w-lg" dir="rtl"><DialogHeader><DialogTitle>کاڵا کەمبووەکان</DialogTitle><DialogDescription>لیستی ئەو کاڵایانەی کە بڕیان لەنێوان 1 بۆ 4 دانەیە.</DialogDescription></DialogHeader><LowStockDetailDialog products={dialogData.lowStockProducts} /></DialogContent>
             </Dialog>
         </div>
@@ -508,6 +509,7 @@ function RecentActivityChart({ data }: { data: any[] }) {
                 </div>
             </CardHeader>
             <CardContent>
+                <ConfidentialBlur className='w-full block'>
                 {viewMode === 'daily' ? (
                 <ChartContainer config={chartConfig} className="h-80 w-full">
                     <AreaChart accessibilityLayer data={data}>
@@ -528,6 +530,7 @@ function RecentActivityChart({ data }: { data: any[] }) {
                     </BarChart>
                 </ChartContainer>
                 )}
+                </ConfidentialBlur>
             </CardContent>
         </Card>
     );

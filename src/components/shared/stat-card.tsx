@@ -4,7 +4,7 @@ import React from 'react';
 
 type StatCardProps = {
     title: string;
-    value: string;
+    value: React.ReactNode;
     icon: React.ElementType;
     description?: string;
     isNegative?: boolean;
