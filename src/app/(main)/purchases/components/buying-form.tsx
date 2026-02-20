@@ -118,7 +118,6 @@ function BuyingFormItemRow({
         if (suggestion) {
             form.setValue(`items.${index}.product`, suggestion.productName);
             form.setValue(`items.${index}.category`, suggestion.category);
-            form.setValue(`items.${index}.sellingPrice`, suggestion.sellingPrice || 0);
             setShowSuggestion(false);
             setSuggestion(null);
         }
