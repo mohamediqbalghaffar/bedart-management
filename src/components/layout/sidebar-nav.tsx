@@ -10,7 +10,6 @@ import { Button } from '../ui/button';
 import { ActiveUsers } from './active-users';
 
 const allNavLinks = [
-  { href: '/dashboard', label: 'داشبۆرد', icon: Home, roles: ['admin', 'data manager', 'salesman'] },
   { href: '/sales', label: 'فرۆشتنەکان', icon: ShoppingCart, roles: ['admin', 'data manager', 'salesman'] },
   { href: '/purchases', label: 'کڕینەکان', icon: Package, roles: ['admin', 'data manager'] },
   { href: '/stock', label: 'کۆگا', icon: Archive, roles: ['admin', 'data manager', 'salesman'] },
@@ -18,6 +17,7 @@ const allNavLinks = [
   { href: '/customers', label: 'کڕیارەکان', icon: Users, roles: ['admin', 'data manager', 'salesman'] },
   { href: '/suppliers', label: 'دابینکەران', icon: Building, roles: ['admin', 'data manager'] },
   { href: '/expenses', label: 'خەرجییەکان', icon: DollarSign, roles: ['admin', 'data manager'] },
+  { href: '/dashboard', label: 'داشبۆرد', icon: Home, roles: ['admin', 'data manager', 'salesman'] },
 ];
 
 const settingsLink = { href: '/settings', label: 'ڕێکخستنەکان', icon: Settings, roles: ['admin', 'data manager'] };
@@ -48,7 +48,7 @@ export function SidebarNav() {
         <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
           <div className="flex items-center gap-2 font-semibold">
             <BedDouble className="h-6 w-6 text-primary" />
-            <span className="animated-gradient-border">BedArt Group</span>
+            <span>BedArt Group</span>
           </div>
         </div>
         <div className="flex-1">

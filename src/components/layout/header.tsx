@@ -9,7 +9,6 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 
 const allNavLinks = [
-  { href: '/dashboard', label: 'داشبۆرد', icon: Home, roles: ['admin', 'data manager', 'salesman'] },
   { href: '/sales', label: 'فرۆشتنەکان', icon: ShoppingCart, roles: ['admin', 'data manager', 'salesman'] },
   { href: '/purchases', label: 'کڕینەکان', icon: Package, roles: ['admin', 'data manager'] },
   { href: '/stock', label: 'کۆگا', icon: Archive, roles: ['admin', 'data manager', 'salesman'] },
@@ -17,6 +16,7 @@ const allNavLinks = [
   { href: '/customers', label: 'کڕیارەکان', icon: Users, roles: ['admin', 'data manager', 'salesman'] },
   { href: '/suppliers', label: 'دابینکەران', icon: Building, roles: ['admin', 'data manager'] },
   { href: '/expenses', label: 'خەرجییەکان', icon: DollarSign, roles: ['admin', 'data manager'] },
+  { href: '/dashboard', label: 'داشبۆرد', icon: Home, roles: ['admin', 'data manager', 'salesman'] },
   { href: '/settings', label: 'ڕێکخستنەکان', icon: Settings, roles: ['admin', 'data manager'] },
 ];
 
@@ -69,7 +69,7 @@ export function Header() {
                  </nav>
             </SheetContent>
         </Sheet>
-         <div className="flex-1 text-center text-lg font-semibold animated-gradient-border">BedArt Group</div>
+         <div className="flex-1 text-center text-lg font-semibold">BedArt Group</div>
          <Button size="icon" variant="ghost" onClick={logout}>
             <LogOut className="h-5 w-5" />
             <span className="sr-only">Logout</span>
