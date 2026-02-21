@@ -89,6 +89,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user, isLoading, pathname, router]);
 
+  // Real-time presence management using Page Visibility API
+  useEffect(() => {
+    if (!user || !firestore) {
+      return;
+    }
+
+    const userStatusRef = doc(firestore, 'users', user.id);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        updateDoc(userStatusRef, { status: 'offline' });
+      } else {
+        updateDoc(userStatusRef, { status: 'online' });
+      }
+    };
+    
+    const handleBeforeUnload = () => {
+        // This is a best-effort attempt to set the user offline.
+        updateDoc(userStatusRef, { status: 'offline' });
+    };
+
+    // Set user online when they first load/focus the page
+    updateDoc(userStatusRef, { status: 'online' });
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      // Set user offline when the component unmounts (e.g., logout)
+      updateDoc(userStatusRef, { status: 'offline' });
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [user, firestore]);
+
   const login = async (name: string, code: string): Promise<boolean> => {
     if (!firestore) {
         console.error("Firestore is not initialized.");
@@ -111,7 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (userData.code === code) {
             const authUser: AuthUser = { id: userDoc.id, name: userData.name, role: userData.role, photoURL: userData.photoURL, allowedPages: userData.allowedPages || [] };
             
-            await updateDoc(userDoc.ref, { status: 'online' });
+            // The presence useEffect will immediately set the status to 'online' after login.
             
             setUser(authUser);
             try {
@@ -134,6 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     if (user && firestore) {
         try {
+            // Explicitly set offline on logout for immediate effect
             const userRef = doc(firestore, 'users', user.id);
             await updateDoc(userRef, { status: 'offline' });
         } catch (error) {
