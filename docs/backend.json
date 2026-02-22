@@ -185,7 +185,7 @@
       "properties": {
         "id": { "type": "string", "description": "Unique identifier for the User entity." },
         "name": { "type": "string", "description": "The user's name." },
-        "role": { "type": "string", "description": "The user's role.", "enum": ["Admin", "Data Manager", "Salesman"] },
+        "role": { "type": "string", "description": "The user's role.", "enum": ["Admin", "Data Manager", "Salesman", "Program Previewer"] },
         "code": { "type": "string", "description": "The user's password code." },
         "photoURL": { "type": "string", "description": "URL of the user's profile picture." },
         "status": { "type": "string", "enum": ["online", "offline"], "description": "The user's current presence status." },

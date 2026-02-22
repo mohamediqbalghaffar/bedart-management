@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useRouter, usePathname } from 'next/navigation';
 import { useFirestore, collection, query, where, getDocs, limit, setDoc, doc, updateDoc } from '@/firebase';
 
-type Role = 'Admin' | 'Data Manager' | 'Salesman';
+type Role = 'Admin' | 'Data Manager' | 'Salesman' | 'Program Previewer';
 
 type User = {
     id: string;

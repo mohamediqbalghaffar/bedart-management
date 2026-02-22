@@ -16,7 +16,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     if (!isLoading) {
       if (!user) {
         router.push('/login');
-      } else if (user.role === 'Salesman') {
+      } else if (user.role === 'Salesman' || user.role === 'Program Previewer') {
         const allowedPages = user.allowedPages || [];
         // If the salesman has no pages allowed, or is trying to access an unallowed page
         if (allowedPages.length === 0) {

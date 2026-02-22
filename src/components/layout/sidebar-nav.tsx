@@ -12,12 +12,12 @@ import { ActiveUsers } from './active-users';
 const allNavLinks = [
   { href: '/sales', label: 'فرۆشتنەکان', icon: ShoppingCart, roles: ['admin', 'data manager', 'salesman'] },
   { href: '/purchases', label: 'کڕینەکان', icon: Package, roles: ['admin', 'data manager'] },
-  { href: '/stock', label: 'کۆگا', icon: Archive, roles: ['admin', 'data manager', 'salesman'] },
-  { href: '/products', label: 'ناوی کاڵاکان', icon: PackageSearch, roles: ['admin', 'data manager'] },
+  { href: '/stock', label: 'کۆگا', icon: Archive, roles: ['admin', 'data manager', 'salesman', 'program previewer'] },
+  { href: '/products', label: 'ناوی کاڵاکان', icon: PackageSearch, roles: ['admin', 'data manager', 'program previewer'] },
   { href: '/customers', label: 'کڕیارەکان', icon: Users, roles: ['admin', 'data manager', 'salesman'] },
   { href: '/suppliers', label: 'دابینکەران', icon: Building, roles: ['admin', 'data manager'] },
   { href: '/expenses', label: 'خەرجییەکان', icon: DollarSign, roles: ['admin', 'data manager'] },
-  { href: '/dashboard', label: 'داشبۆرد', icon: Home, roles: ['admin', 'data manager', 'salesman'] },
+  { href: '/dashboard', label: 'داشبۆرد', icon: Home, roles: ['admin', 'data manager', 'salesman', 'program previewer'] },
 ];
 
 const settingsLink = { href: '/settings', label: 'ڕێکخستنەکان', icon: Settings, roles: ['admin', 'data manager'] };
@@ -35,7 +35,7 @@ export function SidebarNav() {
         return false;
     }
     
-    if (userRole === 'salesman') {
+    if (userRole === 'salesman' || userRole === 'program previewer') {
         return user.allowedPages?.includes(link.href);
     }
     
@@ -48,7 +48,7 @@ export function SidebarNav() {
         <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
           <div className="flex items-center gap-2 font-semibold">
             <BedDouble className="h-6 w-6 text-primary" />
-            <span>BedArt Group</span>
+            <span className="animated-gradient-border">BedArt Group</span>
           </div>
         </div>
         <div className="flex-1">

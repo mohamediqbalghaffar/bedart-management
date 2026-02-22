@@ -11,12 +11,12 @@ import { useAuth } from '@/contexts/auth-context';
 const allNavLinks = [
   { href: '/sales', label: 'فرۆشتنەکان', icon: ShoppingCart, roles: ['admin', 'data manager', 'salesman'] },
   { href: '/purchases', label: 'کڕینەکان', icon: Package, roles: ['admin', 'data manager'] },
-  { href: '/stock', label: 'کۆگا', icon: Archive, roles: ['admin', 'data manager', 'salesman'] },
-  { href: '/products', label: 'ناوی کاڵاکان', icon: PackageSearch, roles: ['admin', 'data manager'] },
+  { href: '/stock', label: 'کۆگا', icon: Archive, roles: ['admin', 'data manager', 'salesman', 'program previewer'] },
+  { href: '/products', label: 'ناوی کاڵاکان', icon: PackageSearch, roles: ['admin', 'data manager', 'program previewer'] },
   { href: '/customers', label: 'کڕیارەکان', icon: Users, roles: ['admin', 'data manager', 'salesman'] },
   { href: '/suppliers', label: 'دابینکەران', icon: Building, roles: ['admin', 'data manager'] },
   { href: '/expenses', label: 'خەرجییەکان', icon: DollarSign, roles: ['admin', 'data manager'] },
-  { href: '/dashboard', label: 'داشبۆرد', icon: Home, roles: ['admin', 'data manager', 'salesman'] },
+  { href: '/dashboard', label: 'داشبۆرد', icon: Home, roles: ['admin', 'data manager', 'salesman', 'program previewer'] },
   { href: '/settings', label: 'ڕێکخستنەکان', icon: Settings, roles: ['admin', 'data manager'] },
 ];
 
@@ -32,7 +32,7 @@ export function Header() {
         return false;
     }
     
-    if (userRole === 'salesman') {
+    if (userRole === 'salesman' || userRole === 'program previewer') {
         return user.allowedPages?.includes(link.href);
     }
     
@@ -69,7 +69,9 @@ export function Header() {
                  </nav>
             </SheetContent>
         </Sheet>
-         <div className="flex-1 text-center text-lg font-semibold">BedArt Group</div>
+         <div className="flex-1 text-center text-lg font-semibold">
+            <span className="animated-gradient-border">BedArt Group</span>
+         </div>
          <Button size="icon" variant="ghost" onClick={logout}>
             <LogOut className="h-5 w-5" />
             <span className="sr-only">Logout</span>

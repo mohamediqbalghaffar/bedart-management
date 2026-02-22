@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useAuth } from './auth-context';
 
 interface ConfidentialModeContextType {
   isConfidential: boolean;
@@ -10,25 +11,44 @@ interface ConfidentialModeContextType {
 const ConfidentialModeContext = createContext<ConfidentialModeContextType | undefined>(undefined);
 
 export function ConfidentialModeProvider({ children }: { children: ReactNode }) {
-  const [isConfidential, setIsConfidential] = useState(false);
+  const { user } = useAuth();
+  const [isConfidentialState, setIsConfidentialState] = useState(false);
+
+  const isPreviewer = user?.role === 'Program Previewer';
 
   useEffect(() => {
-    const storedValue = localStorage.getItem('confidentialMode');
-    if (storedValue) {
-      setIsConfidential(JSON.parse(storedValue));
+    if (isPreviewer) {
+      // For previewer, mode is always on, no need to check storage.
+      return;
     }
-  }, []);
+    try {
+        const storedValue = localStorage.getItem('confidentialMode');
+        if (storedValue) {
+            setIsConfidentialState(JSON.parse(storedValue));
+        }
+    } catch (e) {
+        console.error("Could not access localStorage for confidential mode", e);
+    }
+  }, [isPreviewer]);
 
   const toggleConfidentialMode = () => {
-    setIsConfidential(prev => {
+    if (isPreviewer) return; // Toggle is disabled for previewer
+    
+    setIsConfidentialState(prev => {
       const newValue = !prev;
-      localStorage.setItem('confidentialMode', JSON.stringify(newValue));
+      try {
+        localStorage.setItem('confidentialMode', JSON.stringify(newValue));
+      } catch (e) {
+        console.error("Could not access localStorage for confidential mode", e);
+      }
       return newValue;
     });
   };
+  
+  const finalIsConfidential = isPreviewer || isConfidentialState;
 
   return (
-    <ConfidentialModeContext.Provider value={{ isConfidential, toggleConfidentialMode }}>
+    <ConfidentialModeContext.Provider value={{ isConfidential: finalIsConfidential, toggleConfidentialMode }}>
       {children}
     </ConfidentialModeContext.Provider>
   );

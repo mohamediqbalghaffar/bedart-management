@@ -20,7 +20,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 type User = {
     id: string;
     name: string;
-    role: 'Admin' | 'Data Manager' | 'Salesman';
+    role: 'Admin' | 'Data Manager' | 'Salesman' | 'Program Previewer';
     code: string;
     photoURL?: string;
     allowedPages?: string[];
@@ -28,7 +28,7 @@ type User = {
 
 const userSchema = z.object({
   name: z.string().min(1, { message: "ناوی بەکارهێنەر پێویستە." }),
-  role: z.enum(['Admin', 'Data Manager', 'Salesman'], { required_error: "ڕۆڵ پێویستە."}),
+  role: z.enum(['Admin', 'Data Manager', 'Salesman', 'Program Previewer'], { required_error: "ڕۆڵ پێویستە."}),
   code: z.string().optional(),
   photoURL: z.string().optional(),
   allowedPages: z.array(z.string()).optional(),
@@ -118,6 +118,8 @@ export function AddEditUserDialog({ children, user, onUserChanged }: AddEditUser
                 }
                 if (data.role === 'Salesman') {
                     updateData.allowedPages = data.allowedPages || [];
+                } else if (data.role === 'Program Previewer') {
+                    updateData.allowedPages = ['/dashboard', '/products', '/stock'];
                 } else {
                     updateData.allowedPages = [];
                 }
@@ -133,7 +135,7 @@ export function AddEditUserDialog({ children, user, onUserChanged }: AddEditUser
                     ...data,
                     id: userRef.id,
                     photoURL: form.getValues('photoURL') || "",
-                    allowedPages: data.role === 'Salesman' ? data.allowedPages : [],
+                    allowedPages: data.role === 'Salesman' ? data.allowedPages : (data.role === 'Program Previewer' ? ['/dashboard', '/products', '/stock'] : []),
                     code: data.code,
                 };
                 await setDoc(userRef, newUserData);
@@ -152,10 +154,12 @@ export function AddEditUserDialog({ children, user, onUserChanged }: AddEditUser
      const roleTranslations: Record<User['role'], string> = {
         'Admin': 'بەڕێوەبەر',
         'Data Manager': 'داتا مانجەر',
-        'Salesman': 'فرۆشیار'
+        'Salesman': 'فرۆشیار',
+        'Program Previewer': 'پیشاندەری پرۆگرام',
     };
     
     const getInitials = (name: string) => {
+        if (!name) return "";
         return name.split(' ').map(n => n[0]).join('').toUpperCase();
     }
 
