@@ -91,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Real-time presence management using Page Visibility API
   useEffect(() => {
-    if (!user || !firestore) {
+    if (!user || !user.id || !firestore) {
       return;
     }
 
