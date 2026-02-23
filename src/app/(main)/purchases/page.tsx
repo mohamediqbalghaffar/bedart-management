@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { PlusCircle, Loader2, Trash2, FileSpreadsheet, Edit, FileUp, FileDown } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { BuyingForm } from "./components/buying-form";
@@ -483,7 +483,7 @@ function PurchasesList() {
                         </TableBody>
                     </Table>
                      {/* Mobile View */}
-                    <div className="md:hidden space-y-4">
+                    <div className="space-y-4 md:hidden">
                         {isLoading ? (
                             <div className="flex justify-center items-center h-48"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></div>
                         ) : enrichedForms.length === 0 ? (
@@ -550,5 +550,3 @@ export default function PurchasesPage() {
         </div>
     );
 }
-
-    
