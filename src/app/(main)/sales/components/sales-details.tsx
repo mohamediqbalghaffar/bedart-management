@@ -153,12 +153,12 @@ export function SalesDetails({ formId }: { formId: string }) {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                             <div><span className="font-semibold">کڕیار:</span><p className="text-muted-foreground">{formData.customerName}</p></div>
                             <div><span className="font-semibold">ژ. مۆبایل:</span><p className="text-muted-foreground"><ConfidentialBlur>{formData.customerPhoneNumber || 'نەزانراو'}</ConfidentialBlur></p></div>
-                            <div className="col-span-2"><span className="font-semibold">ناونیشان:</span><p className="text-muted-foreground">{formData.customerAddress || 'نەزانراو'}</p></div>
-                             <div className="col-span-2"><span className="font-semibold">فرۆشیار:</span><p className="text-muted-foreground">{formData.creatorName || 'نەزانراو'}</p></div>
-                            <div className="col-span-2"><span className="font-semibold">جۆری پارەدان:</span><p className="text-muted-foreground">{paymentTypeTranslations[formData.paymentType] || formData.paymentType}</p></div>
+                            <div className="col-span-1 sm:col-span-2"><span className="font-semibold">ناونیشان:</span><p className="text-muted-foreground">{formData.customerAddress || 'نەزانراو'}</p></div>
+                             <div className="col-span-1 sm:col-span-2"><span className="font-semibold">فرۆشیار:</span><p className="text-muted-foreground">{formData.creatorName || 'نەزانراو'}</p></div>
+                            <div className="col-span-1 sm:col-span-2"><span className="font-semibold">جۆری پارەدان:</span><p className="text-muted-foreground">{paymentTypeTranslations[formData.paymentType] || formData.paymentType}</p></div>
                         </div>
                     </CardContent>
                 </Card>
@@ -166,23 +166,43 @@ export function SalesDetails({ formId }: { formId: string }) {
                 <Card>
                     <CardHeader><CardTitle>کاڵا فرۆشراوەکان</CardTitle></CardHeader>
                     <CardContent>
-                        <Table>
-                            <TableHeader><TableRow><TableHead className="text-right">کاڵا</TableHead><TableHead className="text-right">دانە</TableHead><TableHead className="text-right">نرخی تاک</TableHead><TableHead className="text-left">نرخی کۆ</TableHead></TableRow></TableHeader>
-                            <TableBody>
+                        <div className="-mx-6 md:mx-0">
+                             {/* Desktop Table */}
+                            <Table className="hidden md:table">
+                                <TableHeader><TableRow><TableHead className="text-right">کاڵا</TableHead><TableHead className="text-right">دانە</TableHead><TableHead className="text-right">نرخی تاک</TableHead><TableHead className="text-left">نرخی کۆ</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {products && products.length > 0 ? (
+                                        products.map((item, index) => (
+                                            <TableRow key={index}>
+                                                <TableCell className="text-right">{item.productName}</TableCell>
+                                                <TableCell className="text-right"><ConfidentialBlur>{item.quantity}</ConfidentialBlur></TableCell>
+                                                <TableCell className="text-right"><ConfidentialBlur>{currencyFormatter.format(item.unitPrice)}</ConfidentialBlur></TableCell>
+                                                <TableCell className="text-left font-semibold"><ConfidentialBlur>{currencyFormatter.format(item.lineTotal)}</ConfidentialBlur></TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow><TableCell colSpan={4} className="text-center">هیچ کاڵایەک بۆ ئەم فۆڕمە تۆمار نەکراوە.</TableCell></TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                            {/* Mobile Cards */}
+                            <div className="md:hidden space-y-4 px-6">
                                 {products && products.length > 0 ? (
                                     products.map((item, index) => (
-                                        <TableRow key={index}>
-                                            <TableCell className="text-right">{item.productName}</TableCell>
-                                            <TableCell className="text-right"><ConfidentialBlur>{item.quantity}</ConfidentialBlur></TableCell>
-                                            <TableCell className="text-right"><ConfidentialBlur>{currencyFormatter.format(item.unitPrice)}</ConfidentialBlur></TableCell>
-                                            <TableCell className="text-left font-semibold"><ConfidentialBlur>{currencyFormatter.format(item.lineTotal)}</ConfidentialBlur></TableCell>
-                                        </TableRow>
+                                        <Card key={index}>
+                                            <CardHeader><CardTitle>{item.productName}</CardTitle></CardHeader>
+                                            <CardContent className="space-y-2 text-sm">
+                                                <div className="flex justify-between items-center"><span>دانە:</span> <ConfidentialBlur><Badge variant="secondary">{item.quantity}</Badge></ConfidentialBlur></div>
+                                                <div className="flex justify-between items-center"><span>نرخی تاک:</span> <ConfidentialBlur>{currencyFormatter.format(item.unitPrice)}</ConfidentialBlur></div>
+                                                <div className="flex justify-between items-center font-semibold"><span>نرخی کۆ:</span> <ConfidentialBlur>{currencyFormatter.format(item.lineTotal)}</ConfidentialBlur></div>
+                                            </CardContent>
+                                        </Card>
                                     ))
                                 ) : (
-                                    <TableRow><TableCell colSpan={4} className="text-center">هیچ کاڵایەک بۆ ئەم فۆڕمە تۆمار نەکراوە.</TableCell></TableRow>
+                                    <p className="text-center text-muted-foreground py-4">هیچ کاڵایەک بۆ ئەم فۆڕمە تۆمار نەکراوە.</p>
                                 )}
-                            </TableBody>
-                        </Table>
+                            </div>
+                        </div>
                         <div className="mt-4 space-y-2 text-left p-4 border-t">
                             <div className="flex justify-between"><span>کۆی کاڵاکان:</span><ConfidentialBlur><span className="font-medium">{currencyFormatter.format(subTotal)}</span></ConfidentialBlur></div>
                             {discountAmount > 0 && <div className="flex justify-between text-destructive"><span>داشکاندن:</span><ConfidentialBlur><span className="font-medium">-{currencyFormatter.format(discountAmount)}</span></ConfidentialBlur></div>}
@@ -196,23 +216,42 @@ export function SalesDetails({ formId }: { formId: string }) {
                     <Card>
                         <CardHeader><CardTitle>تۆماری پارەدانەکان</CardTitle></CardHeader>
                         <CardContent>
-                            <Table>
-                                <TableHeader><TableRow><TableHead className="text-right">بەروار</TableHead><TableHead className="text-right">بڕ</TableHead><TableHead className="text-right">شێواز</TableHead><TableHead className="text-right">تێبینی</TableHead></TableRow></TableHeader>
-                                <TableBody>
-                                    {payments && payments.length > 0 ? (
+                            <div className="-mx-6 md:mx-0">
+                                {/* Desktop Table */}
+                                <Table className="hidden md:table">
+                                    <TableHeader><TableRow><TableHead className="text-right">بەروار</TableHead><TableHead className="text-right">بڕ</TableHead><TableHead className="text-right">شێواز</TableHead><TableHead className="text-right">تێبینی</TableHead></TableRow></TableHeader>
+                                    <TableBody>
+                                        {payments && payments.length > 0 ? (
+                                            payments.map((p) => (
+                                                <TableRow key={p.id}>
+                                                    <TableCell className="text-right">{p.paymentDate}</TableCell>
+                                                    <TableCell className="text-right font-semibold"><ConfidentialBlur>{currencyFormatter.format(p.amountPaid)}</ConfidentialBlur></TableCell>
+                                                    <TableCell className="text-right">{p.paymentMethod === 'Cash' ? 'کاش' : 'حەواڵە'}</TableCell>
+                                                    <TableCell className="text-right">{p.note || 'نەزانراو'}</TableCell>
+                                                </TableRow>
+                                            ))
+                                        ) : (
+                                            <TableRow><TableCell colSpan={4} className="text-center">هیچ پارەدانێک تۆمار نەکراوە.</TableCell></TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                                {/* Mobile Cards */}
+                                <div className="md:hidden space-y-4 px-6">
+                                     {payments && payments.length > 0 ? (
                                         payments.map((p) => (
-                                            <TableRow key={p.id}>
-                                                <TableCell className="text-right">{p.paymentDate}</TableCell>
-                                                <TableCell className="text-right font-semibold"><ConfidentialBlur>{currencyFormatter.format(p.amountPaid)}</ConfidentialBlur></TableCell>
-                                                <TableCell className="text-right">{p.paymentMethod === 'Cash' ? 'کاش' : 'حەواڵە'}</TableCell>
-                                                <TableCell className="text-right">{p.note || 'نەزانراو'}</TableCell>
-                                            </TableRow>
+                                            <Card key={p.id}>
+                                                <CardHeader><CardTitle>{currencyFormatter.format(p.amountPaid)}</CardTitle><CardDescription>{p.paymentDate}</CardDescription></CardHeader>
+                                                <CardContent>
+                                                     <div className="flex justify-between text-sm"><span>شێواز:</span> <span>{p.paymentMethod === 'Cash' ? 'کاش' : 'حەواڵە'}</span></div>
+                                                    {p.note && <div className="flex justify-between text-sm"><span>تێبینی:</span> <span>{p.note}</span></div>}
+                                                </CardContent>
+                                            </Card>
                                         ))
-                                    ) : (
-                                        <TableRow><TableCell colSpan={4} className="text-center">هیچ پارەدانێک تۆمار نەکراوە.</TableCell></TableRow>
+                                     ) : (
+                                        <p className="text-center text-muted-foreground py-4">هیچ پارەدانێک تۆمار نەکراوە.</p>
                                     )}
-                                </TableBody>
-                            </Table>
+                                </div>
+                            </div>
                             <div className="mt-4 space-y-2 text-left p-4 border-t">
                                 <div className="flex justify-between"><span>کۆی دراوە:</span><ConfidentialBlur><span className="font-medium text-green-500">{currencyFormatter.format(totalPaid)}</span></ConfidentialBlur></div>
                                 <div className="flex justify-between font-bold text-lg text-destructive"><span>ماوە:</span><ConfidentialBlur><span>{currencyFormatter.format(calculatedRemaining)}</span></ConfidentialBlur></div>

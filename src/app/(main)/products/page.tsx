@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PlusCircle, Loader2, FileDown, FileUp, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useFirestore, useCollection, useMemoFirebase, collection, writeBatch, doc, getDocs, query, where } from '@/firebase';
@@ -171,10 +171,21 @@ function UploadItemsButton({ onUploadSuccess, existingProducts }: { onUploadSucc
                 <DialogContent dir="rtl" className="sm:max-w-2xl">
                     <DialogHeader><DialogTitle>پشتڕاستکردنەوەی هاوردەکردن</DialogTitle><DialogDescription>ئەم کاڵا نوێیانە بۆ لیستی پێناسەکان زیاد دەکرێن.</DialogDescription></DialogHeader>
                     <div className="max-h-96 overflow-auto">
-                        <Table>
+                        <Table className="hidden md:table">
                             <TableHeader><TableRow><TableHead>ناوی کاڵا</TableHead><TableHead>پۆل</TableHead><TableHead>نرخی فرۆشتن</TableHead></TableRow></TableHeader>
                             <TableBody>{newProducts.map((p, i) => ( <TableRow key={i}><TableCell>{p.productName}</TableCell><TableCell>{categoryTranslations[p.category]}</TableCell><TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(p.sellingPrice || 0)}</TableCell></TableRow>))}</TableBody>
                         </Table>
+                        <div className="space-y-4 md:hidden">
+                            {newProducts.map((p, i) => (
+                                <Card key={i}>
+                                    <CardHeader><CardTitle>{p.productName}</CardTitle></CardHeader>
+                                    <CardContent>
+                                        <div className="flex justify-between"><span>پۆل:</span><span>{categoryTranslations[p.category]}</span></div>
+                                        <div className="flex justify-between"><span>نرخی فرۆشتن:</span><span>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(p.sellingPrice || 0)}</span></div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
                     </div>
                     <DialogFooter>
                         <Button onClick={handleSave} disabled={isSaving}>{isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}پاشەکەوتکردن</Button>
@@ -401,5 +412,3 @@ export default function ProductsPage() {
         </div>
     );
 }
-
-    

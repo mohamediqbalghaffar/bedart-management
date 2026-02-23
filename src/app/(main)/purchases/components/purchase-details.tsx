@@ -86,8 +86,9 @@ export function PurchaseDetails({ formId }: { formId: string }) {
                     <CardTitle>لیستی کاڵا کڕاوەکان</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <ScrollArea className="h-[300px]">
-                        <Table>
+                    <ScrollArea className="h-[300px] -mx-6">
+                        {/* Desktop Table */}
+                        <Table className="hidden md:table">
                             <TableHeader>
                                 <TableRow>
                                     <TableHead className="text-right">کاڵا</TableHead>
@@ -113,6 +114,25 @@ export function PurchaseDetails({ formId }: { formId: string }) {
                                 )}
                             </TableBody>
                         </Table>
+                        {/* Mobile Cards */}
+                        <div className="md:hidden space-y-4 px-6">
+                             {products && products.length > 0 ? (
+                                products.map((item, index) => (
+                                    <Card key={index}>
+                                        <CardHeader>
+                                            <CardTitle>{item.productName}</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-2">
+                                            <div className="flex justify-between"><span>دانە:</span><ConfidentialBlur><Badge variant="secondary">{item.quantity}</Badge></ConfidentialBlur></div>
+                                            <div className="flex justify-between"><span>نرخی تاک:</span><ConfidentialBlur><Badge>{currencyFormatter.format(item.unitPrice)}</Badge></ConfidentialBlur></div>
+                                            <div className="flex justify-between font-semibold"><span>نرخی کۆ:</span><ConfidentialBlur>{currencyFormatter.format(item.quantity * item.unitPrice)}</ConfidentialBlur></div>
+                                        </CardContent>
+                                    </Card>
+                                ))
+                            ) : (
+                                <div className="text-center py-8 text-muted-foreground">هیچ کاڵایەک بۆ ئەم پسوولەیە تۆمار نەکراوە.</div>
+                            )}
+                        </div>
                     </ScrollArea>
                     <div className="mt-4 space-y-2 text-left p-4 border-t">
                          <div className="flex justify-between"><span>کۆی کاڵاکان:</span><ConfidentialBlur><span className="font-medium">{currencyFormatter.format(subTotal)}</span></ConfidentialBlur></div>
