@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { FileDown, Search, Loader2, Info, ArrowRightLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useFirestore, useCollection, useMemoFirebase, collection } from '@/firebase';
@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { StockTransferDialog } from './components/stock-transfer-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ConfidentialBlur } from '@/components/shared/confidential-blur';
+import { Separator } from '@/components/ui/separator';
 
 type Product = {
     productName: string;
@@ -166,7 +167,8 @@ function StockPageContent() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <ScrollArea className="h-[60vh]">
+                    {/* Desktop View */}
+                    <ScrollArea className="h-[60vh] hidden md:block">
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -232,6 +234,63 @@ function StockPageContent() {
                             </TableBody>
                         </Table>
                     </ScrollArea>
+                    
+                    {/* Mobile View */}
+                    <div className="md:hidden">
+                        {isLoading ? (
+                            <div className="flex justify-center items-center h-48"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></div>
+                        ) : groupedProducts.length === 0 ? (
+                             <div className="py-8 text-center text-muted-foreground">
+                                {searchTerm ? `هیچ کاڵایەک نەدۆزرایەوە بۆ "${searchTerm}"` : "هیچ کاڵایەک لە کۆگا نییە."}
+                            </div>
+                        ) : (
+                            <ScrollArea className="h-[60vh] -mx-4 px-4">
+                                <div className="space-y-4">
+                                    {groupedProducts.map((product) => (
+                                         <Card key={`${product.productName}-${product.sizeModel}`} className="bg-card/80">
+                                            <CardHeader>
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <CardTitle>{product.productName} {product.sizeModel && `(${product.sizeModel})`}</CardTitle>
+                                                        <CardDescription>{product.category}</CardDescription>
+                                                    </div>
+                                                     <StockTransferDialog product={product} onTransferSuccess={onTransferSuccess}>
+                                                        <Button variant="ghost" size="icon" disabled={!product.locations.Warehouse && !product.locations['Shop Showroom']}>
+                                                            <ArrowRightLeft className="h-5 w-5 text-blue-500" />
+                                                        </Button>
+                                                    </StockTransferDialog>
+                                                </div>
+                                            </CardHeader>
+                                            <CardContent className="space-y-3 text-sm">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-muted-foreground">دابینکەر:</span>
+                                                    <span className="font-medium">{product.supplierName}</span>
+                                                </div>
+                                                <Separator />
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-muted-foreground">کۆگا:</span>
+                                                    <ConfidentialBlur><Badge variant="secondary">{product.locations.Warehouse?.currentQuantity || 0}</Badge></ConfidentialBlur>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-muted-foreground">فرۆشگا:</span>
+                                                    <ConfidentialBlur><Badge variant="secondary">{product.locations['Shop Showroom']?.currentQuantity || 0}</Badge></ConfidentialBlur>
+                                                </div>
+                                                <Separator />
+                                                <div className="flex justify-between items-center font-bold">
+                                                    <span>کۆی گشتی:</span>
+                                                    <ConfidentialBlur>
+                                                        <Badge variant={product.totalQuantity < 5 ? "destructive" : "default"} className={product.totalQuantity >= 5 ? "bg-primary" : ""}>
+                                                            {product.totalQuantity}
+                                                        </Badge>
+                                                    </ConfidentialBlur>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            </ScrollArea>
+                        )}
+                    </div>
                 </CardContent>
             </Card>
         </div>
