@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { useFirestore, collection, getDocs, query, where, useCollection, useMemoFirebase } from '@/firebase';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Loader2, DollarSign, ShoppingCart, Archive, Package, LineChart, TrendingUp, TrendingDown, CalendarIcon } from 'lucide-react';
 import { StatCard } from '@/components/shared/stat-card';
 import { format as formatDate, subDays, parseISO, isValid, startOfDay, endOfDay, differenceInDays } from 'date-fns';
@@ -23,6 +23,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConfidentialBlur } from '@/components/shared/confidential-blur';
+import { Badge } from '@/components/ui/badge';
 
 
 // --- TYPE DEFINITIONS ---
@@ -290,21 +291,47 @@ function SalesDetailDialog({ data }: { data: any }) {
                 <AccordionItem value="item-2" className="border rounded-lg bg-card text-card-foreground">
                      <AccordionTrigger className="p-6 text-lg font-semibold">پوختەی هەر کاڵایەک</AccordionTrigger>
                     <AccordionContent className="px-6 pb-6">
-                        <Table><TableHeader><TableRow><TableHead className="text-right">ناوی کاڵا</TableHead><TableHead className="text-right">کۆی دانە</TableHead><TableHead className="text-right">کۆی داهات</TableHead></TableRow></TableHeader>
+                        {/* Desktop Table */}
+                        <Table className="hidden md:table">
+                            <TableHeader><TableRow><TableHead className="text-right">ناوی کاڵا</TableHead><TableHead className="text-right">کۆی دانە</TableHead><TableHead className="text-right">کۆی داهات</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {filteredData.perProduct.map((item: any) => ( <TableRow key={item.productName}><TableCell>{item.productName}</TableCell><TableCell><ConfidentialBlur>{item.totalQuantity}</ConfidentialBlur></TableCell><TableCell><ConfidentialBlur>{currencyFormatter.format(item.totalRevenue)}</ConfidentialBlur></TableCell></TableRow> ))}
                             </TableBody>
                         </Table>
+                        {/* Mobile Cards */}
+                        <div className="space-y-4 md:hidden">
+                            {filteredData.perProduct.map((item: any) => (
+                                <Card key={item.productName}>
+                                    <CardHeader><CardTitle>{item.productName}</CardTitle></CardHeader>
+                                    <CardContent className="space-y-2">
+                                        <div className="flex justify-between"><span>کۆی دانە:</span><ConfidentialBlur><Badge variant="secondary">{item.totalQuantity}</Badge></ConfidentialBlur></div>
+                                        <div className="flex justify-between"><span>کۆی داهات:</span><ConfidentialBlur><Badge>{currencyFormatter.format(item.totalRevenue)}</Badge></ConfidentialBlur></div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
                     </AccordionContent>
                 </AccordionItem>
                  <AccordionItem value="item-3" className="border rounded-lg bg-card text-card-foreground">
                      <AccordionTrigger className="p-6 text-lg font-semibold">لیستی فرۆشتنەکان</AccordionTrigger>
                     <AccordionContent className="px-6 pb-6">
-                        <Table><TableHeader><TableRow><TableHead className="text-right">کڕیار</TableHead><TableHead className="text-right">بەروار</TableHead><TableHead className="text-right">کۆی گشتی</TableHead></TableRow></TableHeader>
+                        {/* Desktop Table */}
+                        <Table className="hidden md:table"><TableHeader><TableRow><TableHead className="text-right">کڕیار</TableHead><TableHead className="text-right">بەروار</TableHead><TableHead className="text-right">کۆی گشتی</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {filteredData.sales?.map((sale: any) => ( <TableRow key={sale.id}><TableCell>{sale.customerName}</TableCell><TableCell>{formatDate(parseISO(sale.issueDate), 'dd/MM/yyyy')}</TableCell><TableCell><ConfidentialBlur>{currencyFormatter.format(sale.totalPrice)}</ConfidentialBlur></TableCell></TableRow> ))}
                             </TableBody>
                         </Table>
+                        {/* Mobile Cards */}
+                        <div className="space-y-4 md:hidden">
+                            {filteredData.sales?.map((sale: any) => (
+                                <Card key={sale.id}>
+                                    <CardHeader><CardTitle>{sale.customerName}</CardTitle><CardDescription>{formatDate(parseISO(sale.issueDate), 'dd/MM/yyyy')}</CardDescription></CardHeader>
+                                    <CardContent>
+                                        <div className="flex justify-between"><span>کۆی گشتی:</span><ConfidentialBlur><Badge>{currencyFormatter.format(sale.totalPrice)}</Badge></ConfidentialBlur></div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
                     </AccordionContent>
                 </AccordionItem>
             </Accordion>
@@ -315,11 +342,23 @@ function SalesDetailDialog({ data }: { data: any }) {
 function ExpensesDetailDialog({ expenses }: { expenses: WithId<Expense>[] | null }) {
     return (
         <div className="max-h-[60vh] overflow-y-auto">
-            <Table><TableHeader><TableRow><TableHead className="text-right">خەرجی</TableHead><TableHead className="text-right">بەروار</TableHead><TableHead className="text-right">بڕ</TableHead></TableRow></TableHeader>
+            {/* Desktop Table */}
+            <Table className="hidden md:table"><TableHeader><TableRow><TableHead className="text-right">خەرجی</TableHead><TableHead className="text-right">بەروار</TableHead><TableHead className="text-right">بڕ</TableHead></TableRow></TableHeader>
                 <TableBody>
                     {expenses?.map(expense => ( <TableRow key={expense.id}><TableCell>{expense.name}</TableCell><TableCell>{formatDate(parseISO(expense.date), 'dd/MM/yyyy')}</TableCell><TableCell><ConfidentialBlur>{new Intl.NumberFormat('en-US', { style: 'currency', currency: expense.currency || 'USD' }).format(expense.amount)}</ConfidentialBlur></TableCell></TableRow> ))}
                 </TableBody>
             </Table>
+            {/* Mobile Cards */}
+            <div className="space-y-4 md:hidden">
+                {expenses?.map(expense => (
+                    <Card key={expense.id}>
+                        <CardHeader><CardTitle>{expense.name}</CardTitle><CardDescription>{formatDate(parseISO(expense.date), 'dd/MM/yyyy')}</CardDescription></CardHeader>
+                        <CardContent>
+                            <div className="flex justify-between"><span>بڕ:</span><ConfidentialBlur><Badge variant="destructive">{new Intl.NumberFormat('en-US', { style: 'currency', currency: expense.currency || 'USD' }).format(expense.amount)}</Badge></ConfidentialBlur></div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
         </div>
     );
 }
@@ -337,7 +376,8 @@ function CombinedExpensesDetailDialog({ expenses, purchases }: { expenses: WithI
             </TabsContent>
             <TabsContent value="purchases">
                  <div className="max-h-[60vh] overflow-y-auto">
-                    <Table>
+                    {/* Desktop Table */}
+                    <Table className="hidden md:table">
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="text-right">دابینکەر</TableHead>
@@ -355,6 +395,17 @@ function CombinedExpensesDetailDialog({ expenses, purchases }: { expenses: WithI
                             ))}
                         </TableBody>
                     </Table>
+                    {/* Mobile Cards */}
+                    <div className="space-y-4 md:hidden">
+                        {purchases?.map((purchase: any) => (
+                             <Card key={purchase.id}>
+                                <CardHeader><CardTitle>{purchase.supplierName}</CardTitle><CardDescription>{formatDate(parseISO(purchase.issueDate), 'dd/MM/yyyy')}</CardDescription></CardHeader>
+                                <CardContent>
+                                    <div className="flex justify-between"><span>کۆی گشتی:</span><ConfidentialBlur><Badge>{currencyFormatter.format(purchase.totalAmount || 0)}</Badge></ConfidentialBlur></div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
                 </div>
             </TabsContent>
         </Tabs>
@@ -386,21 +437,46 @@ function PurchasesDetailDialog({ data }: { data: any }) {
                 <AccordionItem value="item-2" className="border rounded-lg bg-card text-card-foreground">
                      <AccordionTrigger className="p-6 text-lg font-semibold">پوختەی هەر کاڵایەک</AccordionTrigger>
                     <AccordionContent className="px-6 pb-6">
-                        <Table><TableHeader><TableRow><TableHead className="text-right">ناوی کاڵا</TableHead><TableHead className="text-right">کۆی دانە</TableHead><TableHead className="text-right">کۆی نرخ</TableHead></TableRow></TableHeader>
+                        {/* Desktop Table */}
+                        <Table className="hidden md:table"><TableHeader><TableRow><TableHead className="text-right">ناوی کاڵا</TableHead><TableHead className="text-right">کۆی دانە</TableHead><TableHead className="text-right">کۆی نرخ</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {perProduct.map((item: any) => ( <TableRow key={item.productName}><TableCell>{item.productName}</TableCell><TableCell><ConfidentialBlur>{item.totalQuantity}</ConfidentialBlur></TableCell><TableCell><ConfidentialBlur>{currencyFormatter.format(item.totalCost)}</ConfidentialBlur></TableCell></TableRow> ))}
                             </TableBody>
                         </Table>
+                        {/* Mobile Cards */}
+                        <div className="space-y-4 md:hidden">
+                            {perProduct.map((item: any) => (
+                                <Card key={item.productName}>
+                                    <CardHeader><CardTitle>{item.productName}</CardTitle></CardHeader>
+                                    <CardContent className="space-y-2">
+                                        <div className="flex justify-between"><span>کۆی دانە:</span><ConfidentialBlur><Badge variant="secondary">{item.totalQuantity}</Badge></ConfidentialBlur></div>
+                                        <div className="flex justify-between"><span>کۆی نرخ:</span><ConfidentialBlur><Badge>{currencyFormatter.format(item.totalCost)}</Badge></ConfidentialBlur></div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
                     </AccordionContent>
                 </AccordionItem>
                  <AccordionItem value="item-3" className="border rounded-lg bg-card text-card-foreground">
                      <AccordionTrigger className="p-6 text-lg font-semibold">لیستی کڕینەکان</AccordionTrigger>
                     <AccordionContent className="px-6 pb-6">
-                        <Table><TableHeader><TableRow><TableHead className="text-right">دابینکەر</TableHead><TableHead className="text-right">بەروار</TableHead><TableHead className="text-right">کۆی گشتی پسوولە</TableHead></TableRow></TableHeader>
+                        {/* Desktop Table */}
+                        <Table className="hidden md:table"><TableHeader><TableRow><TableHead className="text-right">دابینکەر</TableHead><TableHead className="text-right">بەروار</TableHead><TableHead className="text-right">کۆی گشتی پسوولە</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {purchases?.map((purchase: any) => ( <TableRow key={purchase.id}><TableCell>{purchase.supplierName}</TableCell><TableCell>{formatDate(parseISO(purchase.issueDate), 'dd/MM/yyyy')}</TableCell><TableCell><ConfidentialBlur>{currencyFormatter.format(purchase.totalAmount || 0)}</ConfidentialBlur></TableCell></TableRow> ))}
                             </TableBody>
                         </Table>
+                         {/* Mobile Cards */}
+                        <div className="space-y-4 md:hidden">
+                            {purchases?.map((purchase: any) => (
+                                <Card key={purchase.id}>
+                                    <CardHeader><CardTitle>{purchase.supplierName}</CardTitle><CardDescription>{formatDate(parseISO(purchase.issueDate), 'dd/MM/yyyy')}</CardDescription></CardHeader>
+                                    <CardContent>
+                                        <div className="flex justify-between"><span>کۆی گشتی:</span><ConfidentialBlur><Badge>{currencyFormatter.format(purchase.totalAmount || 0)}</Badge></ConfidentialBlur></div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
                     </AccordionContent>
                 </AccordionItem>
             </Accordion>
@@ -414,11 +490,25 @@ function LowStockDetailDialog({ products }: { products: GroupedProduct[] }) {
 
     return (
         <div className="max-h-[60vh] overflow-y-auto">
-            <Table><TableHeader><TableRow><TableHead className="text-right">ناوی کاڵا</TableHead><TableHead className="text-right">بڕی ماوە</TableHead></TableRow></TableHeader>
+            {/* Desktop Table */}
+            <Table className="hidden md:table"><TableHeader><TableRow><TableHead className="text-right">ناوی کاڵا</TableHead><TableHead className="text-right">بڕی ماوە</TableHead></TableRow></TableHeader>
                 <TableBody>
                     {products?.map(product => ( <TableRow key={product.productName} onClick={() => handleRowClick(product.productName)} className="cursor-pointer"><TableCell>{product.productName}</TableCell><TableCell><ConfidentialBlur>{product.totalQuantity}</ConfidentialBlur></TableCell></TableRow> ))}
                 </TableBody>
             </Table>
+            {/* Mobile Cards */}
+            <div className="space-y-4 md:hidden">
+                {products?.map(product => (
+                    <Card key={product.productName} onClick={() => handleRowClick(product.productName)} className="cursor-pointer">
+                        <CardHeader>
+                            <CardTitle>{product.productName}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex justify-between"><span>بڕی ماوە:</span><ConfidentialBlur><Badge variant="destructive">{product.totalQuantity}</Badge></ConfidentialBlur></div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
         </div>
     );
 }
@@ -432,7 +522,7 @@ function DashboardStats({ stats, dialogData }: { stats: any, dialogData: any }) 
     const expenseDescription = `کۆی گشتی خەرجی و کڕینەکان بە دۆلار.`;
 
     return (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
              <Dialog><DialogTrigger asChild><div className="cursor-pointer"><StatCard title="کۆی فرۆش" value={<ConfidentialBlur>{currencyFormatter.format(stats.totalRevenue)}</ConfidentialBlur>} icon={ShoppingCart} description="کۆی گشتی فرۆشتن لە ماوەی دیاریکراودا." /></div></DialogTrigger>
                 <DialogContent className="sm:max-w-4xl" dir="rtl"><DialogHeader><DialogTitle>وردەکاریی فرۆشتن</DialogTitle><DialogDescription>پوختەی فرۆشتنەکان لە ماوەی دیاریکراودا.</DialogDescription></DialogHeader><SalesDetailDialog data={dialogData.sales} /></DialogContent>
             </Dialog>
@@ -616,7 +706,7 @@ export default function DashboardPage() {
             
             {isLoading ? (
                 <div className="space-y-8">
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                         {[...Array(4)].map((_, i) => ( <Card key={i} className="bg-card/50 border-blue-800/40"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><div className="h-4 bg-muted rounded w-2/4" /></CardHeader><CardContent><div className="h-8 bg-muted rounded w-3/4 mb-2" /><div className="h-3 bg-muted rounded w-full" /></CardContent></Card> ))}
                     </div>
                     <Card className="h-96 flex items-center justify-center bg-gradient-to-br from-blue-900/50 via-purple-900/50 to-indigo-900/50"><Loader2 className="h-8 w-8 animate-spin text-primary" /></Card>
@@ -630,3 +720,5 @@ export default function DashboardPage() {
         </div>
     );
 }
+
+    

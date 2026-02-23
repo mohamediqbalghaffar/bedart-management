@@ -1,14 +1,13 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { PlusCircle, Loader2, FileSpreadsheet, Trash2, Edit, ArrowUpDown, Search, Printer, FileDown, FileUp } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { SalesForm } from "./components/sales-form";
 import { useFirestore, useCollection, useMemoFirebase, collection, deleteDoc, doc, getDocs, runTransaction, getDoc } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
@@ -546,7 +545,7 @@ function SalesList() {
             <Card>
                 <CardHeader>
                     <CardTitle>لیستی فرۆشتنەکان</CardTitle>
-                    <div className="flex items-center justify-between gap-4 mt-4">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-4">
                         <div className="relative w-full max-w-sm">
                             <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
@@ -556,15 +555,15 @@ function SalesList() {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
                              <Select dir="rtl" value={statusFilter} onValueChange={(value) => setStatusFilter(value as any)}>
-                                <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                                <SelectTrigger className="w-full md:w-[180px]"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     {paymentStatusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                             <Select dir="rtl" value={typeFilter} onValueChange={(value) => setTypeFilter(value as any)}>
-                                <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                                <SelectTrigger className="w-full md:w-[180px]"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     {paymentTypeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
                                 </SelectContent>
@@ -573,7 +572,8 @@ function SalesList() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <Table>
+                    {/* Desktop Table */}
+                    <Table className="hidden md:table">
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="text-center">
@@ -699,6 +699,62 @@ function SalesList() {
                             )))}
                         </TableBody>
                     </Table>
+                     {/* Mobile View */}
+                    <div className="md:hidden space-y-4">
+                        {isLoadingSales ? (
+                            <div className="flex justify-center items-center h-48"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></div>
+                        ) : !sortedSales || sortedSales.length === 0 ? (
+                            <div className="py-8 text-center text-muted-foreground">هیچ فرۆشێک بەم پێوەرانە نەدۆزرایەوە.</div>
+                        ) : (
+                             sortedSales.map((sale) => (
+                                <Card key={sale.id}>
+                                    <CardHeader>
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <CardTitle>{sale.customerName}</CardTitle>
+                                                <CardDescription>فۆڕمی #{sale.formNumber} - {sale.issueDate}</CardDescription>
+                                            </div>
+                                             <Badge 
+                                                variant={sale.paymentStatus === 'Fully Paid' ? 'default' : sale.paymentStatus === 'Unpaid' ? 'destructive' : 'secondary'} 
+                                                className={sale.paymentStatus === 'Fully Paid' ? 'bg-green-600 text-white' : ''}
+                                            >
+                                                {paymentStatusOptions.find(o => o.value === sale.paymentStatus)?.label || sale.paymentStatus}
+                                            </Badge>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-muted-foreground">کۆی گشتی:</span>
+                                            <span className="font-semibold">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(sale.totalPrice || 0)}</span>
+                                        </div>
+                                    </CardContent>
+                                    <CardFooter className="flex justify-end gap-2">
+                                         <AlertDialog>
+                                            <AlertDialogTrigger asChild><Button variant="ghost" size="sm"><Trash2 className="h-4 w-4 mr-2 text-destructive" />سڕینەوە</Button></AlertDialogTrigger>
+                                            <AlertDialogContent dir="rtl">
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>دڵنیایت لە سڕینەوەی ئەم فۆڕمە؟</AlertDialogTitle>
+                                                    <AlertDialogDescription>ئەم کردارە پاشگەزبوونەوەی نییە.</AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDelete(sale.id)} className="bg-destructive hover:bg-destructive/90">بەڵێ، بسڕەوە</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                         <SalesFormDialog formId={sale.id} onSave={handleFormSave} trigger={<Button variant="ghost" size="sm"><Edit className="h-4 w-4 mr-2 text-blue-500" />دەستکاری</Button>} />
+                                        <Dialog>
+                                            <DialogTrigger asChild><Button variant="ghost" size="sm"><FileSpreadsheet className="h-4 w-4 mr-2" />وردەکاری</Button></DialogTrigger>
+                                            <DialogContent className="sm:max-w-3xl" dir="rtl">
+                                                <DialogHeader><DialogTitle>پێشبینینی پسوولە</DialogTitle></DialogHeader>
+                                                <ReceiptPreview formId={sale.id} />
+                                            </DialogContent>
+                                        </Dialog>
+                                    </CardFooter>
+                                </Card>
+                            ))
+                        )}
+                    </div>
                 </CardContent>
             </Card>
         </>
@@ -712,3 +768,5 @@ export default function SalesPage() {
         </div>
     );
 }
+
+    

@@ -238,7 +238,7 @@ function ProductDefinitionsList({ products, isLoading, onProductUpdated, onBulkU
         <Card>
             <CardHeader>
                 <CardTitle>لیستی پێناسەی کاڵاکان</CardTitle>
-                 <div className="flex justify-between items-center gap-4 mt-4">
+                 <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mt-4">
                     <div className="relative w-full max-w-sm">
                         <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -251,65 +251,75 @@ function ProductDefinitionsList({ products, isLoading, onProductUpdated, onBulkU
                     {selectedProducts.size > 0 && (
                         <div className="flex items-center gap-2">
                              <span>{selectedProducts.size} دانە هەڵبژێردراوە</span>
-                             <Button variant="ghost" size="sm" onClick={() => setSelectedProducts(new Set())}>هەڵوەشاندنەوە</Button>
+                             <Select onValueChange={handleApplyBulkChange}>
+                                <SelectTrigger className="w-[200px] border-dashed h-8">
+                                    <SelectValue placeholder="گۆڕینی پۆلی هەڵبژێردراو" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {productCategories.map(cat => (
+                                        <SelectItem key={cat} value={cat}>{categoryTranslations[cat]}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Button variant="ghost" size="sm" onClick={() => setSelectedProducts(new Set())}>هەڵوەشاندنەوە</Button>
                         </div>
                     )}
                 </div>
             </CardHeader>
             <CardContent>
-                 <div>
-                    <ScrollArea className="h-[60vh] border rounded-lg">
-                        <Table dir="rtl">
-                            <TableHeader className="sticky top-0 bg-card z-10">
-                                <TableRow>
-                                    <TableHead className="text-right w-[50%]">ناوی کاڵا</TableHead>
-                                    <TableHead className="text-right w-[30%]">
-                                        <div className="flex items-center gap-2 justify-end">
-                                            {selectedProducts.size > 0 ? (
-                                                <Select onValueChange={handleApplyBulkChange}>
-                                                    <SelectTrigger className="w-[200px] border-dashed h-8">
-                                                        <SelectValue placeholder="گۆڕینی پۆلی هەڵبژێردراو" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {productCategories.map(cat => (
-                                                            <SelectItem key={cat} value={cat}>{categoryTranslations[cat]}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            ) : (
-                                                <span>پۆل</span>
-                                            )}
-                                        </div>
-                                    </TableHead>
-                                    <TableHead className="text-left w-[20%]">کردارەکان</TableHead>
-                                    <TableHead className="w-[50px] text-center">
-                                         <Checkbox
-                                            checked={filteredProducts.length > 0 && selectedProducts.size === filteredProducts.length}
-                                            onCheckedChange={handleSelectAll}
-                                            aria-label="Select all rows"
-                                        />
-                                    </TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isLoading ? (
-                                    <TableRow><TableCell colSpan={4} className="h-24 text-center"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></TableCell></TableRow>
-                                ) : !filteredProducts || filteredProducts.length === 0 ? (
-                                    <TableRow><TableCell colSpan={4} className="py-8 text-center text-muted-foreground">هیچ پێناسەیەکی کاڵا تۆمار نەکراوە.</TableCell></TableRow>
-                                ) : (
-                                    filteredProducts.map((product) => 
-                                    <EditableProductRow 
-                                        key={product.id} 
-                                        product={product} 
-                                        onProductUpdated={onProductUpdated}
-                                        isSelected={selectedProducts.has(product.id)}
-                                        onSelectionChange={handleSelectionChange} 
-                                    />)
-                                )}
-                            </TableBody>
-                        </Table>
-                    </ScrollArea>
-                </div>
+                <ScrollArea className="h-[60vh] border rounded-lg">
+                    {/* Desktop Table */}
+                    <Table className="hidden md:table" dir="rtl">
+                        <TableHeader className="sticky top-0 bg-card z-10">
+                            <TableRow>
+                                <TableHead className="text-right w-[50%]">ناوی کاڵا</TableHead>
+                                <TableHead className="text-right w-[30%]">پۆل</TableHead>
+                                <TableHead className="text-left w-[20%]">کردارەکان</TableHead>
+                                <TableHead className="w-[50px] text-center">
+                                     <Checkbox
+                                        checked={filteredProducts.length > 0 && selectedProducts.size === filteredProducts.length}
+                                        onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                                        aria-label="Select all rows"
+                                    />
+                                </TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {isLoading ? (
+                                <TableRow><TableCell colSpan={4} className="h-24 text-center"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></TableCell></TableRow>
+                            ) : !filteredProducts || filteredProducts.length === 0 ? (
+                                <TableRow><TableCell colSpan={4} className="py-8 text-center text-muted-foreground">هیچ پێناسەیەکی کاڵا تۆمار نەکراوە.</TableCell></TableRow>
+                            ) : (
+                                filteredProducts.map((product) => 
+                                <EditableProductRow 
+                                    key={product.id} 
+                                    product={product} 
+                                    onProductUpdated={onProductUpdated}
+                                    isSelected={selectedProducts.has(product.id)}
+                                    onSelectionChange={handleSelectionChange} 
+                                />)
+                            )}
+                        </TableBody>
+                    </Table>
+                    {/* Mobile Cards */}
+                    <div className="md:hidden space-y-4 p-4">
+                         {isLoading ? (
+                            <div className="flex justify-center items-center h-48"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></div>
+                        ) : !filteredProducts || filteredProducts.length === 0 ? (
+                            <div className="py-8 text-center text-muted-foreground">هیچ پێناسەیەکی کاڵا تۆمار نەکراوە.</div>
+                        ) : (
+                            filteredProducts.map((product) => 
+                                <EditableProductRow 
+                                    key={product.id} 
+                                    product={product} 
+                                    onProductUpdated={onProductUpdated}
+                                    isSelected={selectedProducts.has(product.id)}
+                                    onSelectionChange={handleSelectionChange} 
+                                />
+                            )
+                        )}
+                    </div>
+                </ScrollArea>
             </CardContent>
         </Card>
     );
@@ -391,3 +401,5 @@ export default function ProductsPage() {
         </div>
     );
 }
+
+    

@@ -8,12 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TableCell, TableRow } from '@/components/ui/table';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Edit, Trash2, Save, X } from 'lucide-react';
 import { useFirestore, doc, updateDoc, deleteDoc, writeBatch, collection, where, query, getDocs } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from "@/components/ui/form";
 import { ProductDefinition } from '../page';
 import { ProductCategory } from '@/lib/types';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -104,8 +105,10 @@ export function EditableProductRow({ product, onProductUpdated, isSelected, onSe
     
     if (isEditing) {
         return (
+            <>
+            {/* Desktop Edit Row */}
             <Form {...form}>
-                <TableRow className="bg-secondary/20">
+                <TableRow className="bg-secondary/20 hidden md:table-row">
                      <TableCell>
                         <FormField control={form.control} name="productName" render={({ field }) => (
                             <FormItem><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
@@ -131,27 +134,93 @@ export function EditableProductRow({ product, onProductUpdated, isSelected, onSe
                         </div>
                     </TableCell>
                     <TableCell>
-                        <Checkbox
-                            checked={isSelected}
-                            onCheckedChange={(checked) => onSelectionChange(product.id, !!checked)}
-                            disabled
-                        />
+                        <Checkbox checked={isSelected} onCheckedChange={(checked) => onSelectionChange(product.id, !!checked)} disabled />
                     </TableCell>
                 </TableRow>
             </Form>
+
+            {/* Mobile Edit Card */}
+            <Card className="md:hidden">
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4">
+                        <CardContent className="pt-6 space-y-4">
+                             <FormField control={form.control} name="productName" render={({ field }) => ( <FormItem> <FormLabel>ناوی کاڵا</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
+                            <FormField control={form.control} name="category" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>پۆل</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value} dir="rtl">
+                                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                        <SelectContent>{productCategories.map(cat => <SelectItem key={cat} value={cat}>{categoryTranslations[cat]}</SelectItem>)}</SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}/>
+                        </CardContent>
+                        <CardFooter className="flex justify-end gap-2">
+                             <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)}><X className="h-4 w-4 mr-2 text-muted-foreground"/>پاشگەزبوونەوە</Button>
+                             <Button size="sm" onClick={form.handleSubmit(handleSave)} disabled={isSaving}>
+                                {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2"/> : <Save className="h-4 w-4 mr-2 text-primary-foreground"/>}
+                                پاشەکەوت
+                            </Button>
+                        </CardFooter>
+                    </form>
+                </Form>
+            </Card>
+            </>
         );
     }
 
     return (
-        <TableRow key={product.id}>
-            <TableCell className="font-medium text-right">{product.productName}</TableCell>
-            <TableCell className="text-right">{categoryTranslations[product.category] || product.category}</TableCell>
-            <TableCell className="text-left">
-                <div className="flex gap-2">
-                    <Button size="icon" variant="ghost" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4 text-blue-500"/></Button>
+        <>
+            {/* Desktop View Row */}
+            <TableRow key={product.id} className="hidden md:table-row">
+                <TableCell className="font-medium text-right">{product.productName}</TableCell>
+                <TableCell className="text-right">{categoryTranslations[product.category] || product.category}</TableCell>
+                <TableCell className="text-left">
+                    <div className="flex gap-2">
+                        <Button size="icon" variant="ghost" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4 text-blue-500"/></Button>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button size="icon" variant="ghost" disabled={isDeleting}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent dir="rtl">
+                                <AlertDialogHeader><AlertDialogTitle>ئایا دڵنیایت لە سڕینەوەی پێناسەی ئەم کاڵایە؟</AlertDialogTitle><AlertDialogDescription>ئەم کردارە پاشگەزبوونەوەی نییە. ئەمە کاریگەری لەسەر دانەکانی ناو کۆگا نابێت، بەڵام پێناسە سەرەکییەکە دەسڕێتەوە.</AlertDialogDescription></AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">بەڵێ, بسڕەوە</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                </TableCell>
+                <TableCell>
+                    <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={(checked) => onSelectionChange(product.id, !!checked)}
+                    />
+                </TableCell>
+            </TableRow>
+
+            {/* Mobile View Card */}
+             <Card key={`${product.id}-mobile`} className="md:hidden">
+                <CardHeader>
+                    <div className="flex justify-between items-start">
+                        <div className="space-y-1">
+                            <CardTitle>{product.productName}</CardTitle>
+                            <CardDescription>{categoryTranslations[product.category] || product.category}</CardDescription>
+                        </div>
+                        <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={(checked) => onSelectionChange(product.id, !!checked)}
+                            className="mt-1"
+                        />
+                    </div>
+                </CardHeader>
+                <CardFooter className="flex justify-end gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4 mr-2 text-blue-500"/>دەستکاری</Button>
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
-                            <Button size="icon" variant="ghost" disabled={isDeleting}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            <Button size="sm" variant="ghost" disabled={isDeleting}><Trash2 className="h-4 w-4 mr-2 text-destructive" />سڕینەوە</Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent dir="rtl">
                             <AlertDialogHeader><AlertDialogTitle>ئایا دڵنیایت لە سڕینەوەی پێناسەی ئەم کاڵایە؟</AlertDialogTitle><AlertDialogDescription>ئەم کردارە پاشگەزبوونەوەی نییە. ئەمە کاریگەری لەسەر دانەکانی ناو کۆگا نابێت، بەڵام پێناسە سەرەکییەکە دەسڕێتەوە.</AlertDialogDescription></AlertDialogHeader>
@@ -161,14 +230,10 @@ export function EditableProductRow({ product, onProductUpdated, isSelected, onSe
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
-                </div>
-            </TableCell>
-            <TableCell>
-                <Checkbox
-                    checked={isSelected}
-                    onCheckedChange={(checked) => onSelectionChange(product.id, !!checked)}
-                />
-            </TableCell>
-        </TableRow>
+                </CardFooter>
+            </Card>
+        </>
     );
 }
+
+    

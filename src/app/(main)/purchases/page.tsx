@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PlusCircle, Loader2, Trash2, FileSpreadsheet, Edit, FileUp, FileDown } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { BuyingForm } from "./components/buying-form";
@@ -398,7 +398,8 @@ function PurchasesList() {
             </CardHeader>
             <CardContent>
                 <ScrollArea className="h-[60vh]">
-                    <Table>
+                    {/* Desktop View */}
+                    <Table className="hidden md:table">
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="text-right">دابینکەر</TableHead>
@@ -481,6 +482,54 @@ function PurchasesList() {
                             )))}
                         </TableBody>
                     </Table>
+                     {/* Mobile View */}
+                    <div className="md:hidden space-y-4">
+                        {isLoading ? (
+                            <div className="flex justify-center items-center h-48"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></div>
+                        ) : enrichedForms.length === 0 ? (
+                            <div className="py-8 text-center text-muted-foreground">هیچ کڕینێک تۆمار نەکراوە.</div>
+                        ) : (
+                            enrichedForms.map((form) => (
+                                <Card key={form.id}>
+                                    <CardHeader>
+                                        <CardTitle>{form.supplierName}</CardTitle>
+                                        <CardDescription>{form.issueDate}</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-muted-foreground">کۆی گشتی:</span>
+                                            <Badge variant="secondary">
+                                                <ConfidentialBlur>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(form.totalAmount || 0)}</ConfidentialBlur>
+                                            </Badge>
+                                        </div>
+                                    </CardContent>
+                                    <CardFooter className="flex justify-end gap-2">
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild><Button variant="ghost" size="sm"><Trash2 className="h-4 w-4 mr-2 text-destructive" />سڕینەوە</Button></AlertDialogTrigger>
+                                            <AlertDialogContent dir="rtl">
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>دڵنیایت لە سڕینەوەی ئەم پسوولەیە؟</AlertDialogTitle>
+                                                    <AlertDialogDescription>ئەم کردارە پاشگەزبوونەوەی نییە. کاڵاکان لە کۆگا کەم دەکرێنەوە و پسوولەکە بە هەمیشەیی دەسڕێتەوە.</AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDelete(form.id)} className="bg-destructive hover:bg-destructive/90">بەڵێ، بسڕەوە</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                        <PurchaseFormDialog formId={form.id} onSave={handleFormSave} trigger={<Button variant="ghost" size="sm"><Edit className="h-4 w-4 mr-2 text-blue-500" />دەستکاری</Button>} />
+                                        <Dialog>
+                                            <DialogTrigger asChild><Button variant="ghost" size="sm"><FileSpreadsheet className="h-4 w-4 mr-2" />وردەکاری</Button></DialogTrigger>
+                                            <DialogContent className="sm:max-w-2xl" dir="rtl">
+                                                <DialogHeader><DialogTitle>وردەکارییەکانی پسوولەی کڕین</DialogTitle></DialogHeader>
+                                                <PurchaseDetails formId={form.id} />
+                                            </DialogContent>
+                                        </Dialog>
+                                    </CardFooter>
+                                </Card>
+                            ))
+                        )}
+                    </div>
                 </ScrollArea>
             </CardContent>
         </Card>

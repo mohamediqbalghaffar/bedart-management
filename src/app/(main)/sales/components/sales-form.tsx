@@ -82,7 +82,9 @@ function SalesFormItemRow({
     const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
     
     return (
-        <TableRow key={fieldId}>
+        <>
+        {/* Desktop Row */}
+        <TableRow key={fieldId} className="hidden md:table-row">
             <TableCell className="align-top">
                 <FormField
                   control={form.control}
@@ -130,6 +132,57 @@ function SalesFormItemRow({
                 </Button>
             </TableCell>
         </TableRow>
+        {/* Mobile Card */}
+        <Card className="md:hidden" key={`${fieldId}-mobile`}>
+            <CardHeader>
+                <div className="flex justify-between items-center">
+                    <CardTitle>کاڵای #{index + 1}</CardTitle>
+                    <Button variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                 <FormField
+                  control={form.control}
+                  name={`items.${index}.product`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ناوی کاڵا</FormLabel>
+                      <div className="flex gap-2">
+                        <FormControl>
+                            <Input placeholder="ناوی کاڵا..." {...field} />
+                        </FormControl>
+                        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="icon"><List className="h-4 w-4" /></Button>
+                          </DialogTrigger>
+                          <DialogContent dir="rtl" className="sm:max-w-3xl">
+                              <DialogHeader>
+                                  <DialogTitle>لیستی کاڵاکان</DialogTitle>
+                              </DialogHeader>
+                              <ProductSelectorDialog onProductSelect={({name, price, category}) => {
+                                  form.setValue(`items.${index}.product`, name);
+                                  form.setValue(`items.${index}.unitPrice`, price);
+                                  form.setValue(`items.${index}.category`, category);
+                                  setDialogOpen(false);
+                              }} />
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                     <FormField control={form.control} name={`items.${index}.quantity`} render={({ field }) => (<FormItem><FormLabel>دانە</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                     <FormField control={form.control} name={`items.${index}.unitPrice`} render={({ field }) => (<FormItem><FormLabel>نرخی تاک</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                </div>
+            </CardContent>
+             <CardFooter className="bg-muted/50 p-4 flex justify-between items-center">
+                <span className="text-muted-foreground">نرخی کۆ:</span>
+                <ConfidentialBlur><span className="font-bold">{currencyFormatter.format(watchedItem?.quantity * watchedItem?.unitPrice || 0)}</span></ConfidentialBlur>
+            </CardFooter>
+        </Card>
+        </>
     );
 }
 
@@ -469,7 +522,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" dir="rtl">
         <Card>
-            <CardHeader className="flex flex-row justify-between items-start p-4">
+            <CardHeader className="flex flex-col md:flex-row justify-between items-start p-4 gap-4">
                  <FormField
                     control={form.control}
                     name="formNumber"
@@ -500,12 +553,12 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
         <Card>
             <CardHeader><CardTitle>زانیاری کڕیار</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-                 <div className="flex items-start gap-4">
+                 <div className="flex flex-col md:flex-row items-start gap-4">
                     <FormField
                     control={form.control}
                     name="customerName"
                     render={({ field }) => (
-                        <FormItem className="flex-1">
+                        <FormItem className="flex-1 w-full">
                         <FormLabel>بەڕێز</FormLabel>
                             <div className="flex gap-2">
                                 <FormControl>
@@ -532,7 +585,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                         </FormItem>
                     )}
                     />
-                    <FormField control={form.control} name="customerPhone" render={({ field }) => ( <FormItem className="flex-1"> <FormLabel>ژ. مۆبایل</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                    <FormField control={form.control} name="customerPhone" render={({ field }) => ( <FormItem className="flex-1 w-full"> <FormLabel>ژ. مۆبایل</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
                 </div>
                 <FormField control={form.control} name="customerAddress" render={({ field }) => ( <FormItem> <FormLabel>ناونیشان</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
             </CardContent>
@@ -541,7 +594,8 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
         <Card>
             <CardHeader><CardTitle>کاڵا فرۆشراوەکان</CardTitle></CardHeader>
             <CardContent>
-                <Table>
+                 {/* Desktop Table */}
+                <Table className="hidden md:table">
                     <TableHeader>
                         <TableRow>
                             <TableHead className="w-[30%] text-right">کاڵا</TableHead>
@@ -563,6 +617,18 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                         ))}
                     </TableBody>
                 </Table>
+                 {/* Mobile Cards */}
+                 <div className="space-y-4 md:hidden">
+                     {fields.map((field, index) => (
+                        <SalesFormItemRow
+                            key={field.id}
+                            fieldId={field.id}
+                            form={form}
+                            index={index}
+                            remove={() => fields.length > 1 && remove(index)}
+                        />
+                    ))}
+                 </div>
                 <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ product: "", quantity: 1, unitPrice: 0, category: 'Mattress' })}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     زیادکردنی کاڵا
@@ -765,3 +831,5 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
     </Form>
   );
 }
+
+    

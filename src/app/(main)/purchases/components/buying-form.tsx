@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -22,6 +21,7 @@ import { DocumentData } from "firebase/firestore";
 import { ProductCategory } from "@/lib/types";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ConfidentialBlur } from "@/components/shared/confidential-blur";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 
 // Define types based on your Firestore structure
@@ -125,106 +125,177 @@ function BuyingFormItemRow({
     };
 
     return (
-        <TableRow key={fieldId}>
-            <TableCell className="align-top">
-                <FormField
-                    control={form.control}
-                    name={`items.${index}.product`}
-                    render={({ field }) => (
-                        <FormItem>
-                            <div className="flex items-center gap-2">
-                                <FormControl>
-                                    <div className="relative w-full">
-                                        <Input placeholder="ناوی کاڵا..." {...field} />
-                                        {showSuggestion && suggestion && (
-                                            <Popover open={showSuggestion} onOpenChange={setShowSuggestion}>
-                                                <PopoverTrigger asChild>
-                                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer">
-                                                        <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                                                    </span>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-auto p-2" align="start">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-sm text-muted-foreground">وات لێ بوو:</span>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={handleSuggestionSelect}
-                                                            className="text-primary hover:text-primary"
-                                                        >
-                                                            {suggestion.productName}؟
-                                                        </Button>
-                                                    </div>
-                                                </PopoverContent>
-                                            </Popover>
-                                        )}
-                                    </div>
-                                </FormControl>
-                                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                                    <DialogTrigger asChild>
-                                        <Button variant="outline" size="icon"><List className="h-4 w-4" /></Button>
-                                    </DialogTrigger>
-                                    <DialogContent className="sm:max-w-3xl" dir="rtl">
-                                        <DialogHeader>
-                                            <DialogTitle>لیستی کاڵاکان</DialogTitle>
-                                        </DialogHeader>
-                                        <ProductSelectorDialog onProductSelect={({ name, price, purchasePrice, category }) => {
-                                            form.setValue(`items.${index}.product`, name);
-                                            form.setValue(`items.${index}.sellingPrice`, price);
-                                            form.setValue(`items.${index}.unitPrice`, purchasePrice || 0);
-                                            form.setValue(`items.${index}.category`, category);
-                                            setDialogOpen(false);
-                                        }} filterByStock={false} />
-                                    </DialogContent>
-                                </Dialog>
-                            </div>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-            </TableCell>
-            <TableCell className="align-top">
-                <FormField
-                    control={form.control}
-                    name={`items.${index}.category`}
-                    render={({ field }) => (
-                        <FormItem>
-                            <Select onValueChange={field.onChange} value={field.value} dir="rtl">
-                                <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    <SelectItem value="Mattress">دۆشەک</SelectItem>
-                                    <SelectItem value="Bed">تەخت</SelectItem>
-                                    <SelectItem value="Pillow">سەرین</SelectItem>
-                                    <SelectItem value="Cover">بەرگ</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-            </TableCell>
-            <TableCell className="align-top">
-                <FormField control={form.control} name={`items.${index}.quantity`} render={({ field }) => (<FormItem><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-            </TableCell>
-            <TableCell className="align-top">
-                <FormField control={form.control} name={`items.${index}.unitPrice`} render={({ field }) => (<FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
-            </TableCell>
-            <TableCell className="align-top">
-                <FormField control={form.control} name={`items.${index}.sellingPrice`} render={({ field }) => (<FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
-            </TableCell>
-            <TableCell className="align-top pt-5 font-semibold text-left">
-                <ConfidentialBlur>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(watchedItem?.quantity * watchedItem?.unitPrice || 0)}</ConfidentialBlur>
-            </TableCell>
-            <TableCell className="align-top text-left">
-                <Button variant="ghost" size="icon" onClick={() => remove(index)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-            </TableCell>
-        </TableRow>
+        <>
+            {/* Desktop Row */}
+            <TableRow key={fieldId} className="hidden md:table-row">
+                <TableCell className="align-top">
+                    <FormField
+                        control={form.control}
+                        name={`items.${index}.product`}
+                        render={({ field }) => (
+                            <FormItem>
+                                <div className="flex items-center gap-2">
+                                    <FormControl>
+                                        <div className="relative w-full">
+                                            <Input placeholder="ناوی کاڵا..." {...field} />
+                                            {showSuggestion && suggestion && (
+                                                <Popover open={showSuggestion} onOpenChange={setShowSuggestion}>
+                                                    <PopoverTrigger asChild>
+                                                        <span className="absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer">
+                                                            <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                                                        </span>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-auto p-2" align="start">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-sm text-muted-foreground">وات لێ بوو:</span>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={handleSuggestionSelect}
+                                                                className="text-primary hover:text-primary"
+                                                            >
+                                                                {suggestion.productName}؟
+                                                            </Button>
+                                                        </div>
+                                                    </PopoverContent>
+                                                </Popover>
+                                            )}
+                                        </div>
+                                    </FormControl>
+                                    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                                        <DialogTrigger asChild>
+                                            <Button variant="outline" size="icon"><List className="h-4 w-4" /></Button>
+                                        </DialogTrigger>
+                                        <DialogContent className="sm:max-w-3xl" dir="rtl">
+                                            <DialogHeader>
+                                                <DialogTitle>لیستی کاڵاکان</DialogTitle>
+                                            </DialogHeader>
+                                            <ProductSelectorDialog onProductSelect={({ name, price, purchasePrice, category }) => {
+                                                form.setValue(`items.${index}.product`, name);
+                                                form.setValue(`items.${index}.sellingPrice`, price);
+                                                form.setValue(`items.${index}.unitPrice`, purchasePrice || 0);
+                                                form.setValue(`items.${index}.category`, category);
+                                                setDialogOpen(false);
+                                            }} filterByStock={false} />
+                                        </DialogContent>
+                                    </Dialog>
+                                </div>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </TableCell>
+                <TableCell className="align-top">
+                    <FormField
+                        control={form.control}
+                        name={`items.${index}.category`}
+                        render={({ field }) => (
+                            <FormItem>
+                                <Select onValueChange={field.onChange} value={field.value} dir="rtl">
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="Mattress">دۆشەک</SelectItem>
+                                        <SelectItem value="Bed">تەخت</SelectItem>
+                                        <SelectItem value="Pillow">سەرین</SelectItem>
+                                        <SelectItem value="Cover">بەرگ</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </TableCell>
+                <TableCell className="align-top">
+                    <FormField control={form.control} name={`items.${index}.quantity`} render={({ field }) => (<FormItem><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                </TableCell>
+                <TableCell className="align-top">
+                    <FormField control={form.control} name={`items.${index}.unitPrice`} render={({ field }) => (<FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                </TableCell>
+                <TableCell className="align-top">
+                    <FormField control={form.control} name={`items.${index}.sellingPrice`} render={({ field }) => (<FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                </TableCell>
+                <TableCell className="align-top pt-5 font-semibold text-left">
+                    <ConfidentialBlur>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(watchedItem?.quantity * watchedItem?.unitPrice || 0)}</ConfidentialBlur>
+                </TableCell>
+                <TableCell className="align-top text-left">
+                    <Button variant="ghost" size="icon" onClick={() => remove(index)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                </TableCell>
+            </TableRow>
+            {/* Mobile Card */}
+             <Card className="md:hidden" key={fieldId}>
+                <CardHeader>
+                    <div className="flex justify-between items-center">
+                         <CardTitle>کاڵای #{index + 1}</CardTitle>
+                        <Button variant="ghost" size="icon" onClick={() => remove(index)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                     <FormField
+                        control={form.control}
+                        name={`items.${index}.product`}
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>ناوی کاڵا</FormLabel>
+                                <div className="flex items-center gap-2">
+                                    <FormControl>
+                                        <div className="relative w-full">
+                                            <Input placeholder="ناوی کاڵا..." {...field} />
+                                            {showSuggestion && suggestion && (
+                                                 <Popover open={showSuggestion} onOpenChange={setShowSuggestion}>
+                                                    <PopoverTrigger asChild><span className="absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"><AlertTriangle className="h-5 w-5 text-yellow-500" /></span></PopoverTrigger>
+                                                    <PopoverContent className="w-auto p-2" align="start"><div className="flex items-center gap-2"><span className="text-sm text-muted-foreground">وات لێ بوو:</span><Button variant="ghost" size="sm" onClick={handleSuggestionSelect} className="text-primary hover:text-primary">{suggestion.productName}؟</Button></div></PopoverContent>
+                                                </Popover>
+                                            )}
+                                        </div>
+                                    </FormControl>
+                                     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                                        <DialogTrigger asChild><Button variant="outline" size="icon"><List className="h-4 w-4" /></Button></DialogTrigger>
+                                        <DialogContent className="sm:max-w-3xl" dir="rtl"><DialogHeader><DialogTitle>لیستی کاڵاکان</DialogTitle></DialogHeader>
+                                            <ProductSelectorDialog onProductSelect={({ name, price, purchasePrice, category }) => {
+                                                form.setValue(`items.${index}.product`, name);
+                                                form.setValue(`items.${index}.sellingPrice`, price);
+                                                form.setValue(`items.${index}.unitPrice`, purchasePrice || 0);
+                                                form.setValue(`items.${index}.category`, category);
+                                                setDialogOpen(false);
+                                            }} filterByStock={false} />
+                                        </DialogContent>
+                                    </Dialog>
+                                </div>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <div className="grid grid-cols-2 gap-4">
+                         <FormField control={form.control} name={`items.${index}.category`} render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>پۆل</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value} dir="rtl">
+                                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                    <SelectContent><SelectItem value="Mattress">دۆشەک</SelectItem><SelectItem value="Bed">تەخت</SelectItem><SelectItem value="Pillow">سەرین</SelectItem><SelectItem value="Cover">بەرگ</SelectItem></SelectContent>
+                                </Select><FormMessage />
+                            </FormItem>
+                        )} />
+                         <FormField control={form.control} name={`items.${index}.quantity`} render={({ field }) => (<FormItem><FormLabel>دانە</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    </div>
+                     <div className="grid grid-cols-2 gap-4">
+                         <FormField control={form.control} name={`items.${index}.unitPrice`} render={({ field }) => (<FormItem><FormLabel>نرخی کڕین</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                         <FormField control={form.control} name={`items.${index}.sellingPrice`} render={({ field }) => (<FormItem><FormLabel>نرخی فرۆشتن</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    </div>
+                </CardContent>
+                <CardFooter className="bg-muted/50 p-4 flex justify-between items-center">
+                    <span className="text-muted-foreground">نرخی کۆ:</span>
+                    <ConfidentialBlur><span className="font-bold">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(watchedItem?.quantity * watchedItem?.unitPrice || 0)}</span></ConfidentialBlur>
+                </CardFooter>
+            </Card>
+        </>
     );
 }
 
@@ -453,7 +524,7 @@ export function BuyingForm({ onSave, formId, initialItems }: BuyingFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" dir="rtl">
-        <div className="flex justify-between items-start p-1 border-b pb-4">
+        <div className="flex flex-col md:flex-row justify-between items-start p-1 border-b pb-4 gap-4">
              <FormField
                 control={form.control}
                 name="issueDate"
@@ -518,7 +589,8 @@ export function BuyingForm({ onSave, formId, initialItems }: BuyingFormProps) {
         </div>
         
         <div className="relative border-t pt-6">
-            <Table>
+            {/* Desktop Table */}
+            <Table className="hidden md:table">
                 <TableHeader>
                     <TableRow className="bg-primary/90 hover:bg-primary">
                         <TableHead className="w-2/5 text-primary-foreground text-center">کاڵا</TableHead>
@@ -543,6 +615,19 @@ export function BuyingForm({ onSave, formId, initialItems }: BuyingFormProps) {
                     ))}
                 </TableBody>
             </Table>
+            {/* Mobile Cards */}
+             <div className="space-y-4 md:hidden">
+                {fields.map((field, index) => (
+                    <BuyingFormItemRow
+                        key={field.id}
+                        fieldId={field.id}
+                        form={form}
+                        index={index}
+                        remove={() => fields.length > 1 && remove(index)}
+                        productDefinitions={productDefinitions}
+                    />
+                ))}
+            </div>
             <div className="flex gap-2 mt-4">
                 <Button type="button" variant="outline" size="sm" onClick={() => append({ product: "", quantity: 1, unitPrice: 0, sellingPrice: 0, category: 'Mattress', sizeModel: '' })}>
                     <PlusCircle className="mr-2 h-4 w-4" />
@@ -551,8 +636,8 @@ export function BuyingForm({ onSave, formId, initialItems }: BuyingFormProps) {
             </div>
         </div>
 
-        <div className="flex justify-end items-start gap-8 pt-6 border-t">
-            <div className="space-y-2 text-left min-w-[280px]">
+        <div className="flex justify-center md:justify-end items-start gap-8 pt-6 border-t">
+            <div className="space-y-2 text-left w-full md:w-auto md:min-w-[280px]">
                 <div className="flex items-center justify-between gap-4 p-2 rounded-md">
                     <span className="text-muted-foreground">:کۆی کاڵاکان</span>
                     <ConfidentialBlur><span className="font-semibold">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(subTotal)}</span></ConfidentialBlur>
@@ -588,3 +673,5 @@ export function BuyingForm({ onSave, formId, initialItems }: BuyingFormProps) {
     </Form>
   );
 }
+
+    
