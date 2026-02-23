@@ -500,7 +500,7 @@ function RecentActivityChart({ data }: { data: any[] }) {
                     <div><CardTitle className="text-white">نەخشەی چالاکییەکان</CardTitle><CardDescription className="text-white/80">بینینی فرۆشتن، خەرجی، و قازانج بەپێی ماوەی دیاریکراو.</CardDescription></div>
                 </div>
                  <div className="flex flex-col sm:flex-row items-center justify-end gap-4 mt-4" dir="rtl">
-                    <Select dir="rtl" value={viewMode} onValueChange={(v) => setViewMode(v as any)}><SelectTrigger className="bg-white/10 text-white border-white/20 w-[180px]"><SelectValue /></SelectTrigger>
+                    <Select dir="rtl" value={viewMode} onValueChange={(v) => setViewMode(v as any)}><SelectTrigger className="bg-white/10 text-white border-white/20 w-full sm:w-[180px]"><SelectValue /></SelectTrigger>
                         <SelectContent dir="rtl"><SelectItem value="daily">نمایشی ڕۆژانە</SelectItem><SelectItem value="total">نمایشی گشتی</SelectItem></SelectContent>
                     </Select>
                     <div className="grid grid-cols-2 sm:flex items-center gap-4">
@@ -558,7 +558,7 @@ export default function DashboardPage() {
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <PageHeader title="داشبۆردی سەرەکی" description="پوختەی کارەکانت لێرە ببینە.">
-                 <div className="flex items-center gap-4">
+                 <div className="flex flex-wrap items-center gap-4">
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-muted-foreground">لە:</span>
                         <Popover>

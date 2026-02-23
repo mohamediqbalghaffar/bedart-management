@@ -2,13 +2,17 @@
 
 import React, { useState, useMemo } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Loader2, PlusCircle } from "lucide-react";
 import { useFirestore, useCollection, useMemoFirebase, collection } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AddExpenseTableRow } from './components/add-expense-table-row';
 import { EditableExpenseRow } from './components/editable-expense-row';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
+import { AddExpenseForm } from './components/add-expense-form';
 
 
 type Expense = {
@@ -19,6 +23,29 @@ type Expense = {
     category: 'Daily' | 'Salary' | 'Rent' | 'Electricity' | 'Transport' | 'Other';
     date: string;
 };
+
+function AddExpenseDialog({ onExpenseAdded }: { onExpenseAdded: () => void }) {
+    const [open, setOpen] = useState(false);
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button className="md:hidden">
+                    <PlusCircle />
+                    زیادکردنی خەرجی
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md" dir="rtl">
+                <DialogHeader>
+                    <DialogTitle>خەرجی نوێ زیاد بکە</DialogTitle>
+                    <DialogDescription>
+                        زانیارییەکانی خەرجی نوێ بنووسە.
+                    </DialogDescription>
+                </DialogHeader>
+                <AddExpenseForm onExpenseAdded={() => { onExpenseAdded(); setOpen(false); }} />
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 function ExpensesList() {
     const firestore = useFirestore();
@@ -38,39 +65,59 @@ function ExpensesList() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>لیستی خەرجییەکان</CardTitle>
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                    <CardTitle>لیستی خەرجییەکان</CardTitle>
+                    <div className="mt-4 md:mt-0">
+                         <AddExpenseDialog onExpenseAdded={handleExpenseChange} />
+                    </div>
+                </div>
             </CardHeader>
             <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-[20%] text-right">ناوی خەرجی</TableHead>
-                            <TableHead className="w-[20%] text-right">تێبینی</TableHead>
-                            <TableHead className="w-[20%] text-right">بڕ</TableHead>
-                            <TableHead className="w-[15%] text-right">پۆل</TableHead>
-                            <TableHead className="w-[15%] text-right">بەروار</TableHead>
-                            <TableHead className="w-[10%] text-left">کردارەکان</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        <AddExpenseTableRow onExpenseAdded={handleExpenseChange} />
+                <ScrollArea className="h-[60vh]">
+                     <Table className="hidden md:table">
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[20%] text-right">ناوی خەرجی</TableHead>
+                                <TableHead className="w-[20%] text-right">تێبینی</TableHead>
+                                <TableHead className="w-[20%] text-right">بڕ</TableHead>
+                                <TableHead className="w-[15%] text-right">پۆل</TableHead>
+                                <TableHead className="w-[15%] text-right">بەروار</TableHead>
+                                <TableHead className="w-[10%] text-left">کردارەکان</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            <AddExpenseTableRow onExpenseAdded={handleExpenseChange} />
+                            {isLoading ? (
+                                <TableRow>
+                                    <TableCell colSpan={6} className="h-24 text-center">
+                                        <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+                                    </TableCell>
+                                </TableRow>
+                            ) : !expenses || expenses.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">هیچ خەرجییەک تۆمار نەکراوە.</TableCell>
+                                </TableRow>
+                            ) : (
+                                expenses.map((expense) => (
+                                    <EditableExpenseRow key={expense.id} expense={expense} onExpenseUpdated={handleExpenseChange} />
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+
+                    {/* Mobile View */}
+                    <div className="md:hidden space-y-4">
                         {isLoading ? (
-                            <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center">
-                                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-                                </TableCell>
-                            </TableRow>
+                           <div className="flex justify-center items-center h-48"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></div>
                         ) : !expenses || expenses.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">هیچ خەرجییەک تۆمار نەکراوە.</TableCell>
-                            </TableRow>
+                            <div className="py-8 text-center text-muted-foreground">هیچ خەرجییەک تۆمار نەکراوە.</div>
                         ) : (
-                            expenses.map((expense) => (
+                             expenses.map((expense) => (
                                 <EditableExpenseRow key={expense.id} expense={expense} onExpenseUpdated={handleExpenseChange} />
                             ))
                         )}
-                    </TableBody>
-                </Table>
+                    </div>
+                </ScrollArea>
             </CardContent>
         </Card>
     );

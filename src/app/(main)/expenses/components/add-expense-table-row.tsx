@@ -69,7 +69,7 @@ export function AddExpenseTableRow({ onExpenseAdded }: { onExpenseAdded: () => v
 
   return (
     <Form {...form}>
-      <TableRow className="bg-muted/10 hover:bg-muted/20">
+      <TableRow className="bg-muted/10 hover:bg-muted/20 hidden md:table-row">
         <TableCell>
           <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormControl><Input placeholder="ناوی خەرجی..." {...field} /></FormControl><FormMessage /></FormItem>)}/>
         </TableCell>
