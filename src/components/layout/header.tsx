@@ -3,20 +3,20 @@
 import Link from 'next/link';
 import { BedDouble, Menu, Home, ShoppingCart, Package, Users, Building, DollarSign, Settings, Archive, LogOut, PackageSearch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 
 const allNavLinks = [
+  { href: '/dashboard', label: 'داشبۆرد', icon: Home, roles: ['admin', 'data manager', 'salesman', 'program previewer'] },
   { href: '/sales', label: 'فرۆشتنەکان', icon: ShoppingCart, roles: ['admin', 'data manager', 'salesman'] },
   { href: '/purchases', label: 'کڕینەکان', icon: Package, roles: ['admin', 'data manager'] },
+  { href: '/expenses', label: 'خەرجییەکان', icon: DollarSign, roles: ['admin', 'data manager'] },
   { href: '/stock', label: 'کۆگا', icon: Archive, roles: ['admin', 'data manager', 'salesman', 'program previewer'] },
   { href: '/products', label: 'ناوی کاڵاکان', icon: PackageSearch, roles: ['admin', 'data manager', 'program previewer'] },
   { href: '/customers', label: 'کڕیارەکان', icon: Users, roles: ['admin', 'data manager', 'salesman'] },
   { href: '/suppliers', label: 'دابینکەران', icon: Building, roles: ['admin', 'data manager'] },
-  { href: '/expenses', label: 'خەرجییەکان', icon: DollarSign, roles: ['admin', 'data manager'] },
-  { href: '/dashboard', label: 'داشبۆرد', icon: Home, roles: ['admin', 'data manager', 'salesman', 'program previewer'] },
   { href: '/settings', label: 'ڕێکخستنەکان', icon: Settings, roles: ['admin', 'data manager'] },
 ];
 
@@ -49,20 +49,25 @@ export function Header() {
                 </Button>
             </SheetTrigger>
             <SheetContent side="right" className="sm:max-w-xs">
-                 <nav className="grid gap-6 text-lg font-medium">
-                    <div
-                        className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:text-base"
-                    >
-                        <BedDouble className="h-5 w-5 transition-all group-hover:scale-110" />
-                        <span className="sr-only">BedArt Group</span>
-                    </div>
+                <SheetHeader>
+                    <SheetTitle>
+                        <div className="flex items-center gap-2 font-semibold">
+                            <BedDouble className="h-6 w-6 text-primary" />
+                            <span className="animated-gradient-border">BedArt Group</span>
+                        </div>
+                    </SheetTitle>
+                </SheetHeader>
+                 <nav className="grid gap-2 text-lg font-medium mt-6">
                      {navLinks.map((link) => (
                         <Link
                             key={link.href}
                             href={link.href}
-                            className={cn("flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground", { 'text-foreground': pathname === link.href })}
+                            className={cn(
+                                'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+                                { 'bg-muted text-primary': pathname.startsWith(link.href) }
+                            )}
                         >
-                            <link.icon className="h-5 w-5" />
+                            <link.icon className="h-4 w-4" />
                             {link.label}
                         </Link>
                     ))}
