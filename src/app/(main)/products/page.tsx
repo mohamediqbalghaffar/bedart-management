@@ -171,10 +171,14 @@ function UploadItemsButton({ onUploadSuccess, existingProducts }: { onUploadSucc
                 <DialogContent dir="rtl" className="sm:max-w-2xl">
                     <DialogHeader><DialogTitle>پشتڕاستکردنەوەی هاوردەکردن</DialogTitle><DialogDescription>ئەم کاڵا نوێیانە بۆ لیستی پێناسەکان زیاد دەکرێن.</DialogDescription></DialogHeader>
                     <div className="max-h-96 overflow-auto">
-                        <Table className="hidden md:table">
-                            <TableHeader><TableRow><TableHead>ناوی کاڵا</TableHead><TableHead>پۆل</TableHead><TableHead>نرخی فرۆشتن</TableHead></TableRow></TableHeader>
-                            <TableBody>{newProducts.map((p, i) => ( <TableRow key={i}><TableCell>{p.productName}</TableCell><TableCell>{categoryTranslations[p.category]}</TableCell><TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(p.sellingPrice || 0)}</TableCell></TableRow>))}</TableBody>
-                        </Table>
+                        {/* Desktop Table View */}
+                        <div className="hidden md:block">
+                            <Table>
+                                <TableHeader><TableRow><TableHead>ناوی کاڵا</TableHead><TableHead>پۆل</TableHead><TableHead>نرخی فرۆشتن</TableHead></TableRow></TableHeader>
+                                <TableBody>{newProducts.map((p, i) => ( <TableRow key={i}><TableCell>{p.productName}</TableCell><TableCell>{categoryTranslations[p.category]}</TableCell><TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(p.sellingPrice || 0)}</TableCell></TableRow>))}</TableBody>
+                            </Table>
+                        </div>
+                        {/* Mobile Card View */}
                         <div className="space-y-4 md:hidden">
                             {newProducts.map((p, i) => (
                                 <Card key={i}>
@@ -308,6 +312,7 @@ function ProductDefinitionsList({ products, isLoading, onProductUpdated, onBulkU
                                     onProductUpdated={onProductUpdated}
                                     isSelected={selectedProducts.has(product.id)}
                                     onSelectionChange={handleSelectionChange} 
+                                    mode="table"
                                 />)
                             )}
                         </TableBody>
@@ -326,6 +331,7 @@ function ProductDefinitionsList({ products, isLoading, onProductUpdated, onBulkU
                                     onProductUpdated={onProductUpdated}
                                     isSelected={selectedProducts.has(product.id)}
                                     onSelectionChange={handleSelectionChange} 
+                                    mode="card"
                                 />
                             )
                         )}

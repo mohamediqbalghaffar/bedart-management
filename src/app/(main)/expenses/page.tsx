@@ -99,7 +99,7 @@ function ExpensesList() {
                                 </TableRow>
                             ) : (
                                 expenses.map((expense) => (
-                                    <EditableExpenseRow key={expense.id} expense={expense} onExpenseUpdated={handleExpenseChange} />
+                                    <EditableExpenseRow key={expense.id} expense={expense} onExpenseUpdated={handleExpenseChange} mode="table" />
                                 ))
                             )}
                         </TableBody>
@@ -113,7 +113,7 @@ function ExpensesList() {
                             <div className="py-8 text-center text-muted-foreground">هیچ خەرجییەک تۆمار نەکراوە.</div>
                         ) : (
                              expenses.map((expense) => (
-                                <EditableExpenseRow key={expense.id} expense={expense} onExpenseUpdated={handleExpenseChange} />
+                                <EditableExpenseRow key={expense.id} expense={expense} onExpenseUpdated={handleExpenseChange} mode="card" />
                             ))
                         )}
                     </div>

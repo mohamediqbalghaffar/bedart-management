@@ -44,7 +44,7 @@ const categoryTranslations: { [key: string]: string } = {
     'Daily': 'ڕۆژانە', 'Salary': 'مووچە', 'Rent': 'کرێ', 'Electricity': 'کارەبا', 'Transport': 'گواستنەوە', 'Other': 'هەمەجۆر'
 };
 
-export function EditableExpenseRow({ expense, onExpenseUpdated }: { expense: WithId<Expense>, onExpenseUpdated: () => void }) {
+export function EditableExpenseRow({ expense, onExpenseUpdated, mode = 'table' }: { expense: WithId<Expense>, onExpenseUpdated: () => void, mode?: 'table' | 'card' }) {
     const firestore = useFirestore();
     const { toast } = useToast();
     const [isEditing, setIsEditing] = useState(false);
@@ -91,9 +91,55 @@ export function EditableExpenseRow({ expense, onExpenseUpdated }: { expense: Wit
     const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: expense.currency || 'USD' });
 
     if (isEditing) {
+        if (mode === 'card') {
+            return (
+                <Card className="md:hidden">
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4">
+                            <CardHeader>
+                                <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>ناوی خەرجی</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <FormField control={form.control} name="note" render={({ field }) => ( <FormItem> <FormLabel>تێبینی</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
+                                <div className="flex gap-4">
+                                    <FormField control={form.control} name="amount" render={({ field }) => ( <FormItem className="flex-grow"> <FormLabel>بڕ</FormLabel> <FormControl><Input type="number" {...field} step="0.01" /></FormControl> <FormMessage /> </FormItem> )}/>
+                                    <FormField control={form.control} name="currency" render={({ field }) => (
+                                        <FormItem className="w-[100px]">
+                                            <FormLabel>دراو</FormLabel>
+                                            <Select onValueChange={field.onChange} value={field.value} dir="rtl">
+                                                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                                <SelectContent><SelectItem value="USD">USD</SelectItem><SelectItem value="IQD">IQD</SelectItem></SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}/>
+                                </div>
+                                <FormField control={form.control} name="category" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>پۆل</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value} dir="rtl">
+                                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                            <SelectContent>{Object.entries(categoryTranslations).map(([key, value]) => <SelectItem key={key} value={key}>{value}</SelectItem>)}</SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}/>
+                                <FormField control={form.control} name="date" render={({ field }) => ( <FormItem> <FormLabel>بەروار</FormLabel> <FormControl><Input type="date" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
+                            </CardContent>
+                            <CardFooter className="flex justify-end gap-2">
+                                <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)}><X className="h-4 w-4 mr-2 text-muted-foreground"/>پاشگەزبوونەوە</Button>
+                                <Button size="sm" onClick={form.handleSubmit(handleSave)} disabled={form.formState.isSubmitting}>
+                                    {form.formState.isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2"/> : <Save className="h-4 w-4 mr-2 text-primary-foreground"/>}
+                                    پاشەکەوت
+                                </Button>
+                            </CardFooter>
+                        </form>
+                    </Form>
+                </Card>
+            );
+        }
+
         return (
-            <>
-            {/* Desktop Editing Row */}
             <Form {...form}>
                 <TableRow className="bg-secondary/20 hidden md:table-row">
                     <TableCell><FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/></TableCell>
@@ -134,84 +180,11 @@ export function EditableExpenseRow({ expense, onExpenseUpdated }: { expense: Wit
                     </TableCell>
                 </TableRow>
             </Form>
-            
-            {/* Mobile Editing Card */}
-            <Card className="md:hidden">
-                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4">
-                        <CardHeader>
-                            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>ناوی خەرجی</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                             <FormField control={form.control} name="note" render={({ field }) => ( <FormItem> <FormLabel>تێبینی</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
-                             <div className="flex gap-4">
-                                <FormField control={form.control} name="amount" render={({ field }) => ( <FormItem className="flex-grow"> <FormLabel>بڕ</FormLabel> <FormControl><Input type="number" {...field} step="0.01" /></FormControl> <FormMessage /> </FormItem> )}/>
-                                 <FormField control={form.control} name="currency" render={({ field }) => (
-                                    <FormItem className="w-[100px]">
-                                        <FormLabel>دراو</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value} dir="rtl">
-                                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                            <SelectContent><SelectItem value="USD">USD</SelectItem><SelectItem value="IQD">IQD</SelectItem></SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}/>
-                            </div>
-                            <FormField control={form.control} name="category" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>پۆل</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value} dir="rtl">
-                                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                        <SelectContent>{Object.entries(categoryTranslations).map(([key, value]) => <SelectItem key={key} value={key}>{value}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}/>
-                            <FormField control={form.control} name="date" render={({ field }) => ( <FormItem> <FormLabel>بەروار</FormLabel> <FormControl><Input type="date" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
-                        </CardContent>
-                        <CardFooter className="flex justify-end gap-2">
-                             <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)}><X className="h-4 w-4 mr-2 text-muted-foreground"/>پاشگەزبوونەوە</Button>
-                             <Button size="sm" onClick={form.handleSubmit(handleSave)} disabled={form.formState.isSubmitting}>
-                                {form.formState.isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2"/> : <Save className="h-4 w-4 mr-2 text-primary-foreground"/>}
-                                پاشەکەوت
-                            </Button>
-                        </CardFooter>
-                    </form>
-                </Form>
-            </Card>
-            </>
         );
     }
 
-    return (
-         <>
-            {/* Desktop View Row */}
-            <TableRow key={expense.id} className="hidden md:table-row">
-                <TableCell className="font-medium text-right">{expense.name}</TableCell>
-                <TableCell className="text-right">{expense.note || '---'}</TableCell>
-                <TableCell className="text-right"><ConfidentialBlur>{currencyFormatter.format(expense.amount)}</ConfidentialBlur></TableCell>
-                <TableCell className="text-right"><Badge variant="outline">{categoryTranslations[expense.category] || expense.category}</Badge></TableCell>
-                <TableCell className="text-right">{format(parseISO(expense.date), "yyyy-MM-dd")}</TableCell>
-                <TableCell className="text-left">
-                    <div className="flex gap-2">
-                            <Button size="icon" variant="ghost" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4 text-blue-500"/></Button>
-                            <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button size="icon" variant="ghost" disabled={isDeleting}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent dir="rtl">
-                                <AlertDialogHeader><AlertDialogTitle>ئایا دڵنیایت لە سڕینەوەی ئەم خەرجییە؟</AlertDialogTitle><AlertDialogDescription>ئەم کردارە پاشگەزبوونەوەی نییە و ناتوانیت بیگەڕێنیتەوە.</AlertDialogDescription></AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">بەڵێ, بسڕەوە</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </div>
-                </TableCell>
-            </TableRow>
-            
-            {/* Mobile View Card */}
+    if (mode === 'card') {
+        return (
             <Card key={`${expense.id}-mobile`} className="md:hidden">
                 <CardHeader>
                     <CardTitle>{expense.name}</CardTitle>
@@ -247,6 +220,33 @@ export function EditableExpenseRow({ expense, onExpenseUpdated }: { expense: Wit
                     </AlertDialog>
                 </CardFooter>
             </Card>
-        </>
+        );
+    }
+
+    return (
+        <TableRow key={expense.id} className="hidden md:table-row">
+            <TableCell className="font-medium text-right">{expense.name}</TableCell>
+            <TableCell className="text-right">{expense.note || '---'}</TableCell>
+            <TableCell className="text-right"><ConfidentialBlur>{currencyFormatter.format(expense.amount)}</ConfidentialBlur></TableCell>
+            <TableCell className="text-right"><Badge variant="outline">{categoryTranslations[expense.category] || expense.category}</Badge></TableCell>
+            <TableCell className="text-right">{format(parseISO(expense.date), "yyyy-MM-dd")}</TableCell>
+            <TableCell className="text-left">
+                <div className="flex gap-2">
+                        <Button size="icon" variant="ghost" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4 text-blue-500"/></Button>
+                        <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button size="icon" variant="ghost" disabled={isDeleting}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent dir="rtl">
+                            <AlertDialogHeader><AlertDialogTitle>ئایا دڵنیایت لە سڕینەوەی ئەم خەرجییە؟</AlertDialogTitle><AlertDialogDescription>ئەم کردارە پاشگەزبوونەوەی نییە و ناتوانیت بیگەڕێنیتەوە.</AlertDialogDescription></AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">بەڵێ, بسڕەوە</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
+            </TableCell>
+        </TableRow>
     );
 }
