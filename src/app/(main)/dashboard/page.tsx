@@ -28,16 +28,18 @@ import { Badge } from '@/components/ui/badge';
 
 // --- TYPE DEFINITIONS ---
 
-type SellingForm = { totalPrice: number; customerName: string; issueDate: string; creatorId: string; };
-type Expense = { amount: number; date: string; name: string; currency?: 'USD' | 'IQD'; };
+type SellingForm = { id: string; totalPrice: number; customerName: string; issueDate: string; creatorId: string; };
+type Expense = { id: string; amount: number; date: string; name: string; currency?: 'USD' | 'IQD'; category: string; };
 type Product = { id: string; currentQuantity: number; category: string; productName: string; sizeModel?: string; stockLocation: 'Warehouse' | 'Shop Showroom'; supplierId?: string; unitPrice?: number; sellingPrice?: number; };
 type BuyingForm = { id: string; issueDate: string; supplierId: string; customsFee?: number; totalAmount?: number; };
 type BuyingFormProduct = { quantity: number; unitPrice: number; productId: string; productName: string; category: string; };
 type SellingFormProduct = { productId: string; productName: string; quantity: number; unitPrice: number; lineTotal: number; category: string; };
-type Supplier = { supplierName: string; };
+type Supplier = { id: string; supplierName: string; };
 
 type GroupedProduct = {
     productName: string;
+    category: string;
+    sizeModel?: string;
     locations: { Warehouse?: WithId<Product>; 'Shop Showroom'?: WithId<Product>; };
     totalQuantity: number;
 }
@@ -366,7 +368,7 @@ function ExpensesDetailDialog({ expenses }: { expenses: WithId<Expense>[] | null
 function CombinedExpensesDetailDialog({ expenses, purchases }: { expenses: WithId<Expense>[] | null, purchases: any[] | null }) {
     const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
     return (
-        <Tabs defaultValue="general" className="w-full">
+        <Tabs defaultValue="general" className="w-full" dir="rtl">
             <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="general">خەرجی گشتی</TabsTrigger>
                 <TabsTrigger value="purchases">کڕینەکان</TabsTrigger>
@@ -517,19 +519,18 @@ function LowStockDetailDialog({ products }: { products: GroupedProduct[] }) {
 
 function DashboardStats({ stats, dialogData }: { stats: any, dialogData: any }) {
     const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 });
-    const numberFormatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 0 });
 
     const expenseDescription = `کۆی گشتی خەرجی و کڕینەکان بە دۆلار.`;
 
     return (
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-             <Dialog><DialogTrigger asChild><div className="cursor-pointer"><StatCard title="کۆی فرۆش" value={<ConfidentialBlur>{currencyFormatter.format(stats.totalRevenue)}</ConfidentialBlur>} icon={ShoppingCart} description="کۆی گشتی فرۆشتن لە ماوەی دیاریکراودا." /></div></DialogTrigger>
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 w-full">
+             <Dialog><DialogTrigger asChild><div className="cursor-pointer w-full"><StatCard title="کۆی فرۆش" value={<ConfidentialBlur>{currencyFormatter.format(stats.totalRevenue)}</ConfidentialBlur>} icon={ShoppingCart} description="کۆی گشتی فرۆشتن لە ماوەی دیاریکراودا." /></div></DialogTrigger>
                 <DialogContent className="sm:max-w-4xl" dir="rtl"><DialogHeader><DialogTitle>وردەکاریی فرۆشتن</DialogTitle><DialogDescription>پوختەی فرۆشتنەکان لە ماوەی دیاریکراودا.</DialogDescription></DialogHeader><SalesDetailDialog data={dialogData.sales} /></DialogContent>
             </Dialog>
 
             <Dialog>
                 <DialogTrigger asChild>
-                    <div className="cursor-pointer">
+                    <div className="cursor-pointer w-full">
                         <StatCard 
                             title="کۆی خەرجی" 
                             value={<ConfidentialBlur>{currencyFormatter.format(stats.totalExpensesUSD)}</ConfidentialBlur>} 
@@ -547,11 +548,11 @@ function DashboardStats({ stats, dialogData }: { stats: any, dialogData: any }) 
                 </DialogContent>
             </Dialog>
 
-            <Dialog><DialogTrigger asChild><div className="cursor-pointer"><StatCard title="ژمارەی پسوولەی کڕین" value={<ConfidentialBlur>{stats.buyingFormsCount.toString()}</ConfidentialBlur>} icon={Package} description="کۆی گشتی پسوولەی کڕین لە ماوەی دیاریکراودا." /></div></DialogTrigger>
+            <Dialog><DialogTrigger asChild><div className="cursor-pointer w-full"><StatCard title="ژمارەی پسوولەی کڕین" value={<ConfidentialBlur>{stats.buyingFormsCount.toString()}</ConfidentialBlur>} icon={Package} description="کۆی گشتی پسوولەی کڕین لە ماوەی دیاریکراودا." /></div></DialogTrigger>
                 <DialogContent className="sm:max-w-4xl" dir="rtl"><DialogHeader><DialogTitle>وردەکاریی کڕینەکان</DialogTitle><DialogDescription>پوختەی کڕینەکان لە ماوەی دیاریکراودا.</DialogDescription></DialogHeader><PurchasesDetailDialog data={dialogData.purchases} /></DialogContent>
             </Dialog>
             
-            <Dialog><DialogTrigger asChild><div className="cursor-pointer"><StatCard title="کاڵای کەم لە کۆگا" value={<ConfidentialBlur>{stats.lowStockCount.toString()}</ConfidentialBlur>} icon={Archive} description="کاڵاکان کە بڕیان لەنێوان 1 بۆ 4 دانەیە" isNegative={stats.lowStockCount > 0} /></div></DialogTrigger>
+            <Dialog><DialogTrigger asChild><div className="cursor-pointer w-full"><StatCard title="کاڵای کەم لە کۆگا" value={<ConfidentialBlur>{stats.lowStockCount.toString()}</ConfidentialBlur>} icon={Archive} description="کاڵاکان کە بڕیان لەنێوان 1 بۆ 4 دانەیە" isNegative={stats.lowStockCount > 0} /></div></DialogTrigger>
                 <DialogContent className="sm:max-w-lg" dir="rtl"><DialogHeader><DialogTitle>کاڵا کەمبووەکان</DialogTitle><DialogDescription>لیستی ئەو کاڵایانەی کە بڕیان لەنێوان 1 بۆ 4 دانەیە.</DialogDescription></DialogHeader><LowStockDetailDialog products={dialogData.lowStockProducts} /></DialogContent>
             </Dialog>
         </div>
@@ -584,28 +585,28 @@ function RecentActivityChart({ data }: { data: any[] }) {
     const currencyFormatter = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', compactDisplay: 'short' }).format(value);
 
     return (
-        <Card className="bg-gradient-to-br from-blue-900/50 via-purple-900/50 to-indigo-900/50 text-white border-blue-800/50">
+        <Card className="bg-gradient-to-br from-blue-900/50 via-purple-900/50 to-indigo-900/50 text-white border-blue-800/50 w-full overflow-hidden">
             <CardHeader>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex flex-col gap-4">
                     <div><CardTitle className="text-white">نەخشەی چالاکییەکان</CardTitle><CardDescription className="text-white/80">بینینی فرۆشتن، خەرجی، و قازانج بەپێی ماوەی دیاریکراو.</CardDescription></div>
                 </div>
-                 <div className="flex flex-col sm:flex-row items-center justify-end gap-4 mt-4" dir="rtl">
+                 <div className="flex flex-col items-center justify-end gap-4 mt-4 w-full" dir="rtl">
                     <Select dir="rtl" value={viewMode} onValueChange={(v) => setViewMode(v as any)}><SelectTrigger className="bg-white/10 text-white border-white/20 w-full sm:w-[180px]"><SelectValue /></SelectTrigger>
                         <SelectContent dir="rtl"><SelectItem value="daily">نمایشی ڕۆژانە</SelectItem><SelectItem value="total">نمایشی گشتی</SelectItem></SelectContent>
                     </Select>
-                    <div className="grid grid-cols-2 sm:flex items-center gap-4">
-                        {Object.entries(activeSubjects).map(([key, value]) => ( <div key={key} className="flex items-center space-x-2 space-x-reverse"><Checkbox id={key} checked={value} onCheckedChange={(checked) => setActiveSubjects(prev => ({...prev, [key]: !!checked}))} className="border-white/50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"/><label htmlFor={key} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{chartConfig[key as keyof typeof chartConfig].label}</label></div> ))}
+                    <div className="grid grid-cols-2 sm:flex items-center gap-4 w-full justify-center">
+                        {Object.entries(activeSubjects).map(([key, value]) => ( <div key={key} className="flex items-center space-x-2 space-x-reverse"><Checkbox id={key} checked={value} onCheckedChange={(checked) => setActiveSubjects(prev => ({...prev, [key]: !!checked}))} className="border-white/50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"/><label htmlFor={key} className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{chartConfig[key as keyof typeof chartConfig].label}</label></div> ))}
                     </div>
                 </div>
             </CardHeader>
-            <CardContent>
-                <ConfidentialBlur className='w-full block'>
+            <CardContent className="px-2 sm:px-6">
+                <ConfidentialBlur className='w-full block min-w-0'>
                 {viewMode === 'daily' ? (
-                <ChartContainer config={chartConfig} className="h-80 w-full">
+                <ChartContainer config={chartConfig} className="h-80 w-full min-w-0">
                     <AreaChart accessibilityLayer data={data}>
                         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)" />
-                        <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => formatDate(parseISO(value), 'MMM d')} tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}/>
-                        <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={currencyFormatter} tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}/>
+                        <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => formatDate(parseISO(value), 'MMM d')} tick={{ fill: 'rgba(255, 255, 255, 0.7)', fontSize: 10 }}/>
+                        <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={currencyFormatter} tick={{ fill: 'rgba(255, 255, 255, 0.7)', fontSize: 10 }}/>
                         <ChartTooltip cursor={true} content={<ChartTooltipContent labelFormatter={(label) => formatDate(parseISO(label), 'eeee, d MMMM yyyy')} indicator="dot" labelClassName="text-white" className="bg-card/80 backdrop-blur-sm text-white border-border/50" formatter={(value, name, item) => ( <div className="flex items-center gap-2"><div style={{ backgroundColor: item.color }} className="w-2.5 h-2.5 rounded-full" /><div className="flex justify-between w-full"><span className="text-muted-foreground">{chartConfig[name as keyof typeof chartConfig].label}: </span><span className="font-bold ml-2">{currencyFormatter(value as number)}</span></div></div> )}/>}/>
                         <defs><linearGradient id="fillSales" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-sales)" stopOpacity={0.8} /><stop offset="95%" stopColor="var(--color-sales)" stopOpacity={0.1} /></linearGradient><linearGradient id="fillExpenses" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-expenses)" stopOpacity={0.8} /><stop offset="95%" stopColor="var(--color-expenses)" stopOpacity={0.1} /></linearGradient><linearGradient id="fillNetProfit" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-netProfit)" stopOpacity={0.8} /><stop offset="95%" stopColor="var(--color-netProfit)" stopOpacity={0.1} /></linearGradient></defs>
                         {activeSubjects.sales && <Area dataKey="sales" type="natural" fill="url(#fillSales)" stroke="var(--color-sales)" stackId="a" />}
@@ -614,9 +615,9 @@ function RecentActivityChart({ data }: { data: any[] }) {
                     </AreaChart>
                 </ChartContainer>
                 ) : (
-                 <ChartContainer config={chartConfig} className="h-80 w-full">
+                 <ChartContainer config={chartConfig} className="h-80 w-full min-w-0">
                     <BarChart accessibilityLayer data={totalData.filter(d => activeSubjects[d.name.includes('فرۆش') ? 'sales' : d.name.includes('خەرجی') ? 'expenses' : 'netProfit'])}>
-                         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)" /><XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={(value) => value} tick={{ fill: 'rgba(255, 255, 255, 0.7)' }} /><YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={currencyFormatter} tick={{ fill: 'rgba(255, 255, 255, 0.7)' }}/><ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" labelClassName="text-white" className="bg-card/80 backdrop-blur-sm text-white border-border/50" />} /><Bar dataKey="value" radius={8} />
+                         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)" /><XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={(value) => value} tick={{ fill: 'rgba(255, 255, 255, 0.7)', fontSize: 10 }} /><YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={currencyFormatter} tick={{ fill: 'rgba(255, 255, 255, 0.7)', fontSize: 10 }}/><ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" labelClassName="text-white" className="bg-card/80 backdrop-blur-sm text-white border-border/50" />} /><Bar dataKey="value" radius={8} />
                     </BarChart>
                 </ChartContainer>
                 )}
@@ -646,22 +647,22 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="p-4 md:p-8 space-y-8" dir="rtl">
+        <div className="flex flex-col gap-6 md:gap-8 p-4 md:p-8 w-full max-w-full overflow-x-hidden" dir="rtl">
             <PageHeader title="داشبۆردی سەرەکی" description="پوختەی کارەکانت لێرە ببینە.">
-                 <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-muted-foreground">لە:</span>
+                 <div className="flex flex-wrap items-center gap-3 w-full">
+                    <div className="flex items-center gap-2 flex-1 min-w-[140px]">
+                        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">لە:</span>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
                                 variant={"outline"}
                                 className={cn(
-                                    "w-[180px] justify-start text-right font-normal",
+                                    "w-full justify-start text-right font-normal text-xs h-9 px-3",
                                     !dateRange.from && "text-muted-foreground"
                                 )}
                                 >
-                                <CalendarIcon className="ml-2 h-4 w-4" />
-                                {dateRange.from ? formatDate(dateRange.from, "dd/MM/yyyy") : <span>بەروارێک هەڵبژێرە</span>}
+                                <CalendarIcon className="ml-2 h-3 w-3" />
+                                {dateRange.from ? formatDate(dateRange.from, "dd/MM/yyyy") : <span>بەروارێک</span>}
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
@@ -675,19 +676,19 @@ export default function DashboardPage() {
                             </PopoverContent>
                         </Popover>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-muted-foreground">بۆ:</span>
+                    <div className="flex items-center gap-2 flex-1 min-w-[140px]">
+                        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">بۆ:</span>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
                                 variant={"outline"}
                                 className={cn(
-                                    "w-[180px] justify-start text-right font-normal",
+                                    "w-full justify-start text-right font-normal text-xs h-9 px-3",
                                     !dateRange.to && "text-muted-foreground"
                                 )}
                                 >
-                                <CalendarIcon className="ml-2 h-4 w-4" />
-                                {dateRange.to ? formatDate(dateRange.to, "dd/MM/yyyy") : <span>بەروارێک هەڵبژێرە</span>}
+                                <CalendarIcon className="ml-2 h-3 w-3" />
+                                {dateRange.to ? formatDate(dateRange.to, "dd/MM/yyyy") : <span>بەروارێک</span>}
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
@@ -705,20 +706,18 @@ export default function DashboardPage() {
             </PageHeader>
             
             {isLoading ? (
-                <div className="space-y-8">
+                <div className="space-y-6 w-full">
                     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                         {[...Array(4)].map((_, i) => ( <Card key={i} className="bg-card/50 border-blue-800/40"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><div className="h-4 bg-muted rounded w-2/4" /></CardHeader><CardContent><div className="h-8 bg-muted rounded w-3/4 mb-2" /><div className="h-3 bg-muted rounded w-full" /></CardContent></Card> ))}
                     </div>
                     <Card className="h-96 flex items-center justify-center bg-gradient-to-br from-blue-900/50 via-purple-900/50 to-indigo-900/50"><Loader2 className="h-8 w-8 animate-spin text-primary" /></Card>
                 </div>
             ) : (
-                <>
+                <div className="flex flex-col gap-6 md:gap-8 w-full">
                     <DashboardStats stats={stats} dialogData={dialogData} />
                     <RecentActivityChart data={chartData} />
-                </>
+                </div>
             )}
         </div>
     );
 }
-
-    
