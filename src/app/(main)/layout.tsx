@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { SidebarNav } from '@/components/layout/sidebar-nav';
 import { Header } from '@/components/layout/header';
+import { BottomNav } from '@/components/layout/bottom-nav';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter, usePathname } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
@@ -41,9 +42,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <SidebarNav />
       <div className="flex flex-col">
         <Header />
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background/95 overflow-auto">
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background/95 overflow-auto pb-20 md:pb-6">
             {children}
         </main>
+        <BottomNav />
       </div>
     </div>
   );
