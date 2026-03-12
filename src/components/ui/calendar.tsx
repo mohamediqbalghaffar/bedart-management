@@ -1,100 +1,65 @@
+
 "use client"
 
 import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { DayPicker, Matcher, useNavigation, type CaptionProps } from "react-day-picker"
-import { format } from 'date-fns';
-import { enUS } from 'date-fns/locale';
+import { DayPicker, useNavigation, type CaptionProps } from "react-day-picker"
 import { ckb } from 'date-fns/locale/ckb';
+import { format } from 'date-fns';
 
 import { cn } from "@/lib/utils"
-import { buttonVariants } from "./button"
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./select";
+import { buttonVariants } from "@/components/ui/button"
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>
 
-function CustomCaption({ displayMonth, locale }: CaptionProps) {
+/**
+ * Custom Caption component to handle Kurdish localization and RTL navigation.
+ * Displays "Month Year" in Sorani Kurdish and provides intuitive navigation.
+ */
+function CustomCaption({ displayMonth }: CaptionProps) {
   const { goToMonth, nextMonth, previousMonth } = useNavigation();
-  const isCkb = locale?.code === 'ckb';
-  const formatLocale = isCkb ? ckb : enUS;
-
-  const handlePreviousClick = () => {
-    if (previousMonth) {
-      goToMonth(previousMonth);
-    }
-  };
-
-  const handleNextClick = () => {
-    if (nextMonth) {
-      goToMonth(nextMonth);
-    }
-  };
-
-  const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i);
-  const months = Array.from({ length: 12 }, (_, i) => i);
+  
+  // Format the month and year in Kurdish (Sorani)
+  // We use date-fns format with the ckb locale for consistent naming
+  const monthYear = format(displayMonth, 'MMMM yyyy', { locale: ckb });
 
   return (
-    <div className="flex justify-between items-center px-1 py-2">
-       <button
+    <div className="flex items-center justify-between px-2 py-4 border-b border-gray-100" dir="rtl">
+      {/* Previous Month Button (RTL: Previous is the Right button) */}
+      <button
         type="button"
         disabled={!previousMonth}
-        onClick={handlePreviousClick}
-        className={cn(buttonVariants({ variant: 'ghost', size: 'icon'}), "h-7 w-7")}
+        onClick={() => previousMonth && goToMonth(previousMonth)}
+        className={cn(
+          buttonVariants({ variant: "ghost", size: "icon" }),
+          "h-8 w-8 text-gray-500 hover:text-primary transition-colors"
+        )}
+        aria-label="مانگی پێشوو"
       >
-        {isCkb ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        <ChevronRight className="h-5 w-5" />
       </button>
+      
+      {/* Month & Year Display */}
+      <div className="text-base font-bold text-gray-900 tracking-tight">
+        {monthYear}
+      </div>
 
-        <div className="flex items-center gap-2">
-            <Select
-                value={displayMonth.getFullYear().toString()}
-                onValueChange={(value) => {
-                    const newDate = new Date(displayMonth);
-                    newDate.setFullYear(parseInt(value, 10));
-                    goToMonth(newDate);
-                }}
-            >
-                <SelectTrigger className="w-24 h-8 text-sm focus:ring-0 border-0 shadow-none">
-                    <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                    {years.map(year => <SelectItem key={year} value={year.toString()}>{isCkb ? new Intl.NumberFormat('ar-EG-u-nu-arab').format(year) : year}</SelectItem>)}
-                </SelectContent>
-            </Select>
-
-             <Select
-                value={displayMonth.getMonth().toString()}
-                onValueChange={(value) => {
-                    const newDate = new Date(displayMonth);
-                    newDate.setMonth(parseInt(value, 10));
-                    goToMonth(newDate);
-                }}
-            >
-                <SelectTrigger className="w-28 h-8 text-sm focus:ring-0 border-0 shadow-none">
-                    <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                    {months.map(month => (
-                        <SelectItem key={month} value={month.toString()}>
-                            {isCkb ? new Intl.NumberFormat('ar-EG-u-nu-arab').format(month + 1) : month + 1}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-        </div>
-
-
-       <button
+      {/* Next Month Button (RTL: Next is the Left button) */}
+      <button
         type="button"
         disabled={!nextMonth}
-        onClick={handleNextClick}
-        className={cn(buttonVariants({ variant: 'ghost', size: 'icon'}), "h-7 w-7")}
+        onClick={() => nextMonth && goToMonth(nextMonth)}
+        className={cn(
+          buttonVariants({ variant: "ghost", size: "icon" }),
+          "h-8 w-8 text-gray-500 hover:text-primary transition-colors"
+        )}
+        aria-label="مانگی داهاتوو"
       >
-        {isCkb ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+        <ChevronLeft className="h-5 w-5" />
       </button>
     </div>
   );
 }
-
 
 function Calendar({
   className,
@@ -102,41 +67,49 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: CalendarProps) {
-  const isCkb = props.locale?.code === 'ckb';
-  const weekendMatcher: Matcher = isCkb ? { dayOfWeek: [5] } : { dayOfWeek: [0, 6] }; // CKB: Fri, Gregorian: Sun, Sat
-
   return (
     <DayPicker
+      dir="rtl"
+      locale={ckb}
+      weekStartsOn={0} // Starts on Sunday as requested for logical ordering
       showOutsideDays={showOutsideDays}
-      className={cn("p-3 bg-white text-gray-900 rounded-lg shadow-lg", className)}
+      className={cn("p-0 bg-white text-gray-900 rounded-xl shadow-2xl border border-gray-200 overflow-hidden", className)}
       classNames={{
-        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-        month: "space-y-4",
-        table: "w-full border-collapse space-y-1",
-        head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
-        row: "flex w-full mt-2",
-        cell: "h-9 w-9 text-center text-sm p-0 relative",
+        months: "flex flex-col",
+        month: "space-y-4 p-4",
+        table: "w-full border-collapse",
+        head_row: "flex w-full mb-2 border-b border-gray-50 pb-2", // Flexbox for reliable 7-column header
+        head_cell: "text-muted-foreground font-semibold text-[0.7rem] flex-1 text-center py-1",
+        row: "flex w-full mt-1", // Flexbox for reliable 7-column day rows
+        cell: "relative p-0 text-center text-sm flex-1 focus-within:relative focus-within:z-20",
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-md hover:bg-gray-100"
+          "h-10 w-10 p-0 font-normal transition-all hover:bg-primary/10 hover:text-primary rounded-lg mx-auto flex items-center justify-center"
         ),
         day_selected:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90 focus:bg-destructive/90",
-        day_today: "bg-blue-100 text-accent-foreground rounded-md",
-        day_outside: "text-gray-400 opacity-50",
-        day_disabled: "text-gray-400 opacity-50",
+          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground font-bold shadow-md",
+        day_today: "bg-blue-50 text-primary border border-primary/20 font-extrabold shadow-sm",
+        day_outside: "text-gray-200 opacity-20 pointer-events-none",
+        day_disabled: "text-gray-200 opacity-20",
         day_hidden: "invisible",
         ...classNames,
       }}
+      formatters={{
+        formatWeekdayName: (date) => {
+          // Exact Sorani Kurdish short headers: [Sunday, Monday, ..., Saturday]
+          // Index 0: Sunday, 1: Monday, etc.
+          const days = ["یەک", "دوو", "سێ", "چوار", "پێنج", "هەینی", "شەم"];
+          return days[date.getDay()];
+        }
+      }}
       modifiers={{
-        weekend: weekendMatcher,
+        weekend: (date) => date.getDay() === 5 || date.getDay() === 6, // Friday & Saturday in Kurdish context
       }}
       modifiersClassNames={{
-        weekend: "text-destructive",
+        weekend: "text-red-500/80 font-medium",
       }}
       components={{
         Caption: CustomCaption,
-        Head: () => null,
       }}
       {...props}
     />
