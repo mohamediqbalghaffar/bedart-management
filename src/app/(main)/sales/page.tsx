@@ -374,9 +374,9 @@ function ReceiptPreview({ formId }: { formId: string }) {
     }
 
     return (
-        <>
-            <div className="bg-gray-200/80 dark:bg-gray-800/50 p-4 rounded-lg overflow-auto">
-                 <div className="bg-white mx-auto max-w-[800px]">
+        <div className="flex flex-col h-full overflow-hidden">
+            <div className="flex-1 bg-gray-200/80 dark:bg-gray-800/50 p-2 sm:p-4 rounded-lg overflow-auto">
+                 <div className="bg-white mx-auto w-full max-w-[800px] shadow-lg rounded-sm">
                     <PrintableReceipt
                         ref={receiptRef}
                         formData={printData.formData}
@@ -386,13 +386,13 @@ function ReceiptPreview({ formId }: { formId: string }) {
                     />
                 </div>
             </div>
-            <DialogFooter className="pt-4 sm:justify-start">
-                 <Button onClick={handleDownloadAsJPEG} disabled={isDownloading}>
+            <DialogFooter className="pt-4 flex flex-col sm:flex-row gap-2">
+                 <Button onClick={handleDownloadAsJPEG} disabled={isDownloading} className="w-full sm:w-auto">
                     {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
                     دابەزاندن وەک وێنە
                 </Button>
             </DialogFooter>
-        </>
+        </div>
     );
 }
 
@@ -683,7 +683,7 @@ function SalesList() {
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
-                                                <DialogContent className="sm:max-w-3xl" dir="rtl">
+                                                <DialogContent className="max-w-[95vw] sm:max-w-3xl h-[90vh] flex flex-col p-4" dir="rtl">
                                                     <DialogHeader>
                                                         <DialogTitle>پێشبینینی پسوولە</DialogTitle>
                                                     </DialogHeader>
@@ -745,7 +745,7 @@ function SalesList() {
                                          <SalesFormDialog formId={sale.id} onSave={handleFormSave} trigger={<Button variant="ghost" size="sm"><Edit className="h-4 w-4 mr-2 text-blue-500" />دەستکاری</Button>} />
                                         <Dialog>
                                             <DialogTrigger asChild><Button variant="ghost" size="sm"><FileSpreadsheet className="h-4 w-4 mr-2" />وردەکاری</Button></DialogTrigger>
-                                            <DialogContent className="sm:max-w-3xl" dir="rtl">
+                                            <DialogContent className="max-w-[95vw] sm:max-w-3xl h-[90vh] flex flex-col p-4" dir="rtl">
                                                 <DialogHeader><DialogTitle>پێشبینینی پسوولە</DialogTitle></DialogHeader>
                                                 <ReceiptPreview formId={sale.id} />
                                             </DialogContent>
