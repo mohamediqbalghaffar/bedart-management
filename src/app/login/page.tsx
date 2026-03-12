@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, use } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,9 @@ type User = {
     name: string;
 }
 
-export default function LoginPage() {
+export default function LoginPage(props: any) {
+  use(props.params);
+  use(props.searchParams);
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);

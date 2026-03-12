@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, use } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -343,7 +343,9 @@ function ProductDefinitionsList({ products, isLoading, onProductUpdated, onBulkU
 }
 
 // Main page component that orchestrates everything
-export default function ProductsPage() {
+export default function ProductsPage(props: any) {
+    React.use(props.params);
+    React.use(props.searchParams);
     const [refreshKey, setRefreshKey] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
     const { toast } = useToast();

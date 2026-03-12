@@ -629,7 +629,9 @@ function RecentActivityChart({ data }: { data: any[] }) {
 
 // --- MAIN PAGE COMPONENT ---
 
-export default function DashboardPage() {
+export default function DashboardPage(props: any) {
+    React.use(props.params);
+    React.use(props.searchParams);
     const [dateRange, setDateRange] = useState<{ from: Date, to: Date }>({ 
         from: new Date('2018-01-01'), 
         to: new Date() 

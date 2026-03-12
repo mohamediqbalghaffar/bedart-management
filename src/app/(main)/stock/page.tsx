@@ -145,12 +145,12 @@ function StockPageContent() {
     }
     
     return (
-        <div className="p-4 md:p-8 space-y-8" dir="rtl">
+        <div className="p-4 md:p-8 space-y-8 overflow-x-hidden" dir="rtl">
             <PageHeader title="بەڕێوەبردنی کۆگا" description="ئاستی کۆگا و زانیاری کاڵاکانت لێرە بەڕێوەببە." />
-            <Card>
+            <Card className="w-full overflow-hidden">
                 <CardHeader>
                     <CardTitle>لیستی کۆگا</CardTitle>
-                    <div className="flex items-center justify-between gap-4 mt-4">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
                         <div className="relative w-full max-w-sm">
                             <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
@@ -160,17 +160,17 @@ function StockPageContent() {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <Button variant="outline" onClick={exportToExcel}>
-                            <FileDown />
+                        <Button variant="outline" onClick={exportToExcel} className="w-full sm:w-auto">
+                            <FileDown className="ml-2 h-4 w-4" />
                             هەناردەکردنی ڕاپۆرت
                         </Button>
                     </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0 sm:p-6">
                     {/* Desktop View */}
-                    <ScrollArea className="h-[60vh] hidden md:block">
+                    <ScrollArea className="h-[60vh] hidden md:block border rounded-md">
                         <Table>
-                            <TableHeader>
+                            <TableHeader className="sticky top-0 bg-card z-10">
                                 <TableRow>
                                     <TableHead className="text-center">گواستنەوە</TableHead>
                                     <TableHead className="text-right">
@@ -236,7 +236,7 @@ function StockPageContent() {
                     </ScrollArea>
                     
                     {/* Mobile View */}
-                    <div className="md:hidden">
+                    <div className="md:hidden p-4">
                         {isLoading ? (
                             <div className="flex justify-center items-center h-48"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></div>
                         ) : groupedProducts.length === 0 ? (
@@ -244,51 +244,50 @@ function StockPageContent() {
                                 {searchTerm ? `هیچ کاڵایەک نەدۆزرایەوە بۆ "${searchTerm}"` : "هیچ کاڵایەک لە کۆگا نییە."}
                             </div>
                         ) : (
-                            <ScrollArea className="h-[60vh] -mx-4 px-4">
-                                <div className="space-y-4">
-                                    {groupedProducts.map((product) => (
-                                         <Card key={`${product.productName}-${product.sizeModel}`} className="bg-card/80">
-                                            <CardHeader>
-                                                <div className="flex justify-between items-start">
-                                                    <div>
-                                                        <CardTitle>{product.productName} {product.sizeModel && `(${product.sizeModel})`}</CardTitle>
-                                                        <CardDescription>{product.category}</CardDescription>
-                                                    </div>
-                                                     <StockTransferDialog product={product} onTransferSuccess={onTransferSuccess}>
-                                                        <Button variant="ghost" size="icon" disabled={!product.locations.Warehouse && !product.locations['Shop Showroom']}>
-                                                            <ArrowRightLeft className="h-5 w-5 text-blue-500" />
-                                                        </Button>
-                                                    </StockTransferDialog>
+                            <div className="space-y-4">
+                                {groupedProducts.map((product) => (
+                                        <Card key={`${product.productName}-${product.sizeModel}`} className="bg-card/80 w-full overflow-hidden">
+                                        <CardHeader className="p-4 pb-2">
+                                            <div className="flex justify-between items-start gap-2">
+                                                <div className="min-w-0">
+                                                    <CardTitle className="text-base truncate">{product.productName} {product.sizeModel && `(${product.sizeModel})`}</CardTitle>
+                                                    <CardDescription className="text-xs">{product.category}</CardDescription>
                                                 </div>
-                                            </CardHeader>
-                                            <CardContent className="space-y-3 text-sm">
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-muted-foreground">دابینکەر:</span>
-                                                    <span className="font-medium">{product.supplierName}</span>
+                                                    <StockTransferDialog product={product} onTransferSuccess={onTransferSuccess}>
+                                                    <Button variant="ghost" size="icon" disabled={!product.locations.Warehouse && !product.locations['Shop Showroom']} className="h-8 w-8 shrink-0">
+                                                        <ArrowRightLeft className="h-4 w-4 text-blue-500" />
+                                                    </Button>
+                                                </StockTransferDialog>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="p-4 pt-0 space-y-2 text-sm">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-muted-foreground">دابینکەر:</span>
+                                                <span className="font-medium truncate ml-2">{product.supplierName}</span>
+                                            </div>
+                                            <Separator className="opacity-50" />
+                                            <div className="grid grid-cols-2 gap-2 pt-1">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] text-muted-foreground mb-1">کۆگا</span>
+                                                    <ConfidentialBlur><Badge variant="secondary" className="w-full justify-center h-7">{product.locations.Warehouse?.currentQuantity || 0}</Badge></ConfidentialBlur>
                                                 </div>
-                                                <Separator />
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-muted-foreground">کۆگا:</span>
-                                                    <ConfidentialBlur><Badge variant="secondary">{product.locations.Warehouse?.currentQuantity || 0}</Badge></ConfidentialBlur>
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] text-muted-foreground mb-1">فرۆشگا</span>
+                                                    <ConfidentialBlur><Badge variant="secondary" className="w-full justify-center h-7">{product.locations['Shop Showroom']?.currentQuantity || 0}</Badge></ConfidentialBlur>
                                                 </div>
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-muted-foreground">فرۆشگا:</span>
-                                                    <ConfidentialBlur><Badge variant="secondary">{product.locations['Shop Showroom']?.currentQuantity || 0}</Badge></ConfidentialBlur>
-                                                </div>
-                                                <Separator />
-                                                <div className="flex justify-between items-center font-bold">
-                                                    <span>کۆی گشتی:</span>
-                                                    <ConfidentialBlur>
-                                                        <Badge variant={product.totalQuantity < 5 ? "destructive" : "default"} className={product.totalQuantity >= 5 ? "bg-primary" : ""}>
-                                                            {product.totalQuantity}
-                                                        </Badge>
-                                                    </ConfidentialBlur>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    ))}
-                                </div>
-                            </ScrollArea>
+                                            </div>
+                                            <div className="flex justify-between items-center font-bold pt-2 border-t mt-2">
+                                                <span>کۆی گشتی:</span>
+                                                <ConfidentialBlur>
+                                                    <Badge variant={product.totalQuantity < 5 ? "destructive" : "default"} className={product.totalQuantity >= 5 ? "bg-primary h-7 px-3" : "h-7 px-3"}>
+                                                        {product.totalQuantity}
+                                                    </Badge>
+                                                </ConfidentialBlur>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
                         )}
                     </div>
                 </CardContent>
@@ -297,7 +296,9 @@ function StockPageContent() {
     );
 }
 
-export default function StockPage() {
+export default function StockPage(props: any) {
+    React.use(props.params);
+    React.use(props.searchParams);
     return (
         <Suspense>
             <StockPageContent />

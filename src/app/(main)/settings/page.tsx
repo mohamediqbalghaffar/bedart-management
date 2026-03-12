@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, use } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -459,7 +459,7 @@ function DataManagement() {
         <Card>
             <CardHeader>
                 <CardTitle>بەڕێوەبردنی داتا</CardTitle>
-                <CardDescription>هەناردەکردن، هاوردەکردن، یان سڕینەوەی هەموو داتاکانی سیستەم.</CardDescription>
+                <CardDescription>هەناردەکردنی، هاوردەکردنی، یان سڕینەوەی هەموو داتاکانی سیستەم.</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap items-center gap-4">
                  <Button variant="outline" onClick={exportAllData} disabled={isExporting}>
@@ -524,7 +524,9 @@ function DataManagement() {
 }
 
 
-export default function SettingsPage() {
+export default function SettingsPage(props: any) {
+    React.use(props.params);
+    React.use(props.searchParams);
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <PageHeader title="ڕێکخستنەکانی سیستەم" description="بەڕێوەبردنی بەکارهێنەران، پۆلەکان، و داتاکان." />

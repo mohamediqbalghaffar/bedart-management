@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { SidebarNav } from '@/components/layout/sidebar-nav';
 import { Header } from '@/components/layout/header';
 import { BottomNav } from '@/components/layout/bottom-nav';
@@ -8,7 +8,9 @@ import { useAuth } from '@/contexts/auth-context';
 import { useRouter, usePathname } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
-export default function MainLayout({ children }: { children: React.ReactNode }) {
+export default function MainLayout(props: any) {
+  const { children } = props;
+  React.use(props.params);
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -40,9 +42,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr] overflow-hidden">
       <SidebarNav />
-      <div className="flex flex-col min-w-0">
+      <div className="flex flex-col min-w-0 overflow-x-hidden">
         <Header />
-        <main className="flex flex-1 flex-col bg-background/95 overflow-x-hidden overflow-y-auto pb-20 md:pb-6">
+        <main className="flex flex-1 flex-col bg-background/95 overflow-x-hidden overflow-y-auto pb-20 md:pb-6 min-w-0">
             {children}
         </main>
         <BottomNav />

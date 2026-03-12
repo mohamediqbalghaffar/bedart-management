@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, use } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -761,7 +761,9 @@ function SalesList() {
     );
 }
 
-export default function SalesPage() {
+export default function SalesPage(props: any) {
+    React.use(props.params);
+    React.use(props.searchParams);
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <SalesList />

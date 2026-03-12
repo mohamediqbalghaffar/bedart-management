@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, use } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, PlusCircle } from "lucide-react";
@@ -123,7 +123,9 @@ function ExpensesList() {
     );
 }
 
-export default function ExpensesPage() {
+export default function ExpensesPage(props: any) {
+    React.use(props.params);
+    React.use(props.searchParams);
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <PageHeader title="بەڕێوەبردنی خەرجییەکان" description="تۆماری خەرجییەکانت لێرە ببینە و زیاد بکە." />

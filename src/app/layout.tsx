@@ -16,11 +16,9 @@ export const metadata: Metadata = {
   description: 'سیستەمی بەڕێوەبردنی کار بۆ فرۆشگای دۆشەک و پێداویستیەکانی',
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default async function RootLayout(props: any) {
+  const { children } = props;
+  const params = await props.params;
 
   return (
     <html lang="ku" dir="rtl">

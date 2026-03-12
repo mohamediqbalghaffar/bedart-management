@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { use } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -114,7 +114,9 @@ function SuppliersList() {
     );
 }
 
-export default function SuppliersPage() {
+export default function SuppliersPage(props: any) {
+    React.use(props.params);
+    React.use(props.searchParams);
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <PageHeader title="بەڕێوەبردنی دابینکەران" description="لیستی دابینکەرەکانت لێرە ببینە و زیاد بکە.">
