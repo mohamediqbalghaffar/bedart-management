@@ -375,8 +375,8 @@ function ReceiptPreview({ formId }: { formId: string }) {
 
     return (
         <div className="flex flex-col h-full overflow-hidden">
-            <div className="flex-1 bg-gray-200/80 dark:bg-gray-800/50 p-2 sm:p-4 rounded-lg overflow-auto">
-                 <div className="bg-white mx-auto w-full max-w-[800px] shadow-lg rounded-sm">
+            <div className="flex-1 bg-muted/30 p-2 sm:p-6 overflow-auto rounded-lg">
+                 <div className="mx-auto shadow-2xl rounded-sm overflow-hidden" style={{ width: 'fit-content' }}>
                     <PrintableReceipt
                         ref={receiptRef}
                         formData={printData.formData}
@@ -387,9 +387,9 @@ function ReceiptPreview({ formId }: { formId: string }) {
                 </div>
             </div>
             <DialogFooter className="pt-4 flex flex-col sm:flex-row gap-2">
-                 <Button onClick={handleDownloadAsJPEG} disabled={isDownloading} className="w-full sm:w-auto">
-                    {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
-                    دابەزاندن وەک وێنە
+                 <Button onClick={handleDownloadAsJPEG} disabled={isDownloading} className="w-full sm:w-auto h-12 text-base font-bold shadow-lg">
+                    {isDownloading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FileDown className="mr-2 h-5 w-5" />}
+                    دابەزاندن وەک وێنە (A4 Portrait)
                 </Button>
             </DialogFooter>
         </div>
