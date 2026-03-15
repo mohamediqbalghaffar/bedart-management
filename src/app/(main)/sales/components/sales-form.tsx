@@ -35,7 +35,7 @@ type Customer = {
 const salesFormSchema = z.object({
   formNumber: z.string().min(1, "ژمارەی فۆڕم پێویستە."),
   customerName: z.string().min(1, { message: "نووسینی ناوی کڕیار پێویستە." }),
-  customerPhone: z.string().optional(),
+  customerPhoneNumber: z.string().optional(),
   customerAddress: z.string().optional(),
   issueDate: z.string().refine((val) => /^\d{4}-\d{2}-\d{2}$/.test(val), { message: "فۆرماتی بەروار هەڵەیە (YYYY-MM-DD)." }),
   items: z.array(z.object({
@@ -202,7 +202,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
     defaultValues: {
       formNumber: "0",
       customerName: "",
-      customerPhone: "",
+      customerPhoneNumber: "",
       customerAddress: "",
       issueDate: format(new Date(), "yyyy-MM-dd"),
       items: initialItems || [{ product: "", quantity: 1, unitPrice: 0, category: 'Mattress' }],
@@ -227,7 +227,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
       if (debouncedCustomerName && customers) {
           const foundCustomer = customers.find(c => c.customerName.toLowerCase() === debouncedCustomerName.toLowerCase());
           if (foundCustomer) {
-              form.setValue('customerPhone', foundCustomer.customerPhoneNumber || '');
+              form.setValue('customerPhoneNumber', foundCustomer.customerPhoneNumber || '');
               form.setValue('customerAddress', foundCustomer.customerAddress || '');
           }
       }
@@ -308,6 +308,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
             form.reset({
               ...data,
               issueDate: data.issueDate,
+              customerPhoneNumber: data.customerPhoneNumber || data.customerPhone || "", // Fallback for old data
               items: items.map(item => ({
                   product: item.productName,
                   quantity: item.quantity,
@@ -577,7 +578,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                                         </DialogHeader>
                                         <CustomerSelectorDialog onCustomerSelect={(customer) => {
                                             form.setValue('customerName', customer.customerName);
-                                            form.setValue('customerPhone', customer.customerPhoneNumber);
+                                            form.setValue('customerPhoneNumber', customer.customerPhoneNumber);
                                             form.setValue('customerAddress', customer.customerAddress);
                                             setIsCustomerDialogOpen(false);
                                         }} />
@@ -588,7 +589,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                         </FormItem>
                     )}
                     />
-                    <FormField control={form.control} name="customerPhone" render={({ field }) => ( <FormItem className="flex-1 w-full"> <FormLabel>ژ. مۆبایل</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                    <FormField control={form.control} name="customerPhoneNumber" render={({ field }) => ( <FormItem className="flex-1 w-full"> <FormLabel>ژ. مۆبایل</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
                 </div>
                 <FormField control={form.control} name="customerAddress" render={({ field }) => ( <FormItem> <FormLabel>ناونیشان</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
             </CardContent>

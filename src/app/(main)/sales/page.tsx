@@ -199,8 +199,15 @@ function ReceiptPreview({ formId }: { formId: string }) {
                     return;
                 }
     
+                const rawData = formSnap.data();
+                // Ensure customerPhoneNumber is prioritized, even if it was saved as customerPhone previously
+                const standardizedData = {
+                    ...rawData,
+                    customerPhoneNumber: rawData.customerPhoneNumber || rawData.customerPhone || ""
+                };
+
                 setPrintData({
-                    formData: formSnap.data(),
+                    formData: standardizedData,
                     products: productsSnap.docs.map(d => d.data()),
                     payments: paymentsSnap.docs.map(d => d.data()),
                     companyInfo: companyInfoSnap.exists() ? companyInfoSnap.data() : null,
@@ -423,8 +430,14 @@ function SalesList() {
             ]);
 
             if (formSnap.exists()) {
+                const rawData = formSnap.data();
+                const standardizedData = {
+                    ...rawData,
+                    customerPhoneNumber: rawData.customerPhoneNumber || rawData.customerPhone || ""
+                };
+
                 setPrintData({
-                    formData: formSnap.data(),
+                    formData: standardizedData,
                     products: productsSnap.docs.map(d => d.data()),
                     payments: paymentsSnap.docs.map(d => d.data()),
                     companyInfo: companyInfoSnap.exists() ? companyInfoSnap.data() : null,
