@@ -538,8 +538,8 @@ function PurchasesList() {
 
 
 export default function PurchasesPage(props: any) {
-    React.use(props.params);
-    React.use(props.searchParams);
+    use(props.params);
+    use(props.searchParams);
     const [refreshKey, setRefreshKey] = useState(0);
     const handleSave = () => setRefreshKey(prev => prev + 1);
 

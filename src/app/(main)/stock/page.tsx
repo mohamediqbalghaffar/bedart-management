@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, Suspense } from 'react';
+import React, { useState, useMemo, useEffect, Suspense, use } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import * as XLSX from 'xlsx';
 import { useToast } from '@/hooks/use-toast';
 import { StockTransferDialog } from './components/stock-transfer-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ConfidentialBlur } from '@/components/shared/confidential-blur';
+import { ConfidentialBlur } from '@/components/shared/blur-content';
 import { Separator } from '@/components/ui/separator';
 
 type Product = {
@@ -297,8 +297,8 @@ function StockPageContent() {
 }
 
 export default function StockPage(props: any) {
-    React.use(props.params);
-    React.use(props.searchParams);
+    use(props.params);
+    use(props.searchParams);
     return (
         <Suspense>
             <StockPageContent />

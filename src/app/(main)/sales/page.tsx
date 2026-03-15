@@ -130,7 +130,7 @@ function UploadSalesFormButton({ onSave }: { onSave: () => void }) {
                 
                 try {
                     const existingProductNames = allProducts?.map(p => p.productName) || [];
-                    const result = await analyzePurchaseExcel({ documentDataUri: dataUri, existingProductNames });
+                    const result = await analyzePurchaseExcel({ documentsDataUri: [dataUri], existingProductNames });
                     
                     const newItems = result.map(item => ({
                         product: item.product,
@@ -407,8 +407,6 @@ function SalesList() {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<PaymentStatus | 'all'>('all');
     const [typeFilter, setTypeFilter] = useState<PaymentType | 'all'>('all');
-
-    const params = use(React.useContext(React.createContext({})) as any); // Correct unwrap if needed, but here simple refresh works
 
     const sellingFormsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -766,8 +764,8 @@ function SalesList() {
 }
 
 export default function SalesPage(props: any) {
-    const params = use(props.params);
-    const searchParams = use(props.searchParams);
+    use(props.params);
+    use(props.searchParams);
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <SalesList />
