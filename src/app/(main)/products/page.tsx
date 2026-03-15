@@ -33,7 +33,6 @@ const categoryTranslations: Record<ProductCategory, string> = {
   Cover: "بەرگ",
 };
 
-// Component to add a new product definition
 function AddProductDialog({ onProductAdded }: { onProductAdded: () => void }) {
     const [open, setOpen] = useState(false);
     return (
@@ -47,7 +46,6 @@ function AddProductDialog({ onProductAdded }: { onProductAdded: () => void }) {
     );
 }
 
-// Component to download an Excel template
 function DownloadTemplateButton() {
     const { toast } = useToast();
     const handleDownload = () => {
@@ -69,7 +67,6 @@ function DownloadTemplateButton() {
     return <Button variant="outline" onClick={handleDownload}><FileDown className="mr-2 h-4 w-4" />دابەزاندنی نموونەی بەتاڵ</Button>;
 }
 
-// Component to upload items from an Excel file
 function UploadItemsButton({ onUploadSuccess, existingProducts }: { onUploadSuccess: () => void, existingProducts: WithId<ProductDefinition>[] | null }) {
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -112,7 +109,7 @@ function UploadItemsButton({ onUploadSuccess, existingProducts }: { onUploadSucc
                         .map(p => ({
                             productName: p.productName,
                             sellingPrice: p.sellingPrice,
-                            category: 'Mattress', // Default category
+                            category: 'Mattress',
                         }))
                         .filter(p => p.productName && !existingProductNames.has(p.productName.toLowerCase())) as ProductDefinition[];
 
@@ -171,14 +168,12 @@ function UploadItemsButton({ onUploadSuccess, existingProducts }: { onUploadSucc
                 <DialogContent dir="rtl" className="sm:max-w-2xl">
                     <DialogHeader><DialogTitle>پشتڕاستکردنەوەی هاوردەکردن</DialogTitle><DialogDescription>ئەم کاڵا نوێیانە بۆ لیستی پێناسەکان زیاد دەکرێن.</DialogDescription></DialogHeader>
                     <div className="max-h-96 overflow-auto">
-                        {/* Desktop Table View */}
                         <div className="hidden md:block">
                             <Table>
                                 <TableHeader><TableRow><TableHead>ناوی کاڵا</TableHead><TableHead>پۆل</TableHead><TableHead>نرخی فرۆشتن</TableHead></TableRow></TableHeader>
                                 <TableBody>{newProducts.map((p, i) => ( <TableRow key={i}><TableCell>{p.productName}</TableCell><TableCell>{categoryTranslations[p.category]}</TableCell><TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(p.sellingPrice || 0)}</TableCell></TableRow>))}</TableBody>
                             </Table>
                         </div>
-                        {/* Mobile Card View */}
                         <div className="space-y-4 md:hidden">
                             {newProducts.map((p, i) => (
                                 <Card key={i}>
@@ -201,7 +196,6 @@ function UploadItemsButton({ onUploadSuccess, existingProducts }: { onUploadSucc
     );
 }
 
-// Component to display the list of product definitions
 function ProductDefinitionsList({ products, isLoading, onProductUpdated, onBulkUpdate, searchTerm, onSearchTermChange }: {
     products: WithId<ProductDefinition>[] | null,
     isLoading: boolean,
@@ -283,7 +277,6 @@ function ProductDefinitionsList({ products, isLoading, onProductUpdated, onBulkU
             </CardHeader>
             <CardContent>
                 <ScrollArea className="h-[60vh] border rounded-lg">
-                    {/* Desktop Table */}
                     <Table className="hidden md:table" dir="rtl">
                         <TableHeader className="sticky top-0 bg-card z-10">
                             <TableRow>
@@ -317,7 +310,6 @@ function ProductDefinitionsList({ products, isLoading, onProductUpdated, onBulkU
                             )}
                         </TableBody>
                     </Table>
-                    {/* Mobile Cards */}
                     <div className="md:hidden space-y-4 p-4">
                          {isLoading ? (
                             <div className="flex justify-center items-center h-48"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></div>
@@ -342,10 +334,9 @@ function ProductDefinitionsList({ products, isLoading, onProductUpdated, onBulkU
     );
 }
 
-// Main page component that orchestrates everything
-export default function ProductsPage(props: any) {
-    React.use(props.params);
-    React.use(props.searchParams);
+export default function ProductsPage({ params, searchParams }: { params: Promise<any>, searchParams: Promise<any> }) {
+    use(params);
+    use(searchParams);
     const [refreshKey, setRefreshKey] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
     const { toast } = useToast();
@@ -372,13 +363,11 @@ export default function ProductsPage(props: any) {
 
             const productNamesToUpdate = [...new Set(definitionsToUpdate.map(p => p.productName))];
 
-            // 1. Update the product_definitions
             definitionsToUpdate.forEach(def => {
                 const defRef = doc(firestore, 'product_definitions', def.id);
                 batch.update(defRef, { category: newCategory });
             });
 
-            // 2. Query for all affected stock items in batches of 30 (Firestore 'in' query limit)
             const CHUNK_SIZE = 30;
             for (let i = 0; i < productNamesToUpdate.length; i += CHUNK_SIZE) {
                 const chunk = productNamesToUpdate.slice(i, i + CHUNK_SIZE);

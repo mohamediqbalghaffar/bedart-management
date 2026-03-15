@@ -16,7 +16,7 @@ import * as XLSX from 'xlsx';
 import { useToast } from '@/hooks/use-toast';
 import { StockTransferDialog } from './components/stock-transfer-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ConfidentialBlur } from '@/components/shared/blur-content';
+import { ConfidentialBlur } from '@/components/shared/confidential-blur';
 import { Separator } from '@/components/ui/separator';
 
 type Product = {
@@ -167,7 +167,6 @@ function StockPageContent() {
                     </div>
                 </CardHeader>
                 <CardContent className="p-0 sm:p-6">
-                    {/* Desktop View */}
                     <ScrollArea className="h-[60vh] hidden md:block border rounded-md">
                         <Table>
                             <TableHeader className="sticky top-0 bg-card z-10">
@@ -234,8 +233,6 @@ function StockPageContent() {
                             </TableBody>
                         </Table>
                     </ScrollArea>
-                    
-                    {/* Mobile View */}
                     <div className="md:hidden p-4">
                         {isLoading ? (
                             <div className="flex justify-center items-center h-48"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></div>
@@ -296,9 +293,9 @@ function StockPageContent() {
     );
 }
 
-export default function StockPage(props: any) {
-    use(props.params);
-    use(props.searchParams);
+export default function StockPage({ params, searchParams }: { params: Promise<any>, searchParams: Promise<any> }) {
+    use(params);
+    use(searchParams);
     return (
         <Suspense>
             <StockPageContent />

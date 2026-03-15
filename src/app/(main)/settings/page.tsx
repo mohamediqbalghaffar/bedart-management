@@ -21,7 +21,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { analyzeSqlExport } from '@/ai/flows/analyze-sql-export';
 
 
-// General Settings Component
 type CompanyInfo = {
     name: string;
     contact: string;
@@ -109,7 +108,6 @@ function GeneralSettings() {
     );
 }
 
-// User Management Component
 type User = {
     id: string;
     name: string;
@@ -224,7 +222,6 @@ function UserManagement() {
 }
 
 
-// Data Management Component
 function DataManagement() {
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -249,7 +246,7 @@ function DataManagement() {
                 let data = querySnapshot.docs.map(doc => doc.data());
 
                 if (collectionName === 'users') {
-                    data = data.map(({ code, ...rest }) => rest); // Exclude 'code' field
+                    data = data.map(({ code, ...rest }) => rest);
                 }
 
                 if (data.length > 0) {
@@ -330,12 +327,10 @@ function DataManagement() {
 
                     if (collectionsToBackup.includes(sheetName) && jsonData.length > 0) {
                         for (const row of jsonData as any[]) {
-                            // Let Firestore generate ID
                             const docRef = doc(collection(firestore, sheetName));
                             let docData: any = { ...row, id: docRef.id };
 
                              if (sheetName === 'products' && row.productName && row.stockLocation) {
-                                // Use composite ID for products
                                 const productId = `${row.productName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${row.stockLocation.toLowerCase().replace(/\s/g, '')}`;
                                 const specificDocRef = doc(firestore, sheetName, productId);
                                 docData = { ...row, id: productId };
@@ -524,9 +519,9 @@ function DataManagement() {
 }
 
 
-export default function SettingsPage(props: any) {
-    React.use(props.params);
-    React.use(props.searchParams);
+export default function SettingsPage({ params, searchParams }: { params: Promise<any>, searchParams: Promise<any> }) {
+    use(params);
+    use(searchParams);
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <PageHeader title="ڕێکخستنەکانی سیستەم" description="بەڕێوەبردنی بەکارهێنەران، پۆلەکان، و داتاکان." />

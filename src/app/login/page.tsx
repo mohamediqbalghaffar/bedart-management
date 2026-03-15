@@ -16,9 +16,9 @@ type User = {
     name: string;
 }
 
-export default function LoginPage(props: any) {
-  use(props.params);
-  use(props.searchParams);
+export default function LoginPage({ params, searchParams }: { params: Promise<any>, searchParams: Promise<any> }) {
+  use(params);
+  use(searchParams);
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -52,7 +52,6 @@ export default function LoginPage(props: any) {
             description: 'ناو یان کۆدی نهێنی هەڵەیە. تکایە دڵنیاببەرەوە و دووبارە هەوڵبدەرەوە.',
         });
     }
-    // On success, the auth context will redirect automatically.
     setIsLoading(false);
   };
 

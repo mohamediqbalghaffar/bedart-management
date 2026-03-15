@@ -105,7 +105,6 @@ function ExpensesList() {
                         </TableBody>
                     </Table>
 
-                    {/* Mobile View */}
                     <div className="md:hidden space-y-4">
                         {isLoading ? (
                            <div className="flex justify-center items-center h-48"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></div>
@@ -123,9 +122,9 @@ function ExpensesList() {
     );
 }
 
-export default function ExpensesPage(props: any) {
-    React.use(props.params);
-    React.use(props.searchParams);
+export default function ExpensesPage({ params, searchParams }: { params: Promise<any>, searchParams: Promise<any> }) {
+    use(params);
+    use(searchParams);
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <PageHeader title="بەڕێوەبردنی خەرجییەکان" description="تۆماری خەرجییەکانت لێرە ببینە و زیاد بکە." />

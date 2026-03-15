@@ -59,7 +59,6 @@ function CustomersList() {
             </CardHeader>
             <CardContent>
                 <ScrollArea className="h-[60vh]">
-                    {/* Desktop View */}
                     <Table className="hidden md:table">
                         <TableHeader>
                             <TableRow>
@@ -91,7 +90,6 @@ function CustomersList() {
                         </TableBody>
                     </Table>
 
-                    {/* Mobile View */}
                     <div className="md:hidden space-y-4">
                         {isLoading ? (
                             <div className="flex justify-center items-center h-48"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></div>
@@ -123,9 +121,9 @@ function CustomersList() {
     );
 }
 
-export default function CustomersPage(props: any) {
-    React.use(props.params);
-    React.use(props.searchParams);
+export default function CustomersPage({ params, searchParams }: { params: Promise<any>, searchParams: Promise<any> }) {
+    use(params);
+    use(searchParams);
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <PageHeader title="بەڕێوەبردنی کڕیارەکان" description="لیستی کڕیارەکانت لێرە ببینە و زیاد بکە.">

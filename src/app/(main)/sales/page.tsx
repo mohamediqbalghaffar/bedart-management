@@ -1,18 +1,16 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef, use } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { PlusCircle, Loader2, FileSpreadsheet, Trash2, Edit, ArrowUpDown, Search, Printer, FileDown, FileUp } from "lucide-react";
+import { PlusCircle, Loader2, FileSpreadsheet, Trash2, Edit, ArrowUpDown, Search, FileDown, FileUp } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { SalesForm } from "./components/sales-form";
 import { useFirestore, useCollection, useMemoFirebase, collection, deleteDoc, doc, getDocs, runTransaction, getDoc } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
-import { SalesDetails } from './components/sales-details';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
@@ -24,8 +22,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import html2canvas from 'html2canvas';
 import { analyzePurchaseExcel } from '@/ai/flows/analyze-purchase-excel';
 
-
-// Matches the structure in backend.json for SellingForm
 type SellingFormType = {
     customerName: string;
     issueDate: string;
@@ -67,7 +63,7 @@ function UploadSalesFormButton({ onSave }: { onSave: () => void }) {
     const [isParsing, setIsParsing] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [initialItems, setInitialItems] = useState<any[] | undefined>(undefined);
-    const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
     const firestore = useFirestore();
 
@@ -77,7 +73,6 @@ function UploadSalesFormButton({ onSave }: { onSave: () => void }) {
     }, [firestore]);
     
     const { data: allProducts } = useCollection<any>(productsQuery);
-
 
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -182,7 +177,7 @@ function ReceiptPreview({ formId }: { formId: string }) {
 
     useEffect(() => {
         const fetchPrintData = async () => {
-            if (!firestore) return;
+            if (!firestore || !formId) return;
             setIsLoading(true);
     
             try {
@@ -292,12 +287,10 @@ function SalesList() {
     const [statusFilter, setStatusFilter] = useState<PaymentStatus | 'all'>('all');
     const [typeFilter, setTypeFilter] = useState<PaymentType | 'all'>('all');
 
-    // UI States for controlled Dialogs
     const [editingFormId, setEditingFormId] = useState<string | null>(null);
     const [previewFormId, setPreviewFormId] = useState<string | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-    // Printing singleton state
     const [printData, setPrintData] = useState<any>(null);
     const [isPrinting, setIsPrinting] = useState(false);
     const printRef = useRef(null);
@@ -313,7 +306,6 @@ function SalesList() {
         if (!sales) return [];
         let sortableItems = [...sales];
 
-        // Filtering
         sortableItems = sortableItems.filter(sale => {
             const searchMatch = searchTerm ? 
                 sale.customerName.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -323,7 +315,6 @@ function SalesList() {
             return searchMatch && statusMatch && typeMatch;
         });
 
-        // Sorting
         if (sortConfig !== null) {
             sortableItems.sort((a, b) => {
                 const aValue = a[sortConfig.key];
@@ -439,7 +430,6 @@ function SalesList() {
                     companyInfo: companyInfoSnap.exists() ? companyInfoSnap.data() : null,
                 });
                 
-                // Trigger print
                 setTimeout(() => {
                     window.print();
                     setIsPrinting(false);
@@ -451,7 +441,6 @@ function SalesList() {
             setIsPrinting(false);
         }
     };
-
 
     return (
         <>
@@ -465,7 +454,6 @@ function SalesList() {
                 </div>
             </PageHeader>
 
-            {/* Controlled Singleton Dialogs */}
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                 <DialogContent className="sm:max-w-4xl" dir="rtl">
                     <DialogHeader>
@@ -503,7 +491,6 @@ function SalesList() {
                 </DialogContent>
             </Dialog>
 
-            {/* Print Area Overlay */}
             {isPrinting && printData && (
                 <div id="printable-area" className="fixed inset-0 z-[9999] bg-white">
                     <PrintableReceipt
@@ -546,7 +533,6 @@ function SalesList() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    {/* Desktop Table */}
                     <Table className="hidden md:table">
                         <TableHeader>
                             <TableRow>
@@ -635,10 +621,10 @@ function SalesList() {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent dir="rtl">
-                                                    <DropdownMenuItem onSelect={() => setPreviewFormId(sale.id)}>
+                                                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setPreviewFormId(sale.id); }}>
                                                         بینینی پسوولە
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem onSelect={() => handleDirectPrint(sale.id)}>
+                                                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleDirectPrint(sale.id); }}>
                                                         چاپکردنی پسوولە
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
@@ -649,7 +635,6 @@ function SalesList() {
                             )))}
                         </TableBody>
                     </Table>
-                     {/* Mobile View */}
                     <div className="md:hidden space-y-4">
                         {isLoadingSales ? (
                             <div className="flex justify-center items-center h-48"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></div>
@@ -706,9 +691,9 @@ function SalesList() {
     );
 }
 
-export default function SalesPage(props: any) {
-    const params = use(props.params);
-    const searchParams = use(props.searchParams);
+export default function SalesPage({ params, searchParams }: { params: Promise<any>, searchParams: Promise<any> }) {
+    use(params);
+    use(searchParams);
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <SalesList />

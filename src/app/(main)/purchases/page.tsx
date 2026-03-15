@@ -30,7 +30,6 @@ import { analyzePurchaseExcel } from '@/ai/flows/analyze-purchase-excel';
 import { ConfidentialBlur } from '@/components/shared/confidential-blur';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-// Matches the structure in backend.json
 type BuyingFormType = {
     supplierId: string;
     issueDate: string;
@@ -46,11 +45,6 @@ type BuyingFormProduct = {
     productId: string;
     quantity: number;
     unitPrice: number;
-};
-
-type EnrichedBuyingForm = WithId<BuyingFormType> & {
-    supplierName?: string;
-    totalAmount: number;
 };
 
 type ProductDefinition = {
@@ -85,7 +79,7 @@ function ImportActions({ onSave }: { onSave: () => void }) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [initialItems, setInitialItems] = useState<any[] | undefined>(undefined);
     const [importType, setImportType] = useState<'ai' | 'standard' | null>(null);
-    const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
     const firestore = useFirestore();
 
@@ -134,7 +128,6 @@ function ImportActions({ onSave }: { onSave: () => void }) {
             }
 
             try {
-                // Read file as array buffer and convert to CSV
                 const workbook = XLSX.read(data, { type: 'array' });
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
@@ -218,7 +211,6 @@ function ImportActions({ onSave }: { onSave: () => void }) {
 
                 if (allProductDefinitions) {
                     for (const def of allProductDefinitions) {
-                        // Check if the definition name is a substring of the sheet name
                         if (productNameFromSheet.toLowerCase().includes(def.productName.toLowerCase().trim())) {
                             if (def.productName.length > longestMatchLength) {
                                 bestMatch = def;
@@ -235,7 +227,7 @@ function ImportActions({ onSave }: { onSave: () => void }) {
                     quantity: Number(row[qtyIdx] || 1),
                     unitPrice: Number(row[purchasePriceIdx] || 0),
                     sellingPrice: Number(row[sellingPriceIdx] || (existingDef?.sellingPrice || 0)),
-                    category: existingDef ? existingDef.category : 'Mattress', // Default category if new
+                    category: existingDef ? existingDef.category : 'Mattress',
                     sizeModel: '',
                 };
             }).filter((item): item is NonNullable<typeof item> => item !== null);
@@ -245,7 +237,7 @@ function ImportActions({ onSave }: { onSave: () => void }) {
                 setInitialItems(newItems);
                 setDialogOpen(true);
             } else {
-                toast({ variant: 'default', title: "هیچ کاڵایەک نەدۆزرایەوە", description: "هیچ کاڵایەکی گونجاو لە فایلەکەدا نەبوو بۆ هاوردەکردن." });
+                toast({ variant: 'default', title: "هیچ کاڵایەک نەدۆزرایەوە", description: "هیچ کاڵایەکی گونجاو لە فایلەکەدا نەبوو بۆ هاوردەکردنی." });
             }
         };
         reader.readAsArrayBuffer(file);
@@ -321,7 +313,7 @@ function PurchasesList() {
     const { data: suppliers, isLoading: isLoadingSuppliers } = useCollection<Supplier>(suppliersQuery);
 
     const handleFormSave = () => {
-        setRefreshKey(prev => prev + 1); // Trigger a re-fetch
+        setRefreshKey(prev => prev + 1);
     };
 
     const enrichedForms = useMemo(() => {
@@ -341,7 +333,7 @@ function PurchasesList() {
         try {
             await runTransaction(firestore, async (transaction) => {
                 const productsPurchasedRef = collection(firestore, `buying_forms/${formId}/buying_form_products`);
-                const productsPurchasedSnapshot = await getDocs(productsPurchasedRef); // This is a non-transactional read.
+                const productsPurchasedSnapshot = await getDocs(productsPurchasedRef);
                 
                 const productRefsToUpdate: { ref: any; newQuantity: number }[] = [];
                 
@@ -398,7 +390,6 @@ function PurchasesList() {
             </CardHeader>
             <CardContent>
                 <ScrollArea className="h-[60vh]">
-                    {/* Desktop View */}
                     <Table className="hidden md:table">
                         <TableHeader>
                             <TableRow>
@@ -482,7 +473,6 @@ function PurchasesList() {
                             )))}
                         </TableBody>
                     </Table>
-                     {/* Mobile View */}
                     <div className="space-y-4 md:hidden">
                         {isLoading ? (
                             <div className="flex justify-center items-center h-48"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></div>
@@ -537,9 +527,9 @@ function PurchasesList() {
 }
 
 
-export default function PurchasesPage(props: any) {
-    use(props.params);
-    use(props.searchParams);
+export default function PurchasesPage({ params, searchParams }: { params: Promise<any>, searchParams: Promise<any> }) {
+    use(params);
+    use(searchParams);
     const [refreshKey, setRefreshKey] = useState(0);
     const handleSave = () => setRefreshKey(prev => prev + 1);
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, use } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { useFirestore, collection, getDocs, query, where, useCollection, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -25,9 +25,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConfidentialBlur } from '@/components/shared/confidential-blur';
 import { Badge } from '@/components/ui/badge';
 
-
-// --- TYPE DEFINITIONS ---
-
 type SellingForm = { id: string; totalPrice: number; customerName: string; issueDate: string; creatorId: string; };
 type Expense = { id: string; amount: number; date: string; name: string; currency?: 'USD' | 'IQD'; category: string; };
 type Product = { id: string; currentQuantity: number; category: string; productName: string; sizeModel?: string; stockLocation: 'Warehouse' | 'Shop Showroom'; supplierId?: string; unitPrice?: number; sellingPrice?: number; };
@@ -47,14 +44,11 @@ type GroupedProduct = {
 const productCategories = ["Mattress", "Bed", "Pillow", "Cover"];
 const categoryTranslations: Record<string, string> = { Mattress: "دۆشەک", Bed: "تەخت", Pillow: "سەرین", Cover: "بەرگ" };
 
-// --- CUSTOM HOOK for Centralized Data Fetching & Processing ---
-
 const useDashboardData = (dateRange: { from: string, to: string }) => {
     const firestore = useFirestore();
     const [isProcessing, setIsProcessing] = useState(true);
     const [processingError, setProcessingError] = useState<Error | null>(null);
 
-    // Processed Data
     const [stats, setStats] = useState({ totalRevenue: 0, totalExpensesUSD: 0, buyingFormsCount: 0, lowStockCount: 0 });
     const [chartData, setChartData] = useState<any[]>([]);
     const [dialogData, setDialogData] = useState<any>({
@@ -64,7 +58,6 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
         lowStockProducts: [],
     });
     
-    // Real-time queries
     const salesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'selling_forms'), where('issueDate', '>=', dateRange.from), where('issueDate', '<=', dateRange.to)) : null, [firestore, dateRange]);
     const expensesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'expenses'), where('date', '>=', dateRange.from), where('date', '<=', dateRange.to)) : null, [firestore, dateRange]);
     const buyingFormsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'buying_forms'), where('issueDate', '>=', dateRange.from), where('issueDate', '<=', dateRange.to)) : null, [firestore, dateRange]);
@@ -81,7 +74,6 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
     const collectionError = salesError || expensesError || buyingFormsError || productsError || suppliersError;
 
     useEffect(() => {
-        // Guard against running processing logic with incomplete or error-state data
         if (isLoadingCollections || collectionError || !firestore || !salesData || !expensesData || !buyingFormsData || !productsData || !suppliersData) {
             if (!isLoadingCollections) {
                  setIsProcessing(false);
@@ -93,7 +85,6 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
             setIsProcessing(true);
             setProcessingError(null);
             try {
-                // Same logic as before, just using hook data instead of getDocs data
                 const totalRevenue = salesData.reduce((acc, sale) => acc + sale.totalPrice, 0);
                 
                 const iqdToUsdRate = 1500;
@@ -123,7 +114,6 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
                 
                 setStats({ totalRevenue, totalExpensesUSD, buyingFormsCount: buyingFormsData.length, lowStockCount });
 
-                // Process chart data
                 const dateMap = new Map<string, { sales: number; expenses: number; netProfit: number }>();
                 const startDate = startOfDay(parseISO(dateRange.from));
                 const endDate = endOfDay(parseISO(dateRange.to));
@@ -158,7 +148,6 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
                 const finalChartData = Array.from(dateMap.entries()).map(([date, data]) => ({ date, ...data }));
                 setChartData(finalChartData);
 
-                // Process ALL dialog data
                 const salesProductsPromises = salesData.map(s => getDocs(collection(firestore, `selling_forms/${s.id}/selling_form_products`)));
                 const buyingFormsProductsPromises = buyingFormsData.map(b => getDocs(collection(firestore, `buying_forms/${b.id}/buying_form_products`)));
                 
@@ -168,7 +157,6 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
                 const buyingFormsProductsSnaps = await Promise.all(buyingFormsProductsPromises);
                 const allBuyingFormsProducts = buyingFormsProductsSnaps.flatMap((snap, i) => snap.docs.map(doc => ({ formId: buyingFormsData[i].id, ...doc.data() as BuyingFormProduct })));
 
-                // Sales Dialog
                 const salesDialogSummary = allSalesProducts.reduce((acc, p) => {
                     acc.totalQuantity += p.quantity;
                     acc.totalRevenue += p.lineTotal;
@@ -179,7 +167,6 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
                     return acc;
                 }, { totalQuantity: 0, totalRevenue: 0, perProduct: new Map<string, { totalQuantity: number; totalRevenue: number }>() });
                 
-                // Purchases Dialog
                 const supplierMap = new Map(suppliersData.map(s => [s.id, s.supplierName]));
                 const enrichedPurchases = buyingFormsData.map(p => ({ ...p, supplierName: supplierMap.get(p.supplierId) || 'نەزانراو' }));
                 const purchasesDialogSummary = allBuyingFormsProducts.reduce((acc, p) => {
@@ -223,9 +210,6 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
 
     return { isLoading: isLoadingCollections || isProcessing, error: collectionError || processingError, stats, chartData, dialogData };
 };
-
-
-// --- DETAIL DIALOG COMPONENTS (Now Dumb) ---
 
 function SalesDetailDialog({ data }: { data: any }) {
     const { sales, perProduct, totalQuantity, totalRevenue, allSalesProducts } = data;
@@ -293,14 +277,12 @@ function SalesDetailDialog({ data }: { data: any }) {
                 <AccordionItem value="item-2" className="border rounded-lg bg-card text-card-foreground">
                      <AccordionTrigger className="p-6 text-lg font-semibold">پوختەی هەر کاڵایەک</AccordionTrigger>
                     <AccordionContent className="px-6 pb-6">
-                        {/* Desktop Table */}
                         <Table className="hidden md:table">
                             <TableHeader><TableRow><TableHead className="text-right">ناوی کاڵا</TableHead><TableHead className="text-right">کۆی دانە</TableHead><TableHead className="text-right">کۆی داهات</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {filteredData.perProduct.map((item: any) => ( <TableRow key={item.productName}><TableCell>{item.productName}</TableCell><TableCell><ConfidentialBlur>{item.totalQuantity}</ConfidentialBlur></TableCell><TableCell><ConfidentialBlur>{currencyFormatter.format(item.totalRevenue)}</ConfidentialBlur></TableCell></TableRow> ))}
                             </TableBody>
                         </Table>
-                        {/* Mobile Cards */}
                         <div className="space-y-4 md:hidden">
                             {filteredData.perProduct.map((item: any) => (
                                 <Card key={item.productName}>
@@ -317,13 +299,11 @@ function SalesDetailDialog({ data }: { data: any }) {
                  <AccordionItem value="item-3" className="border rounded-lg bg-card text-card-foreground">
                      <AccordionTrigger className="p-6 text-lg font-semibold">لیستی فرۆشتنەکان</AccordionTrigger>
                     <AccordionContent className="px-6 pb-6">
-                        {/* Desktop Table */}
                         <Table className="hidden md:table"><TableHeader><TableRow><TableHead className="text-right">کڕیار</TableHead><TableHead className="text-right">بەروار</TableHead><TableHead className="text-right">کۆی گشتی</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {filteredData.sales?.map((sale: any) => ( <TableRow key={sale.id}><TableCell>{sale.customerName}</TableCell><TableCell>{formatDate(parseISO(sale.issueDate), 'dd/MM/yyyy')}</TableCell><TableCell><ConfidentialBlur>{currencyFormatter.format(sale.totalPrice)}</ConfidentialBlur></TableCell></TableRow> ))}
                             </TableBody>
                         </Table>
-                        {/* Mobile Cards */}
                         <div className="space-y-4 md:hidden">
                             {filteredData.sales?.map((sale: any) => (
                                 <Card key={sale.id}>
@@ -344,13 +324,11 @@ function SalesDetailDialog({ data }: { data: any }) {
 function ExpensesDetailDialog({ expenses }: { expenses: WithId<Expense>[] | null }) {
     return (
         <div className="max-h-[60vh] overflow-y-auto">
-            {/* Desktop Table */}
             <Table className="hidden md:table"><TableHeader><TableRow><TableHead className="text-right">خەرجی</TableHead><TableHead className="text-right">بەروار</TableHead><TableHead className="text-right">بڕ</TableHead></TableRow></TableHeader>
                 <TableBody>
                     {expenses?.map(expense => ( <TableRow key={expense.id}><TableCell>{expense.name}</TableCell><TableCell>{formatDate(parseISO(expense.date), 'dd/MM/yyyy')}</TableCell><TableCell><ConfidentialBlur>{new Intl.NumberFormat('en-US', { style: 'currency', currency: expense.currency || 'USD' }).format(expense.amount)}</ConfidentialBlur></TableCell></TableRow> ))}
                 </TableBody>
             </Table>
-            {/* Mobile Cards */}
             <div className="space-y-4 md:hidden">
                 {expenses?.map(expense => (
                     <Card key={expense.id}>
@@ -378,7 +356,6 @@ function CombinedExpensesDetailDialog({ expenses, purchases }: { expenses: WithI
             </TabsContent>
             <TabsContent value="purchases">
                  <div className="max-h-[60vh] overflow-y-auto">
-                    {/* Desktop Table */}
                     <Table className="hidden md:table">
                         <TableHeader>
                             <TableRow>
@@ -397,7 +374,6 @@ function CombinedExpensesDetailDialog({ expenses, purchases }: { expenses: WithI
                             ))}
                         </TableBody>
                     </Table>
-                    {/* Mobile Cards */}
                     <div className="space-y-4 md:hidden">
                         {purchases?.map((purchase: any) => (
                              <Card key={purchase.id}>
@@ -439,13 +415,11 @@ function PurchasesDetailDialog({ data }: { data: any }) {
                 <AccordionItem value="item-2" className="border rounded-lg bg-card text-card-foreground">
                      <AccordionTrigger className="p-6 text-lg font-semibold">پوختەی هەر کاڵایەک</AccordionTrigger>
                     <AccordionContent className="px-6 pb-6">
-                        {/* Desktop Table */}
                         <Table className="hidden md:table"><TableHeader><TableRow><TableHead className="text-right">ناوی کاڵا</TableHead><TableHead className="text-right">کۆی دانە</TableHead><TableHead className="text-right">کۆی نرخ</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {perProduct.map((item: any) => ( <TableRow key={item.productName}><TableCell>{item.productName}</TableCell><TableCell><ConfidentialBlur>{item.totalQuantity}</ConfidentialBlur></TableCell><TableCell><ConfidentialBlur>{currencyFormatter.format(item.totalCost)}</ConfidentialBlur></TableCell></TableRow> ))}
                             </TableBody>
                         </Table>
-                        {/* Mobile Cards */}
                         <div className="space-y-4 md:hidden">
                             {perProduct.map((item: any) => (
                                 <Card key={item.productName}>
@@ -462,13 +436,11 @@ function PurchasesDetailDialog({ data }: { data: any }) {
                  <AccordionItem value="item-3" className="border rounded-lg bg-card text-card-foreground">
                      <AccordionTrigger className="p-6 text-lg font-semibold">لیستی کڕینەکان</AccordionTrigger>
                     <AccordionContent className="px-6 pb-6">
-                        {/* Desktop Table */}
                         <Table className="hidden md:table"><TableHeader><TableRow><TableHead className="text-right">دابینکەر</TableHead><TableHead className="text-right">بەروار</TableHead><TableHead className="text-right">کۆی گشتی پسوولە</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {purchases?.map((purchase: any) => ( <TableRow key={purchase.id}><TableCell>{purchase.supplierName}</TableCell><TableCell>{formatDate(parseISO(purchase.issueDate), 'dd/MM/yyyy')}</TableCell><TableCell><ConfidentialBlur>{currencyFormatter.format(purchase.totalAmount || 0)}</ConfidentialBlur></TableCell></TableRow> ))}
                             </TableBody>
                         </Table>
-                         {/* Mobile Cards */}
                         <div className="space-y-4 md:hidden">
                             {purchases?.map((purchase: any) => (
                                 <Card key={purchase.id}>
@@ -492,13 +464,11 @@ function LowStockDetailDialog({ products }: { products: GroupedProduct[] }) {
 
     return (
         <div className="max-h-[60vh] overflow-y-auto">
-            {/* Desktop Table */}
             <Table className="hidden md:table"><TableHeader><TableRow><TableHead className="text-right">ناوی کاڵا</TableHead><TableHead className="text-right">بڕی ماوە</TableHead></TableRow></TableHeader>
                 <TableBody>
                     {products?.map(product => ( <TableRow key={product.productName} onClick={() => handleRowClick(product.productName)} className="cursor-pointer"><TableCell>{product.productName}</TableCell><TableCell><ConfidentialBlur>{product.totalQuantity}</ConfidentialBlur></TableCell></TableRow> ))}
                 </TableBody>
             </Table>
-            {/* Mobile Cards */}
             <div className="space-y-4 md:hidden">
                 {products?.map(product => (
                     <Card key={product.productName} onClick={() => handleRowClick(product.productName)} className="cursor-pointer">
@@ -514,8 +484,6 @@ function LowStockDetailDialog({ products }: { products: GroupedProduct[] }) {
         </div>
     );
 }
-
-// --- TOP-LEVEL STATS COMPONENT (Now Dumb) ---
 
 function DashboardStats({ stats, dialogData }: { stats: any, dialogData: any }) {
     const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 });
@@ -558,8 +526,6 @@ function DashboardStats({ stats, dialogData }: { stats: any, dialogData: any }) 
         </div>
     );
 }
-
-// --- CHART COMPONENT (Now Dumb) ---
 
 const chartConfig = { sales: { label: "فرۆش", color: "hsl(var(--chart-2))", icon: TrendingUp }, expenses: { label: "خەرجی", color: "hsl(var(--chart-5))", icon: TrendingDown }, netProfit: { label: "قازانجی پوخت", color: "hsl(var(--chart-1))", icon: LineChart } } satisfies ChartConfig;
 
@@ -627,11 +593,9 @@ function RecentActivityChart({ data }: { data: any[] }) {
     );
 }
 
-// --- MAIN PAGE COMPONENT ---
-
-export default function DashboardPage(props: any) {
-    React.use(props.params);
-    React.use(props.searchParams);
+export default function DashboardPage({ params, searchParams }: { params: Promise<any>, searchParams: Promise<any> }) {
+    use(params);
+    use(searchParams);
     const [dateRange, setDateRange] = useState<{ from: Date, to: Date }>({ 
         from: new Date('2018-01-01'), 
         to: new Date() 
