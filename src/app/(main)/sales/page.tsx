@@ -63,31 +63,6 @@ const paymentTypeOptions: { value: PaymentType | 'all', label: string }[] = [
     { value: 'Pre-order', label: 'داواکاری پێشوەختە'},
 ];
 
-function SalesFormDialog({ formId, onSave, trigger }: { formId: string | null, onSave: () => void, trigger: React.ReactNode }) {
-    const [open, setOpen] = useState(false);
-
-    return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>{trigger}</DialogTrigger>
-            <DialogContent className="sm:max-w-4xl" dir="rtl">
-                <DialogHeader>
-                    <div className="text-center p-4">
-                       <DialogTitle className="text-2xl font-bold">BedArt Group</DialogTitle>
-                        <DialogDescription className="text-sm">
-                            تەختی نوستن . دۆشەک . پشتی
-                            <br />
-                            <span className="text-xs text-muted-foreground">07708171818 - 07700771818</span>
-                        </DialogDescription>
-                    </div>
-                </DialogHeader>
-                <div className="max-h-[80vh] overflow-y-auto p-2">
-                    <SalesForm formId={formId} onSave={() => { onSave(); setOpen(false); }} />
-                </div>
-            </DialogContent>
-        </Dialog>
-    );
-}
-
 function UploadSalesFormButton({ onSave }: { onSave: () => void }) {
     const [isParsing, setIsParsing] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -101,10 +76,7 @@ function UploadSalesFormButton({ onSave }: { onSave: () => void }) {
         return collection(firestore, 'products');
     }, [firestore]);
     
-    type ProductForContext = {
-        productName: string;
-    };
-    const { data: allProducts } = useCollection<ProductForContext>(productsQuery);
+    const { data: allProducts } = useCollection<any>(productsQuery);
 
 
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -126,12 +98,12 @@ function UploadSalesFormButton({ onSave }: { onSave: () => void }) {
                 
                 try {
                     const existingProductNames = allProducts?.map(p => p.productName) || [];
-                    const result = await analyzePurchaseExcel({ DocumentsDataUri: [dataUri], existingProductNames } as any);
+                    const result = await analyzePurchaseExcel({ purchaseDataAsCsv: dataUri, existingProductNames } as any);
                     
                     const newItems = result.map(item => ({
                         product: item.product,
                         quantity: item.quantity,
-                        unitPrice: item.unitPrice, // AI extracts price, we use it as selling price
+                        unitPrice: item.unitPrice, 
                         category: item.category,
                     }));
 
@@ -144,11 +116,7 @@ function UploadSalesFormButton({ onSave }: { onSave: () => void }) {
 
                 } catch (aiError: any) {
                      console.error("AI analysis failed:", aiError);
-                     if (aiError.message && aiError.message.includes('503')) {
-                        toast({ variant: 'destructive', title: "خزمەتگوزاری سەرقاڵە", description: "مۆدێلی AI لەکارکەوتووە. تکایە چەند خولەکێکی تر هەوڵبدەرەوە." });
-                     } else {
-                        toast({ variant: 'destructive', title: "هەڵە لە شیکردنەوەی فایل", description: aiError.message || "AI نەیتوانی داتاکان دەربهێنێت." });
-                     }
+                     toast({ variant: 'destructive', title: "هەڵە لە شیکردنەوەی فایل", description: "AI نەیتوانی داتاکان دەربهێنێت." });
                 } finally {
                     setIsParsing(false);
                      if (fileInputRef.current) {
@@ -200,82 +168,6 @@ function UploadSalesFormButton({ onSave }: { onSave: () => void }) {
                     </div>
                 </DialogContent>
             </Dialog>
-        </>
-    );
-}
-
-function DirectPrintButton({ formId, id }: { formId: string, id?: string }) {
-    const firestore = useFirestore();
-    const { toast } = useToast();
-    const [isPrinting, setIsPrinting] = useState(false);
-    const [printData, setPrintData] = useState<any>(null);
-    const printRef = useRef(null);
-
-    useEffect(() => {
-        if (isPrinting && printData) {
-            const timer = setTimeout(() => {
-                window.print();
-                setIsPrinting(false);
-                setPrintData(null);
-            }, 300);
-            return () => clearTimeout(timer);
-        }
-    }, [isPrinting, printData]);
-
-    const handlePrint = async () => {
-        if (!firestore) return;
-        setIsPrinting(true);
-        toast({ title: '...ئامادەکردنی پسوولە' });
-
-        try {
-            const formRef = doc(firestore, 'selling_forms', formId);
-            const productsRef = collection(firestore, `selling_forms/${formId}/selling_form_products`);
-            const paymentsRef = collection(firestore, `selling_forms/${formId}/payments`);
-            const companyInfoRef = doc(firestore, 'app_settings', 'companyInfo');
-
-            const [formSnap, productsSnap, paymentsSnap, companyInfoSnap] = await Promise.all([
-                getDoc(formRef),
-                getDocs(productsRef),
-                getDocs(paymentsRef),
-                getDoc(companyInfoRef),
-            ]);
-
-            if (!formSnap.exists()) {
-                toast({ variant: 'destructive', title: 'هەڵە', description: 'پسوولە نەدۆزرایەوە.' });
-                setIsPrinting(false);
-                return;
-            }
-
-            setPrintData({
-                formData: formSnap.data(),
-                products: productsSnap.docs.map(d => d.data()),
-                payments: paymentsSnap.docs.map(d => d.data()),
-                companyInfo: companyInfoSnap.exists() ? companyInfoSnap.data() : null,
-            });
-
-        } catch (error) {
-            console.error("Error preparing print data:", error);
-            toast({ variant: 'destructive', title: 'هەڵەیەک ڕوویدا', description: 'ئامادەکردنی داتا بۆ چاپ سەرکەوتوو نەبوو.' });
-            setIsPrinting(false);
-        }
-    };
-
-    return (
-        <>
-            <Button id={id} variant="ghost" size="icon" onClick={handlePrint} disabled={isPrinting}>
-                {isPrinting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4 text-green-500" />}
-            </Button>
-            {isPrinting && printData && (
-                 <div id="printable-area">
-                    <PrintableReceipt
-                        ref={printRef}
-                        formData={printData.formData}
-                        products={printData.products}
-                        payments={printData.payments}
-                        companyInfo={printData.companyInfo}
-                    />
-                </div>
-            )}
         </>
     );
 }
@@ -342,8 +234,8 @@ function ReceiptPreview({ formId }: { formId: string }) {
                 scale: 2,
                 useCORS: true,
                 backgroundColor: '#ffffff',
-                width: 794, // 210mm at 96dpi
-                height: 1123, // 297mm at 96dpi
+                width: 794,
+                height: 1123,
             });
             const link = document.createElement('a');
             link.href = canvas.toDataURL('image/jpeg', 0.95);
@@ -394,12 +286,21 @@ function ReceiptPreview({ formId }: { formId: string }) {
 function SalesList() {
     const firestore = useFirestore();
     const { toast } = useToast();
-    const [editingFormId, setEditingFormId] = useState<string | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
     const [sortConfig, setSortConfig] = useState<{ key: keyof SellingFormType; direction: 'ascending' | 'descending' } | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<PaymentStatus | 'all'>('all');
     const [typeFilter, setTypeFilter] = useState<PaymentType | 'all'>('all');
+
+    // UI States for controlled Dialogs
+    const [editingFormId, setEditingFormId] = useState<string | null>(null);
+    const [previewFormId, setPreviewFormId] = useState<string | null>(null);
+    const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
+    // Printing singleton state
+    const [printData, setPrintData] = useState<any>(null);
+    const [isPrinting, setIsPrinting] = useState(false);
+    const printRef = useRef(null);
 
     const sellingFormsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -444,12 +345,8 @@ function SalesList() {
                      return 0;
                 }
 
-                if (aValue < bValue) {
-                    return sortConfig.direction === 'ascending' ? -1 : 1;
-                }
-                if (aValue > bValue) {
-                    return sortConfig.direction === 'ascending' ? 1 : -1;
-                }
+                if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
+                if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
                 return 0;
             });
         }
@@ -473,6 +370,7 @@ function SalesList() {
 
     const handleFormSave = () => {
         setEditingFormId(null);
+        setIsCreateDialogOpen(false);
         setRefreshKey(prev => prev + 1);
     };
 
@@ -505,17 +403,52 @@ function SalesList() {
 
             toast({
                 title: "سەرکەوتوو بوو",
-                description: "فۆڕمی فرۆشتن بە سەرکەوتوویی سڕایەوە و کاڵاکان گەڕێنرانەوە بۆ کۆگا.",
+                description: "فۆڕمی فرۆشتن بە سەرکەوتوویی سڕایەوە.",
                 className: "bg-accent text-accent-foreground",
             });
             handleFormSave();
         } catch (error) {
             console.error("Error deleting sales form:", error);
-            toast({
-                variant: 'destructive',
-                title: "هەڵەیەک ڕوویدا",
-                description: "سڕینەوەی فۆڕمی فرۆشتن سەرکەوتوو نەبوو.",
-            });
+            toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "سڕینەوەی فۆڕمی فرۆشتن سەرکەوتوو نەبوو." });
+        }
+    };
+
+    const handleDirectPrint = async (formId: string) => {
+        if (!firestore) return;
+        setIsPrinting(true);
+        toast({ title: '...ئامادەکردنی پسوولە' });
+
+        try {
+            const formRef = doc(firestore, 'selling_forms', formId);
+            const productsRef = collection(firestore, `selling_forms/${formId}/selling_form_products`);
+            const paymentsRef = collection(firestore, `selling_forms/${formId}/payments`);
+            const companyInfoRef = doc(firestore, 'app_settings', 'companyInfo');
+
+            const [formSnap, productsSnap, paymentsSnap, companyInfoSnap] = await Promise.all([
+                getDoc(formRef),
+                getDocs(productsRef),
+                getDocs(paymentsRef),
+                getDoc(companyInfoRef),
+            ]);
+
+            if (formSnap.exists()) {
+                setPrintData({
+                    formData: formSnap.data(),
+                    products: productsSnap.docs.map(d => d.data()),
+                    payments: paymentsSnap.docs.map(d => d.data()),
+                    companyInfo: companyInfoSnap.exists() ? companyInfoSnap.data() : null,
+                });
+                
+                // Trigger print
+                setTimeout(() => {
+                    window.print();
+                    setIsPrinting(false);
+                    setPrintData(null);
+                }, 500);
+            }
+        } catch (error) {
+            console.error("Print failed:", error);
+            setIsPrinting(false);
         }
     };
 
@@ -524,19 +457,65 @@ function SalesList() {
         <>
             <PageHeader title="بەڕێوەبردنی فرۆشتن" description="تۆماری فۆڕمەکانی فرۆشتن لێرە ببینە و زیاد بکە.">
                  <div className="flex items-center gap-2">
-                    <SalesFormDialog
-                        formId={null}
-                        onSave={handleFormSave}
-                        trigger={
-                            <Button>
-                                <PlusCircle />
-                                دروستکردنی فۆڕمی فرۆشتن
-                            </Button>
-                        }
-                    />
+                    <Button onClick={() => setIsCreateDialogOpen(true)}>
+                        <PlusCircle />
+                        دروستکردنی فۆڕمی فرۆشتن
+                    </Button>
                     <UploadSalesFormButton onSave={handleFormSave} />
                 </div>
             </PageHeader>
+
+            {/* Controlled Singleton Dialogs */}
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                <DialogContent className="sm:max-w-4xl" dir="rtl">
+                    <DialogHeader>
+                        <div className="text-center p-4">
+                           <DialogTitle className="text-2xl font-bold">BedArt Group</DialogTitle>
+                            <DialogDescription className="text-sm">تەختی نوستن . دۆشەک . پشتی</DialogDescription>
+                        </div>
+                    </DialogHeader>
+                    <div className="max-h-[80vh] overflow-y-auto p-2">
+                        <SalesForm formId={null} onSave={handleFormSave} />
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!editingFormId} onOpenChange={(open) => !open && setEditingFormId(null)}>
+                <DialogContent className="sm:max-w-4xl" dir="rtl">
+                    <DialogHeader>
+                        <div className="text-center p-4">
+                           <DialogTitle className="text-2xl font-bold">BedArt Group</DialogTitle>
+                            <DialogDescription className="text-sm">دەستکاریکردنی فۆڕم</DialogDescription>
+                        </div>
+                    </DialogHeader>
+                    <div className="max-h-[80vh] overflow-y-auto p-2">
+                        {editingFormId && <SalesForm formId={editingFormId} onSave={handleFormSave} />}
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!previewFormId} onOpenChange={(open) => !open && setPreviewFormId(null)}>
+                <DialogContent className="max-w-[95vw] sm:max-w-5xl h-[90vh] flex flex-col p-4" dir="rtl">
+                    <DialogHeader>
+                        <DialogTitle>پێشبینینی پسوولە</DialogTitle>
+                    </DialogHeader>
+                    {previewFormId && <ReceiptPreview formId={previewFormId} />}
+                </DialogContent>
+            </Dialog>
+
+            {/* Print Area Overlay */}
+            {isPrinting && printData && (
+                <div id="printable-area" className="fixed inset-0 z-[9999] bg-white">
+                    <PrintableReceipt
+                        ref={printRef}
+                        formData={printData.formData}
+                        products={printData.products}
+                        payments={printData.payments}
+                        companyInfo={printData.companyInfo}
+                    />
+                </div>
+            )}
+
             <Card>
                 <CardHeader>
                     <CardTitle>لیستی فرۆشتنەکان</CardTitle>
@@ -627,15 +606,10 @@ function SalesList() {
                                     </TableCell>
                                     <TableCell className="text-center">
                                         <div className="flex items-center justify-center gap-2">
-                                            <SalesFormDialog
-                                                formId={sale.id}
-                                                onSave={handleFormSave}
-                                                trigger={
-                                                    <Button variant="ghost" size="icon">
-                                                        <Edit className="h-4 w-4 text-blue-500" />
-                                                    </Button>
-                                                }
-                                            />
+                                            <Button variant="ghost" size="icon" onClick={() => setEditingFormId(sale.id)}>
+                                                <Edit className="h-4 w-4 text-blue-500" />
+                                            </Button>
+                                            
                                             <AlertDialog>
                                                 <AlertDialogTrigger asChild>
                                                     <Button variant="ghost" size="icon">
@@ -645,49 +619,30 @@ function SalesList() {
                                                 <AlertDialogContent dir="rtl">
                                                     <AlertDialogHeader>
                                                         <AlertDialogTitle>دڵنیایت لە سڕینەوەی ئەم فۆڕمە؟</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            ئەم کردارە پاشگەزبوونەوەی نییە. کاڵاکان دەگەڕێنرێنەوە بۆ کۆگا و فۆڕمەکە بە هەمیشەیی دەسڕێتەوە.
-                                                        </AlertDialogDescription>
+                                                        <AlertDialogDescription>ئەم کردارە پاشگەزبوونەوەی نییە.</AlertDialogDescription>
                                                     </AlertDialogHeader>
                                                     <AlertDialogFooter>
                                                         <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDelete(sale.id)} className="bg-destructive hover:bg-destructive/90">
-                                                            بەڵێ، بسڕەوە
-                                                        </AlertDialogAction>
+                                                        <AlertDialogAction onClick={() => handleDelete(sale.id)} className="bg-destructive hover:bg-destructive/90">بەڵێ، بسڕەوە</AlertDialogAction>
                                                     </AlertDialogFooter>
                                                 </AlertDialogContent>
                                             </AlertDialog>
-                                            <Dialog>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon">
-                                                            <FileSpreadsheet className="h-4 w-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent>
-                                                        <DialogTrigger asChild>
-                                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                                                بینینی فایل
-                                                            </DropdownMenuItem>
-                                                        </DialogTrigger>
-                                                        <DropdownMenuItem onSelect={(e) => {
-                                                            e.preventDefault();
-                                                            document.getElementById(`print-btn-${sale.id}`)?.click()
-                                                        }}>
-                                                            چاپکردنی فایل
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                                <DialogContent className="max-w-[95vw] sm:max-w-5xl h-[90vh] flex flex-col p-4" dir="rtl">
-                                                    <DialogHeader>
-                                                        <DialogTitle>پێشبینینی پسوولە</DialogTitle>
-                                                    </DialogHeader>
-                                                    <ReceiptPreview formId={sale.id} />
-                                                </DialogContent>
-                                            </Dialog>
-                                            <div className="hidden">
-                                                <DirectPrintButton formId={sale.id} id={`print-btn-${sale.id}`} />
-                                            </div>
+
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon">
+                                                        <FileSpreadsheet className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent dir="rtl">
+                                                    <DropdownMenuItem onSelect={() => setPreviewFormId(sale.id)}>
+                                                        بینینی پسوولە
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={() => handleDirectPrint(sale.id)}>
+                                                        چاپکردنی پسوولە
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -727,26 +682,19 @@ function SalesList() {
                                          <AlertDialog>
                                             <AlertDialogTrigger asChild><Button variant="ghost" size="sm"><Trash2 className="h-4 w-4 mr-2 text-destructive" />سڕینەوە</Button></AlertDialogTrigger>
                                             <AlertDialogContent dir="rtl">
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>دڵنیایت لە سڕینەوەی ئەم فۆڕمە؟</AlertDialogTitle>
-                                                    <AlertDialogDescription>ئەم کردارە پاشگەزبوونەوەی نییە.</AlertDialogDescription>
-                                                </AlertDialogHeader>
+                                                <AlertDialogHeader><AlertDialogTitle>دڵنیایت؟</AlertDialogTitle></AlertDialogHeader>
                                                 <AlertDialogFooter>
-                                                    <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleDelete(sale.id)} className="bg-destructive hover:bg-destructive/90">بەڵێ، بسڕەوە</AlertDialogAction>
+                                                    <AlertDialogCancel>نەخێر</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDelete(sale.id)} className="bg-destructive">بەڵێ</AlertDialogAction>
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
-                                         <SalesFormDialog formId={sale.id} onSave={handleFormSave} trigger={<Button variant="ghost" size="sm"><Edit className="h-4 w-4 mr-2 text-blue-500" />دەستکاری</Button>} />
-                                        <Dialog>
-                                            <DialogTrigger asChild>
-                                                <Button variant="ghost" size="sm"><FileSpreadsheet className="h-4 w-4 mr-2" />وردەکاری</Button>
-                                            </DialogTrigger>
-                                            <DialogContent className="max-w-[95vw] sm:max-w-5xl h-[90vh] flex flex-col p-4" dir="rtl">
-                                                <DialogHeader><DialogTitle>پێشبینینی پسوولە</DialogTitle></DialogHeader>
-                                                <ReceiptPreview formId={sale.id} />
-                                            </DialogContent>
-                                        </Dialog>
+                                         <Button variant="ghost" size="sm" onClick={() => setEditingFormId(sale.id)}>
+                                            <Edit className="h-4 w-4 mr-2 text-blue-500" />دەستکاری
+                                         </Button>
+                                         <Button variant="ghost" size="sm" onClick={() => setPreviewFormId(sale.id)}>
+                                            <FileSpreadsheet className="h-4 w-4 mr-2" />وردەکاری
+                                         </Button>
                                     </CardFooter>
                                 </Card>
                             ))
@@ -759,8 +707,8 @@ function SalesList() {
 }
 
 export default function SalesPage(props: any) {
-    use(props.params);
-    use(props.searchParams);
+    const params = use(props.params);
+    const searchParams = use(props.searchParams);
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <SalesList />
