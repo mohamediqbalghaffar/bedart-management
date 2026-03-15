@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef, use } from 'react';
@@ -46,11 +47,6 @@ type SellingFormProduct = {
     unitPrice: number;
     lineTotal: number;
 };
-
-type CompanyInfo = {
-    name: string;
-    contact: string;
-}
 
 const paymentStatusOptions: { value: PaymentStatus | 'all', label: string }[] = [
     { value: 'all', label: 'هەموو دۆخەکان'},
@@ -130,7 +126,7 @@ function UploadSalesFormButton({ onSave }: { onSave: () => void }) {
                 
                 try {
                     const existingProductNames = allProducts?.map(p => p.productName) || [];
-                    const result = await analyzePurchaseExcel({ documentsDataUri: [dataUri], existingProductNames });
+                    const result = await analyzePurchaseExcel({ DocumentsDataUri: [dataUri], existingProductNames } as any);
                     
                     const newItems = result.map(item => ({
                         product: item.product,
@@ -151,7 +147,7 @@ function UploadSalesFormButton({ onSave }: { onSave: () => void }) {
                      if (aiError.message && aiError.message.includes('503')) {
                         toast({ variant: 'destructive', title: "خزمەتگوزاری سەرقاڵە", description: "مۆدێلی AI لەکارکەوتووە. تکایە چەند خولەکێکی تر هەوڵبدەرەوە." });
                      } else {
-                        toast({ variant: 'destructive', title: "هەڵە لە شیکردنەوەی فایل", description: "AI نەیتوانی داتاکان دەربهێنێت." });
+                        toast({ variant: 'destructive', title: "هەڵە لە شیکردنەوەی فایل", description: aiError.message || "AI نەیتوانی داتاکان دەربهێنێت." });
                      }
                 } finally {
                     setIsParsing(false);
@@ -294,10 +290,7 @@ function ReceiptPreview({ formId }: { formId: string }) {
 
     useEffect(() => {
         const fetchPrintData = async () => {
-            if (!firestore) {
-                setIsLoading(false);
-                return;
-            };
+            if (!firestore) return;
             setIsLoading(true);
     
             try {
@@ -673,7 +666,7 @@ function SalesList() {
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent>
                                                         <DialogTrigger asChild>
-                                                            <DropdownMenuItem>
+                                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                                                                 بینینی فایل
                                                             </DropdownMenuItem>
                                                         </DialogTrigger>
@@ -746,7 +739,9 @@ function SalesList() {
                                         </AlertDialog>
                                          <SalesFormDialog formId={sale.id} onSave={handleFormSave} trigger={<Button variant="ghost" size="sm"><Edit className="h-4 w-4 mr-2 text-blue-500" />دەستکاری</Button>} />
                                         <Dialog>
-                                            <DialogTrigger asChild><Button variant="ghost" size="sm"><FileSpreadsheet className="h-4 w-4 mr-2" />وردەکاری</Button></DialogTrigger>
+                                            <DialogTrigger asChild>
+                                                <Button variant="ghost" size="sm"><FileSpreadsheet className="h-4 w-4 mr-2" />وردەکاری</Button>
+                                            </DialogTrigger>
                                             <DialogContent className="max-w-[95vw] sm:max-w-5xl h-[90vh] flex flex-col p-4" dir="rtl">
                                                 <DialogHeader><DialogTitle>پێشبینینی پسوولە</DialogTitle></DialogHeader>
                                                 <ReceiptPreview formId={sale.id} />
