@@ -195,6 +195,23 @@
 
 .totals-summary {
     min-width: 240px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.summary-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    color: #475569;
+    padding: 0 4px;
+}
+
+.summary-line.discount {
+    color: #ef4444;
+    font-weight: 600;
 }
 
 .total-line {
@@ -209,6 +226,7 @@
     padding: 10px 15px;
     border-radius: 6px;
     border: 2px solid #1e293b;
+    margin-top: 4px;
 }
 
 .total-line span:first-child {

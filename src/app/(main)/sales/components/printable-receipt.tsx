@@ -47,6 +47,15 @@ export const PrintableReceipt = React.forwardRef<HTMLDivElement, PrintableReceip
     
     const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
     
+    const subTotal = products.reduce((acc, item) => acc + item.lineTotal, 0);
+    const discountAmount = (() => {
+        if (!formData.discountType || !formData.discountValue) return 0;
+        if (formData.discountType === 'percentage') {
+            return (subTotal * formData.discountValue) / 100;
+        }
+        return formData.discountValue;
+    })();
+
     // Standard row count for A4 to keep the footer at the bottom
     const minRows = 18;
     const emptyRowsCount = Math.max(0, minRows - products.length);
@@ -132,6 +141,22 @@ export const PrintableReceipt = React.forwardRef<HTMLDivElement, PrintableReceip
                         </div>
                     </div>
                     <div className="totals-summary">
+                        <div className="summary-line">
+                            <span className="summary-label">کۆی کاڵاکان:</span>
+                            <span className="summary-value">{currencyFormatter.format(subTotal)}</span>
+                        </div>
+                        {discountAmount > 0 && (
+                            <div className="summary-line discount">
+                                <span className="summary-label">داشکاندن:</span>
+                                <span className="summary-value">-{currencyFormatter.format(discountAmount)}</span>
+                            </div>
+                        )}
+                        {(formData.deliveryCost || 0) > 0 && (
+                            <div className="summary-line">
+                                <span className="summary-label">گەیاندن:</span>
+                                <span className="summary-value">{currencyFormatter.format(formData.deliveryCost || 0)}</span>
+                            </div>
+                        )}
                         <div className="total-line">
                             <span>کۆی گشتی (USD):</span>
                             <span>{currencyFormatter.format(formData.totalPrice)}</span>
