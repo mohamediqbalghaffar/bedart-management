@@ -252,14 +252,14 @@ function DataManagement() {
 
                 if (data.length > 0) {
                     const worksheet = XLSX.utils.json_to_sheet(data);
-                    XLSX.utils.book_append_sheet(workbook, worksheet, collectionName);
+                    XLSX.utils.book_append_sheet(workbook, worksheet, collectionName.substring(0, 31));
                 }
             }
 
             const subcollectionMappings = [
-                { parent: 'selling_forms', sub: 'selling_form_products', sheetPrefix: 'selling_products_' },
-                { parent: 'selling_forms', sub: 'payments', sheetPrefix: 'selling_payments_' },
-                { parent: 'buying_forms', sub: 'buying_form_products', sheetPrefix: 'buying_products_' },
+                { parent: 'selling_forms', sub: 'selling_form_products', sheetPrefix: 'sel_prod_' },
+                { parent: 'selling_forms', sub: 'payments', sheetPrefix: 'sel_pay_' },
+                { parent: 'buying_forms', sub: 'buying_form_products', sheetPrefix: 'buy_prod_' },
             ];
 
             for (const mapping of subcollectionMappings) {
@@ -269,7 +269,8 @@ function DataManagement() {
                     const subData = subSnap.docs.map(d => d.data());
                     if (subData.length > 0) {
                         const ws = XLSX.utils.json_to_sheet(subData);
-                        XLSX.utils.book_append_sheet(workbook, ws, `${mapping.sheetPrefix}${formDoc.id}`);
+                        const sheetName = `${mapping.sheetPrefix}${formDoc.id}`.substring(0, 31);
+                        XLSX.utils.book_append_sheet(workbook, ws, sheetName);
                     }
                 }
             }
