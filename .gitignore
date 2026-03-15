@@ -25,7 +25,6 @@ yarn-error.log*
 
 # local env files
 .env*.local
-.env
 
 # vercel
 .vercel
@@ -36,9 +35,6 @@ next-env.d.ts
 
 # firebase
 .firebase/
-*-debug.log
 firebase-debug.log*
 firestore-debug.log*
-pubsub-debug.log*
 ui-debug.log*
-firebase-export*
