@@ -2,16 +2,17 @@
     background-color: white;
     color: black;
     font-family: var(--font-noto-kufi-arabic), sans-serif;
-    padding: 40px;
+    padding: 15mm; /* Standard professional margins */
     border: 1px solid #eee;
-    width: 100%;
-    max-width: 800px;
-    min-height: 1131px; /* A4 aspect ratio: 800 * 1.414 */
+    width: 210mm; /* Precise A4 width */
+    height: 297mm; /* Precise A4 height */
     margin: 0 auto;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     box-shadow: 0 0 20px rgba(0,0,0,0.05);
+    position: relative;
+    overflow: hidden; /* Prevent content from pushing the height out */
 }
 
 /* --- Header --- */
@@ -19,15 +20,15 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding-bottom: 20px;
+    padding-bottom: 15px;
     border-bottom: 3px solid #3b82f6;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     direction: rtl;
 }
 
 .header-left .logo-text {
     font-weight: 800;
-    font-size: 2.5rem;
+    font-size: 2.2rem;
     line-height: 1;
 }
 
@@ -38,33 +39,33 @@
     color: #2563eb;
 }
 .header-left .logo-group {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     color: #666;
     margin-right: 4px;
 }
 
 .header-left .form-number {
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: #444;
     font-weight: 600;
-    margin-top: 8px;
+    margin-top: 6px;
 }
 
 .header-left .product-categories {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: #555;
-    margin-top: 4px;
+    margin-top: 2px;
 }
 
 .header-right {
     text-align: left;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
 }
 
 .header-right .phone-numbers {
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 700;
     color: #222;
     direction: ltr;
@@ -75,7 +76,7 @@
 }
 
 .header-right .slogan {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: #666;
     margin-top: 4px;
     font-style: italic;
@@ -83,10 +84,10 @@
 
 /* --- Customer Info --- */
 .customer-info {
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 12px 24px;
+    gap: 10px 20px;
 }
 
 .info-line {
@@ -101,7 +102,7 @@
 .info-label {
     font-weight: 700;
     white-space: nowrap;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     color: #333;
 }
 .info-value {
@@ -109,8 +110,8 @@
     border-bottom: 1px dotted #aaa;
     text-align: right;
     padding: 0 4px;
-    font-size: 0.95rem;
-    min-height: 1.4rem;
+    font-size: 0.9rem;
+    min-height: 1.3rem;
     color: #000;
 }
 
@@ -118,14 +119,14 @@
 .new-line-items-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.95rem;
-    flex-grow: 1; /* Pushes footer down */
+    font-size: 0.9rem;
+    flex-grow: 1; /* Table stretches to fill space */
 }
 
 .new-line-items-table th,
 .new-line-items-table td {
     border: 1px solid #ccc;
-    padding: 10px 8px;
+    padding: 8px 6px;
 }
 
 .new-line-items-table th {
@@ -145,14 +146,14 @@
 }
 
 .new-line-items-table .empty-row td {
-    height: 32px;
+    height: 30px;
     border-color: #eee;
 }
 
 /* --- Footer --- */
 .new-receipt-footer {
-    margin-top: 20px;
-    padding-top: 20px;
+    margin-top: 15px;
+    padding-top: 15px;
     border-top: 2px solid #333;
     display: flex;
     justify-content: space-between;
@@ -164,7 +165,7 @@
 }
 
 .signature {
-    margin-top: 20px;
+    margin-top: 10px;
 }
 
 .signature p {
@@ -172,18 +173,18 @@
     border-top: 1px solid #333;
     padding: 4px 40px;
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
 }
 
 .totals-summary {
-    min-width: 240px;
+    min-width: 220px;
 }
 
 .total-line {
     display: flex;
     justify-content: space-between;
     width: 100%;
-    font-size: 1.25rem;
+    font-size: 1.2rem;
     font-weight: 800;
     color: #000;
 }

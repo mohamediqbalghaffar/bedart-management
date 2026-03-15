@@ -375,8 +375,8 @@ function ReceiptPreview({ formId }: { formId: string }) {
 
     return (
         <div className="flex flex-col h-full overflow-hidden">
-            <div className="flex-1 bg-muted/30 p-2 sm:p-6 overflow-auto rounded-lg">
-                 <div className="mx-auto shadow-2xl rounded-sm overflow-hidden" style={{ width: 'fit-content' }}>
+            <div className="flex-1 bg-muted/30 p-2 sm:p-4 overflow-auto rounded-lg flex justify-center items-start">
+                 <div className="shadow-2xl origin-top scale-[0.4] sm:scale-[0.6] md:scale-[0.85] lg:scale-100 mt-4 mb-4 transition-transform">
                     <PrintableReceipt
                         ref={receiptRef}
                         formData={printData.formData}

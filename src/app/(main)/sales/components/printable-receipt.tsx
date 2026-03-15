@@ -48,8 +48,8 @@ export const PrintableReceipt = React.forwardRef<HTMLDivElement, PrintableReceip
     
     const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
     
-    // Create enough empty rows to have at least 15 rows in total
-    const minRows = 15;
+    // Increased minRows to 20 to fill the A4 page height more nicely
+    const minRows = 20;
     const emptyRows = Math.max(0, minRows - products.length);
 
     return (
@@ -71,7 +71,7 @@ export const PrintableReceipt = React.forwardRef<HTMLDivElement, PrintableReceip
                 </div>
             </header>
 
-            <main className="new-receipt-main">
+            <main className="new-receipt-main flex-grow flex flex-col">
                 <section className="customer-info">
                     <div className="info-line">
                         <span className="info-label">بەڕێز:</span>
