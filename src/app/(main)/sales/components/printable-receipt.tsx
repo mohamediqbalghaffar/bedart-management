@@ -3,7 +3,7 @@
 import React from 'react';
 import '../printable-receipt.css';
 import { PaymentType } from '@/lib/types';
-
+import { Phone, MapPin, Calendar, User } from 'lucide-react';
 
 // Define types for props
 type SellingFormType = {
@@ -43,14 +43,13 @@ type PrintableReceiptProps = {
     companyInfo: CompanyInfo | null;
 };
 
-
 export const PrintableReceipt = React.forwardRef<HTMLDivElement, PrintableReceiptProps>(({ formData, products, payments, companyInfo }, ref) => {
     
     const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
     
-    // Increased minRows to 20 to fill the A4 page height more nicely
-    const minRows = 20;
-    const emptyRows = Math.max(0, minRows - products.length);
+    // Standard row count for A4 to keep the footer at the bottom
+    const minRows = 18;
+    const emptyRowsCount = Math.max(0, minRows - products.length);
 
     return (
         <div ref={ref} className="new-receipt-container" dir="rtl">
@@ -59,33 +58,39 @@ export const PrintableReceipt = React.forwardRef<HTMLDivElement, PrintableReceip
                     <div className="logo-text">
                         <span className="logo-bed">Bed</span><span className="logo-art">Art</span> <span className="logo-group">group</span>
                     </div>
-                    <p className="form-number">No. {formData.formNumber}</p>
+                    <div className="form-number-box">
+                        <p className="form-number">No. {formData.formNumber}</p>
+                    </div>
                     <p className="product-categories">تەختی نوستن . دۆشەک . پشتی</p>
                 </div>
                 <div className="header-right">
                     <div className="phone-numbers">
-                        <p>&#x1F4DE; 0770 817 1818</p>
-                        <p>&#x1F4DE; 0770 077 1818</p>
+                        <p>0770 817 1818</p>
+                        <p>0770 077 1818</p>
                     </div>
                      <p className="slogan">بە ئارامی بنوو، بە دڵخۆشی لە خەو هەستە.</p>
                 </div>
             </header>
 
-            <main className="new-receipt-main flex-grow flex flex-col">
+            <main className="flex-grow flex flex-col">
                 <section className="customer-info">
                     <div className="info-line">
+                        <User className="h-3.5 w-3.5 text-slate-400" />
                         <span className="info-label">بەڕێز:</span>
                         <span className="info-value">{formData.customerName}</span>
                     </div>
                     <div className="info-line">
-                        <span className="info-label">ژ.مۆبایل:</span>
-                        <span className="info-value">{formData.customerPhoneNumber || '.........................'}</span>
+                        <Phone className="h-3.5 w-3.5 text-slate-400" />
+                        <span className="info-label">مۆبایل:</span>
+                        <span className="info-value">{formData.customerPhoneNumber || ''}</span>
                     </div>
-                     <div className="info-line full-width">
+                    <div className="info-line full-width">
+                        <MapPin className="h-3.5 w-3.5 text-slate-400" />
                         <span className="info-label">ناونیشان:</span>
-                         <span className="info-value">{formData.customerAddress || '................................................................'}</span>
+                         <span className="info-value">{formData.customerAddress || ''}</span>
                     </div>
                     <div className="info-line">
+                        <Calendar className="h-3.5 w-3.5 text-slate-400" />
                         <span className="info-label">بەروار:</span>
                         <span className="info-value">{formData.issueDate}</span>
                     </div>
@@ -103,13 +108,13 @@ export const PrintableReceipt = React.forwardRef<HTMLDivElement, PrintableReceip
                     <tbody>
                         {products.map((item, index) => (
                             <tr key={index}>
-                                <td>{item.productName}</td>
-                                <td className="text-center">{item.quantity}</td>
+                                <td className="font-bold">{item.productName}</td>
+                                <td className="text-center font-bold">{item.quantity}</td>
                                 <td className="text-center">{currencyFormatter.format(item.unitPrice)}</td>
-                                <td className="text-center">{currencyFormatter.format(item.lineTotal)}</td>
+                                <td className="text-center font-bold">{currencyFormatter.format(item.lineTotal)}</td>
                             </tr>
                         ))}
-                        {Array.from({ length: emptyRows }).map((_, index) => (
+                        {Array.from({ length: emptyRowsCount }).map((_, index) => (
                              <tr key={`empty-${index}`} className="empty-row">
                                 <td>&nbsp;</td>
                                 <td></td>
@@ -121,15 +126,15 @@ export const PrintableReceipt = React.forwardRef<HTMLDivElement, PrintableReceip
                 </table>
                 
                 <footer className="new-receipt-footer">
-                    <div className="notes-and-signature">
+                    <div className="signature-area">
                          <div className="signature">
                             <p>واژۆ</p>
                         </div>
                     </div>
                     <div className="totals-summary">
                         <div className="total-line">
-                            <span>کۆی گشتی:</span>
-                            <span className="font-bold">{currencyFormatter.format(formData.totalPrice)}</span>
+                            <span>کۆی گشتی (USD):</span>
+                            <span>{currencyFormatter.format(formData.totalPrice)}</span>
                         </div>
                     </div>
                 </footer>

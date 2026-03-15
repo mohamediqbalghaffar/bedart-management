@@ -349,6 +349,8 @@ function ReceiptPreview({ formId }: { formId: string }) {
                 scale: 2,
                 useCORS: true,
                 backgroundColor: '#ffffff',
+                width: 794, // 210mm at 96dpi
+                height: 1123, // 297mm at 96dpi
             });
             const link = document.createElement('a');
             link.href = canvas.toDataURL('image/jpeg', 0.95);
@@ -375,8 +377,8 @@ function ReceiptPreview({ formId }: { formId: string }) {
 
     return (
         <div className="flex flex-col h-full overflow-hidden">
-            <div className="flex-1 bg-muted/30 p-2 sm:p-4 overflow-auto rounded-lg flex justify-center items-start">
-                 <div className="shadow-2xl origin-top scale-[0.4] sm:scale-[0.6] md:scale-[0.85] lg:scale-100 mt-4 mb-4 transition-transform">
+            <div className="flex-1 bg-slate-900/50 p-2 sm:p-8 overflow-auto rounded-lg flex justify-center items-start">
+                 <div className="shadow-2xl origin-top scale-[0.35] sm:scale-[0.5] md:scale-[0.75] lg:scale-[0.9] xl:scale-100 transition-transform">
                     <PrintableReceipt
                         ref={receiptRef}
                         formData={printData.formData}
@@ -386,10 +388,10 @@ function ReceiptPreview({ formId }: { formId: string }) {
                     />
                 </div>
             </div>
-            <DialogFooter className="pt-4 flex flex-col sm:flex-row gap-2">
-                 <Button onClick={handleDownloadAsJPEG} disabled={isDownloading} className="w-full sm:w-auto h-12 text-base font-bold shadow-lg">
+            <DialogFooter className="pt-4 flex flex-col sm:flex-row gap-3">
+                 <Button onClick={handleDownloadAsJPEG} disabled={isDownloading} className="w-full sm:w-auto h-12 text-base font-bold shadow-lg" size="lg">
                     {isDownloading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FileDown className="mr-2 h-5 w-5" />}
-                    دابەزاندن وەک وێنە (A4 Portrait)
+                    دابەزاندنی پسوولە (JPEG A4)
                 </Button>
             </DialogFooter>
         </div>
@@ -405,6 +407,8 @@ function SalesList() {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<PaymentStatus | 'all'>('all');
     const [typeFilter, setTypeFilter] = useState<PaymentType | 'all'>('all');
+
+    const params = use(React.useContext(React.createContext({})) as any); // Correct unwrap if needed, but here simple refresh works
 
     const sellingFormsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -683,7 +687,7 @@ function SalesList() {
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
-                                                <DialogContent className="max-w-[95vw] sm:max-w-3xl h-[90vh] flex flex-col p-4" dir="rtl">
+                                                <DialogContent className="max-w-[95vw] sm:max-w-5xl h-[90vh] flex flex-col p-4" dir="rtl">
                                                     <DialogHeader>
                                                         <DialogTitle>پێشبینینی پسوولە</DialogTitle>
                                                     </DialogHeader>
@@ -745,7 +749,7 @@ function SalesList() {
                                          <SalesFormDialog formId={sale.id} onSave={handleFormSave} trigger={<Button variant="ghost" size="sm"><Edit className="h-4 w-4 mr-2 text-blue-500" />دەستکاری</Button>} />
                                         <Dialog>
                                             <DialogTrigger asChild><Button variant="ghost" size="sm"><FileSpreadsheet className="h-4 w-4 mr-2" />وردەکاری</Button></DialogTrigger>
-                                            <DialogContent className="max-w-[95vw] sm:max-w-3xl h-[90vh] flex flex-col p-4" dir="rtl">
+                                            <DialogContent className="max-w-[95vw] sm:max-w-5xl h-[90vh] flex flex-col p-4" dir="rtl">
                                                 <DialogHeader><DialogTitle>پێشبینینی پسوولە</DialogTitle></DialogHeader>
                                                 <ReceiptPreview formId={sale.id} />
                                             </DialogContent>
@@ -762,8 +766,8 @@ function SalesList() {
 }
 
 export default function SalesPage(props: any) {
-    React.use(props.params);
-    React.use(props.searchParams);
+    const params = use(props.params);
+    const searchParams = use(props.searchParams);
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <SalesList />
