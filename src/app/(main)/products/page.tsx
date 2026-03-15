@@ -4,7 +4,7 @@ import React, { useState, useMemo, use } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { PlusCircle, Loader2, FileDown, FileUp, Search } from "lucide-react";
+import { PlusCircle, Loader2, FileDown, FileUp, Search, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useFirestore, useCollection, useMemoFirebase, collection, writeBatch, doc, getDocs, query, where } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
@@ -18,6 +18,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ProductCategory } from '@/lib/types';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 export type ProductDefinition = {
     productName: string;
@@ -196,11 +197,20 @@ function UploadItemsButton({ onUploadSuccess, existingProducts }: { onUploadSucc
     );
 }
 
-function ProductDefinitionsList({ products, isLoading, onProductUpdated, onBulkUpdate, searchTerm, onSearchTermChange }: {
+function ProductDefinitionsList({ 
+    products, 
+    isLoading, 
+    onProductUpdated, 
+    onBulkUpdate, 
+    onBulkDelete,
+    searchTerm, 
+    onSearchTermChange 
+}: {
     products: WithId<ProductDefinition>[] | null,
     isLoading: boolean,
     onProductUpdated: () => void,
     onBulkUpdate: (ids: string[], newCategory: ProductCategory) => Promise<void>,
+    onBulkDelete: (ids: string[]) => Promise<void>,
     searchTerm: string,
     onSearchTermChange: (value: string) => void
 }) {
@@ -243,6 +253,13 @@ function ProductDefinitionsList({ products, isLoading, onProductUpdated, onBulkU
         });
     };
 
+    const handleApplyBulkDelete = () => {
+        if (selectedProducts.size === 0) return;
+        onBulkDelete(Array.from(selectedProducts)).then(() => {
+            setSelectedProducts(new Set());
+        });
+    };
+
     return (
         <Card>
             <CardHeader>
@@ -259,7 +276,7 @@ function ProductDefinitionsList({ products, isLoading, onProductUpdated, onBulkU
                     </div>
                     {selectedProducts.size > 0 && (
                         <div className="flex items-center gap-2">
-                             <span>{selectedProducts.size} دانە هەڵبژێردراوە</span>
+                             <span className="text-sm font-medium">{selectedProducts.size} دانە هەڵبژێردراوە</span>
                              <Select onValueChange={handleApplyBulkChange}>
                                 <SelectTrigger className="w-[200px] border-dashed h-8">
                                     <SelectValue placeholder="گۆڕینی پۆلی هەڵبژێردراو" />
@@ -270,7 +287,29 @@ function ProductDefinitionsList({ products, isLoading, onProductUpdated, onBulkU
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <Button variant="ghost" size="sm" onClick={() => setSelectedProducts(new Set())}>هەڵوەشاندنەوە</Button>
+                            
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" size="sm" className="h-8">
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        سڕینەوەی هەموو
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent dir="rtl">
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>ئایا دڵنیایت لە سڕینەوەی {selectedProducts.size} پێناسەی کاڵا؟</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            ئەم کردارە پاشگەزبوونەوەی نییە. سڕینەوەی پێناسەکان کاریگەری لەسەر بڕی کاڵاکانی ناو کۆگا نابێت، تەنها پێناسە سەرەکییەکان دەسڕدرێنەوە.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleApplyBulkDelete} className="bg-destructive hover:bg-destructive/90">بەڵێ، بسڕەوە</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+
+                            <Button variant="ghost" size="sm" onClick={() => setSelectedProducts(new Set())} className="h-8">هەڵوەشاندنەوە</Button>
                         </div>
                     )}
                 </div>
@@ -389,6 +428,28 @@ export default function ProductsPage({ params, searchParams }: { params: Promise
         }
     };
 
+    const handleBulkDelete = async (ids: string[]) => {
+        if (!firestore || ids.length === 0) return;
+
+        const { id: toastId, update: updateToast } = toast({ title: '...سڕینەوەی پێناسەکان', description: `Deleting ${ids.length} product definitions.` });
+        
+        try {
+            const batch = writeBatch(firestore);
+            
+            ids.forEach(id => {
+                const defRef = doc(firestore, 'product_definitions', id);
+                batch.delete(defRef);
+            });
+
+            await batch.commit();
+            updateToast(toastId, { title: 'سەرکەوتوو بوو', description: 'پێناسەکان بە سەرکەوتوویی سڕانەوە.', className: 'bg-accent text-accent-foreground' });
+            handleSave();
+        } catch (error) {
+            console.error("Error during bulk delete:", error);
+            updateToast(toastId, { variant: "destructive", title: "هەڵەیەک ڕوویدا", description: "سڕینەوەی پێناسەکان سەرکەوتوو نەبوو." });
+        }
+    };
+
     return (
         <div className="p-4 md:p-8 space-y-8" dir="rtl">
             <PageHeader title="بەڕێوەبردنی ناوی کاڵاکان" description="پێناسەی کاڵا سەرەکییەکانت لێرە ببینە و زیاد بکە.">
@@ -403,6 +464,7 @@ export default function ProductsPage({ params, searchParams }: { params: Promise
                 isLoading={isLoading} 
                 onProductUpdated={handleSave} 
                 onBulkUpdate={handleBulkUpdateCategory}
+                onBulkDelete={handleBulkDelete}
                 searchTerm={searchTerm} 
                 onSearchTermChange={setSearchTerm} 
             />
