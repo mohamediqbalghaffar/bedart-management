@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useRef, use } from 'react';
@@ -236,7 +237,7 @@ function DataManagement() {
     const exportAllData = async () => {
         if (!firestore) return;
         setIsExporting(true);
-        toast({ title: '...هەناردەکردن', description: 'هەموو داتاکان خەریکی هەناردەکردنن' });
+        const { update: updateToast } = toast({ title: '...هەناردەکردن', description: 'هەموو داتاکان خەریکی هەناردەکردنن' });
 
         try {
             const workbook = XLSX.utils.book_new();
@@ -274,11 +275,11 @@ function DataManagement() {
             }
 
             XLSX.writeFile(workbook, 'BedArt_Backup.xlsx');
-            toast({ title: 'سەرکەوتوو بوو', description: 'هەموو داتاکان بە سەرکەوتوویی هەناردەکران.', className: 'bg-accent text-accent-foreground' });
+            updateToast({ title: 'سەرکەوتوو بوو', description: 'هەموو داتاکان بە سەرکەوتوویی هەناردەکران.', className: 'bg-accent text-accent-foreground' });
 
         } catch (error) {
             console.error("Error exporting data: ", error);
-            toast({ variant: 'destructive', title: 'هەڵەیەک ڕوویدا', description: 'هەناردەکردن سەرکەوتوو نەبوو.' });
+            updateToast({ variant: 'destructive', title: 'هەڵەیەک ڕوویدا', description: 'هەناردەکردن سەرکەوتوو نەبوو.' });
         } finally {
             setIsExporting(false);
         }

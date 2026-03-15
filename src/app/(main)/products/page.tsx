@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, use } from 'react';
@@ -392,7 +393,7 @@ export default function ProductsPage({ params, searchParams }: { params: Promise
     const handleBulkUpdateCategory = async (ids: string[], newCategory: ProductCategory) => {
         if (!firestore || ids.length === 0) return;
 
-        const { id: toastId, update: updateToast } = toast({ title: '...نوێکردنەوەی پۆلەکان', description: `Updating ${ids.length} products.` });
+        const { update: updateToast } = toast({ title: '...نوێکردنەوەی پۆلەکان', description: `Updating ${ids.length} products.` });
         
         try {
             const batch = writeBatch(firestore);
@@ -420,18 +421,18 @@ export default function ProductsPage({ params, searchParams }: { params: Promise
             }
 
             await batch.commit();
-            updateToast(toastId, { title: 'سەرکەوتوو بوو', description: 'پۆلەکان بە سەرکەوتوویی نوێکرانەوە.', className: 'bg-accent text-accent-foreground' });
+            updateToast({ title: 'سەرکەوتوو بوو', description: 'پۆلەکان بە سەرکەوتوویی نوێکرانەوە.', className: 'bg-accent text-accent-foreground' });
             handleSave();
         } catch (error) {
             console.error("Error during bulk category update:", error);
-            updateToast(toastId, { variant: "destructive", title: "هەڵەیەک ڕوویدا", description: "نوێکردنەوەی پۆلەکان سەرکەوتوو نەبوو." });
+            updateToast({ variant: "destructive", title: "هەڵەیەک ڕوویدا", description: "نوێکردنەوەی پۆلەکان سەرکەوتوو نەبوو." });
         }
     };
 
     const handleBulkDelete = async (ids: string[]) => {
         if (!firestore || ids.length === 0) return;
 
-        const { id: toastId, update: updateToast } = toast({ title: '...سڕینەوەی پێناسەکان', description: `Deleting ${ids.length} product definitions.` });
+        const { update: updateToast } = toast({ title: '...سڕینەوەی پێناسەکان', description: `Deleting ${ids.length} product definitions.` });
         
         try {
             const batch = writeBatch(firestore);
@@ -442,11 +443,11 @@ export default function ProductsPage({ params, searchParams }: { params: Promise
             });
 
             await batch.commit();
-            updateToast(toastId, { title: 'سەرکەوتوو بوو', description: 'پێناسەکان بە سەرکەوتوویی سڕانەوە.', className: 'bg-accent text-accent-foreground' });
+            updateToast({ title: 'سەرکەوتوو بوو', description: 'پێناسەکان بە سەرکەوتوویی سڕانەوە.', className: 'bg-accent text-accent-foreground' });
             handleSave();
         } catch (error) {
             console.error("Error during bulk delete:", error);
-            updateToast(toastId, { variant: "destructive", title: "هەڵەیەک ڕوویدا", description: "سڕینەوەی پێناسەکان سەرکەوتوو نەبوو." });
+            updateToast({ variant: "destructive", title: "هەڵەیەک ڕوویدا", description: "سڕینەوەی پێناسەکان سەرکەوتوو نەبوو." });
         }
     };
 
