@@ -67,7 +67,7 @@ function PrintButton({ formData, products, payments }: { formData: any, products
             setTimeout(() => {
                 window.print();
                 setShowPrintable(false);
-            }, 100); // Small delay to ensure render
+            }, 100); 
         }
     }, [showPrintable]);
 
@@ -118,18 +118,23 @@ export function SalesDetails({ formId }: { formId: string }) {
     }
     
     const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
-    const subTotal = products?.reduce((acc, item) => acc + item.lineTotal, 0) || 0;
+    
+    // Accurate financial breakdown
+    const subTotal = products.reduce((acc, item) => acc + (Number(item.quantity) * Number(item.unitPrice)), 0);
+    const dVal = Number(formData.discountValue || 0);
     const discountAmount = (() => {
-        if (!formData.discountType || !formData.discountValue) return 0;
+        if (!formData.discountType || dVal === 0) return 0;
         if (formData.discountType === 'percentage') {
-            return (subTotal * formData.discountValue) / 100;
+            return (subTotal * dVal) / 100;
         }
-        return formData.discountValue;
+        return dVal;
     })();
+    const delivery = Number(formData.deliveryCost || 0);
+    const calculatedTotal = subTotal - discountAmount + delivery;
 
     const totalPaid = payments?.reduce((acc, p) => acc + (Number(p.amountPaid) || 0), 0) || 0;
-    const calculatedRemaining = Math.max(0, formData.totalPrice - totalPaid);
-    const overpayment = Math.max(0, totalPaid - formData.totalPrice);
+    const calculatedRemaining = Math.max(0, calculatedTotal - totalPaid);
+    const overpayment = Math.max(0, totalPaid - calculatedTotal);
 
     return (
         <div className="space-y-6">
@@ -177,7 +182,7 @@ export function SalesDetails({ formId }: { formId: string }) {
                                                 <TableCell className="text-right">{item.productName}</TableCell>
                                                 <TableCell className="text-right"><ConfidentialBlur>{item.quantity}</ConfidentialBlur></TableCell>
                                                 <TableCell className="text-right"><ConfidentialBlur>{currencyFormatter.format(item.unitPrice)}</ConfidentialBlur></TableCell>
-                                                <TableCell className="text-left font-semibold"><ConfidentialBlur>{currencyFormatter.format(item.lineTotal)}</ConfidentialBlur></TableCell>
+                                                <TableCell className="text-left font-semibold"><ConfidentialBlur>{currencyFormatter.format(Number(item.quantity) * Number(item.unitPrice))}</ConfidentialBlur></TableCell>
                                             </TableRow>
                                         ))
                                     ) : (
@@ -194,7 +199,7 @@ export function SalesDetails({ formId }: { formId: string }) {
                                             <CardContent className="space-y-2 text-sm">
                                                 <div className="flex justify-between items-center"><span>دانە:</span> <ConfidentialBlur><Badge variant="secondary">{item.quantity}</Badge></ConfidentialBlur></div>
                                                 <div className="flex justify-between items-center"><span>نرخی تاک:</span> <ConfidentialBlur>{currencyFormatter.format(item.unitPrice)}</ConfidentialBlur></div>
-                                                <div className="flex justify-between items-center font-semibold"><span>نرخی کۆ:</span> <ConfidentialBlur>{currencyFormatter.format(item.lineTotal)}</ConfidentialBlur></div>
+                                                <div className="flex justify-between items-center font-semibold"><span>نرخی کۆ:</span> <ConfidentialBlur>{currencyFormatter.format(Number(item.quantity) * Number(item.unitPrice))}</ConfidentialBlur></div>
                                             </CardContent>
                                         </Card>
                                     ))
@@ -206,8 +211,8 @@ export function SalesDetails({ formId }: { formId: string }) {
                         <div className="mt-4 space-y-2 text-left p-4 border-t">
                             <div className="flex justify-between"><span>کۆی کاڵاکان:</span><ConfidentialBlur><span className="font-medium">{currencyFormatter.format(subTotal)}</span></ConfidentialBlur></div>
                             {discountAmount > 0 && <div className="flex justify-between text-destructive"><span>داشکاندن:</span><ConfidentialBlur><span className="font-medium">-{currencyFormatter.format(discountAmount)}</span></ConfidentialBlur></div>}
-                            <div className="flex justify-between"><span>تێچووی گەیاندن:</span><ConfidentialBlur><span className="font-medium">{currencyFormatter.format(formData.deliveryCost || 0)}</span></ConfidentialBlur></div>
-                            <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2"><span>کۆی گشتی:</span><ConfidentialBlur><span>{currencyFormatter.format(formData.totalPrice)}</span></ConfidentialBlur></div>
+                            {delivery > 0 && <div className="flex justify-between"><span>تێچووی گەیاندن:</span><ConfidentialBlur><span className="font-medium">{currencyFormatter.format(delivery)}</span></ConfidentialBlur></div>}
+                            <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2"><span>کۆی گشتی:</span><ConfidentialBlur><span>{currencyFormatter.format(calculatedTotal)}</span></ConfidentialBlur></div>
                         </div>
                     </CardContent>
                 </Card>

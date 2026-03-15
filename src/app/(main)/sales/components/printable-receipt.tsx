@@ -47,14 +47,18 @@ export const PrintableReceipt = React.forwardRef<HTMLDivElement, PrintableReceip
     
     const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
     
-    const subTotal = products.reduce((acc, item) => acc + item.lineTotal, 0);
+    // Recalculate accurately for the display
+    const subTotal = products.reduce((acc, item) => acc + (Number(item.quantity) * Number(item.unitPrice)), 0);
+    const dVal = Number(formData.discountValue || 0);
     const discountAmount = (() => {
-        if (!formData.discountType || !formData.discountValue) return 0;
+        if (!formData.discountType || dVal === 0) return 0;
         if (formData.discountType === 'percentage') {
-            return (subTotal * formData.discountValue) / 100;
+            return (subTotal * dVal) / 100;
         }
-        return formData.discountValue;
+        return dVal;
     })();
+    const delivery = Number(formData.deliveryCost || 0);
+    const calculatedTotal = subTotal - discountAmount + delivery;
 
     // Standard row count for A4 to keep the footer at the bottom
     const minRows = 18;
@@ -120,7 +124,7 @@ export const PrintableReceipt = React.forwardRef<HTMLDivElement, PrintableReceip
                                 <td className="font-bold">{item.productName}</td>
                                 <td className="text-center font-bold">{item.quantity}</td>
                                 <td className="text-center">{currencyFormatter.format(item.unitPrice)}</td>
-                                <td className="text-center font-bold">{currencyFormatter.format(item.lineTotal)}</td>
+                                <td className="text-center font-bold">{currencyFormatter.format(Number(item.quantity) * Number(item.unitPrice))}</td>
                             </tr>
                         ))}
                         {Array.from({ length: emptyRowsCount }).map((_, index) => (
@@ -151,15 +155,15 @@ export const PrintableReceipt = React.forwardRef<HTMLDivElement, PrintableReceip
                                 <span className="summary-value">-{currencyFormatter.format(discountAmount)}</span>
                             </div>
                         )}
-                        {(formData.deliveryCost || 0) > 0 && (
+                        {delivery > 0 && (
                             <div className="summary-line">
-                                <span className="summary-label">گەیاندن:</span>
-                                <span className="summary-value">{currencyFormatter.format(formData.deliveryCost || 0)}</span>
+                                <span className="summary-label">تێچووی گەیاندن:</span>
+                                <span className="summary-value">{currencyFormatter.format(delivery)}</span>
                             </div>
                         )}
                         <div className="total-line">
                             <span>کۆی گشتی (USD):</span>
-                            <span>{currencyFormatter.format(formData.totalPrice)}</span>
+                            <span>{currencyFormatter.format(calculatedTotal)}</span>
                         </div>
                     </div>
                 </footer>

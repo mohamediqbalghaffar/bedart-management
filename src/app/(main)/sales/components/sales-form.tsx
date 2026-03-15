@@ -131,7 +131,7 @@ function SalesFormItemRow({
                 </CardContent>
                 <CardFooter className="bg-muted/50 p-4 flex justify-between items-center">
                     <span className="text-muted-foreground">نرخی کۆ:</span>
-                    <ConfidentialBlur><span className="font-bold">{currencyFormatter.format(watchedItem?.quantity * watchedItem?.unitPrice || 0)}</span></ConfidentialBlur>
+                    <ConfidentialBlur><span className="font-bold">{currencyFormatter.format(Number(watchedItem?.quantity || 0) * Number(watchedItem?.unitPrice || 0))}</span></ConfidentialBlur>
                 </CardFooter>
             </Card>
         );
@@ -178,7 +178,7 @@ function SalesFormItemRow({
                 <FormField control={form.control} name={`items.${index}.unitPrice`} render={({ field }) => (<FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
             </TableCell>
              <TableCell className="align-top pt-5 font-semibold text-left">
-                <ConfidentialBlur>{currencyFormatter.format(watchedItem?.quantity * watchedItem?.unitPrice || 0)}</ConfidentialBlur>
+                <ConfidentialBlur>{currencyFormatter.format(Number(watchedItem?.quantity || 0) * Number(watchedItem?.unitPrice || 0))}</ConfidentialBlur>
             </TableCell>
             <TableCell className="align-top">
                 <Button variant="ghost" size="icon" onClick={() => remove(index)}>
@@ -240,14 +240,15 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
   const watchedPayments = form.watch('payments');
   const discountValue = form.watch('discountValue');
 
-  const subTotal = watchedItems.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
+  const subTotal = watchedItems.reduce((acc, item) => acc + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0);
 
   const discountAmount = React.useMemo(() => {
-    if (!discountType || !discountValue || discountValue <= 0) return 0;
+    const dVal = Number(discountValue || 0);
+    if (!discountType || dVal <= 0) return 0;
     if (discountType === 'percentage') {
-      return (subTotal * discountValue) / 100;
+      return (subTotal * dVal) / 100;
     }
-    return discountValue;
+    return dVal;
   }, [subTotal, discountType, discountValue]);
 
   const totalAfterDiscount = subTotal - discountAmount;
@@ -308,7 +309,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
             form.reset({
               ...data,
               issueDate: data.issueDate,
-              customerPhoneNumber: data.customerPhoneNumber || data.customerPhone || "", // Fallback for old data
+              customerPhoneNumber: data.customerPhoneNumber || data.customerPhone || "", 
               items: items.map(item => ({
                   product: item.productName,
                   quantity: item.quantity,
@@ -401,7 +402,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
         if (formId) {
           originalItems.forEach(item => {
             if (item.productId) {
-              stockChanges.set(item.productId, { change: item.quantity, resolvedId: item.productId });
+              stockChanges.set(item.productId, { change: Number(item.quantity || 0), resolvedId: item.productId });
             }
           });
         }
@@ -413,16 +414,16 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
           const showroomDoc = productDocs.get(showroomId);
           const warehouseDoc = productDocs.get(warehouseId);
 
-          const showroomCurrentStock = showroomDoc?.exists() ? showroomDoc.data().currentQuantity : 0;
-          const warehouseCurrentStock = warehouseDoc?.exists() ? warehouseDoc.data().currentQuantity : 0;
+          const showroomCurrentStock = Number(showroomDoc?.exists() ? showroomDoc.data().currentQuantity : 0);
+          const warehouseCurrentStock = Number(warehouseDoc?.exists() ? warehouseDoc.data().currentQuantity : 0);
           
           const showroomStockAfterRestore = showroomCurrentStock + (stockChanges.get(showroomId)?.change || 0);
           const warehouseStockAfterRestore = warehouseCurrentStock + (stockChanges.get(warehouseId)?.change || 0);
           
           let deductedFrom: string | null = null;
-          if (showroomStockAfterRestore >= item.quantity) {
+          if (showroomStockAfterRestore >= Number(item.quantity)) {
             deductedFrom = showroomId;
-          } else if (warehouseStockAfterRestore >= item.quantity) {
+          } else if (warehouseStockAfterRestore >= Number(item.quantity)) {
             deductedFrom = warehouseId;
           }
 
@@ -431,7 +432,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
           }
           
           const currentChange = stockChanges.get(deductedFrom)?.change || 0;
-          stockChanges.set(deductedFrom, { change: currentChange - item.quantity, resolvedId: deductedFrom });
+          stockChanges.set(deductedFrom, { change: currentChange - Number(item.quantity), resolvedId: deductedFrom });
           (item as any).resolvedProductId = deductedFrom;
         }
 
@@ -440,7 +441,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
           const productDoc = productDocs.get(productId);
 
           if (productDoc?.exists()) {
-            const currentQuantity = productDoc.data()!.currentQuantity;
+            const currentQuantity = Number(productDoc.data()!.currentQuantity);
             transaction.update(productRef, { currentQuantity: currentQuantity + change });
           }
         }
@@ -448,19 +449,20 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
         const { items, payments, ...mainData } = sanitizedData;
 
         // Recalculate totals inside the transaction for consistency
-        const subTotal = items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
+        const subTotal = items.reduce((acc, item) => acc + (Number(item.quantity) * Number(item.unitPrice)), 0);
+        const dVal = Number(mainData.discountValue || 0);
         const discountAmount = (() => {
-            if (!mainData.discountType || !mainData.discountValue) return 0;
+            if (!mainData.discountType || dVal === 0) return 0;
             if (mainData.discountType === 'percentage') {
-                return (subTotal * mainData.discountValue) / 100;
+                return (subTotal * dVal) / 100;
             }
-            return mainData.discountValue;
+            return dVal;
         })();
         const finalTotalAmount = subTotal - discountAmount + Number(mainData.deliveryCost || 0);
-        const finalTotalPaid = payments?.reduce((acc, p) => acc + p.amount, 0) || 0;
+        const finalTotalPaid = payments?.reduce((acc, p) => acc + Number(p.amount || 0), 0) || 0;
         const finalRemainingBalance = Math.max(0, finalTotalAmount - finalTotalPaid);
         const creatorName = user?.name || "System";
-        const creatorId = user?.name || "system"; // In a real app, this would be a user ID
+        const creatorId = user?.id || "system"; 
         
         const sellingFormData: any = { 
             ...mainData, 
@@ -468,10 +470,12 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
             creatorId: creatorId,
             creatorName,
             issueDate: sanitizedData.issueDate, 
-            totalPrice: finalTotalAmount, 
-            remainingBalance: finalRemainingBalance 
+            totalPrice: Number(finalTotalAmount), 
+            remainingBalance: Number(finalRemainingBalance),
+            discountValue: Number(dVal),
+            deliveryCost: Number(mainData.deliveryCost || 0)
         };
-        if (!sellingFormData.discountValue) sellingFormData.discountValue = 0;
+        
         if (!sellingFormData.discountType) delete sellingFormData.discountType;
         transaction.set(sellingFormRef, sellingFormData, { merge: true });
 
@@ -480,14 +484,15 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
 
         items.forEach(item => {
           const productSubCollectionRef = doc(collection(firestore, `selling_forms/${sellingFormId}/selling_form_products`));
+          const lineTotal = Number(item.quantity) * Number(item.unitPrice);
           transaction.set(productSubCollectionRef, {
             id: productSubCollectionRef.id,
             sellingFormId: sellingFormId,
             productId: (item as any).resolvedProductId,
             productName: item.product,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            lineTotal: item.quantity * item.unitPrice,
+            quantity: Number(item.quantity),
+            unitPrice: Number(item.unitPrice),
+            lineTotal: Number(lineTotal),
             category: item.category,
           });
         });
@@ -499,7 +504,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
               id: paymentRef.id,
               sellingFormId: sellingFormId,
               paymentDate: payment.date,
-              amountPaid: payment.amount,
+              amountPaid: Number(payment.amount),
               paymentMethod: payment.method,
               note: payment.note,
             });
