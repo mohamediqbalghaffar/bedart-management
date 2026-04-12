@@ -77,6 +77,11 @@
   * {
     @apply border-border;
   }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
@@ -84,24 +89,55 @@
     background-image: radial-gradient(circle at 1px 1px, #1a203f 1px, transparent 0);
     background-size: 2.5rem 2.5rem;
   }
-  
-  .rdp {
-    --rdp-cell-size: 40px;
-    --rdp-caption-font-size: 18px;
-    --rdp-accent-color: hsl(var(--primary));
-    --rdp-background-color: hsl(var(--secondary));
-    --rdp-accent-color-dark: hsl(var(--primary));
-    --rdp-background-color-dark: hsl(var(--secondary));
-    --rdp-outline: 2px solid var(--rdp-accent-color);
-    --rdp-outline-selected: 3px solid var(--rdp-accent-color);
-    --rdp-selected-color: hsl(var(--primary-foreground));
+
+  /* ─── Calendar grid safety rules (belt-and-suspenders for react-day-picker v9) ─── */
+  /* These ensure the 7-column grid renders correctly regardless of which CSS is */
+  /* loaded first. The component-level Tailwind classes are the primary mechanism. */
+
+  .rdp-weeks,
+  .rdp-month_grid tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .rdp-week,
+  .rdp-month_grid tr {
+    display: flex !important;
+    width: 100%;
+  }
+
+  .rdp-weekdays {
+    display: flex !important;
+    width: 100%;
+  }
+
+  .rdp-day,
+  .rdp-weekday {
+    flex: 1 1 0 !important;
+    min-width: 0;
+  }
+
+  /* ─── Custom scrollbar for dark theme ─── */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(215 28% 30%);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(215 28% 45%);
   }
 }
 
 @layer utilities {
   @keyframes move-gradient {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
   }
 
@@ -113,5 +149,14 @@
     -webkit-background-clip: text;
     color: transparent;
     animation: move-gradient 4s ease-in-out infinite;
+  }
+
+  /* ─── Skeleton pulse ─── */
+  @keyframes skeleton-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.5; }
+  }
+  .skeleton-pulse {
+    animation: skeleton-pulse 1.8s ease-in-out infinite;
   }
 }

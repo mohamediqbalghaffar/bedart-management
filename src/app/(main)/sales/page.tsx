@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect, useRef, use } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { PlusCircle, Loader2, FileSpreadsheet, Trash2, Edit, ArrowUpDown, Search, FileDown, FileUp } from "lucide-react";
+import { PlusCircle, Loader2, FileSpreadsheet, Trash2, Edit, ArrowUpDown, Search, FileDown, FileUp, ChevronRight, ChevronLeft } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -15,18 +15,23 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PaymentStatus, PaymentType } from '@/lib/types';
+import { SaleStatus, PaymentType } from '@/lib/types';
 import { PrintableReceipt } from './components/printable-receipt';
 import './printable-receipt.css';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import html2canvas from 'html2canvas';
 import { analyzePurchaseExcel } from '@/ai/flows/analyze-purchase-excel';
 
+// ── Constants ──────────────────────────────────────────────────────────────────
+const PAGE_SIZE = 20;
+
+// ── Types ──────────────────────────────────────────────────────────────────────
 type SellingFormType = {
     customerName: string;
     issueDate: string;
     totalPrice: number;
-    paymentStatus: PaymentStatus;
+    paymentStatus: SaleStatus;
     paymentType: PaymentType;
     formNumber: string;
     creatorName?: string;
@@ -44,21 +49,23 @@ type SellingFormProduct = {
     lineTotal: number;
 };
 
-const paymentStatusOptions: { value: PaymentStatus | 'all', label: string }[] = [
-    { value: 'all', label: 'هەموو دۆخەکان'},
-    { value: 'Fully Paid', label: 'هەمووی دراوە'},
-    { value: 'Partially Paid', label: 'بەشێکی دراوە'},
-    { value: 'Unpaid', label: 'نەدراوە'},
+// ── Filter options ─────────────────────────────────────────────────────────────
+const paymentStatusOptions: { value: SaleStatus | 'all', label: string }[] = [
+    { value: 'all', label: 'هەموو دۆخەکان' },
+    { value: 'Fully Paid', label: 'هەمووی دراوە' },
+    { value: 'Partially Paid', label: 'بەشێکی دراوە' },
+    { value: 'Unpaid', label: 'نەدراوە' },
 ];
 
 const paymentTypeOptions: { value: PaymentType | 'all', label: string }[] = [
-    { value: 'all', label: 'هەموو جۆرەکان'},
-    { value: 'Direct Payment', label: 'پارەی ڕاستەوخۆ'},
-    { value: 'After Delivery', label: 'دوای گەیاندن'},
-    { value: 'Installments', label: 'قیست'},
-    { value: 'Pre-order', label: 'داواکاری پێشوەختە'},
+    { value: 'all', label: 'هەموو جۆرەکان' },
+    { value: 'Direct Payment', label: 'پارەی ڕاستەوخۆ' },
+    { value: 'After Delivery', label: 'دوای گەیاندن' },
+    { value: 'Installments', label: 'قیست' },
+    { value: 'Pre-order', label: 'داواکاری پێشوەختە' },
 ];
 
+// ── UploadSalesFormButton ──────────────────────────────────────────────────────
 function UploadSalesFormButton({ onSave }: { onSave: () => void }) {
     const [isParsing, setIsParsing] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -71,7 +78,7 @@ function UploadSalesFormButton({ onSave }: { onSave: () => void }) {
         if (!firestore) return null;
         return collection(firestore, 'products');
     }, [firestore]);
-    
+
     const { data: allProducts } = useCollection<any>(productsQuery);
 
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,15 +97,15 @@ function UploadSalesFormButton({ onSave }: { onSave: () => void }) {
                     setIsParsing(false);
                     return;
                 }
-                
+
                 try {
                     const existingProductNames = allProducts?.map(p => p.productName) || [];
                     const result = await analyzePurchaseExcel({ purchaseDataAsCsv: dataUri, existingProductNames } as any);
-                    
+
                     const newItems = result.map(item => ({
                         product: item.product,
                         quantity: item.quantity,
-                        unitPrice: item.unitPrice, 
+                        unitPrice: item.unitPrice,
                         category: item.category,
                     }));
 
@@ -108,26 +115,22 @@ function UploadSalesFormButton({ onSave }: { onSave: () => void }) {
                     } else {
                         toast({ variant: 'destructive', title: "هیچ کاڵایەک نەدۆزرایەوە", description: "AI نەیتوانی هیچ کاڵایەک لەم فایلە دەربهێنێت." });
                     }
-
                 } catch (aiError: any) {
-                     console.error("AI analysis failed:", aiError);
-                     toast({ variant: 'destructive', title: "هەڵە لە شیکردنەوەی فایل", description: "AI نەیتوانی داتاکان دەربهێنێت." });
+                    console.error("AI analysis failed:", aiError);
+                    toast({ variant: 'destructive', title: "هەڵە لە شیکردنەوەی فایل", description: "AI نەیتوانی داتاکان دەربهێنێت." });
                 } finally {
                     setIsParsing(false);
-                     if (fileInputRef.current) {
-                        fileInputRef.current.value = "";
-                    }
+                    if (fileInputRef.current) fileInputRef.current.value = "";
                 }
             };
             reader.readAsDataURL(file);
-
         } catch (error) {
             console.error("File processing error:", error);
             toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "پرۆسێسی فایلەکە سەرکەوتوو نەبوو." });
             setIsParsing(false);
         }
     };
-    
+
     const triggerUpload = () => fileInputRef.current?.click();
 
     return (
@@ -150,15 +153,15 @@ function UploadSalesFormButton({ onSave }: { onSave: () => void }) {
                         <div className="text-center p-4">
                             <DialogTitle className="text-2xl font-bold">BedArt Group</DialogTitle>
                             <DialogDescription className="text-sm">
-                               وردبینی زانیارییەکان بکە و پاشەکەوتی بکە.
+                                وردبینی زانیارییەکان بکە و پاشەکەوتی بکە.
                             </DialogDescription>
                         </div>
                     </DialogHeader>
                     <div className="max-h-[80vh] overflow-y-auto p-2">
-                        <SalesForm 
-                            formId={null} 
-                            onSave={() => { onSave(); setDialogOpen(false); }} 
-                            initialItems={initialItems} 
+                        <SalesForm
+                            formId={null}
+                            onSave={() => { onSave(); setDialogOpen(false); }}
+                            initialItems={initialItems}
                         />
                     </div>
                 </DialogContent>
@@ -167,6 +170,7 @@ function UploadSalesFormButton({ onSave }: { onSave: () => void }) {
     );
 }
 
+// ── ReceiptPreview ─────────────────────────────────────────────────────────────
 function ReceiptPreview({ formId }: { formId: string }) {
     const firestore = useFirestore();
     const [printData, setPrintData] = useState<any>(null);
@@ -179,28 +183,27 @@ function ReceiptPreview({ formId }: { formId: string }) {
         const fetchPrintData = async () => {
             if (!firestore || !formId) return;
             setIsLoading(true);
-    
+
             try {
                 const formRef = doc(firestore, 'selling_forms', formId);
                 const productsRef = collection(firestore, `selling_forms/${formId}/selling_form_products`);
                 const paymentsRef = collection(firestore, `selling_forms/${formId}/payments`);
                 const companyInfoRef = doc(firestore, 'app_settings', 'companyInfo');
-    
+
                 const [formSnap, productsSnap, paymentsSnap, companyInfoSnap] = await Promise.all([
                     getDoc(formRef),
                     getDocs(productsRef),
                     getDocs(paymentsRef),
                     getDoc(companyInfoRef),
                 ]);
-    
+
                 if (!formSnap.exists()) {
                     toast({ variant: 'destructive', title: 'هەڵە', description: 'پسوولە نەدۆزرایەوە.' });
                     setIsLoading(false);
                     return;
                 }
-    
+
                 const rawData = formSnap.data();
-                // Ensure customerPhoneNumber is prioritized, even if it was saved as customerPhone previously
                 const standardizedData = {
                     ...rawData,
                     customerPhoneNumber: rawData.customerPhoneNumber || rawData.customerPhone || ""
@@ -212,7 +215,6 @@ function ReceiptPreview({ formId }: { formId: string }) {
                     payments: paymentsSnap.docs.map(d => d.data()),
                     companyInfo: companyInfoSnap.exists() ? companyInfoSnap.data() : null,
                 });
-    
             } catch (error) {
                 console.error("Error preparing print data:", error);
                 toast({ variant: 'destructive', title: 'هەڵەیەک ڕوویدا', description: 'ئامادەکردنی داتا بۆ بینین سەرکەوتوو نەبوو.' });
@@ -220,7 +222,7 @@ function ReceiptPreview({ formId }: { formId: string }) {
                 setIsLoading(false);
             }
         };
-        
+
         fetchPrintData();
     }, [formId, firestore, toast]);
 
@@ -257,15 +259,15 @@ function ReceiptPreview({ formId }: { formId: string }) {
     if (isLoading) {
         return <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
     }
-    
+
     if (!printData) {
-        return <div className="text-center p-8 text-muted-foreground">داتا بۆ ئەم پسوولەیە نەدۆزرایەوە.</div>
+        return <div className="text-center p-8 text-muted-foreground">داتا بۆ ئەم پسوولەیە نەدۆزرایەوە.</div>;
     }
 
     return (
         <div className="flex flex-col h-full overflow-hidden">
             <div className="flex-1 bg-slate-900/50 p-2 sm:p-8 overflow-auto rounded-lg flex justify-center items-start">
-                 <div className="shadow-2xl origin-top scale-[0.35] sm:scale-[0.5] md:scale-[0.75] lg:scale-[0.9] xl:scale-100 transition-transform">
+                <div className="shadow-2xl origin-top scale-[0.35] sm:scale-[0.5] md:scale-[0.75] lg:scale-[0.9] xl:scale-100 transition-transform">
                     <PrintableReceipt
                         ref={receiptRef}
                         formData={printData.formData}
@@ -276,8 +278,9 @@ function ReceiptPreview({ formId }: { formId: string }) {
                 </div>
             </div>
             <DialogFooter className="pt-4 flex flex-col sm:flex-row gap-3">
-                 <Button onClick={handleDownloadAsJPEG} disabled={isDownloading} className="w-full sm:w-auto h-12 text-base font-bold shadow-lg" size="lg">
-                    {isDownloading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FileDown className="mr-2 h-5 w-5" />}
+                {/* RTL fix: use ml-2 so icon (right) gets space from text (left) */}
+                <Button onClick={handleDownloadAsJPEG} disabled={isDownloading} className="w-full sm:w-auto h-12 text-base font-bold shadow-lg" size="lg">
+                    {isDownloading ? <Loader2 className="ml-2 h-5 w-5 animate-spin" /> : <FileDown className="ml-2 h-5 w-5" />}
                     دابەزاندنی پسوولە (JPEG A4)
                 </Button>
             </DialogFooter>
@@ -285,14 +288,16 @@ function ReceiptPreview({ formId }: { formId: string }) {
     );
 }
 
+// ── SalesList ──────────────────────────────────────────────────────────────────
 function SalesList() {
     const firestore = useFirestore();
     const { toast } = useToast();
     const [refreshKey, setRefreshKey] = useState(0);
     const [sortConfig, setSortConfig] = useState<{ key: keyof SellingFormType; direction: 'ascending' | 'descending' } | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState<PaymentStatus | 'all'>('all');
+    const [statusFilter, setStatusFilter] = useState<SaleStatus | 'all'>('all');
     const [typeFilter, setTypeFilter] = useState<PaymentType | 'all'>('all');
+    const [currentPage, setCurrentPage] = useState(1);
 
     const [editingFormId, setEditingFormId] = useState<string | null>(null);
     const [previewFormId, setPreviewFormId] = useState<string | null>(null);
@@ -309,14 +314,16 @@ function SalesList() {
 
     const { data: sales, isLoading: isLoadingSales } = useCollection<SellingFormType>(sellingFormsQuery);
 
+    // ── Filter + sort ──
     const sortedSales = useMemo(() => {
         if (!sales) return [];
         let sortableItems = [...sales];
 
         sortableItems = sortableItems.filter(sale => {
-            const searchMatch = searchTerm ? 
-                sale.customerName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                sale.formNumber.includes(searchTerm) : true;
+            const searchMatch = searchTerm
+                ? sale.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  sale.formNumber.includes(searchTerm)
+                : true;
             const statusMatch = statusFilter !== 'all' ? sale.paymentStatus === statusFilter : true;
             const typeMatch = typeFilter !== 'all' ? sale.paymentType === typeFilter : true;
             return searchMatch && statusMatch && typeMatch;
@@ -329,18 +336,18 @@ function SalesList() {
 
                 if (aValue === null || aValue === undefined) return 1;
                 if (bValue === null || bValue === undefined) return -1;
-                
+
                 if (sortConfig.key === 'formNumber') {
                     const numA = parseInt(String(aValue), 10);
                     const numB = parseInt(String(bValue), 10);
                     if (isNaN(numA) || isNaN(numB)) {
-                         if (String(aValue) < String(bValue)) return sortConfig.direction === 'ascending' ? -1 : 1;
-                         if (String(aValue) > String(bValue)) return sortConfig.direction === 'ascending' ? 1 : -1;
-                         return 0;
+                        if (String(aValue) < String(bValue)) return sortConfig.direction === 'ascending' ? -1 : 1;
+                        if (String(aValue) > String(bValue)) return sortConfig.direction === 'ascending' ? 1 : -1;
+                        return 0;
                     }
-                     if (numA < numB) return sortConfig.direction === 'ascending' ? -1 : 1;
-                     if (numA > numB) return sortConfig.direction === 'ascending' ? 1 : -1;
-                     return 0;
+                    if (numA < numB) return sortConfig.direction === 'ascending' ? -1 : 1;
+                    if (numA > numB) return sortConfig.direction === 'ascending' ? 1 : -1;
+                    return 0;
                 }
 
                 if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
@@ -351,6 +358,31 @@ function SalesList() {
         return sortableItems;
     }, [sales, sortConfig, searchTerm, statusFilter, typeFilter]);
 
+    // ── Reset to page 1 whenever filters or search change ──
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, statusFilter, typeFilter, sortConfig]);
+
+    // ── Pagination ──
+    const totalPages = Math.max(1, Math.ceil(sortedSales.length / PAGE_SIZE));
+    const paginatedSales = useMemo(
+        () => sortedSales.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+        [sortedSales, currentPage]
+    );
+
+    // ── Print: useEffect-driven so the DOM renders before window.print() ──
+    useEffect(() => {
+        if (isPrinting && printData) {
+            const timer = setTimeout(() => {
+                window.print();
+                setIsPrinting(false);
+                setPrintData(null);
+            }, 350);
+            return () => clearTimeout(timer);
+        }
+    }, [isPrinting, printData]);
+
+    // ── Sort helpers ──
     const requestSort = (key: keyof SellingFormType) => {
         let direction: 'ascending' | 'descending' = 'ascending';
         if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
@@ -359,12 +391,9 @@ function SalesList() {
         setSortConfig({ key, direction });
     };
 
-    const getSortIcon = (key: keyof SellingFormType) => {
-        if (!sortConfig || sortConfig.key !== key) {
-            return <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />;
-        }
-        return <ArrowUpDown className="mr-2 h-4 w-4 text-primary" />;
-    };
+    const getSortIcon = (key: keyof SellingFormType) => (
+        <ArrowUpDown className={`mr-2 h-4 w-4 ${sortConfig?.key === key ? 'text-primary' : 'text-muted-foreground'}`} />
+    );
 
     const handleFormSave = () => {
         setEditingFormId(null);
@@ -374,7 +403,6 @@ function SalesList() {
 
     const handleDelete = async (formId: string) => {
         if (!firestore) return;
-        
         try {
             const productsSoldRef = collection(firestore, `selling_forms/${formId}/selling_form_products`);
             const productsSoldSnapshot = await getDocs(productsSoldRef);
@@ -396,7 +424,6 @@ function SalesList() {
             const paymentsSnapshot = await getDocs(paymentsRef);
             await Promise.all(productsSoldSnapshot.docs.map(d => deleteDoc(d.ref)));
             await Promise.all(paymentsSnapshot.docs.map(p => deleteDoc(p.ref)));
-
             await deleteDoc(doc(firestore, 'selling_forms', formId));
 
             toast({
@@ -413,7 +440,6 @@ function SalesList() {
 
     const handleDirectPrint = async (formId: string) => {
         if (!firestore) return;
-        setIsPrinting(true);
         toast({ title: '...ئامادەکردنی پسوولە' });
 
         try {
@@ -435,30 +461,29 @@ function SalesList() {
                     ...rawData,
                     customerPhoneNumber: rawData.customerPhoneNumber || rawData.customerPhone || ""
                 };
-
+                // Setting printData triggers the useEffect which calls window.print()
                 setPrintData({
                     formData: standardizedData,
                     products: productsSnap.docs.map(d => d.data()),
                     payments: paymentsSnap.docs.map(d => d.data()),
                     companyInfo: companyInfoSnap.exists() ? companyInfoSnap.data() : null,
                 });
-                
-                setTimeout(() => {
-                    window.print();
-                    setIsPrinting(false);
-                    setPrintData(null);
-                }, 500);
+                setIsPrinting(true);
             }
         } catch (error) {
             console.error("Print failed:", error);
+            toast({ variant: 'destructive', title: "هەڵەیەک ڕوویدا", description: "چاپکردنی پسوولە سەرکەوتوو نەبوو." });
             setIsPrinting(false);
         }
     };
 
+    // ── Currency formatter ──
+    const fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
+
     return (
         <>
             <PageHeader title="بەڕێوەبردنی فرۆشتن" description="تۆماری فۆڕمەکانی فرۆشتن لێرە ببینە و زیاد بکە.">
-                 <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
                     <Button onClick={() => setIsCreateDialogOpen(true)}>
                         <PlusCircle />
                         دروستکردنی فۆڕمی فرۆشتن
@@ -467,11 +492,12 @@ function SalesList() {
                 </div>
             </PageHeader>
 
+            {/* ── Create dialog ── */}
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                 <DialogContent className="sm:max-w-4xl" dir="rtl">
                     <DialogHeader>
                         <div className="text-center p-4">
-                           <DialogTitle className="text-2xl font-bold">BedArt Group</DialogTitle>
+                            <DialogTitle className="text-2xl font-bold">BedArt Group</DialogTitle>
                             <DialogDescription className="text-sm">تەختی نوستن . دۆشەک . پشتی</DialogDescription>
                         </div>
                     </DialogHeader>
@@ -481,11 +507,12 @@ function SalesList() {
                 </DialogContent>
             </Dialog>
 
+            {/* ── Edit dialog ── */}
             <Dialog open={!!editingFormId} onOpenChange={(open) => !open && setEditingFormId(null)}>
                 <DialogContent className="sm:max-w-4xl" dir="rtl">
                     <DialogHeader>
                         <div className="text-center p-4">
-                           <DialogTitle className="text-2xl font-bold">BedArt Group</DialogTitle>
+                            <DialogTitle className="text-2xl font-bold">BedArt Group</DialogTitle>
                             <DialogDescription className="text-sm">دەستکاریکردنی فۆڕم</DialogDescription>
                         </div>
                     </DialogHeader>
@@ -495,6 +522,7 @@ function SalesList() {
                 </DialogContent>
             </Dialog>
 
+            {/* ── Receipt preview dialog ── */}
             <Dialog open={!!previewFormId} onOpenChange={(open) => !open && setPreviewFormId(null)}>
                 <DialogContent className="max-w-[95vw] sm:max-w-5xl h-[90vh] flex flex-col p-4" dir="rtl">
                     <DialogHeader>
@@ -504,6 +532,7 @@ function SalesList() {
                 </DialogContent>
             </Dialog>
 
+            {/* ── Direct print area (hidden, triggered by useEffect) ── */}
             {isPrinting && printData && (
                 <div id="printable-area" className="fixed inset-0 z-[9999] bg-white">
                     <PrintableReceipt
@@ -516,10 +545,12 @@ function SalesList() {
                 </div>
             )}
 
+            {/* ── Main table card ── */}
             <Card>
                 <CardHeader>
                     <CardTitle>لیستی فرۆشتنەکان</CardTitle>
                     <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-4">
+                        {/* Search */}
                         <div className="relative w-full max-w-sm">
                             <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
@@ -529,8 +560,9 @@ function SalesList() {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
+                        {/* Filters */}
                         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-                             <Select dir="rtl" value={statusFilter} onValueChange={(value) => setStatusFilter(value as any)}>
+                            <Select dir="rtl" value={statusFilter} onValueChange={(value) => setStatusFilter(value as any)}>
                                 <SelectTrigger className="w-full md:w-[180px]"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     {paymentStatusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
@@ -545,125 +577,192 @@ function SalesList() {
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent>
-                    <Table className="hidden md:table">
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="text-center">
-                                    <Button variant="ghost" onClick={() => requestSort('formNumber')}>
-                                        {getSortIcon('formNumber')} ژ. فۆڕم
-                                    </Button>
-                                </TableHead>
-                                <TableHead className="text-center">
-                                     <Button variant="ghost" onClick={() => requestSort('customerName')}>
-                                        {getSortIcon('customerName')} کڕیار
-                                    </Button>
-                                </TableHead>
-                                <TableHead className="text-center">
-                                     <Button variant="ghost" onClick={() => requestSort('issueDate')}>
-                                        {getSortIcon('issueDate')} بەروار
-                                    </Button>
-                                </TableHead>
-                                <TableHead className="text-center">
-                                     <Button variant="ghost" onClick={() => requestSort('totalPrice')}>
-                                        {getSortIcon('totalPrice')} بڕی فرۆشراو
-                                    </Button>
-                                </TableHead>
-                                <TableHead className="text-center">
-                                     <Button variant="ghost" onClick={() => requestSort('paymentStatus')}>
-                                        {getSortIcon('paymentStatus')} بارودۆخ
-                                    </Button>
-                                </TableHead>
-                                <TableHead className="text-center">کردارەکان</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {isLoadingSales ? (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="h-24 text-center">
-                                        <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-                                    </TableCell>
-                                </TableRow>
-                            ) : !sortedSales || sortedSales.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">هیچ فرۆشێک بەم پێوەرانە نەدۆزرایەوە.</TableCell>
-                                </TableRow>
-                            ) : (
-                                sortedSales.map((sale) => (
-                                <TableRow key={sale.id}>
-                                    <TableCell className="font-medium text-center">{sale.formNumber}</TableCell>
-                                    <TableCell className="text-center">{sale.customerName}</TableCell>
-                                    <TableCell className="text-center">{sale.issueDate}</TableCell>
-                                    <TableCell className="text-center">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(sale.totalPrice || 0)}</TableCell>
-                                    <TableCell className="text-center">
-                                        <Badge 
-                                            variant={sale.paymentStatus === 'Fully Paid' ? 'default' : sale.paymentStatus === 'Unpaid' ? 'destructive' : 'secondary'} 
-                                            className={sale.paymentStatus === 'Fully Paid' ? 'bg-green-600 text-white' : ''}
-                                        >
-                                            {paymentStatusOptions.find(o => o.value === sale.paymentStatus)?.label || sale.paymentStatus}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        <div className="flex items-center justify-center gap-2">
-                                            <Button variant="ghost" size="icon" onClick={() => setEditingFormId(sale.id)}>
-                                                <Edit className="h-4 w-4 text-blue-500" />
-                                            </Button>
-                                            
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button variant="ghost" size="icon">
-                                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                                    </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent dir="rtl">
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>دڵنیایت لە سڕینەوەی ئەم فۆڕمە؟</AlertDialogTitle>
-                                                        <AlertDialogDescription>ئەم کردارە پاشگەزبوونەوەی نییە.</AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDelete(sale.id)} className="bg-destructive hover:bg-destructive/90">بەڵێ، بسڕەوە</AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
 
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon">
-                                                        <FileSpreadsheet className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent dir="rtl">
-                                                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setPreviewFormId(sale.id); }}>
-                                                        بینینی پسوولە
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleDirectPrint(sale.id); }}>
-                                                        چاپکردنی پسوولە
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </div>
-                                    </TableCell>
+                <CardContent>
+                    {/* ── Desktop table ── */}
+                    <TooltipProvider delayDuration={300}>
+                        <Table className="hidden md:table">
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="text-center">
+                                        <Button variant="ghost" onClick={() => requestSort('formNumber')}>
+                                            {getSortIcon('formNumber')} ژ. فۆڕم
+                                        </Button>
+                                    </TableHead>
+                                    <TableHead className="text-center">
+                                        <Button variant="ghost" onClick={() => requestSort('customerName')}>
+                                            {getSortIcon('customerName')} کڕیار
+                                        </Button>
+                                    </TableHead>
+                                    <TableHead className="text-center">
+                                        <Button variant="ghost" onClick={() => requestSort('issueDate')}>
+                                            {getSortIcon('issueDate')} بەروار
+                                        </Button>
+                                    </TableHead>
+                                    <TableHead className="text-center">
+                                        <Button variant="ghost" onClick={() => requestSort('totalPrice')}>
+                                            {getSortIcon('totalPrice')} بڕی فرۆشراو
+                                        </Button>
+                                    </TableHead>
+                                    <TableHead className="text-center">
+                                        <Button variant="ghost" onClick={() => requestSort('paymentStatus')}>
+                                            {getSortIcon('paymentStatus')} بارودۆخ
+                                        </Button>
+                                    </TableHead>
+                                    <TableHead className="text-center">کردارەکان</TableHead>
                                 </TableRow>
-                            )))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {isLoadingSales ? (
+                                    /* ── Loading skeleton ── */
+                                    [...Array(5)].map((_, i) => (
+                                        <TableRow key={i} className="animate-pulse">
+                                            {[...Array(6)].map((_, j) => (
+                                                <TableCell key={j}>
+                                                    <div className="h-4 bg-muted rounded w-3/4 mx-auto" />
+                                                </TableCell>
+                                            ))}
+                                        </TableRow>
+                                    ))
+                                ) : !paginatedSales || paginatedSales.length === 0 ? (
+                                    /* ── Empty state ── */
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="py-16 text-center">
+                                            <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                                                <FileSpreadsheet className="h-12 w-12 opacity-30" />
+                                                <p className="text-base font-medium">هیچ فرۆشێک بەم پێوەرانە نەدۆزرایەوە.</p>
+                                                {(searchTerm || statusFilter !== 'all' || typeFilter !== 'all') && (
+                                                    <p className="text-sm opacity-70">فلتەرەکانت بگۆڕە یان پاک بکەرەوە.</p>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    paginatedSales.map((sale) => (
+                                        <TableRow key={sale.id} className="group transition-colors hover:bg-muted/30">
+                                            <TableCell className="font-medium text-center">{sale.formNumber}</TableCell>
+                                            <TableCell className="text-center">{sale.customerName}</TableCell>
+                                            <TableCell className="text-center">{sale.issueDate}</TableCell>
+                                            <TableCell className="text-center font-mono text-sm">{fmt.format(sale.totalPrice || 0)}</TableCell>
+                                            <TableCell className="text-center">
+                                                <Badge
+                                                    variant={sale.paymentStatus === 'Fully Paid' ? 'default' : sale.paymentStatus === 'Unpaid' ? 'destructive' : 'secondary'}
+                                                    className={sale.paymentStatus === 'Fully Paid' ? 'bg-green-600 text-white' : ''}
+                                                >
+                                                    {paymentStatusOptions.find(o => o.value === sale.paymentStatus)?.label || sale.paymentStatus}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <div className="flex items-center justify-center gap-1">
+                                                    {/* Edit */}
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 hover:bg-blue-500/10 hover:text-blue-400 transition-colors"
+                                                                onClick={() => setEditingFormId(sale.id)}
+                                                            >
+                                                                <Edit className="h-4 w-4 text-blue-500" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent><p>دەستکاریکردن</p></TooltipContent>
+                                                    </Tooltip>
+
+                                                    {/* Delete */}
+                                                    <AlertDialog>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <AlertDialogTrigger asChild>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-8 w-8 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+                                                                    >
+                                                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                                                    </Button>
+                                                                </AlertDialogTrigger>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>سڕینەوە</p></TooltipContent>
+                                                        </Tooltip>
+                                                        <AlertDialogContent dir="rtl">
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>دڵنیایت لە سڕینەوەی ئەم فۆڕمە؟</AlertDialogTitle>
+                                                                <AlertDialogDescription>ئەم کردارە پاشگەزبوونەوەی نییە. کاڵاکان دووبارە بۆ کۆگا دەگەڕێنرێنەوە.</AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => handleDelete(sale.id)} className="bg-destructive hover:bg-destructive/90">بەڵێ، بسڕەوە</AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+
+                                                    {/* Receipt / Print */}
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <span>
+                                                                <DropdownMenu>
+                                                                    <DropdownMenuTrigger asChild>
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="h-8 w-8 hover:bg-muted transition-colors"
+                                                                        >
+                                                                            <FileSpreadsheet className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </DropdownMenuTrigger>
+                                                                    <DropdownMenuContent>
+                                                                        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setPreviewFormId(sale.id); }}>
+                                                                            بینینی پسوولە
+                                                                        </DropdownMenuItem>
+                                                                        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleDirectPrint(sale.id); }}>
+                                                                            چاپکردنی پسوولە
+                                                                        </DropdownMenuItem>
+                                                                    </DropdownMenuContent>
+                                                                </DropdownMenu>
+                                                            </span>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent><p>پسوولە</p></TooltipContent>
+                                                    </Tooltip>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </TooltipProvider>
+
+                    {/* ── Mobile cards ── */}
                     <div className="md:hidden space-y-4">
                         {isLoadingSales ? (
-                            <div className="flex justify-center items-center h-48"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></div>
-                        ) : !sortedSales || sortedSales.length === 0 ? (
-                            <div className="py-8 text-center text-muted-foreground">هیچ فرۆشێک بەم پێوەرانە نەدۆزرایەوە.</div>
+                            [...Array(3)].map((_, i) => (
+                                <Card key={i} className="animate-pulse">
+                                    <CardHeader>
+                                        <div className="h-5 bg-muted rounded w-1/2" />
+                                        <div className="h-3 bg-muted rounded w-1/3 mt-2" />
+                                    </CardHeader>
+                                    <CardContent><div className="h-4 bg-muted rounded w-full" /></CardContent>
+                                </Card>
+                            ))
+                        ) : !paginatedSales || paginatedSales.length === 0 ? (
+                            <div className="py-16 text-center">
+                                <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                                    <FileSpreadsheet className="h-12 w-12 opacity-30" />
+                                    <p className="text-base font-medium">هیچ فرۆشێک بەم پێوەرانە نەدۆزرایەوە.</p>
+                                </div>
+                            </div>
                         ) : (
-                             sortedSales.map((sale) => (
-                                <Card key={sale.id}>
+                            paginatedSales.map((sale) => (
+                                <Card key={sale.id} className="transition-shadow hover:shadow-md">
                                     <CardHeader>
                                         <div className="flex justify-between items-start">
                                             <div>
-                                                <CardTitle>{sale.customerName}</CardTitle>
-                                                <CardDescription>فۆڕمی #{sale.formNumber} - {sale.issueDate}</CardDescription>
+                                                <CardTitle className="text-base">{sale.customerName}</CardTitle>
+                                                <CardDescription>فۆڕمی #{sale.formNumber} — {sale.issueDate}</CardDescription>
                                             </div>
-                                             <Badge 
-                                                variant={sale.paymentStatus === 'Fully Paid' ? 'default' : sale.paymentStatus === 'Unpaid' ? 'destructive' : 'secondary'} 
+                                            <Badge
+                                                variant={sale.paymentStatus === 'Fully Paid' ? 'default' : sale.paymentStatus === 'Unpaid' ? 'destructive' : 'secondary'}
                                                 className={sale.paymentStatus === 'Fully Paid' ? 'bg-green-600 text-white' : ''}
                                             >
                                                 {paymentStatusOptions.find(o => o.value === sale.paymentStatus)?.label || sale.paymentStatus}
@@ -672,13 +771,18 @@ function SalesList() {
                                     </CardHeader>
                                     <CardContent>
                                         <div className="flex justify-between items-center">
-                                            <span className="text-muted-foreground">کۆی گشتی:</span>
-                                            <span className="font-semibold">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(sale.totalPrice || 0)}</span>
+                                            <span className="text-muted-foreground text-sm">کۆی گشتی:</span>
+                                            <span className="font-semibold font-mono text-sm">{fmt.format(sale.totalPrice || 0)}</span>
                                         </div>
                                     </CardContent>
-                                    <CardFooter className="flex justify-end gap-2">
-                                         <AlertDialog>
-                                            <AlertDialogTrigger asChild><Button variant="ghost" size="sm"><Trash2 className="h-4 w-4 mr-2 text-destructive" />سڕینەوە</Button></AlertDialogTrigger>
+                                    <CardFooter className="flex justify-end gap-2 flex-wrap">
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="sm" className="text-destructive hover:bg-red-500/10">
+                                                    {/* RTL fix: ml-2 so icon (right) has space from text (left) */}
+                                                    <Trash2 className="h-4 w-4 ml-2" />سڕینەوە
+                                                </Button>
+                                            </AlertDialogTrigger>
                                             <AlertDialogContent dir="rtl">
                                                 <AlertDialogHeader><AlertDialogTitle>دڵنیایت؟</AlertDialogTitle></AlertDialogHeader>
                                                 <AlertDialogFooter>
@@ -687,23 +791,82 @@ function SalesList() {
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
-                                         <Button variant="ghost" size="sm" onClick={() => setEditingFormId(sale.id)}>
-                                            <Edit className="h-4 w-4 mr-2 text-blue-500" />دەستکاری
-                                         </Button>
-                                         <Button variant="ghost" size="sm" onClick={() => setPreviewFormId(sale.id)}>
-                                            <FileSpreadsheet className="h-4 w-4 mr-2" />وردەکاری
-                                         </Button>
+                                        <Button variant="ghost" size="sm" onClick={() => setEditingFormId(sale.id)} className="hover:bg-blue-500/10 hover:text-blue-400">
+                                            <Edit className="h-4 w-4 ml-2 text-blue-500" />دەستکاری
+                                        </Button>
+                                        <Button variant="ghost" size="sm" onClick={() => setPreviewFormId(sale.id)} className="hover:bg-muted">
+                                            <FileSpreadsheet className="h-4 w-4 ml-2" />وردەکاری
+                                        </Button>
                                     </CardFooter>
                                 </Card>
                             ))
                         )}
                     </div>
                 </CardContent>
+
+                {/* ── Pagination footer ── */}
+                {!isLoadingSales && sortedSales.length > 0 && (
+                    <CardFooter className="flex items-center justify-between border-t pt-4 flex-wrap gap-3">
+                        <p className="text-sm text-muted-foreground">
+                            {sortedSales.length} تۆمار — پەڕەی {currentPage} لە {totalPages}
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                disabled={currentPage === 1}
+                                className="h-8 w-8 p-0"
+                                aria-label="پەڕەی پێشوو"
+                            >
+                                {/* In RTL, previous page = ChevronRight (pointing right = going back) */}
+                                <ChevronRight className="h-4 w-4" />
+                            </Button>
+
+                            {/* Page number pills */}
+                            {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                                .reduce<(number | 'ellipsis')[]>((acc, p, idx, arr) => {
+                                    if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('ellipsis');
+                                    acc.push(p);
+                                    return acc;
+                                }, [])
+                                .map((p, idx) =>
+                                    p === 'ellipsis' ? (
+                                        <span key={`e-${idx}`} className="text-muted-foreground text-sm px-1">…</span>
+                                    ) : (
+                                        <Button
+                                            key={p}
+                                            variant={currentPage === p ? 'default' : 'outline'}
+                                            size="sm"
+                                            onClick={() => setCurrentPage(p as number)}
+                                            className="h-8 w-8 p-0 text-xs"
+                                        >
+                                            {p}
+                                        </Button>
+                                    )
+                                )
+                            }
+
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                disabled={currentPage === totalPages}
+                                className="h-8 w-8 p-0"
+                                aria-label="پەڕەی داهاتوو"
+                            >
+                                <ChevronLeft className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </CardFooter>
+                )}
             </Card>
         </>
     );
 }
 
+// ── Page entry point ───────────────────────────────────────────────────────────
 export default function SalesPage({ params, searchParams }: { params: Promise<any>, searchParams: Promise<any> }) {
     use(params);
     use(searchParams);

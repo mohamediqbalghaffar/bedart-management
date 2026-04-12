@@ -20,6 +20,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DatePicker } from '@/components/ui/date-picker';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConfidentialBlur } from '@/components/shared/confidential-blur';
@@ -49,7 +50,7 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
     const [isProcessing, setIsProcessing] = useState(true);
     const [processingError, setProcessingError] = useState<Error | null>(null);
 
-    const [stats, setStats] = useState({ totalRevenue: 0, totalExpensesUSD: 0, buyingFormsCount: 0, lowStockCount: 0 });
+    const [stats, setStats] = useState({ totalRevenue: 0, totalExpensesAll: 0, netProfit: 0, buyingFormsCount: 0, lowStockCount: 0 });
     const [chartData, setChartData] = useState<any[]>([]);
     const [dialogData, setDialogData] = useState<any>({
         sales: { sales: [], perProduct: [], totalQuantity: 0, totalRevenue: 0, allSalesProducts: [] },
@@ -74,6 +75,7 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
     const collectionError = salesError || expensesError || buyingFormsError || productsError || suppliersError;
 
     useEffect(() => {
+        let cancelled = false; // Race-condition guard: prevents stale async setState calls
         if (isLoadingCollections || collectionError || !firestore || !salesData || !expensesData || !buyingFormsData || !productsData || !suppliersData) {
             if (!isLoadingCollections) {
                  setIsProcessing(false);
@@ -86,18 +88,22 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
             setProcessingError(null);
             try {
                 const totalRevenue = salesData.reduce((acc, sale) => acc + sale.totalPrice, 0);
-                
+
                 const iqdToUsdRate = 1500;
                 const { totalUSD, totalIQD } = expensesData.reduce((acc, expense) => {
                     if (expense.currency === 'IQD') acc.totalIQD += expense.amount;
                     else acc.totalUSD += expense.amount;
                     return acc;
                 }, { totalUSD: 0, totalIQD: 0 });
-                const totalExpensesFromIqdInUSD = totalIQD / iqdToUsdRate;
 
+                // Operational expenses only (rent, salary, utilities, etc.) → USD
+                const totalExpensesOperational = totalUSD + (totalIQD / iqdToUsdRate);
+                // Purchase COGS — kept separate for transparency
                 const totalPurchaseCost = buyingFormsData.reduce((acc, form) => acc + (form.totalAmount || 0), 0);
-                
-                const totalExpensesUSD = totalUSD + totalExpensesFromIqdInUSD + totalPurchaseCost;
+                // Combined total costs shown on the expenses stat card
+                const totalExpensesAll = totalExpensesOperational + totalPurchaseCost;
+                // Net Profit = Revenue − all costs (accounting formula)
+                const netProfit = totalRevenue - totalExpensesAll;
 
                 const groupedProductsMap = new Map<string, GroupedProduct>();
                 productsData.forEach(p => {
@@ -112,7 +118,7 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
                 const groupedProducts = Array.from(groupedProductsMap.values());
                 const lowStockCount = groupedProducts.filter(p => p.totalQuantity > 0 && p.totalQuantity < 5).length;
                 
-                setStats({ totalRevenue, totalExpensesUSD, buyingFormsCount: buyingFormsData.length, lowStockCount });
+                if (!cancelled) setStats({ totalRevenue, totalExpensesAll, netProfit, buyingFormsCount: buyingFormsData.length, lowStockCount });
 
                 const dateMap = new Map<string, { sales: number; expenses: number; netProfit: number }>();
                 const startDate = startOfDay(parseISO(dateRange.from));
@@ -146,7 +152,7 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
 
                 dateMap.forEach((data) => { data.netProfit = data.sales - data.expenses; });
                 const finalChartData = Array.from(dateMap.entries()).map(([date, data]) => ({ date, ...data }));
-                setChartData(finalChartData);
+                if (!cancelled) setChartData(finalChartData);
 
                 const salesProductsPromises = salesData.map(s => getDocs(collection(firestore, `selling_forms/${s.id}/selling_form_products`)));
                 const buyingFormsProductsPromises = buyingFormsData.map(b => getDocs(collection(firestore, `buying_forms/${b.id}/buying_form_products`)));
@@ -180,7 +186,7 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
                     return acc;
                 }, { totalQuantity: 0, totalCost: 0, perProduct: new Map<string, { totalQuantity: number; totalCost: number }>() });
 
-                setDialogData({
+                if (!cancelled) setDialogData({
                     sales: {
                         sales: salesData,
                         perProduct: Array.from(salesDialogSummary.perProduct.entries()).map(([productName, data]) => ({ productName, ...data })),
@@ -198,14 +204,15 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
                     lowStockProducts: groupedProducts.filter(p => p.totalQuantity > 0 && p.totalQuantity < 5),
                 });
             } catch (err: any) {
-                console.error("Dashboard data processing failed:", err);
-                setProcessingError(err);
+                if (!cancelled) setProcessingError(err);
             } finally {
-                setIsProcessing(false);
+                if (!cancelled) setIsProcessing(false);
             }
         };
 
         processAllData();
+        // Cleanup: mark as cancelled so no stale setState calls fire after re-render
+        return () => { cancelled = true; };
     }, [dateRange, firestore, salesData, expensesData, buyingFormsData, productsData, suppliersData, isLoadingCollections, collectionError]);
 
     return { isLoading: isLoadingCollections || isProcessing, error: collectionError || processingError, stats, chartData, dialogData };
@@ -239,7 +246,7 @@ function SalesDetailDialog({ data }: { data: any }) {
         
         return {
             sales: filteredSales,
-            perProduct: Array.from(summary.perProduct.entries()).map(([productName, data] : [string, any]) => ({ productName, ...data })),
+            perProduct: Array.from(summary.perProduct.entries() as Iterable<[string, { totalQuantity: number; totalRevenue: number }]>).map(([productName, data]) => ({ productName, ...data })),
             totalQuantity: summary.totalQuantity,
             totalRevenue: summary.totalRevenue,
         }
@@ -486,24 +493,25 @@ function LowStockDetailDialog({ products }: { products: GroupedProduct[] }) {
 }
 
 function DashboardStats({ stats, dialogData }: { stats: any, dialogData: any }) {
-    const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 });
-
-    const expenseDescription = `کۆی گشتی خەرجی و کڕینەکان بە دۆلار.`;
+    // Standard 2-decimal accounting format: $1,541,458.16
+    const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     return (
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 w-full">
-             <Dialog><DialogTrigger asChild><div className="cursor-pointer w-full"><StatCard title="کۆی فرۆش" value={<ConfidentialBlur>{currencyFormatter.format(stats.totalRevenue)}</ConfidentialBlur>} icon={ShoppingCart} description="کۆی گشتی فرۆشتن لە ماوەی دیاریکراودا." /></div></DialogTrigger>
+            {/* ── Total Sales ── */}
+            <Dialog><DialogTrigger asChild><div className="cursor-pointer w-full"><StatCard title="کۆی فرۆش" value={<ConfidentialBlur>{currencyFormatter.format(stats.totalRevenue)}</ConfidentialBlur>} icon={ShoppingCart} description="کۆی گشتی فرۆشتن لە ماوەی دیاریکراودا." /></div></DialogTrigger>
                 <DialogContent className="sm:max-w-4xl" dir="rtl"><DialogHeader><DialogTitle>وردەکاریی فرۆشتن</DialogTitle><DialogDescription>پوختەی فرۆشتنەکان لە ماوەی دیاریکراودا.</DialogDescription></DialogHeader><SalesDetailDialog data={dialogData.sales} /></DialogContent>
             </Dialog>
 
+            {/* ── Total Expenses (operational + purchases) ── */}
             <Dialog>
                 <DialogTrigger asChild>
                     <div className="cursor-pointer w-full">
-                        <StatCard 
-                            title="کۆی خەرجی" 
-                            value={<ConfidentialBlur>{currencyFormatter.format(stats.totalExpensesUSD)}</ConfidentialBlur>} 
-                            icon={DollarSign} 
-                            description={expenseDescription}
+                        <StatCard
+                            title="کۆی خەرجی"
+                            value={<ConfidentialBlur>{currencyFormatter.format(stats.totalExpensesAll)}</ConfidentialBlur>}
+                            icon={DollarSign}
+                            description="کۆی گشتی خەرجی و کڕینەکان بە دۆلار."
                         />
                     </div>
                 </DialogTrigger>
@@ -516,13 +524,26 @@ function DashboardStats({ stats, dialogData }: { stats: any, dialogData: any }) 
                 </DialogContent>
             </Dialog>
 
+            {/* ── Purchase Invoice Count ── */}
             <Dialog><DialogTrigger asChild><div className="cursor-pointer w-full"><StatCard title="ژمارەی پسوولەی کڕین" value={<ConfidentialBlur>{stats.buyingFormsCount.toString()}</ConfidentialBlur>} icon={Package} description="کۆی گشتی پسوولەی کڕین لە ماوەی دیاریکراودا." /></div></DialogTrigger>
                 <DialogContent className="sm:max-w-4xl" dir="rtl"><DialogHeader><DialogTitle>وردەکاریی کڕینەکان</DialogTitle><DialogDescription>پوختەی کڕینەکان لە ماوەی دیاریکراودا.</DialogDescription></DialogHeader><PurchasesDetailDialog data={dialogData.purchases} /></DialogContent>
             </Dialog>
-            
+
+            {/* ── Low Stock ── */}
             <Dialog><DialogTrigger asChild><div className="cursor-pointer w-full"><StatCard title="کاڵای کەم لە کۆگا" value={<ConfidentialBlur>{stats.lowStockCount.toString()}</ConfidentialBlur>} icon={Archive} description="کاڵاکان کە بڕیان لەنێوان 1 بۆ 4 دانەیە" isNegative={stats.lowStockCount > 0} /></div></DialogTrigger>
                 <DialogContent className="sm:max-w-lg" dir="rtl"><DialogHeader><DialogTitle>کاڵا کەمبووەکان</DialogTitle><DialogDescription>لیستی ئەو کاڵایانەی کە بڕیان لەنێوان 1 بۆ 4 دانەیە.</DialogDescription></DialogHeader><LowStockDetailDialog products={dialogData.lowStockProducts} /></DialogContent>
             </Dialog>
+
+            {/* ── Net Profit — full-width prominent KPI ── */}
+            <div className="sm:col-span-2 lg:col-span-4">
+                <StatCard
+                    title="قازانجی پوخت"
+                    value={<ConfidentialBlur>{currencyFormatter.format(stats.netProfit)}</ConfidentialBlur>}
+                    icon={stats.netProfit >= 0 ? TrendingUp : TrendingDown}
+                    description="قازانج = کۆی فرۆش − کۆی خەرجی − کۆی کڕین"
+                    isNegative={stats.netProfit < 0}
+                />
+            </div>
         </div>
     );
 }
@@ -575,15 +596,15 @@ function RecentActivityChart({ data }: { data: any[] }) {
                         <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={currencyFormatter} tick={{ fill: 'rgba(255, 255, 255, 0.7)', fontSize: 10 }}/>
                         <ChartTooltip cursor={true} content={<ChartTooltipContent labelFormatter={(label) => formatDate(parseISO(label), 'eeee, d MMMM yyyy')} indicator="dot" labelClassName="text-white" className="bg-card/80 backdrop-blur-sm text-white border-border/50" formatter={(value, name, item) => ( <div className="flex items-center gap-2"><div style={{ backgroundColor: item.color }} className="w-2.5 h-2.5 rounded-full" /><div className="flex justify-between w-full"><span className="text-muted-foreground">{chartConfig[name as keyof typeof chartConfig].label}: </span><span className="font-bold ml-2">{currencyFormatter(value as number)}</span></div></div> )}/>}/>
                         <defs><linearGradient id="fillSales" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-sales)" stopOpacity={0.8} /><stop offset="95%" stopColor="var(--color-sales)" stopOpacity={0.1} /></linearGradient><linearGradient id="fillExpenses" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-expenses)" stopOpacity={0.8} /><stop offset="95%" stopColor="var(--color-expenses)" stopOpacity={0.1} /></linearGradient><linearGradient id="fillNetProfit" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-netProfit)" stopOpacity={0.8} /><stop offset="95%" stopColor="var(--color-netProfit)" stopOpacity={0.1} /></linearGradient></defs>
-                        {activeSubjects.sales && <Area dataKey="sales" type="natural" fill="url(#fillSales)" stroke="var(--color-sales)" stackId="a" />}
-                        {activeSubjects.expenses && <Area dataKey="expenses" type="natural" fill="url(#fillExpenses)" stroke="var(--color-expenses)" stackId="c" />}
-                        {activeSubjects.netProfit && <Area dataKey="netProfit" type="natural" fill="url(#fillNetProfit)" stroke="var(--color-netProfit)" stackId="d" />}
+                        {activeSubjects.sales && <Area dataKey="sales" type="natural" fill="url(#fillSales)" stroke="var(--color-sales)" stackId="a" isAnimationActive animationDuration={700} animationEasing="ease-out" />}
+                        {activeSubjects.expenses && <Area dataKey="expenses" type="natural" fill="url(#fillExpenses)" stroke="var(--color-expenses)" stackId="c" isAnimationActive animationDuration={900} animationEasing="ease-out" />}
+                        {activeSubjects.netProfit && <Area dataKey="netProfit" type="natural" fill="url(#fillNetProfit)" stroke="var(--color-netProfit)" stackId="d" isAnimationActive animationDuration={1100} animationEasing="ease-out" />}
                     </AreaChart>
                 </ChartContainer>
                 ) : (
                  <ChartContainer config={chartConfig} className="h-80 w-full min-w-0">
                     <BarChart accessibilityLayer data={totalData.filter(d => activeSubjects[d.name.includes('فرۆش') ? 'sales' : d.name.includes('خەرجی') ? 'expenses' : 'netProfit'])}>
-                         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)" /><XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={(value) => value} tick={{ fill: 'rgba(255, 255, 255, 0.7)', fontSize: 10 }} /><YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={currencyFormatter} tick={{ fill: 'rgba(255, 255, 255, 0.7)', fontSize: 10 }}/><ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" labelClassName="text-white" className="bg-card/80 backdrop-blur-sm text-white border-border/50" />} /><Bar dataKey="value" radius={8} />
+                         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)" /><XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={(value) => value} tick={{ fill: 'rgba(255, 255, 255, 0.7)', fontSize: 10 }} /><YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={currencyFormatter} tick={{ fill: 'rgba(255, 255, 255, 0.7)', fontSize: 10 }}/><ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" labelClassName="text-white" className="bg-card/80 backdrop-blur-sm text-white border-border/50" />} /><Bar dataKey="value" radius={8} isAnimationActive animationDuration={800} animationEasing="ease-out" />
                     </BarChart>
                 </ChartContainer>
                 )}
@@ -618,55 +639,19 @@ export default function DashboardPage({ params, searchParams }: { params: Promis
                  <div className="flex flex-wrap items-center gap-3 w-full">
                     <div className="flex items-center gap-2 flex-1 min-w-[140px]">
                         <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">لە:</span>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                variant={"outline"}
-                                className={cn(
-                                    "w-full justify-start text-right font-normal text-xs h-9 px-3",
-                                    !dateRange.from && "text-muted-foreground"
-                                )}
-                                >
-                                <CalendarIcon className="ml-2 h-3 w-3" />
-                                {dateRange.from ? formatDate(dateRange.from, "dd/MM/yyyy") : <span>بەروارێک</span>}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                mode="single"
-                                selected={dateRange.from}
-                                onSelect={(date) => setDateRange(prev => ({...prev, from: date || prev.from }))}
-                                initialFocus
-                                locale={ckb}
-                                />
-                            </PopoverContent>
-                        </Popover>
+                        <DatePicker
+                            value={dateRange.from ? formatDate(dateRange.from, 'yyyy-MM-dd') : ""}
+                            onChange={(val) => setDateRange(prev => ({...prev, from: val ? parseISO(val) : new Date() }))}
+                            className="flex-1"
+                        />
                     </div>
                     <div className="flex items-center gap-2 flex-1 min-w-[140px]">
                         <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">بۆ:</span>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                variant={"outline"}
-                                className={cn(
-                                    "w-full justify-start text-right font-normal text-xs h-9 px-3",
-                                    !dateRange.to && "text-muted-foreground"
-                                )}
-                                >
-                                <CalendarIcon className="ml-2 h-3 w-3" />
-                                {dateRange.to ? formatDate(dateRange.to, "dd/MM/yyyy") : <span>بەروارێک</span>}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                mode="single"
-                                selected={dateRange.to}
-                                onSelect={(date) => setDateRange(prev => ({...prev, to: date || prev.to }))}
-                                initialFocus
-                                locale={ckb}
-                                />
-                            </PopoverContent>
-                        </Popover>
+                        <DatePicker
+                            value={dateRange.to ? formatDate(dateRange.to, 'yyyy-MM-dd') : ""}
+                            onChange={(val) => setDateRange(prev => ({...prev, to: val ? parseISO(val) : new Date() }))}
+                            className="flex-1"
+                        />
                     </div>
                 </div>
             </PageHeader>

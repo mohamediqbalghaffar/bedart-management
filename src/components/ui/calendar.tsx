@@ -1,65 +1,15 @@
-
 "use client"
 
 import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { DayPicker, useNavigation, type CaptionProps } from "react-day-picker"
-import { ckb } from 'date-fns/locale/ckb';
-import { format } from 'date-fns';
+import { DayPicker } from "react-day-picker"
+import { ckb } from 'date-fns/locale/ckb'
+import { format } from 'date-fns'
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>
-
-/**
- * Custom Caption component to handle Kurdish localization and RTL navigation.
- * Displays "Month Year" in Sorani Kurdish and provides intuitive navigation.
- */
-function CustomCaption({ displayMonth }: CaptionProps) {
-  const { goToMonth, nextMonth, previousMonth } = useNavigation();
-  
-  // Format the month and year in Kurdish (Sorani)
-  // We use date-fns format with the ckb locale for consistent naming
-  const monthYear = format(displayMonth, 'MMMM yyyy', { locale: ckb });
-
-  return (
-    <div className="flex items-center justify-between px-2 py-4 border-b border-gray-100" dir="rtl">
-      {/* Previous Month Button (RTL: Previous is the Right button) */}
-      <button
-        type="button"
-        disabled={!previousMonth}
-        onClick={() => previousMonth && goToMonth(previousMonth)}
-        className={cn(
-          buttonVariants({ variant: "ghost", size: "icon" }),
-          "h-8 w-8 text-gray-500 hover:text-primary transition-colors"
-        )}
-        aria-label="مانگی پێشوو"
-      >
-        <ChevronRight className="h-5 w-5" />
-      </button>
-      
-      {/* Month & Year Display */}
-      <div className="text-base font-bold text-gray-900 tracking-tight">
-        {monthYear}
-      </div>
-
-      {/* Next Month Button (RTL: Next is the Left button) */}
-      <button
-        type="button"
-        disabled={!nextMonth}
-        onClick={() => nextMonth && goToMonth(nextMonth)}
-        className={cn(
-          buttonVariants({ variant: "ghost", size: "icon" }),
-          "h-8 w-8 text-gray-500 hover:text-primary transition-colors"
-        )}
-        aria-label="مانگی داهاتوو"
-      >
-        <ChevronLeft className="h-5 w-5" />
-      </button>
-    </div>
-  );
-}
 
 function Calendar({
   className,
@@ -71,45 +21,80 @@ function Calendar({
     <DayPicker
       dir="rtl"
       locale={ckb}
-      weekStartsOn={0} // Starts on Sunday as requested for logical ordering
+      weekStartsOn={6}
       showOutsideDays={showOutsideDays}
-      className={cn("p-0 bg-white text-gray-900 rounded-xl shadow-2xl border border-gray-200 overflow-hidden", className)}
+      className={cn(
+        "p-4 bg-white rounded-[1.5rem] shadow-xl border border-slate-200/60 select-none",
+        className
+      )}
       classNames={{
+        // Layout
         months: "flex flex-col",
-        month: "space-y-4 p-4",
-        table: "w-full border-collapse",
-        head_row: "flex w-full mb-2 border-b border-gray-50 pb-2", // Flexbox for reliable 7-column header
-        head_cell: "text-muted-foreground font-semibold text-[0.7rem] flex-1 text-center py-1",
-        row: "flex w-full mt-1", // Flexbox for reliable 7-column day rows
-        cell: "relative p-0 text-center text-sm flex-1 focus-within:relative focus-within:z-20",
-        day: cn(
-          buttonVariants({ variant: "ghost" }),
-          "h-10 w-10 p-0 font-normal transition-all hover:bg-primary/10 hover:text-primary rounded-lg mx-auto flex items-center justify-center"
+        month: "space-y-3 w-full",
+        month_caption: "flex items-center justify-between px-1 pb-2 border-b border-slate-100",
+        caption_label: "text-base font-bold text-slate-800 tracking-tight",
+
+        // Navigation
+        nav: "flex items-center gap-1",
+        button_previous: cn(
+          buttonVariants({ variant: "ghost", size: "icon" }),
+          "h-8 w-8 text-slate-500 hover:bg-slate-100 hover:text-slate-900 rounded-full transition-colors"
         ),
-        day_selected:
-          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground font-bold shadow-md",
-        day_today: "bg-blue-50 text-primary border border-primary/20 font-extrabold shadow-sm",
-        day_outside: "text-gray-200 opacity-20 pointer-events-none",
-        day_disabled: "text-gray-200 opacity-20",
-        day_hidden: "invisible",
+        button_next: cn(
+          buttonVariants({ variant: "ghost", size: "icon" }),
+          "h-8 w-8 text-slate-500 hover:bg-slate-100 hover:text-slate-900 rounded-full transition-colors"
+        ),
+
+        // Grid — the critical fix for the vertical list bug
+        month_grid: "w-full border-collapse",
+        weekdays: "flex w-full",
+        weekday:
+          "flex-1 text-center text-[0.7rem] font-semibold text-slate-400 uppercase tracking-wider py-2",
+        week: "flex w-full mt-1",
+        day: "flex-1 flex items-center justify-center p-0 relative",
+        day_button: cn(
+          buttonVariants({ variant: "ghost" }),
+          "h-9 w-9 p-0 font-medium rounded-full text-slate-700",
+          "hover:bg-slate-100 hover:text-slate-900",
+          "focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1",
+          "transition-colors duration-150"
+        ),
+
+        // Day state modifiers
+        selected:
+          "day_button:bg-blue-600 day_button:text-white day_button:hover:bg-blue-700 day_button:hover:text-white day_button:font-bold",
+        today: "day_button:bg-blue-50 day_button:text-blue-600 day_button:font-bold",
+        outside: "opacity-30 pointer-events-none",
+        disabled: "opacity-30 cursor-not-allowed pointer-events-none",
+        hidden: "invisible",
+        range_start: "day_button:bg-blue-600 day_button:text-white day_button:rounded-full",
+        range_end: "day_button:bg-blue-600 day_button:text-white day_button:rounded-full",
+        range_middle: "day_button:bg-blue-50 day_button:text-blue-700 day_button:rounded-none",
+
         ...classNames,
       }}
       formatters={{
         formatWeekdayName: (date) => {
-          // Exact Sorani Kurdish short headers: [Sunday, Monday, ..., Saturday]
-          // Index 0: Sunday, 1: Monday, etc.
-          const days = ["یەک", "دوو", "سێ", "چوار", "پێنج", "هەینی", "شەم"];
-          return days[date.getDay()];
-        }
-      }}
-      modifiers={{
-        weekend: (date) => date.getDay() === 5 || date.getDay() === 6, // Friday & Saturday in Kurdish context
-      }}
-      modifiersClassNames={{
-        weekend: "text-red-500/80 font-medium",
+          // Kurdish short weekday names, Sunday-first
+          const days = ["یەک", "دوو", "سێ", "چوار", "پێنج", "هەین", "شەم"]
+          return days[date.getDay()]
+        },
+        formatCaption: (month) => format(month, "MMMM yyyy", { locale: ckb }),
       }}
       components={{
-        Caption: CustomCaption,
+        // Correct v9 navigation chevrons for RTL (right = previous, left = next)
+        Chevron: ({ orientation }) => {
+          if (orientation === "left") {
+            return <ChevronLeft className="h-4 w-4" />
+          }
+          return <ChevronRight className="h-4 w-4" />
+        },
+      }}
+      modifiers={{
+        weekend: (date) => date.getDay() === 5 || date.getDay() === 6,
+      }}
+      modifiersClassNames={{
+        weekend: "text-rose-500",
       }}
       {...props}
     />
