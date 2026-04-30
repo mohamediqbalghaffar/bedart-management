@@ -13,7 +13,8 @@ import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useFirestore, doc, runTransaction, getDoc, collection, getDocs, DocumentReference, useMemoFirebase, useCollection } from "@/firebase";
+import { useFirestore, doc, runTransaction, getDoc, collection, getDocs, useMemoFirebase, useCollection } from "@/firebase";
+import { DocumentReference } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ProductSelectorDialog } from "../../components/product-selector-dialog";
@@ -414,8 +415,8 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
           const showroomDoc = productDocs.get(showroomId);
           const warehouseDoc = productDocs.get(warehouseId);
 
-          const showroomCurrentStock = Number(showroomDoc?.exists() ? showroomDoc.data().currentQuantity : 0);
-          const warehouseCurrentStock = Number(warehouseDoc?.exists() ? warehouseDoc.data().currentQuantity : 0);
+          const showroomCurrentStock = Number(showroomDoc?.exists() ? (showroomDoc.data() as any).currentQuantity : 0);
+          const warehouseCurrentStock = Number(warehouseDoc?.exists() ? (warehouseDoc.data() as any).currentQuantity : 0);
           
           const showroomStockAfterRestore = showroomCurrentStock + (stockChanges.get(showroomId)?.change || 0);
           const warehouseStockAfterRestore = warehouseCurrentStock + (stockChanges.get(warehouseId)?.change || 0);
@@ -441,7 +442,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
           const productDoc = productDocs.get(productId);
 
           if (productDoc?.exists()) {
-            const currentQuantity = Number(productDoc.data()!.currentQuantity);
+            const currentQuantity = Number((productDoc.data() as any)!.currentQuantity);
             transaction.update(productRef, { currentQuantity: currentQuantity + change });
           }
         }

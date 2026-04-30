@@ -11,15 +11,32 @@ import { Loader2, PlusCircle, Trash2, List, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useFirestore, useCollection, useMemoFirebase, collection, doc, setDoc, getDoc, runTransaction, getDocs, deleteDoc, DocumentReference } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase, collection, doc, setDoc, getDoc, runTransaction, getDocs, deleteDoc } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { WithId } from "@/firebase/firestore/use-collection";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ProductSelectorDialog } from "../../components/product-selector-dialog";
 import { useDebounce } from "@/hooks/use-debounce";
-import { DocumentData } from "firebase/firestore";
+import { DocumentData, DocumentReference } from "firebase/firestore";
 import { ProductCategory } from "@/lib/types";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+// ── Stable, Unicode-safe product document ID generator ────────────────────────
+// The old approach used /[^a-z0-9]/g which stripped all Kurdish/Arabic chars,
+// producing identical IDs for every Kurdish-named product. This version uses
+// encodeURIComponent + base64 to create a collision-free, URL-safe ID.
+function makeProductId(productName: string, sizeModel: string | undefined | null, stockLocation: string): string {
+  const key = `${productName.trim()}||${(sizeModel || '').trim()}||${stockLocation}`;
+  try {
+    // btoa needs a binary string — encodeURIComponent handles unicode, unescape converts back
+    const b64 = btoa(unescape(encodeURIComponent(key)));
+    // Make it URL-safe and trim to 80 chars (Firestore doc ID max is 1500 bytes)
+    return b64.replace(/[+/=]/g, '_').slice(0, 80);
+  } catch {
+    // Fallback: simple sanitise keeping arabic/kurdish unicode range
+    return key.replace(/[^\w\u0600-\u06FF\u0660-\u0669-]/g, '_').slice(0, 80);
+  }
+}
 import { ConfidentialBlur } from "@/components/shared/confidential-blur";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -412,7 +429,7 @@ export function BuyingForm({ onSave, formId, initialItems }: BuyingFormProps) {
                 });
             }
             data.items.forEach(item => {
-                const productId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${data.stockLocation.toLowerCase().replace(/\s/g, '')}`;
+                const productId = makeProductId(item.product, item.sizeModel, data.stockLocation);
                 productDocsToRead.set(productId, doc(firestore, 'products', productId));
             });
 
@@ -435,7 +452,7 @@ export function BuyingForm({ onSave, formId, initialItems }: BuyingFormProps) {
             }
 
             data.items.forEach(item => {
-                const productId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${data.stockLocation.toLowerCase().replace(/\s/g, '')}`;
+                const productId = makeProductId(item.product, item.sizeModel, data.stockLocation);
                 stockAdjustments.set(productId, (stockAdjustments.get(productId) || 0) + item.quantity);
             });
 
@@ -446,7 +463,7 @@ export function BuyingForm({ onSave, formId, initialItems }: BuyingFormProps) {
                 const formItemData = data.items.find(i => `${i.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${data.stockLocation.toLowerCase().replace(/\s/g, '')}` === productId);
 
                 if (productDoc && productDoc.exists()) {
-                    const currentQuantity = productDoc.data().currentQuantity || 0;
+                    const currentQuantity = (productDoc.data() as any)?.currentQuantity || 0;
                     const newQuantity = currentQuantity + quantityChange;
                     transaction.update(productRef, { 
                         currentQuantity: newQuantity,
@@ -484,7 +501,7 @@ export function BuyingForm({ onSave, formId, initialItems }: BuyingFormProps) {
 
             items.forEach(item => {
                 const productSubCollectionRef = doc(collection(firestore, `buying_forms/${buyingFormId}/buying_form_products`));
-                const productDocId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${data.stockLocation.toLowerCase().replace(/\s/g, '')}`;
+                const productDocId = makeProductId(item.product, item.sizeModel, data.stockLocation);
 
                 const productData = {
                     id: productSubCollectionRef.id,
@@ -492,7 +509,7 @@ export function BuyingForm({ onSave, formId, initialItems }: BuyingFormProps) {
                     productId: productDocId,
                     productName: item.product,
                     category: item.category,
-                    sizeModel: item.sizeModel,
+                    sizeModel: item.sizeModel || '',
                     quantity: item.quantity,
                     unitPrice: item.unitPrice,
                     sellingPrice: item.sellingPrice,

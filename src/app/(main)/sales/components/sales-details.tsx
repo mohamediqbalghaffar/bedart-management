@@ -6,7 +6,7 @@ import { Loader2, Printer } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { PaymentStatus, PaymentType } from '@/lib/types';
+import { SaleStatus as PaymentStatus, PaymentType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { PrintableReceipt } from './printable-receipt';
 import '../printable-receipt.css';

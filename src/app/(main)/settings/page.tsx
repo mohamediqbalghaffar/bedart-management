@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFirestore, useCollection, useMemoFirebase, collection, doc, getDoc, setDoc, getDocs, deleteDoc, updateDoc } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
-import { Loader2, FileDown, AlertTriangle, PlusCircle, FileUp, EyeOff, Edit, Trash2 } from 'lucide-react';
+import { Loader2, FileDown, AlertTriangle, PlusCircle, FileUp, EyeOff, Edit, Trash2, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,18 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { analyzeSqlExport } from '@/ai/flows/analyze-sql-export';
+
+// ── Stable, Unicode-safe product document ID generator (shared logic) ────────
+// Mirrors the same function in buying-form.tsx. Both must stay in sync.
+function makeProductId(productName: string, sizeModel: string | undefined | null, stockLocation: string): string {
+  const key = `${productName.trim()}||${(sizeModel || '').trim()}||${stockLocation}`;
+  try {
+    const b64 = btoa(unescape(encodeURIComponent(key)));
+    return b64.replace(/[+/=]/g, '_').slice(0, 80);
+  } catch {
+    return key.replace(/[^\w\u0600-\u06FF\u0660-\u0669-]/g, '_').slice(0, 80);
+  }
+}
 
 
 type CompanyInfo = {
@@ -333,7 +345,7 @@ function DataManagement() {
                             let docData: any = { ...row, id: docRef.id };
 
                              if (sheetName === 'products' && row.productName && row.stockLocation) {
-                                const productId = `${row.productName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${row.stockLocation.toLowerCase().replace(/\s/g, '')}`;
+                                const productId = makeProductId(row.productName, row.sizeModel, row.stockLocation);
                                 const specificDocRef = doc(firestore, sheetName, productId);
                                 docData = { ...row, id: productId };
                                 await setDoc(specificDocRef, docData, { merge: true });
@@ -391,7 +403,7 @@ function DataManagement() {
                         const productName = record.productName;
                         const stockLocation = record.stockLocation || 'Warehouse';
                         if (productName && stockLocation) {
-                            const productId = `${productName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${stockLocation.toLowerCase().replace(/\s/g, '')}`;
+                            const productId = makeProductId(productName, record.sizeModel, stockLocation);
                             const docRef = doc(firestore, 'products', productId);
                             await setDoc(docRef, { ...record, stockLocation, id: productId }, { merge: true });
                             count++;
@@ -520,6 +532,148 @@ function DataManagement() {
     );
 }
 
+// ── Stock Reconciliation Tool ─────────────────────────────────────────────────
+// Scans every doc in the `products` collection, computes what its ID *should*
+// be under the new makeProductId() scheme, and migrates any that don't match.
+function StockReconciliation() {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const [isRunning, setIsRunning] = useState(false);
+    const [results, setResults] = useState<{ migrated: number; skipped: number; errors: string[] } | null>(null);
+
+    const runReconciliation = async () => {
+        if (!firestore) return;
+        setIsRunning(true);
+        setResults(null);
+        toast({ title: '...شیکردنەوەی کۆگا', description: 'سیستەم خەریکی بررسی کردنی هەموو کاڵاکانێ.' });
+
+        let migrated = 0;
+        let skipped = 0;
+        const errors: string[] = [];
+
+        try {
+            const productsSnap = await getDocs(collection(firestore, 'products'));
+
+            for (const productDoc of productsSnap.docs) {
+                const data = productDoc.data();
+                const currentId = productDoc.id;
+
+                // Build what the ID should be under the new scheme
+                const productName: string = data.productName || '';
+                const sizeModel: string = data.sizeModel || '';
+                const stockLocation: string = data.stockLocation || 'Warehouse';
+
+                if (!productName) {
+                    errors.push(`Doc "${currentId}": productName خاڵی بوو`);
+                    continue;
+                }
+
+                const correctId = makeProductId(productName, sizeModel, stockLocation);
+
+                if (currentId === correctId) {
+                    // Already correct — nothing to do
+                    skipped++;
+                    continue;
+                }
+
+                try {
+                    // Write the doc under the new ID, then delete the old one
+                    const newRef = doc(firestore, 'products', correctId);
+                    await setDoc(newRef, { ...data, id: correctId }, { merge: true });
+                    await deleteDoc(productDoc.ref);
+                    migrated++;
+                } catch (err: any) {
+                    errors.push(`Doc "${currentId}": ${err.message}`);
+                }
+            }
+
+            setResults({ migrated, skipped, errors });
+            if (errors.length === 0) {
+                toast({
+                    title: 'سەرکەوتوو بوو!',
+                    description: `${migrated} کاڵا گواستنەوەی دانە، ${skipped} گۆڕانکاری پێویست نەبوو.`,
+                    className: 'bg-accent text-accent-foreground'
+                });
+            } else {
+                toast({
+                    variant: 'destructive',
+                    title: 'تەواوبوو بەهەندێک هەڵە',
+                    description: `${migrated} گواستنەوە، ${errors.length} هەڵە.`
+                });
+            }
+        } catch (err: any) {
+            console.error('Reconciliation failed:', err);
+            toast({ variant: 'destructive', title: 'هەڵەیەک ڕوویدا', description: err.message });
+        } finally {
+            setIsRunning(false);
+        }
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>هاوکاریی کۆگا</CardTitle>
+                <CardDescription>
+                    ئەم ئامرازە داتای کۆنی کۆگا دەگوازێتەوە بۆ سیستەمی نوێی ناسنامەی کاڵا، بۆ ئەوەی کڕینەکان و کۆگا بە شێوەیەکی ڕاست هاوکاری بکەن.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="p-4 border border-yellow-500/30 bg-yellow-500/5 rounded-lg space-y-2">
+                    <div className="flex items-center gap-2 text-yellow-600 dark:text-yellow-400 font-semibold">
+                        <AlertTriangle className="h-4 w-4" />
+                        <span>پێش ئەوەی بەکاربهێنی بیخوێنەرەوە</span>
+                    </div>
+                    <ul className="text-sm text-muted-foreground list-disc pr-4 space-y-1">
+                        <li>ئەم مەحکەمە تەنها <strong>یەک جار</strong> پێویستە بەکاربهێنرێت</li>
+                        <li>کاڵاکانی کۆنی کۆگا دەگوازێتەوە بۆ ناسنامەی تازە (کۆپی دەکرێن، سپاری دەکرێن)</li>
+                        <li>هەموو بڕی کاڵا، نرخ و شوێن بوێرەکەیانەوە دەمێنێت</li>
+                        <li>پشتیوانی (Backup) لە داتاکانەوە بکە پێش جێبەجێکردن</li>
+                    </ul>
+                </div>
+
+                <Button onClick={runReconciliation} disabled={isRunning} className="w-full sm:w-auto">
+                    {isRunning
+                        ? <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                        : <RefreshCw className="ml-2 h-4 w-4" />}
+                    {isRunning ? '...خەریکی هاوکاریکردنە' : 'دەستپێکردنی هاوکاریی کۆگا'}
+                </Button>
+
+                {results && (
+                    <div className="mt-4 space-y-3">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="flex items-center gap-3 p-3 border border-green-500/30 bg-green-500/5 rounded-lg">
+                                <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
+                                <div>
+                                    <p className="text-sm text-muted-foreground">گواستنەوەی سەرکەوتوو</p>
+                                    <p className="text-2xl font-bold text-green-500">{results.migrated}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-3 border rounded-lg">
+                                <CheckCircle2 className="h-5 w-5 text-muted-foreground shrink-0" />
+                                <div>
+                                    <p className="text-sm text-muted-foreground">گۆڕانکاری پێویست نەبوو</p>
+                                    <p className="text-2xl font-bold">{results.skipped}</p>
+                                </div>
+                            </div>
+                        </div>
+                        {results.errors.length > 0 && (
+                            <div className="p-3 border border-destructive/30 bg-destructive/5 rounded-lg space-y-1">
+                                <div className="flex items-center gap-2 text-destructive font-semibold text-sm">
+                                    <AlertCircle className="h-4 w-4" />
+                                    <span>هەڵەکان ({results.errors.length})</span>
+                                </div>
+                                <ul className="text-xs text-muted-foreground list-disc pr-4 space-y-1 max-h-40 overflow-y-auto">
+                                    {results.errors.map((e, i) => <li key={i}>{e}</li>)}
+                                </ul>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
 
 export default function SettingsPage({ params, searchParams }: { params: Promise<any>, searchParams: Promise<any> }) {
     use(params);
@@ -529,10 +683,11 @@ export default function SettingsPage({ params, searchParams }: { params: Promise
             <PageHeader title="ڕێکخستنەکانی سیستەم" description="بەڕێوەبردنی بەکارهێنەران، پۆلەکان، و داتاکان." />
             
             <Tabs defaultValue="users" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="general">گشتی</TabsTrigger>
                     <TabsTrigger value="users">بەکارهێنەران</TabsTrigger>
                     <TabsTrigger value="data">بەڕێوەبردنی داتا</TabsTrigger>
+                    <TabsTrigger value="sync">هاوکاریی کۆگا</TabsTrigger>
                 </TabsList>
                 <TabsContent value="general" className="mt-6">
                     <GeneralSettings />
@@ -542,6 +697,9 @@ export default function SettingsPage({ params, searchParams }: { params: Promise
                 </TabsContent>
                 <TabsContent value="data" className="mt-6">
                     <DataManagement />
+                </TabsContent>
+                <TabsContent value="sync" className="mt-6">
+                    <StockReconciliation />
                 </TabsContent>
             </Tabs>
         </div>
