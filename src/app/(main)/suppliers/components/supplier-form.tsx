@@ -1,4 +1,3 @@
-
 'use client';
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore, addDocumentNonBlocking, collection } from "@/firebase";
+import { useFirestore, addDocumentNonBlocking, collection, doc, updateDoc } from "@/firebase";
 import { Textarea } from "@/components/ui/textarea";
 
 const supplierSchema = z.object({
@@ -18,13 +17,19 @@ const supplierSchema = z.object({
 
 type SupplierFormValues = z.infer<typeof supplierSchema>;
 
-export function AddSupplierForm({ onSupplierAdded }: { onSupplierAdded?: () => void }) {
+interface SupplierFormProps {
+  onSuccess?: () => void;
+  initialData?: SupplierFormValues;
+  supplierId?: string;
+}
+
+export function SupplierForm({ onSuccess, initialData, supplierId }: SupplierFormProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
 
   const form = useForm<SupplierFormValues>({
     resolver: zodResolver(supplierSchema),
-    defaultValues: {
+    defaultValues: initialData || {
       supplierName: "",
       contactInformation: "",
     },
@@ -40,17 +45,38 @@ export function AddSupplierForm({ onSupplierAdded }: { onSupplierAdded?: () => v
       return;
     }
 
-    const suppliersColRef = collection(firestore, "suppliers");
-    addDocumentNonBlocking(suppliersColRef, data);
-
-    toast({
-      title: "سەرکەوتوو بوو!",
-      description: "دابینکەری نوێ بە سەرکەوتوویی زیادکرا.",
-      className: "bg-accent text-accent-foreground",
-    });
-    form.reset();
-    if (onSupplierAdded) {
-      onSupplierAdded();
+    try {
+      if (supplierId) {
+        // Update existing supplier
+        const supplierRef = doc(firestore, "suppliers", supplierId);
+        await updateDoc(supplierRef, data);
+        toast({
+          title: "سەرکەوتوو بوو!",
+          description: "دابینکەر بە سەرکەوتوویی نوێکرایەوە.",
+          className: "bg-accent text-accent-foreground",
+        });
+      } else {
+        // Add new supplier
+        const suppliersColRef = collection(firestore, "suppliers");
+        addDocumentNonBlocking(suppliersColRef, data);
+        toast({
+          title: "سەرکەوتوو بوو!",
+          description: "دابینکەری نوێ بە سەرکەوتوویی زیادکرا.",
+          className: "bg-accent text-accent-foreground",
+        });
+      }
+      
+      form.reset();
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (error) {
+      console.error("Error saving supplier:", error);
+      toast({
+        variant: "destructive",
+        title: "هەڵەیەک ڕوویدا",
+        description: "نەتوانرا زانیارییەکان پاشەکەوت بکرێن.",
+      });
     }
   }
 

@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useFirestore, addDocumentNonBlocking, collection } from "@/firebase";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Loader2 } from "lucide-react";
 
 const expenseSchema = z.object({
@@ -94,7 +95,7 @@ export function AddExpenseForm({ onExpenseAdded }: { onExpenseAdded: () => void 
                   <FormMessage />
               </FormItem>
         )}/>
-        <FormField control={form.control} name="date" render={({ field }) => (<FormItem><FormLabel>بەروار</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+        <FormField control={form.control} name="date" render={({ field }) => (<FormItem><FormLabel>بەروار</FormLabel><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)}/>
         <div className="flex justify-end pt-4">
             <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? <Loader2 className="h-4 w-4 animate-spin ml-2"/> : null}

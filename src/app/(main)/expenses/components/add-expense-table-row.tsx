@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { DatePicker } from "@/components/ui/date-picker";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
@@ -102,7 +103,7 @@ export function AddExpenseTableRow({ onExpenseAdded }: { onExpenseAdded: () => v
           )}/>
         </TableCell>
         <TableCell>
-          <FormField control={form.control} name="date" render={({ field }) => (<FormItem><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+          <FormField control={form.control} name="date" render={({ field }) => (<FormItem><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)}/>
         </TableCell>
         <TableCell className="text-left">
           <Button onClick={form.handleSubmit(onSubmit)} size="icon" variant="ghost" disabled={form.formState.isSubmitting}>

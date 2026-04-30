@@ -18,6 +18,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from "@/components/ui/form";
 import { format, parseISO } from 'date-fns';
 import { ConfidentialBlur } from '@/components/shared/confidential-blur';
+import { DatePicker } from "@/components/ui/date-picker";
 
 type Expense = {
     name: string;
@@ -124,7 +125,7 @@ export function EditableExpenseRow({ expense, onExpenseUpdated, mode = 'table' }
                                         <FormMessage />
                                     </FormItem>
                                 )}/>
-                                <FormField control={form.control} name="date" render={({ field }) => ( <FormItem> <FormLabel>بەروار</FormLabel> <FormControl><Input type="date" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
+                                <FormField control={form.control} name="date" render={({ field }) => ( <FormItem> <FormLabel>بەروار</FormLabel> <FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl> <FormMessage /> </FormItem> )}/>
                             </CardContent>
                             <CardFooter className="flex justify-end gap-2">
                                 <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)}><X className="h-4 w-4 mr-2 text-muted-foreground"/>پاشگەزبوونەوە</Button>
@@ -169,7 +170,7 @@ export function EditableExpenseRow({ expense, onExpenseUpdated, mode = 'table' }
                             </FormItem>
                         )}/>
                     </TableCell>
-                    <TableCell><FormField control={form.control} name="date" render={({ field }) => (<FormItem><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)}/></TableCell>
+                    <TableCell><FormField control={form.control} name="date" render={({ field }) => (<FormItem><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)}/></TableCell>
                     <TableCell className="text-left">
                         <div className="flex gap-2">
                             <Button size="icon" variant="ghost" onClick={form.handleSubmit(handleSave)} disabled={form.formState.isSubmitting}>

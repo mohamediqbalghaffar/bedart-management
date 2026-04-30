@@ -17,6 +17,7 @@ import { useFirestore, doc, runTransaction, getDoc, collection, getDocs, useMemo
 import { DocumentReference } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { DatePicker } from "@/components/ui/date-picker";
 import { ProductSelectorDialog } from "../../components/product-selector-dialog";
 import { CustomerSelectorDialog } from "../../components/customer-selector-dialog";
 import { Loader2 } from "lucide-react";
@@ -387,8 +388,8 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
         }
         
         sanitizedData.items.forEach(item => {
-          const showroomId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-shopshowroom`;
-          const warehouseId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-warehouse`;
+          const showroomId = `${item.product.toLowerCase().replace(/[^\u0600-\u06FFa-z0-9]/g, '-')}-shopshowroom`;
+          const warehouseId = `${item.product.toLowerCase().replace(/[^\u0600-\u06FFa-z0-9]/g, '-')}-warehouse`;
           productRefsToRead.set(showroomId, doc(firestore, 'products', showroomId));
           productRefsToRead.set(warehouseId, doc(firestore, 'products', warehouseId));
         });
@@ -409,8 +410,8 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
         }
 
         for (const item of sanitizedData.items) {
-          const showroomId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-shopshowroom`;
-          const warehouseId = `${item.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-warehouse`;
+          const showroomId = `${item.product.toLowerCase().replace(/[^\u0600-\u06FFa-z0-9]/g, '-')}-shopshowroom`;
+          const warehouseId = `${item.product.toLowerCase().replace(/[^\u0600-\u06FFa-z0-9]/g, '-')}-warehouse`;
           
           const showroomDoc = productDocs.get(showroomId);
           const warehouseDoc = productDocs.get(warehouseId);
@@ -551,7 +552,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                         <FormItem className="flex items-center gap-2">
                             <FormLabel className="mt-2">بەروار:</FormLabel>
                             <FormControl>
-                                <Input placeholder="YYYY-MM-DD" {...field} className="w-[180px]" />
+                                <DatePicker value={field.value} onChange={field.onChange} className="w-[180px]" />
                             </FormControl>
                             <FormMessage />
                         </FormItem>

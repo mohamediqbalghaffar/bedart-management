@@ -11,7 +11,8 @@ import { Loader2, PlusCircle, Trash2, List, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useFirestore, useCollection, useMemoFirebase, collection, doc, setDoc, getDoc, runTransaction, getDocs, deleteDoc } from "@/firebase";
+import { DatePicker } from "@/components/ui/date-picker";
+import { useFirestore, useCollection, useMemoFirebase, collection, doc, setDoc, getDoc, runTransaction, getDocs, deleteDoc, DocumentReference } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { WithId } from "@/firebase/firestore/use-collection";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -460,7 +461,7 @@ export function BuyingForm({ onSave, formId, initialItems }: BuyingFormProps) {
             for (const [productId, quantityChange] of stockAdjustments.entries()) {
                 const productRef = doc(firestore, 'products', productId);
                 const productDoc = productDataMap.get(productId);
-                const formItemData = data.items.find(i => `${i.product.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${data.stockLocation.toLowerCase().replace(/\s/g, '')}` === productId);
+                const formItemData = data.items.find(i => `${i.product.toLowerCase().replace(/[^\u0600-\u06FFa-z0-9]/g, '-')}-${data.stockLocation.toLowerCase().replace(/\s/g, '')}` === productId);
 
                 if (productDoc && productDoc.exists()) {
                     const currentQuantity = (productDoc.data() as any)?.currentQuantity || 0;
@@ -552,7 +553,7 @@ export function BuyingForm({ onSave, formId, initialItems }: BuyingFormProps) {
                     <FormItem className="flex items-center gap-2">
                         <FormLabel className="mt-2">بەروار:</FormLabel>
                         <FormControl>
-                            <Input placeholder="YYYY-MM-DD" {...field} className="w-[180px]" />
+                            <DatePicker value={field.value} onChange={field.onChange} className="w-[180px]" />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
