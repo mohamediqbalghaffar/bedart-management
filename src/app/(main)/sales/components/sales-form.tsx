@@ -27,6 +27,17 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useAuth } from "@/contexts/auth-context";
 import { ConfidentialBlur } from "@/components/shared/confidential-blur";
 
+// ── Stable, Unicode-safe product document ID generator ────────────────────────
+function makeProductId(productName: string, sizeModel: string | undefined | null, stockLocation: string): string {
+  const key = `${productName.trim()}||${(sizeModel || '').trim()}||${stockLocation}`;
+  try {
+    const b64 = btoa(unescape(encodeURIComponent(key)));
+    return b64.replace(/[+/=]/g, '_').slice(0, 80);
+  } catch {
+    return key.replace(/[^\w\u0600-\u06FF\u0660-\u0669-]/g, '_').slice(0, 80);
+  }
+}
+
 type Customer = {
   customerName: string;
   customerPhoneNumber?: string;
@@ -44,6 +55,8 @@ const salesFormSchema = z.object({
     product: z.string().min(1, "ناوی کاڵا پێویستە."),
     quantity: z.coerce.number().min(1, "دانە دەبێت لانیکەم 1 بێت."),
     unitPrice: z.coerce.number().min(0, "نرخ پێویستە."),
+    purchasePrice: z.coerce.number().optional().default(0),
+    sizeModel: z.string().optional(),
     category: z.string().min(1, "پۆل پێویستە."),
   })).min(1, { message: "لانیکەم یەک کاڵا پێویستە." }),
   deliveryCost: z.coerce.number().optional().default(0),
@@ -103,7 +116,12 @@ function SalesFormItemRow({
                         <FormLabel>ناوی کاڵا</FormLabel>
                         <div className="flex gap-2">
                             <FormControl>
-                                <Input placeholder="ناوی کاڵا..." {...field} />
+                                <div className="flex flex-col gap-1 w-full">
+                                    <Input placeholder="ناوی کاڵا..." {...field} />
+                                    {form.watch(`items.${index}.sizeModel`) && (
+                                        <span className="text-xs text-muted-foreground pr-2">({form.watch(`items.${index}.sizeModel`)})</span>
+                                    )}
+                                </div>
                             </FormControl>
                             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                             <DialogTrigger asChild>
@@ -113,9 +131,11 @@ function SalesFormItemRow({
                                 <DialogHeader>
                                     <DialogTitle>لیستی کاڵاکان</DialogTitle>
                                 </DialogHeader>
-                                <ProductSelectorDialog onProductSelect={({name, price, category}) => {
+                                <ProductSelectorDialog onProductSelect={({name, sizeModel, price, purchasePrice, category}) => {
                                     form.setValue(`items.${index}.product`, name);
+                                    form.setValue(`items.${index}.sizeModel`, sizeModel || "");
                                     form.setValue(`items.${index}.unitPrice`, price);
+                                    form.setValue(`items.${index}.purchasePrice`, purchasePrice || 0);
                                     form.setValue(`items.${index}.category`, category);
                                     setDialogOpen(false);
                                 }} />
@@ -149,7 +169,12 @@ function SalesFormItemRow({
                     <FormItem>
                       <div className="flex gap-2">
                         <FormControl>
-                            <Input placeholder="ناوی کاڵا..." {...field} />
+                            <div className="flex flex-col gap-1 w-full">
+                                <Input placeholder="ناوی کاڵا..." {...field} />
+                                {form.watch(`items.${index}.sizeModel`) && (
+                                    <span className="text-xs text-muted-foreground pr-2">({form.watch(`items.${index}.sizeModel`)})</span>
+                                )}
+                            </div>
                         </FormControl>
                         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                           <DialogTrigger asChild>
@@ -159,9 +184,11 @@ function SalesFormItemRow({
                               <DialogHeader>
                                   <DialogTitle>لیستی کاڵاکان</DialogTitle>
                               </DialogHeader>
-                              <ProductSelectorDialog onProductSelect={({name, price, category}) => {
+                              <ProductSelectorDialog onProductSelect={({name, sizeModel, price, purchasePrice, category}) => {
                                   form.setValue(`items.${index}.product`, name);
+                                  form.setValue(`items.${index}.sizeModel`, sizeModel || "");
                                   form.setValue(`items.${index}.unitPrice`, price);
+                                  form.setValue(`items.${index}.purchasePrice`, purchasePrice || 0);
                                   form.setValue(`items.${index}.category`, category);
                                   setDialogOpen(false);
                               }} />
@@ -207,7 +234,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
       customerPhoneNumber: "",
       customerAddress: "",
       issueDate: format(new Date(), "yyyy-MM-dd"),
-      items: initialItems || [{ product: "", quantity: 1, unitPrice: 0, category: 'Mattress' }],
+      items: initialItems || [{ product: "", quantity: 1, unitPrice: 0, purchasePrice: 0, sizeModel: "", category: 'Mattress' }],
       deliveryCost: 0,
       discountValue: 0,
       paymentStatus: "Fully Paid",
@@ -388,8 +415,8 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
         }
         
         sanitizedData.items.forEach(item => {
-          const showroomId = `${item.product.toLowerCase().replace(/[^\u0600-\u06FFa-z0-9]/g, '-')}-shopshowroom`;
-          const warehouseId = `${item.product.toLowerCase().replace(/[^\u0600-\u06FFa-z0-9]/g, '-')}-warehouse`;
+          const showroomId = makeProductId(item.product, item.sizeModel, 'Shop Showroom');
+          const warehouseId = makeProductId(item.product, item.sizeModel, 'Warehouse');
           productRefsToRead.set(showroomId, doc(firestore, 'products', showroomId));
           productRefsToRead.set(warehouseId, doc(firestore, 'products', warehouseId));
         });
@@ -410,8 +437,8 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
         }
 
         for (const item of sanitizedData.items) {
-          const showroomId = `${item.product.toLowerCase().replace(/[^\u0600-\u06FFa-z0-9]/g, '-')}-shopshowroom`;
-          const warehouseId = `${item.product.toLowerCase().replace(/[^\u0600-\u06FFa-z0-9]/g, '-')}-warehouse`;
+          const showroomId = makeProductId(item.product, item.sizeModel, 'Shop Showroom');
+          const warehouseId = makeProductId(item.product, item.sizeModel, 'Warehouse');
           
           const showroomDoc = productDocs.get(showroomId);
           const warehouseDoc = productDocs.get(warehouseId);
@@ -492,8 +519,10 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
             sellingFormId: sellingFormId,
             productId: (item as any).resolvedProductId,
             productName: item.product,
+            sizeModel: item.sizeModel || "",
             quantity: Number(item.quantity),
             unitPrice: Number(item.unitPrice),
+            purchasePrice: Number(item.purchasePrice || 0),
             lineTotal: Number(lineTotal),
             category: item.category,
           });
@@ -642,7 +671,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                         />
                     ))}
                  </div>
-                <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ product: "", quantity: 1, unitPrice: 0, category: 'Mattress' })}>
+                <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ product: "", quantity: 1, unitPrice: 0, purchasePrice: 0, sizeModel: "", category: 'Mattress' })}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     زیادکردنی کاڵا
                 </Button>

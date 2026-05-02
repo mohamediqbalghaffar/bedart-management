@@ -31,7 +31,7 @@ type Expense = { id: string; amount: number; date: string; name: string; currenc
 type Product = { id: string; currentQuantity: number; category: string; productName: string; sizeModel?: string; stockLocation: 'Warehouse' | 'Shop Showroom'; supplierId?: string; unitPrice?: number; sellingPrice?: number; };
 type BuyingForm = { id: string; issueDate: string; supplierId: string; customsFee?: number; totalAmount?: number; };
 type BuyingFormProduct = { quantity: number; unitPrice: number; productId: string; productName: string; category: string; };
-type SellingFormProduct = { productId: string; productName: string; quantity: number; unitPrice: number; lineTotal: number; category: string; };
+type SellingFormProduct = { productId: string; productName: string; quantity: number; unitPrice: number; purchasePrice?: number; lineTotal: number; category: string; };
 type Supplier = { id: string; supplierName: string; };
 
 type GroupedProduct = {
@@ -100,10 +100,22 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
                 const totalExpensesOperational = totalUSD + (totalIQD / iqdToUsdRate);
                 // Purchase COGS — kept separate for transparency
                 const totalPurchaseCost = buyingFormsData.reduce((acc, form) => acc + (form.totalAmount || 0), 0);
-                // Combined total costs shown on the expenses stat card
+                const salesProductsPromises = salesData.map(s => getDocs(collection(firestore, `selling_forms/${s.id}/selling_form_products`)));
+                const buyingFormsProductsPromises = buyingFormsData.map(b => getDocs(collection(firestore, `buying_forms/${b.id}/buying_form_products`)));
+                
+                const salesProductsSnaps = await Promise.all(salesProductsPromises);
+                const allSalesProducts = salesProductsSnaps.flatMap((snap, i) => snap.docs.map(doc => ({ formId: salesData[i].id, ...doc.data() as SellingFormProduct })));
+                
+                const buyingFormsProductsSnaps = await Promise.all(buyingFormsProductsPromises);
+                const allBuyingFormsProducts = buyingFormsProductsSnaps.flatMap((snap, i) => snap.docs.map(doc => ({ formId: buyingFormsData[i].id, ...doc.data() as BuyingFormProduct })));
+
+                // Calculate COGS (Cost of Goods Sold)
+                const totalCOGS = allSalesProducts.reduce((acc, p) => acc + (p.quantity * (p.purchasePrice || 0)), 0);
+
+                // Combined total costs shown on the expenses stat card (Cash Flow Out)
                 const totalExpensesAll = totalExpensesOperational + totalPurchaseCost;
-                // Net Profit = Revenue − all costs (accounting formula)
-                const netProfit = totalRevenue - totalExpensesAll;
+                // Net Profit = Revenue − Operational Expenses - COGS
+                const netProfit = totalRevenue - totalExpensesOperational - totalCOGS;
 
                 const groupedProductsMap = new Map<string, GroupedProduct>();
                 productsData.forEach(p => {
@@ -154,14 +166,6 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
                 const finalChartData = Array.from(dateMap.entries()).map(([date, data]) => ({ date, ...data }));
                 if (!cancelled) setChartData(finalChartData);
 
-                const salesProductsPromises = salesData.map(s => getDocs(collection(firestore, `selling_forms/${s.id}/selling_form_products`)));
-                const buyingFormsProductsPromises = buyingFormsData.map(b => getDocs(collection(firestore, `buying_forms/${b.id}/buying_form_products`)));
-                
-                const salesProductsSnaps = await Promise.all(salesProductsPromises);
-                const allSalesProducts = salesProductsSnaps.flatMap((snap, i) => snap.docs.map(doc => ({ formId: salesData[i].id, ...doc.data() as SellingFormProduct })));
-                
-                const buyingFormsProductsSnaps = await Promise.all(buyingFormsProductsPromises);
-                const allBuyingFormsProducts = buyingFormsProductsSnaps.flatMap((snap, i) => snap.docs.map(doc => ({ formId: buyingFormsData[i].id, ...doc.data() as BuyingFormProduct })));
 
                 const salesDialogSummary = allSalesProducts.reduce((acc, p) => {
                     acc.totalQuantity += p.quantity;
@@ -540,7 +544,7 @@ function DashboardStats({ stats, dialogData }: { stats: any, dialogData: any }) 
                     title="قازانجی پوخت"
                     value={<ConfidentialBlur>{currencyFormatter.format(stats.netProfit)}</ConfidentialBlur>}
                     icon={stats.netProfit >= 0 ? TrendingUp : TrendingDown}
-                    description="قازانج = کۆی فرۆش − کۆی خەرجی − کۆی کڕین"
+                    description="قازانج = کۆی فرۆش − تێچووی کاڵای فرۆشراو − خەرجییەکان"
                     isNegative={stats.netProfit < 0}
                 />
             </div>

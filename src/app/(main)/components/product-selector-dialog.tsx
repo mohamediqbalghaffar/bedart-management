@@ -18,18 +18,26 @@ type ProductDefinition = {
 };
 
 type ProductStock = {
+    id: string;
     productName: string;
+    sizeModel?: string;
     currentQuantity: number;
     unitPrice?: number; // purchase price
+    sellingPrice?: number;
 }
 
-type EnrichedProduct = WithId<ProductDefinition> & {
+type EnrichedProduct = {
+    id: string; // Combined ID for the list
+    productName: string;
+    sizeModel?: string;
+    category: ProductCategory;
+    sellingPrice?: number;
     currentQuantity: number;
     purchasePrice?: number;
 }
 
 type ProductSelectorDialogProps = {
-  onProductSelect: (product: { name: string; price: number, purchasePrice?: number, category: ProductCategory }) => void;
+  onProductSelect: (product: { name: string; sizeModel?: string; price: number, purchasePrice?: number, category: ProductCategory, productId?: string }) => void;
   filterByStock?: boolean;
 };
 
@@ -62,34 +70,56 @@ export function ProductSelectorDialog({ onProductSelect, filterByStock = true }:
   const { data: stock, isLoading: isLoadingStock } = useCollection<ProductStock>(stockQuery);
 
   const enrichedProducts = useMemo(() => {
-    if (!definitions) return [];
+    const combinedMap = new Map<string, EnrichedProduct>();
 
-    const stockMap = new Map<string, { totalQuantity: number, lastPurchasePrice?: number }>();
-    if (stock) {
-        stock.forEach(s => {
-            const current = stockMap.get(s.productName) || { totalQuantity: 0 };
-            current.totalQuantity += s.currentQuantity;
-            if(s.unitPrice) {
-                current.lastPurchasePrice = s.unitPrice;
-            }
-            stockMap.set(s.productName, current);
+    // First add all definitions as base generic items (no size model)
+    if (definitions) {
+        definitions.forEach(def => {
+            const key = `${def.productName}||`;
+            combinedMap.set(key, {
+                id: key,
+                productName: def.productName,
+                sizeModel: "",
+                category: def.category,
+                sellingPrice: def.sellingPrice,
+                currentQuantity: 0,
+            });
         });
     }
-    
-    let enriched: EnrichedProduct[] = definitions.map(def => {
-        const stockInfo = stockMap.get(def.productName);
-        return {
-            ...def,
-            currentQuantity: stockInfo?.totalQuantity || 0,
-            purchasePrice: stockInfo?.lastPurchasePrice,
-        }
-    });
+
+    // Then layer on real stock data, grouping by product and size
+    if (stock) {
+        stock.forEach(s => {
+            const key = `${s.productName}||${s.sizeModel || ""}`;
+            if (combinedMap.has(key)) {
+                const existing = combinedMap.get(key)!;
+                existing.currentQuantity += s.currentQuantity;
+                if (s.unitPrice) existing.purchasePrice = s.unitPrice;
+                if (s.sellingPrice) existing.sellingPrice = s.sellingPrice;
+            } else {
+                combinedMap.set(key, {
+                    id: key,
+                    productName: s.productName,
+                    sizeModel: s.sizeModel || "",
+                    category: "Mattress", // Fallback, though products should have category
+                    sellingPrice: s.sellingPrice,
+                    purchasePrice: s.unitPrice,
+                    currentQuantity: s.currentQuantity,
+                });
+            }
+        });
+    }
+
+    let enriched = Array.from(combinedMap.values());
 
     if (categoryFilter !== 'all') {
         enriched = enriched.filter(p => p.category === categoryFilter);
     }
     if (searchTerm) {
-      enriched = enriched.filter(p => p.productName.toLowerCase().includes(searchTerm.toLowerCase()));
+      enriched = enriched.filter(p => 
+        p.productName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        (p.sizeModel && p.sizeModel.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
     }
     
     if (filterByStock) {
@@ -105,9 +135,11 @@ export function ProductSelectorDialog({ onProductSelect, filterByStock = true }:
   const handleSelect = (product: EnrichedProduct) => {
     onProductSelect({
       name: product.productName,
+      sizeModel: product.sizeModel,
       price: product.sellingPrice || 0,
       purchasePrice: product.purchasePrice || 0,
       category: product.category,
+      productId: product.id,
     });
   };
 
@@ -158,7 +190,10 @@ export function ProductSelectorDialog({ onProductSelect, filterByStock = true }:
             ) : (
               enrichedProducts.map(product => (
                 <TableRow key={product.id}>
-                  <TableCell className="text-right font-medium">{product.productName}</TableCell>
+                  <TableCell className="text-right font-medium">
+                    {product.productName}
+                    {product.sizeModel && <span className="ml-2 text-sm text-muted-foreground">({product.sizeModel})</span>}
+                  </TableCell>
                   <TableCell className="text-right font-semibold text-primary">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.sellingPrice || 0)}</TableCell>
                   <TableCell className="text-right">{product.currentQuantity}</TableCell>
                   <TableCell className="text-right">{categoryTranslations[product.category] || product.category}</TableCell>
