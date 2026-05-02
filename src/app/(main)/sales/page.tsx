@@ -712,10 +712,14 @@ function SalesList() {
                                                                         </Button>
                                                                     </DropdownMenuTrigger>
                                                                     <DropdownMenuContent>
-                                                                        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setPreviewFormId(sale.id); }}>
+                                                                        <DropdownMenuItem onSelect={() => { 
+                                                                            setTimeout(() => setPreviewFormId(sale.id), 150); 
+                                                                        }}>
                                                                             بینینی پسوولە
                                                                         </DropdownMenuItem>
-                                                                        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleDirectPrint(sale.id); }}>
+                                                                        <DropdownMenuItem onSelect={() => { 
+                                                                            setTimeout(() => handleDirectPrint(sale.id), 150); 
+                                                                        }}>
                                                                             چاپکردنی پسوولە
                                                                         </DropdownMenuItem>
                                                                     </DropdownMenuContent>
