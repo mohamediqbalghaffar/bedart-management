@@ -60,8 +60,12 @@ export const PrintableReceipt = React.forwardRef<HTMLDivElement, PrintableReceip
     const delivery = Number(formData.deliveryCost || 0);
     const calculatedTotal = subTotal - discountAmount + delivery;
 
+    const totalPaid = payments?.reduce((acc, p) => acc + (Number(p.amountPaid) || 0), 0) || 0;
+    const calculatedRemaining = Math.max(0, calculatedTotal - totalPaid);
+    const overpayment = Math.max(0, totalPaid - calculatedTotal);
+
     // Standard row count for A4 to keep the footer at the bottom
-    const minRows = 18;
+    const minRows = 10;
     const emptyRowsCount = Math.max(0, minRows - products.length);
 
     return (
@@ -165,6 +169,24 @@ export const PrintableReceipt = React.forwardRef<HTMLDivElement, PrintableReceip
                             <span>کۆی گشتی (USD):</span>
                             <span>{currencyFormatter.format(calculatedTotal)}</span>
                         </div>
+                        {(formData.paymentType === 'Installments' || (payments && payments.length > 0)) && (
+                            <>
+                                <div className="summary-line mt-2 text-green-700 font-semibold text-lg">
+                                    <span className="summary-label">کۆی دراوە:</span>
+                                    <span className="summary-value">{currencyFormatter.format(totalPaid)}</span>
+                                </div>
+                                <div className="summary-line text-red-600 font-bold text-lg">
+                                    <span className="summary-label">ماوە:</span>
+                                    <span className="summary-value">{currencyFormatter.format(calculatedRemaining)}</span>
+                                </div>
+                                {overpayment > 0 && (
+                                    <div className="summary-line text-green-600 font-bold text-lg">
+                                        <span className="summary-label">بڕی زیادە:</span>
+                                        <span className="summary-value">{currencyFormatter.format(overpayment)}</span>
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </div>
                 </footer>
             </main>
