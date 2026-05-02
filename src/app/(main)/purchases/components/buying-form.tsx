@@ -461,7 +461,7 @@ export function BuyingForm({ onSave, formId, initialItems }: BuyingFormProps) {
             for (const [productId, quantityChange] of stockAdjustments.entries()) {
                 const productRef = doc(firestore, 'products', productId);
                 const productDoc = productDataMap.get(productId);
-                const formItemData = data.items.find(i => `${i.product.toLowerCase().replace(/[^\u0600-\u06FFa-z0-9]/g, '-')}-${data.stockLocation.toLowerCase().replace(/\s/g, '')}` === productId);
+                const formItemData = data.items.find(i => makeProductId(i.product, i.sizeModel, data.stockLocation) === productId);
 
                 if (productDoc && productDoc.exists()) {
                     const currentQuantity = (productDoc.data() as any)?.currentQuantity || 0;
