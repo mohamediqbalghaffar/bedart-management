@@ -645,16 +645,26 @@ export default function DashboardPage({ params, searchParams }: { params: Promis
                         <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">لە:</span>
                         <DatePicker
                             value={dateRange.from ? formatDate(dateRange.from, 'yyyy-MM-dd') : ""}
-                            onChange={(val) => setDateRange(prev => ({...prev, from: val ? parseISO(val) : new Date() }))}
-                            className="flex-1"
+                            onChange={(val) => {
+                                if (val) {
+                                    const parsed = parseISO(val);
+                                    if (isValid(parsed)) setDateRange(prev => ({...prev, from: parsed }));
+                                }
+                            }}
+                            className="flex-1 bg-white/10 text-white border-white/20"
                         />
                     </div>
                     <div className="flex items-center gap-2 flex-1 min-w-[140px]">
                         <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">بۆ:</span>
                         <DatePicker
                             value={dateRange.to ? formatDate(dateRange.to, 'yyyy-MM-dd') : ""}
-                            onChange={(val) => setDateRange(prev => ({...prev, to: val ? parseISO(val) : new Date() }))}
-                            className="flex-1"
+                            onChange={(val) => {
+                                if (val) {
+                                    const parsed = parseISO(val);
+                                    if (isValid(parsed)) setDateRange(prev => ({...prev, to: parsed }));
+                                }
+                            }}
+                            className="flex-1 bg-white/10 text-white border-white/20"
                         />
                     </div>
                 </div>
