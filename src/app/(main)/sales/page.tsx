@@ -22,6 +22,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import html2canvas from 'html2canvas';
 import { analyzePurchaseExcel } from '@/ai/flows/analyze-purchase-excel';
+import { cn } from '@/lib/utils';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const PAGE_SIZE = 20;
