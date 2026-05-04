@@ -69,7 +69,7 @@ export const PrintableReceipt = React.forwardRef<HTMLDivElement, PrintableReceip
     const emptyRowsCount = Math.max(0, minRows - products.length);
 
     return (
-        <div ref={ref} className="new-receipt-container" dir="rtl">
+        <div ref={ref} id="printable-receipt-content" className="new-receipt-container" dir="rtl">
             <header className="new-receipt-header">
                 <div className="header-left">
                     <div className="logo-text">

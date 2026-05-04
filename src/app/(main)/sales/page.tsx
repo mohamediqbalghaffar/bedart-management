@@ -238,11 +238,17 @@ function ReceiptPreview({ formId }: { formId: string }) {
         toast({ title: '...ئامادەکردنی وێنە' });
         try {
             const canvas = await html2canvas(receiptRef.current, {
-                scale: 2,
+                scale: 3,
                 useCORS: true,
                 backgroundColor: '#ffffff',
-                width: 794,
-                height: 1123,
+                logging: false,
+                onclone: (clonedDoc) => {
+                    const el = clonedDoc.getElementById('printable-receipt-content');
+                    if (el) {
+                        el.style.transform = 'none';
+                        el.style.margin = '0';
+                    }
+                }
             });
             const link = document.createElement('a');
             link.href = canvas.toDataURL('image/jpeg', 0.95);
