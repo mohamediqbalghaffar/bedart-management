@@ -375,12 +375,34 @@ function SalesList() {
     // ── Print: useEffect-driven so the DOM renders before window.print() ──
     useEffect(() => {
         if (isPrinting && printData) {
-            const timer = setTimeout(() => {
-                window.print();
+            const handleAfterPrint = () => {
                 setIsPrinting(false);
                 setPrintData(null);
-            }, 350);
-            return () => clearTimeout(timer);
+                window.removeEventListener('afterprint', handleAfterPrint);
+            };
+
+            const timer = setTimeout(() => {
+                window.addEventListener('afterprint', handleAfterPrint);
+                window.print();
+                
+                // Fallback for browsers that don't support afterprint well
+                if (window.matchMedia) {
+                    const mediaQueryList = window.matchMedia('print');
+                    mediaQueryList.addEventListener('change', (mql) => {
+                        if (!mql.matches) {
+                            handleAfterPrint();
+                        }
+                    });
+                }
+                
+                // Final safety fallback
+                setTimeout(handleAfterPrint, 3000);
+            }, 800); // Increased timeout for mobile rendering
+            
+            return () => {
+                clearTimeout(timer);
+                window.removeEventListener('afterprint', handleAfterPrint);
+            };
         }
     }, [isPrinting, printData]);
 
@@ -484,7 +506,7 @@ function SalesList() {
     const fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
 
     return (
-        <>
+        <div className={isPrinting ? "no-print" : ""}>
             <PageHeader title="بەڕێوەبردنی فرۆشتن" description="تۆماری فۆڕمەکانی فرۆشتن لێرە ببینە و زیاد بکە.">
                 <div className="flex items-center gap-2">
                     <Button onClick={() => setIsCreateDialogOpen(true)}>
@@ -883,7 +905,7 @@ function SalesList() {
                     </CardFooter>
                 )}
             </Card>
-        </>
+        </div>
     );
 }
 
