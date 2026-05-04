@@ -454,21 +454,6 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
     
     try {
       await runTransaction(firestore, async (transaction) => {
-        // ── Auto-save new customer if they don't exist ──
-        if (sanitizedData.customerName) {
-            const customerExists = customers?.some(c => c.customerName.trim().toLowerCase() === sanitizedData.customerName.trim().toLowerCase());
-            if (!customerExists) {
-                const newCustomerRef = doc(collection(firestore, 'customers'));
-                transaction.set(newCustomerRef, {
-                    id: newCustomerRef.id,
-                    customerName: sanitizedData.customerName.trim(),
-                    customerPhoneNumber: sanitizedData.customerPhoneNumber || "",
-                    customerAddress: sanitizedData.customerAddress || "",
-                    createdAt: serverTimestamp()
-                });
-            }
-        }
-
         const productRefsToRead = new Map<string, DocumentReference>();
 
         if (formId) {
@@ -484,10 +469,28 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
           productRefsToRead.set(warehouseId, doc(firestore, 'products', warehouseId));
         });
 
+        // ── ALL READS MUST COME BEFORE ALL WRITES ──
         const productSnaps = await Promise.all(
           Array.from(productRefsToRead.values()).map(ref => transaction.get(ref))
         );
         const productDocs = new Map(productSnaps.map(snap => [snap.id, snap]));
+
+        // ── NOW WE CAN START WRITING ──
+        
+        // Auto-save new customer if they don't exist
+        if (sanitizedData.customerName) {
+            const customerExists = customers?.some(c => c.customerName.trim().toLowerCase() === sanitizedData.customerName.trim().toLowerCase());
+            if (!customerExists) {
+                const newCustomerRef = doc(collection(firestore, 'customers'));
+                transaction.set(newCustomerRef, {
+                    id: newCustomerRef.id,
+                    customerName: sanitizedData.customerName.trim(),
+                    customerPhoneNumber: sanitizedData.customerPhoneNumber || "",
+                    customerAddress: sanitizedData.customerAddress || "",
+                    createdAt: serverTimestamp()
+                });
+            }
+        }
 
         const stockChanges = new Map<string, { change: number, resolvedId: string | null }>();
 
