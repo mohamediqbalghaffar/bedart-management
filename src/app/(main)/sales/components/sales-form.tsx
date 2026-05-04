@@ -454,6 +454,21 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
     
     try {
       await runTransaction(firestore, async (transaction) => {
+        // ── Auto-save new customer if they don't exist ──
+        if (sanitizedData.customerName) {
+            const customerExists = customers?.some(c => c.customerName.trim().toLowerCase() === sanitizedData.customerName.trim().toLowerCase());
+            if (!customerExists) {
+                const newCustomerRef = doc(collection(firestore, 'customers'));
+                transaction.set(newCustomerRef, {
+                    id: newCustomerRef.id,
+                    customerName: sanitizedData.customerName.trim(),
+                    customerPhoneNumber: sanitizedData.customerPhoneNumber || "",
+                    customerAddress: sanitizedData.customerAddress || "",
+                    createdAt: serverTimestamp()
+                });
+            }
+        }
+
         const productRefsToRead = new Map<string, DocumentReference>();
 
         if (formId) {
