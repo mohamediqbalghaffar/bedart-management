@@ -333,19 +333,40 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                 amount: d.data().amountPaid
             }));
 
+            const normalizeDate = (dateVal: any) => {
+              if (!dateVal) return format(new Date(), "yyyy-MM-dd");
+              if (typeof dateVal === 'string') {
+                  if (/^\d{4}-\d{2}-\d{2}$/.test(dateVal)) return dateVal;
+                  try { return format(new Date(dateVal), "yyyy-MM-dd"); } catch { return dateVal; }
+              }
+              if (dateVal.toDate) return format(dateVal.toDate(), "yyyy-MM-dd");
+              if (dateVal instanceof Date) return format(dateVal, "yyyy-MM-dd");
+              return dateVal;
+            };
+
             setOriginalItems(items); // Store original items for stock calculation
 
             form.reset({
               ...data,
-              issueDate: data.issueDate,
+              formNumber: String(data.formNumber || ""),
+              issueDate: normalizeDate(data.issueDate),
+              customerName: data.customerName || "",
               customerPhoneNumber: data.customerPhoneNumber || data.customerPhone || "", 
+              customerAddress: data.customerAddress || "",
               items: items.map(item => ({
-                  product: item.productName,
-                  quantity: item.quantity,
-                  unitPrice: item.unitPrice,
-                  category: item.category,
+                  product: item.productName || item.product || "",
+                  quantity: Number(item.quantity) || 0,
+                  unitPrice: Number(item.unitPrice) || 0,
+                  purchasePrice: Number(item.purchasePrice) || 0,
+                  sizeModel: item.sizeModel || "",
+                  category: item.category || "Mattress",
               })),
-              payments: payments as any,
+              payments: payments.map(p => ({
+                date: normalizeDate(p.date),
+                amount: Number(p.amount) || 0,
+                method: p.method || "Cash",
+                note: p.note || ""
+              })) as any,
             });
 
           }
