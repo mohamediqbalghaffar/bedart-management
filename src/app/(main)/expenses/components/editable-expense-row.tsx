@@ -186,30 +186,33 @@ export function EditableExpenseRow({ expense, onExpenseUpdated, mode = 'table' }
 
     if (mode === 'card') {
         return (
-            <Card key={`${expense.id}-mobile`} className="md:hidden">
-                <CardHeader>
-                    <CardTitle>{expense.name}</CardTitle>
-                    <CardDescription>{format(parseISO(expense.date), "yyyy-MM-dd")}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                     <div className="flex justify-between">
-                        <span className="text-muted-foreground">بڕ:</span>
-                        <ConfidentialBlur><span className="font-semibold">{currencyFormatter.format(expense.amount)}</span></ConfidentialBlur>
+            <div key={`${expense.id}-mobile`} className="md:hidden bg-card border rounded-lg p-3 space-y-2 shadow-sm">
+                <div className="flex justify-between items-start">
+                    <div className="flex flex-col gap-0.5">
+                        <span className="font-bold text-sm leading-tight">{expense.name}</span>
+                        <span className="text-[10px] text-muted-foreground">{format(parseISO(expense.date), "yyyy-MM-dd")}</span>
                     </div>
-                    <div className="flex justify-between">
-                        <span className="text-muted-foreground">پۆل:</span>
-                        <Badge variant="outline">{categoryTranslations[expense.category] || expense.category}</Badge>
+                    <Badge variant="outline" className="text-[10px] px-1.5 h-5">{categoryTranslations[expense.category] || expense.category}</Badge>
+                </div>
+                
+                <div className="flex justify-between items-center py-0.5">
+                    <div className="text-sm font-bold text-primary">
+                        <ConfidentialBlur>{currencyFormatter.format(expense.amount)}</ConfidentialBlur>
                     </div>
-                     {expense.note && <div className="flex justify-between">
-                        <span className="text-muted-foreground">تێبینی:</span>
-                        <span>{expense.note}</span>
-                    </div>}
-                </CardContent>
-                <CardFooter className="flex justify-end gap-2">
-                     <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4 mr-2 text-blue-500"/>دەستکاری</Button>
-                        <AlertDialog>
+                    {expense.note && (
+                        <span className="text-[11px] text-muted-foreground truncate max-w-[150px]">{expense.note}</span>
+                    )}
+                </div>
+
+                <div className="flex justify-end gap-1 pt-1 border-t">
+                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setIsEditing(true)}>
+                        <Edit className="h-4 w-4 text-blue-500"/>
+                    </Button>
+                    <AlertDialog>
                         <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="ghost" disabled={isDeleting}><Trash2 className="h-4 w-4 mr-2 text-destructive" />سڕینەوە</Button>
+                            <Button size="icon" variant="ghost" className="h-8 w-8" disabled={isDeleting}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent dir="rtl">
                             <AlertDialogHeader><AlertDialogTitle>ئایا دڵنیایت لە سڕینەوەی ئەم خەرجییە؟</AlertDialogTitle><AlertDialogDescription>ئەم کردارە پاشگەزبوونەوەی نییە و ناتوانیت بیگەڕێنیتەوە.</AlertDialogDescription></AlertDialogHeader>
@@ -219,8 +222,8 @@ export function EditableExpenseRow({ expense, onExpenseUpdated, mode = 'table' }
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
-                </CardFooter>
-            </Card>
+                </div>
+            </div>
         );
     }
 

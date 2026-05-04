@@ -70,14 +70,14 @@ export function AddExpenseTableRow({ onExpenseAdded }: { onExpenseAdded: () => v
 
   return (
     <Form {...form}>
-      <TableRow className="bg-muted/10 hover:bg-muted/20 hidden md:table-row">
-        <TableCell>
+      <TableRow className="bg-muted/10 hover:bg-muted/20 hidden md:table-row sticky top-[48px] z-10 shadow-sm backdrop-blur-sm">
+        <TableCell className="bg-muted/5">
           <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormControl><Input placeholder="ناوی خەرجی..." {...field} /></FormControl><FormMessage /></FormItem>)}/>
         </TableCell>
-        <TableCell>
+        <TableCell className="bg-muted/5">
           <FormField control={form.control} name="note" render={({ field }) => (<FormItem><FormControl><Input placeholder="تێبینی..." {...field} /></FormControl><FormMessage /></FormItem>)}/>
         </TableCell>
-        <TableCell>
+        <TableCell className="bg-muted/5">
           <div className="flex gap-2">
               <FormField control={form.control} name="amount" render={({ field }) => ( <FormItem className="flex-grow"><FormControl><Input type="number" placeholder="0.00" {...field} step="0.01" /></FormControl><FormMessage /></FormItem>)}/>
               <FormField control={form.control} name="currency" render={({ field }) => (
@@ -91,7 +91,7 @@ export function AddExpenseTableRow({ onExpenseAdded }: { onExpenseAdded: () => v
               )}/>
           </div>
         </TableCell>
-        <TableCell>
+        <TableCell className="bg-muted/5">
           <FormField control={form.control} name="category" render={({ field }) => (
               <FormItem>
                   <Select onValueChange={field.onChange} value={field.value} dir="rtl">
@@ -102,10 +102,10 @@ export function AddExpenseTableRow({ onExpenseAdded }: { onExpenseAdded: () => v
               </FormItem>
           )}/>
         </TableCell>
-        <TableCell>
+        <TableCell className="bg-muted/5">
           <FormField control={form.control} name="date" render={({ field }) => (<FormItem><FormControl><DatePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)}/>
         </TableCell>
-        <TableCell className="text-left">
+        <TableCell className="text-left bg-muted/5">
           <Button onClick={form.handleSubmit(onSubmit)} size="icon" variant="ghost" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="h-4 w-4 text-primary"/>}
           </Button>
