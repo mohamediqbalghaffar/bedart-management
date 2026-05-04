@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef, use } from 'react';
+import { createPortal } from 'react-dom';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -557,8 +558,8 @@ function SalesList() {
                 </DialogContent>
             </Dialog>
 
-            {/* ── Direct print area (hidden, triggered by useEffect) ── */}
-            {isPrinting && printData && (
+            {/* ── Direct print area (Rendered via Portal to body) ── */}
+            {isPrinting && printData && typeof document !== 'undefined' && createPortal(
                 <div id="printable-area" className="fixed inset-0 z-[9999] bg-white">
                     <PrintableReceipt
                         ref={printRef}
@@ -567,7 +568,8 @@ function SalesList() {
                         payments={printData.payments}
                         companyInfo={printData.companyInfo}
                     />
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* ── Main table card ── */}

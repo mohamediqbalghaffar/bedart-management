@@ -244,19 +244,12 @@
 
 /* --- Print Settings --- */
 @media print {
-    /* Hide everything by default using display: none */
-    body > *:not(#printable-area),
-    header, 
-    nav, 
-    aside,
-    .sidebar,
-    .header,
-    .bottom-nav {
+    body > *:not(#printable-area) {
         display: none !important;
     }
     
-    .no-print {
-        display: none !important;
+    body {
+        background: white !important;
     }
     #printable-area {
         display: block !important;
@@ -268,6 +261,7 @@
         margin: 0;
         padding: 0;
         background: white !important;
+        z-index: 9999999 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }
