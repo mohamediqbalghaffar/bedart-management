@@ -20,18 +20,9 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { analyzeSqlExport } from '@/ai/flows/analyze-sql-export';
+import { makeProductId } from '@/lib/inventory';
 
-// ── Stable, Unicode-safe product document ID generator (shared logic) ────────
-// Mirrors the same function in buying-form.tsx. Both must stay in sync.
-function makeProductId(productName: string, sizeModel: string | undefined | null, stockLocation: string): string {
-  const key = `${productName.trim()}||${(sizeModel || '').trim()}||${stockLocation}`;
-  try {
-    const b64 = btoa(unescape(encodeURIComponent(key)));
-    return b64.replace(/[+/=]/g, '_').slice(0, 80);
-  } catch {
-    return key.replace(/[^\w\u0600-\u06FF\u0660-\u0669-]/g, '_').slice(0, 80);
-  }
-}
+// ── Shared inventory ID generator used instead of local version ────────────────────────
 
 
 type CompanyInfo = {
@@ -579,7 +570,18 @@ function StockReconciliation() {
                 try {
                     // Write the doc under the new ID, then delete the old one
                     const newRef = doc(firestore, 'products', correctId);
-                    await setDoc(newRef, { ...data, id: correctId }, { merge: true });
+                    
+                    // Enhancement: If the target document already exists, sum the quantities
+                    const targetSnap = await getDoc(newRef);
+                    let finalData = { ...data, id: correctId };
+                    
+                    if (targetSnap.exists()) {
+                        const targetData = targetSnap.data();
+                        const summedQuantity = (targetData.currentQuantity || 0) + (data.currentQuantity || 0);
+                        finalData = { ...finalData, currentQuantity: summedQuantity };
+                    }
+
+                    await setDoc(newRef, finalData, { merge: true });
                     await deleteDoc(productDoc.ref);
                     migrated++;
                 } catch (err: any) {

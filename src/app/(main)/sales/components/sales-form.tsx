@@ -23,20 +23,12 @@ import { CustomerSelectorDialog } from "../../components/customer-selector-dialo
 import { Loader2 } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { WithId } from "@/firebase/firestore/use-collection";
+import { makeProductId } from "@/lib/inventory";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/auth-context";
 import { ConfidentialBlur } from "@/components/shared/confidential-blur";
 
-// ── Stable, Unicode-safe product document ID generator ────────────────────────
-function makeProductId(productName: string, sizeModel: string | undefined | null, stockLocation: string): string {
-  const key = `${productName.trim()}||${(sizeModel || '').trim()}||${stockLocation}`;
-  try {
-    const b64 = btoa(unescape(encodeURIComponent(key)));
-    return b64.replace(/[+/=]/g, '_').slice(0, 80);
-  } catch {
-    return key.replace(/[^\w\u0600-\u06FF\u0660-\u0669-]/g, '_').slice(0, 80);
-  }
-}
+// ── Shared inventory ID generator used instead of local version ────────────────────────
 
 type Customer = {
   customerName: string;

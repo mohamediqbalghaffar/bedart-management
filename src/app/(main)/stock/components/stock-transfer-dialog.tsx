@@ -12,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useFirestore, runTransaction, doc, getDoc, setDoc } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { makeProductId } from '@/lib/inventory';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
@@ -87,7 +88,7 @@ export function StockTransferDialog({ product, children, onTransferSuccess }: St
     }
 
     const toLocation = data.source === 'Warehouse' ? 'Shop Showroom' : 'Warehouse';
-    const destinationProductId = sourceProduct.id.replace(data.source.toLowerCase().replace(/\s/g, ''), toLocation.toLowerCase().replace(/\s/g, ''));
+    const destinationProductId = makeProductId(product.productName, product.sizeModel, toLocation);
 
     try {
       await runTransaction(firestore, async (transaction) => {

@@ -21,23 +21,9 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { DocumentData, DocumentReference } from "firebase/firestore";
 import { ProductCategory } from "@/lib/types";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { makeProductId } from "@/lib/inventory";
 
-// ── Stable, Unicode-safe product document ID generator ────────────────────────
-// The old approach used /[^a-z0-9]/g which stripped all Kurdish/Arabic chars,
-// producing identical IDs for every Kurdish-named product. This version uses
-// encodeURIComponent + base64 to create a collision-free, URL-safe ID.
-function makeProductId(productName: string, sizeModel: string | undefined | null, stockLocation: string): string {
-  const key = `${productName.trim()}||${(sizeModel || '').trim()}||${stockLocation}`;
-  try {
-    // btoa needs a binary string — encodeURIComponent handles unicode, unescape converts back
-    const b64 = btoa(unescape(encodeURIComponent(key)));
-    // Make it URL-safe and trim to 80 chars (Firestore doc ID max is 1500 bytes)
-    return b64.replace(/[+/=]/g, '_').slice(0, 80);
-  } catch {
-    // Fallback: simple sanitise keeping arabic/kurdish unicode range
-    return key.replace(/[^\w\u0600-\u06FF\u0660-\u0669-]/g, '_').slice(0, 80);
-  }
-}
+// ── Shared inventory ID generator used instead of local version ────────────────────────
 import { ConfidentialBlur } from "@/components/shared/confidential-blur";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
