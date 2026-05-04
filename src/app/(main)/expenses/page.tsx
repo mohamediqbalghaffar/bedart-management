@@ -109,29 +109,29 @@ function ExpensesList() {
             </CardHeader>
             <CardContent className="flex-1 overflow-hidden p-0 md:p-6 pt-0">
                 <ScrollArea className="h-full overflow-y-auto pr-4">
-                     <Table className="hidden md:table relative">
+                     <Table className="hidden md:table relative overflow-visible">
                         <TableHeader className="sticky top-0 z-20 bg-card shadow-sm">
-                            <TableRow>
-                                <TableHead className="w-[20%] text-right cursor-pointer hover:text-primary transition-colors" onClick={() => requestSort('name')}>
-                                    {getSortIcon('name')} ناوی خەرجی
-                                </TableHead>
-                                <TableHead className="w-[20%] text-right cursor-pointer hover:text-primary transition-colors" onClick={() => requestSort('note')}>
-                                    {getSortIcon('note')} تێبینی
-                                </TableHead>
-                                <TableHead className="w-[20%] text-right cursor-pointer hover:text-primary transition-colors" onClick={() => requestSort('amount')}>
-                                    {getSortIcon('amount')} بڕ
+                            <TableRow className="bg-card">
+                                <TableHead className="w-[10%] text-right">کردارەکان</TableHead>
+                                <TableHead className="w-[15%] text-right cursor-pointer hover:text-primary transition-colors" onClick={() => requestSort('date')}>
+                                    {getSortIcon('date')} بەروار
                                 </TableHead>
                                 <TableHead className="w-[15%] text-right cursor-pointer hover:text-primary transition-colors" onClick={() => requestSort('category')}>
                                     {getSortIcon('category')} پۆل
                                 </TableHead>
-                                <TableHead className="w-[15%] text-right cursor-pointer hover:text-primary transition-colors" onClick={() => requestSort('date')}>
-                                    {getSortIcon('date')} بەروار
+                                <TableHead className="w-[20%] text-right cursor-pointer hover:text-primary transition-colors" onClick={() => requestSort('amount')}>
+                                    {getSortIcon('amount')} بڕ
                                 </TableHead>
-                                <TableHead className="w-[10%] text-left">کردارەکان</TableHead>
+                                <TableHead className="w-[20%] text-right cursor-pointer hover:text-primary transition-colors" onClick={() => requestSort('note')}>
+                                    {getSortIcon('note')} تێبینی
+                                </TableHead>
+                                <TableHead className="w-[20%] text-right cursor-pointer hover:text-primary transition-colors" onClick={() => requestSort('name')}>
+                                    {getSortIcon('name')} ناوی خەرجی
+                                </TableHead>
                             </TableRow>
+                            <AddExpenseTableRow onExpenseAdded={handleExpenseChange} />
                         </TableHeader>
                         <TableBody>
-                            <AddExpenseTableRow onExpenseAdded={handleExpenseChange} />
                             {isLoading ? (
                                 <TableRow>
                                     <TableCell colSpan={6} className="h-24 text-center">

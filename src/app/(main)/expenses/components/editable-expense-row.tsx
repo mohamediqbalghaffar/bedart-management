@@ -229,12 +229,7 @@ export function EditableExpenseRow({ expense, onExpenseUpdated, mode = 'table' }
 
     return (
         <TableRow key={expense.id} className="hidden md:table-row">
-            <TableCell className="font-medium text-right">{expense.name}</TableCell>
-            <TableCell className="text-right">{expense.note || '---'}</TableCell>
-            <TableCell className="text-right"><ConfidentialBlur>{currencyFormatter.format(expense.amount)}</ConfidentialBlur></TableCell>
-            <TableCell className="text-right"><Badge variant="outline">{categoryTranslations[expense.category] || expense.category}</Badge></TableCell>
-            <TableCell className="text-right">{format(parseISO(expense.date), "yyyy-MM-dd")}</TableCell>
-            <TableCell className="text-left">
+            <TableCell className="text-right">
                 <div className="flex gap-2">
                         <Button size="icon" variant="ghost" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4 text-blue-500"/></Button>
                         <AlertDialog>
@@ -251,6 +246,11 @@ export function EditableExpenseRow({ expense, onExpenseUpdated, mode = 'table' }
                     </AlertDialog>
                 </div>
             </TableCell>
+            <TableCell className="text-right">{format(parseISO(expense.date), "yyyy-MM-dd")}</TableCell>
+            <TableCell className="text-right"><Badge variant="outline">{categoryTranslations[expense.category] || expense.category}</Badge></TableCell>
+            <TableCell className="text-right"><ConfidentialBlur>{currencyFormatter.format(expense.amount)}</ConfidentialBlur></TableCell>
+            <TableCell className="text-right">{expense.note || '---'}</TableCell>
+            <TableCell className="font-medium text-right">{expense.name}</TableCell>
         </TableRow>
     );
 }
