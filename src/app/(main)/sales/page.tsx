@@ -548,8 +548,8 @@ function SalesList() {
             )}
 
             {/* ── Main table card ── */}
-            <Card>
-                <CardHeader>
+            <Card className="flex-1 flex flex-col overflow-hidden min-h-0">
+                <CardHeader className="flex-shrink-0">
                     <CardTitle>لیستی فرۆشتنەکان</CardTitle>
                     <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-4">
                         {/* Search */}
@@ -580,11 +580,11 @@ function SalesList() {
                     </div>
                 </CardHeader>
 
-                <CardContent>
+                <CardContent className="flex-1 overflow-y-auto min-h-0 p-0 md:p-6">
                     {/* ── Desktop table ── */}
                     <TooltipProvider delayDuration={300}>
-                        <Table className="hidden md:table">
-                            <TableHeader>
+                        <Table className="hidden md:table relative">
+                            <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
                                 <TableRow>
                                     <TableHead className="text-center">
                                         <Button variant="ghost" onClick={() => requestSort('formNumber')}>
@@ -740,7 +740,7 @@ function SalesList() {
                     </TooltipProvider>
 
                     {/* ── Mobile cards ── */}
-                    <div className="md:hidden space-y-4">
+                    <div className="md:hidden space-y-4 p-4">
                         {isLoadingSales ? (
                             [...Array(3)].map((_, i) => (
                                 <Card key={i} className="animate-pulse">
@@ -812,7 +812,7 @@ function SalesList() {
 
                 {/* ── Pagination footer ── */}
                 {!isLoadingSales && sortedSales.length > 0 && (
-                    <CardFooter className="flex items-center justify-between border-t pt-4 flex-wrap gap-3">
+                    <CardFooter className="flex-shrink-0 flex items-center justify-between border-t pt-4 flex-wrap gap-3">
                         <p className="text-sm text-muted-foreground">
                             {sortedSales.length} تۆمار — پەڕەی {currentPage} لە {totalPages}
                         </p>
@@ -877,7 +877,7 @@ export default function SalesPage({ params, searchParams }: { params: Promise<an
     use(params);
     use(searchParams);
     return (
-        <div className="p-4 md:p-8 space-y-8" dir="rtl">
+        <div className="h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)] pb-20 md:pb-0 flex flex-col p-4 md:p-8 space-y-4 md:space-y-8 overflow-hidden" dir="rtl">
             <SalesList />
         </div>
     );
