@@ -206,6 +206,7 @@ function ReceiptPreview({ formId }: { formId: string }) {
                 const rawData = formSnap.data();
                 const standardizedData = {
                     ...rawData,
+                    formNumber: String(rawData.formNumber || '0'),
                     customerPhoneNumber: rawData.customerPhoneNumber || rawData.customerPhone || ""
                 };
 
@@ -459,6 +460,7 @@ function SalesList() {
                 const rawData = formSnap.data();
                 const standardizedData = {
                     ...rawData,
+                    formNumber: String(rawData.formNumber || '0'),
                     customerPhoneNumber: rawData.customerPhoneNumber || rawData.customerPhone || ""
                 };
                 // Setting printData triggers the useEffect which calls window.print()

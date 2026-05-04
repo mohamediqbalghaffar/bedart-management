@@ -2,7 +2,7 @@
 .new-receipt-container {
     background-color: white;
     color: black;
-    font-family: var(--font-noto-kufi-arabic), sans-serif;
+    font-family: var(--font-noto-kufi-arabic), 'Noto Kufi Arabic', 'Segoe UI', Tahoma, Arial, sans-serif;
     padding: 12mm 15mm; /* Professional margins */
     width: 210mm; /* Standard A4 width */
     height: 297mm; /* Standard A4 height */
@@ -12,7 +12,11 @@
     flex-direction: column;
     position: relative;
     overflow: hidden;
-    line-height: 1.4;
+    line-height: 1.2;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    font-variant-ligatures: common-ligatures;
+    letter-spacing: 0 !important;
 }
 
 /* --- Header Section --- */
@@ -22,7 +26,7 @@
     align-items: center;
     padding-bottom: 12px;
     border-bottom: 2px solid #1e293b;
-    margin-bottom: 15px;
+    margin-bottom: 8px;
     direction: rtl;
 }
 
@@ -56,9 +60,9 @@
 }
 
 .header-left .form-number {
-    font-size: 0.9rem;
+    font-size: 1.1rem;
     color: #1e293b;
-    font-weight: 700;
+    font-weight: 900;
 }
 
 .header-left .product-categories {
@@ -93,7 +97,7 @@
 
 /* --- Customer Information --- */
 .customer-info {
-    margin-bottom: 15px;
+    margin-bottom: 8px;
     display: grid;
     grid-template-columns: 1.5fr 1fr;
     gap: 12px 30px;
@@ -144,7 +148,7 @@
 .new-line-items-table th,
 .new-line-items-table td {
     border: 1px solid #cbd5e1;
-    padding: 10px 8px;
+    padding: 6px 8px;
 }
 
 .new-line-items-table th {
@@ -155,10 +159,14 @@
     font-size: 0.85rem;
 }
 
-.new-line-items-table .item-col { width: 45%; text-align: right; }
-.new-line-items-table .qty-col { width: 10%; }
-.new-line-items-table .price-col { width: 20%; }
-.new-line-items-table .total-col { width: 25%; }
+.new-line-items-table .item-col { width: 55%; text-align: right; }
+.new-line-items-table .qty-col { width: 8%; }
+.new-line-items-table .price-col { width: 17%; }
+.new-line-items-table .total-col { width: 20%; }
+
+.new-line-items-table td {
+    letter-spacing: 0px !important;
+}
 
 .new-line-items-table tbody tr:nth-child(even) {
     background-color: #f8fafc;

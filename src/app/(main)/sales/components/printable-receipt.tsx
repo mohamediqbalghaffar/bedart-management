@@ -76,7 +76,7 @@ export const PrintableReceipt = React.forwardRef<HTMLDivElement, PrintableReceip
                         <span className="logo-bed">Bed</span><span className="logo-art">Art</span> <span className="logo-group">group</span>
                     </div>
                     <div className="form-number-box">
-                        <p className="form-number">No. {formData.formNumber}</p>
+                        <p className="form-number">No. {String(formData?.formNumber || '0')}</p>
                     </div>
                     <p className="product-categories">تەختی نوستن . دۆشەک . پشتی</p>
                 </div>
