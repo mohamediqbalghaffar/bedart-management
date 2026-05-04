@@ -740,71 +740,85 @@ function SalesList() {
                     </TooltipProvider>
 
                     {/* ── Mobile cards ── */}
-                    <div className="md:hidden space-y-4 p-4">
+                    <div className="md:hidden space-y-2 p-2">
                         {isLoadingSales ? (
-                            [...Array(3)].map((_, i) => (
-                                <Card key={i} className="animate-pulse">
-                                    <CardHeader>
-                                        <div className="h-5 bg-muted rounded w-1/2" />
-                                        <div className="h-3 bg-muted rounded w-1/3 mt-2" />
-                                    </CardHeader>
-                                    <CardContent><div className="h-4 bg-muted rounded w-full" /></CardContent>
-                                </Card>
+                            [...Array(5)].map((_, i) => (
+                                <div key={i} className="animate-pulse h-24 bg-muted rounded-lg" />
                             ))
                         ) : !paginatedSales || paginatedSales.length === 0 ? (
-                            <div className="py-16 text-center">
-                                <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                                    <FileSpreadsheet className="h-12 w-12 opacity-30" />
-                                    <p className="text-base font-medium">هیچ فرۆشێک بەم پێوەرانە نەدۆزرایەوە.</p>
-                                </div>
+                            <div className="py-16 text-center text-muted-foreground">
+                                <FileSpreadsheet className="h-12 w-12 opacity-30 mx-auto mb-3" />
+                                <p className="text-base font-medium">هیچ فرۆشێک نەدۆزرایەوە.</p>
                             </div>
                         ) : (
                             paginatedSales.map((sale) => (
-                                <Card key={sale.id} className="transition-shadow hover:shadow-md">
-                                    <CardHeader>
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <CardTitle className="text-base">{sale.customerName}</CardTitle>
-                                                <CardDescription>فۆڕمی #{sale.formNumber} — {sale.issueDate}</CardDescription>
-                                            </div>
-                                            <Badge
-                                                variant={sale.paymentStatus === 'Fully Paid' ? 'default' : sale.paymentStatus === 'Unpaid' ? 'destructive' : 'secondary'}
-                                                className={sale.paymentStatus === 'Fully Paid' ? 'bg-green-600 text-white' : ''}
-                                            >
-                                                {paymentStatusOptions.find(o => o.value === sale.paymentStatus)?.label || sale.paymentStatus}
-                                            </Badge>
+                                <div key={sale.id} className="bg-card border rounded-lg p-3 space-y-2 shadow-sm transition-shadow hover:shadow-md">
+                                    <div className="flex justify-between items-center gap-2">
+                                        <div className="font-bold text-sm truncate flex-1 text-right">{sale.customerName}</div>
+                                        <Badge
+                                            variant={sale.paymentStatus === 'Fully Paid' ? 'default' : sale.paymentStatus === 'Unpaid' ? 'destructive' : 'secondary'}
+                                            className={cn("text-[10px] px-1.5 h-5 flex-shrink-0", sale.paymentStatus === 'Fully Paid' ? 'bg-green-600 text-white' : '')}
+                                        >
+                                            {paymentStatusOptions.find(o => o.value === sale.paymentStatus)?.label || sale.paymentStatus}
+                                        </Badge>
+                                    </div>
+                                    
+                                    <div className="flex justify-between items-center text-[11px] text-muted-foreground">
+                                        <div className="flex gap-2">
+                                            <span>#{sale.formNumber}</span>
+                                            <span>{sale.issueDate}</span>
                                         </div>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-muted-foreground text-sm">کۆی گشتی:</span>
-                                            <span className="font-semibold font-mono text-sm">{fmt.format(sale.totalPrice || 0)}</span>
-                                        </div>
-                                    </CardContent>
-                                    <CardFooter className="flex justify-end gap-2 flex-wrap">
+                                        <div className="font-bold font-mono text-foreground text-xs">{fmt.format(sale.totalPrice || 0)}</div>
+                                    </div>
+                                    
+                                    <div className="flex justify-end gap-1 pt-1 border-t border-muted/30">
+                                        {/* Receipt dropdown */}
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted transition-colors">
+                                                    <FileSpreadsheet className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent dir="rtl">
+                                                <DropdownMenuItem onSelect={() => setTimeout(() => setPreviewFormId(sale.id), 150)}>بینینی پسوولە</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => setTimeout(() => handleDirectPrint(sale.id), 150)}>چاپکردنی پسوولە</DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+
+                                        {/* Edit */}
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 hover:bg-blue-500/10 hover:text-blue-400 transition-colors"
+                                            onClick={() => setEditingFormId(sale.id)}
+                                        >
+                                            <Edit className="h-4 w-4 text-blue-500" />
+                                        </Button>
+
+                                        {/* Delete */}
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="sm" className="text-destructive hover:bg-red-500/10">
-                                                    {/* RTL fix: ml-2 so icon (right) has space from text (left) */}
-                                                    <Trash2 className="h-4 w-4 ml-2" />سڕینەوە
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+                                                >
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
                                                 </Button>
                                             </AlertDialogTrigger>
                                             <AlertDialogContent dir="rtl">
-                                                <AlertDialogHeader><AlertDialogTitle>دڵنیایت؟</AlertDialogTitle></AlertDialogHeader>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>دڵنیایت؟</AlertDialogTitle>
+                                                    <AlertDialogDescription>ئەم کردارە پاشگەزبوونەوەی نییە.</AlertDialogDescription>
+                                                </AlertDialogHeader>
                                                 <AlertDialogFooter>
                                                     <AlertDialogCancel>نەخێر</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleDelete(sale.id)} className="bg-destructive">بەڵێ</AlertDialogAction>
+                                                    <AlertDialogAction onClick={() => handleDelete(sale.id)} className="bg-destructive">بەڵێ، بسڕەوە</AlertDialogAction>
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
-                                        <Button variant="ghost" size="sm" onClick={() => setEditingFormId(sale.id)} className="hover:bg-blue-500/10 hover:text-blue-400">
-                                            <Edit className="h-4 w-4 ml-2 text-blue-500" />دەستکاری
-                                        </Button>
-                                        <Button variant="ghost" size="sm" onClick={() => setPreviewFormId(sale.id)} className="hover:bg-muted">
-                                            <FileSpreadsheet className="h-4 w-4 ml-2" />وردەکاری
-                                        </Button>
-                                    </CardFooter>
-                                </Card>
+                                    </div>
+                                </div>
                             ))
                         )}
                     </div>
