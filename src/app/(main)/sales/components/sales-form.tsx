@@ -13,7 +13,7 @@ import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useFirestore, doc, runTransaction, getDoc, collection, getDocs, useMemoFirebase, useCollection } from "@/firebase";
+import { useFirestore, doc, runTransaction, getDoc, collection, getDocs, useMemoFirebase, useCollection, orderBy, query, limit } from "@/firebase";
 import { DocumentReference } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -308,6 +308,33 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
             }
         }
     }, [paymentType, form, totalPaid, totalAmount]);
+
+
+  useEffect(() => {
+    async function fetchMaxFormNumber() {
+      if (!formId && firestore) {
+        try {
+          const formsRef = collection(firestore, 'selling_forms');
+          // Query the most recent forms to find the last sequence number
+          const q = query(formsRef, orderBy('issueDate', 'desc'), limit(50));
+          const querySnapshot = await getDocs(q);
+          
+          let maxNum = 0;
+          querySnapshot.forEach((doc) => {
+            const num = parseInt(doc.data().formNumber || "0");
+            if (!isNaN(num) && num > maxNum) {
+              maxNum = num;
+            }
+          });
+          
+          form.setValue('formNumber', String(maxNum + 1));
+        } catch (error) {
+          console.error("Error fetching max form number:", error);
+        }
+      }
+    }
+    fetchMaxFormNumber();
+  }, [formId, firestore, form]);
 
 
   useEffect(() => {
