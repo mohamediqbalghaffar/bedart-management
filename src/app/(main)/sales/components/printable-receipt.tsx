@@ -125,7 +125,9 @@ export const PrintableReceipt = React.forwardRef<HTMLDivElement, PrintableReceip
                     <tbody>
                         {products.map((item, index) => (
                             <tr key={index}>
-                                <td className="font-bold">{item.productName}</td>
+                                <td className="font-bold">
+                                    <span dir="rtl" style={{ unicodeBidi: 'embed' }}>{item.productName}</span>
+                                </td>
                                 <td className="text-center font-bold">{item.quantity}</td>
                                 <td className="text-center">{currencyFormatter.format(item.unitPrice)}</td>
                                 <td className="text-center font-bold">{currencyFormatter.format(Number(item.quantity) * Number(item.unitPrice))}</td>
@@ -141,6 +143,8 @@ export const PrintableReceipt = React.forwardRef<HTMLDivElement, PrintableReceip
                         ))}
                     </tbody>
                 </table>
+                
+                <div className="flex-grow"></div>
                 
                 <footer className="new-receipt-footer">
                     <div className="signature-area">
