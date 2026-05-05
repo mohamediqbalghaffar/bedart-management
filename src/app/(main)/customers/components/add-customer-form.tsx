@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore, addDocumentNonBlocking, collection } from "@/firebase";
+import { useFirestore, addDocumentNonBlocking, collection, doc, updateDoc } from "@/firebase";
 import { Textarea } from "@/components/ui/textarea";
 
 const customerSchema = z.object({
@@ -19,13 +19,19 @@ const customerSchema = z.object({
 
 type CustomerFormValues = z.infer<typeof customerSchema>;
 
-export function AddCustomerForm({ onCustomerAdded }: { onCustomerAdded?: () => void }) {
+interface AddCustomerFormProps {
+  onCustomerAdded?: () => void;
+  customerId?: string;
+  initialData?: CustomerFormValues;
+}
+
+export function AddCustomerForm({ onCustomerAdded, customerId, initialData }: AddCustomerFormProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
 
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(customerSchema),
-    defaultValues: {
+    defaultValues: initialData || {
       customerName: "",
       customerPhoneNumber: "",
       customerAddress: "",
@@ -42,17 +48,36 @@ export function AddCustomerForm({ onCustomerAdded }: { onCustomerAdded?: () => v
       return;
     }
 
-    const customersColRef = collection(firestore, "customers");
-    addDocumentNonBlocking(customersColRef, data);
-
-    toast({
-      title: "سەرکەوتوو بوو!",
-      description: "کڕیاری نوێ بە سەرکەوتوویی زیادکرا.",
-      className: "bg-accent text-accent-foreground",
-    });
-    form.reset();
-    if (onCustomerAdded) {
-      onCustomerAdded();
+    try {
+      if (customerId) {
+        const customerRef = doc(firestore, "customers", customerId);
+        await updateDoc(customerRef, data);
+        toast({
+          title: "سەرکەوتوو بوو!",
+          description: "زانیارییەکانی کڕیار بە سەرکەوتوویی نوێکرایەوە.",
+          className: "bg-accent text-accent-foreground",
+        });
+      } else {
+        const customersColRef = collection(firestore, "customers");
+        addDocumentNonBlocking(customersColRef, data);
+        toast({
+          title: "سەرکەوتوو بوو!",
+          description: "کڕیاری نوێ بە سەرکەوتوویی زیادکرا.",
+          className: "bg-accent text-accent-foreground",
+        });
+      }
+      
+      form.reset();
+      if (onCustomerAdded) {
+        onCustomerAdded();
+      }
+    } catch (error) {
+      console.error("Error saving customer:", error);
+      toast({
+        variant: "destructive",
+        title: "هەڵەیەک ڕوویدا",
+        description: "پاشەکەوتکردنی زانیارییەکان سەرکەوتوو نەبوو.",
+      });
     }
   }
 
