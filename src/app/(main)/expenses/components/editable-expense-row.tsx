@@ -186,14 +186,14 @@ export function EditableExpenseRow({ expense, onExpenseUpdated, mode = 'table' }
 
     if (mode === 'card') {
         return (
-            <div key={`${expense.id}-mobile`} className="md:hidden bg-card border rounded-md p-2 space-y-1 shadow-sm">
+            <div key={`${expense.id}-mobile`} className="md:hidden bg-card border rounded-md p-2 space-y-1 shadow-sm" dir="rtl">
                 <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2 min-w-0">
                          <Badge variant="outline" className="text-[8px] px-1 h-4 shrink-0">{categoryTranslations[expense.category] || expense.category}</Badge>
                          <span className="font-bold text-xs truncate">{expense.name}</span>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                         <span className="text-[9px] text-muted-foreground mr-1">{format(parseISO(expense.date), "yyyy-MM-dd")}</span>
+                         <span className="text-[9px] text-muted-foreground ml-1">{format(parseISO(expense.date), "yyyy-MM-dd")}</span>
                          <div className="flex gap-0">
                             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setIsEditing(true)}>
                                 <Edit className="h-3.5 w-3.5 text-blue-500"/>
