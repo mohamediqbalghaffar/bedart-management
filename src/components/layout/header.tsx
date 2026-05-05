@@ -10,8 +10,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 md:hidden">
          <div className="flex items-center gap-2 font-semibold">
-            <BedDouble className="h-6 w-6 text-primary" />
-            <span className="animated-gradient-border text-lg">BedArt Group</span>
+            <img src="/logo.png" alt="BedArt Group" className="h-8 w-auto object-contain" />
          </div>
          <div className="flex-1" />
          <Button size="icon" variant="ghost" onClick={logout}>

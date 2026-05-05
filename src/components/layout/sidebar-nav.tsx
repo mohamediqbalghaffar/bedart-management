@@ -47,8 +47,7 @@ export function SidebarNav() {
       <div className="flex h-full max-h-screen flex-col gap-2">
         <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
           <div className="flex items-center gap-2 font-semibold">
-            <BedDouble className="h-6 w-6 text-primary" />
-            <span className="animated-gradient-border">BedArt Group</span>
+            <img src="/logo.png" alt="BedArt Group" className="h-10 w-auto object-contain" />
           </div>
         </div>
         <div className="flex-1">

@@ -66,8 +66,7 @@ export default function LoginPage({ params, searchParams }: { params: Promise<an
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4" dir="rtl">
         <div className='absolute top-8 flex flex-col items-center gap-2'>
-            <BedDouble className="h-10 w-10 text-primary" />
-            <h1 className='text-2xl font-bold'>BedArt Group</h1>
+            <img src="/logo.png" alt="BedArt Group" className="h-24 w-auto object-contain" />
         </div>
       <Card className="w-[400px]">
         <CardHeader>
