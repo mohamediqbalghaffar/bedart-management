@@ -186,42 +186,43 @@ export function EditableExpenseRow({ expense, onExpenseUpdated, mode = 'table' }
 
     if (mode === 'card') {
         return (
-            <div key={`${expense.id}-mobile`} className="md:hidden bg-card border rounded-lg p-3 space-y-2 shadow-sm">
-                <div className="flex justify-between items-start">
-                    <div className="flex flex-col gap-0.5">
-                        <span className="font-bold text-sm leading-tight">{expense.name}</span>
-                        <span className="text-[10px] text-muted-foreground">{format(parseISO(expense.date), "yyyy-MM-dd")}</span>
+            <div key={`${expense.id}-mobile`} className="md:hidden bg-card border rounded-md p-2 space-y-1 shadow-sm">
+                <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2 min-w-0">
+                         <Badge variant="outline" className="text-[8px] px-1 h-4 shrink-0">{categoryTranslations[expense.category] || expense.category}</Badge>
+                         <span className="font-bold text-xs truncate">{expense.name}</span>
                     </div>
-                    <Badge variant="outline" className="text-[10px] px-1.5 h-5">{categoryTranslations[expense.category] || expense.category}</Badge>
+                    <div className="flex items-center gap-1 shrink-0">
+                         <span className="text-[9px] text-muted-foreground mr-1">{format(parseISO(expense.date), "yyyy-MM-dd")}</span>
+                         <div className="flex gap-0">
+                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setIsEditing(true)}>
+                                <Edit className="h-3.5 w-3.5 text-blue-500"/>
+                            </Button>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button size="icon" variant="ghost" className="h-7 w-7" disabled={isDeleting}>
+                                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent dir="rtl">
+                                    <AlertDialogHeader><AlertDialogTitle>ئایا دڵنیایت لە سڕینەوەی ئەم خەرجییە؟</AlertDialogTitle><AlertDialogDescription>ئەم کردارە پاشگەزبوونەوەی نییە و ناتوانیت بیگەڕێنیتەوە.</AlertDialogDescription></AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">بەڵێ, بسڕەوە</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                         </div>
+                    </div>
                 </div>
                 
-                <div className="flex justify-between items-center py-0.5">
-                    <div className="text-sm font-bold text-primary">
+                <div className="flex justify-between items-center px-1">
+                     <div className="text-xs font-bold text-primary">
                         <ConfidentialBlur>{currencyFormatter.format(expense.amount)}</ConfidentialBlur>
                     </div>
                     {expense.note && (
-                        <span className="text-[11px] text-muted-foreground truncate max-w-[150px]">{expense.note}</span>
+                        <span className="text-[9px] text-muted-foreground truncate max-w-[120px]">{expense.note}</span>
                     )}
-                </div>
-
-                <div className="flex justify-end gap-1 pt-1 border-t">
-                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setIsEditing(true)}>
-                        <Edit className="h-4 w-4 text-blue-500"/>
-                    </Button>
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button size="icon" variant="ghost" className="h-8 w-8" disabled={isDeleting}>
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent dir="rtl">
-                            <AlertDialogHeader><AlertDialogTitle>ئایا دڵنیایت لە سڕینەوەی ئەم خەرجییە؟</AlertDialogTitle><AlertDialogDescription>ئەم کردارە پاشگەزبوونەوەی نییە و ناتوانیت بیگەڕێنیتەوە.</AlertDialogDescription></AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">بەڵێ, بسڕەوە</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
                 </div>
             </div>
         );

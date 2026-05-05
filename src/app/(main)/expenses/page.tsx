@@ -99,16 +99,16 @@ function ExpensesList() {
 
     return (
         <Card className="flex flex-col h-full border-none shadow-none bg-transparent md:bg-card md:border md:shadow-sm">
-            <CardHeader className="pb-2">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                    <CardTitle>لیستی خەرجییەکان</CardTitle>
-                    <div className="mt-4 md:mt-0">
+            <CardHeader className="p-3 sm:p-6 pb-2 sm:pb-4">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
+                    <CardTitle className="text-base sm:text-xl">لیستی خەرجییەکان</CardTitle>
+                    <div className="mt-0">
                          <AddExpenseDialog onExpenseAdded={handleExpenseChange} />
                     </div>
                 </div>
             </CardHeader>
             <CardContent className="flex-1 overflow-hidden p-0 md:p-6 pt-0">
-                <ScrollArea className="h-full overflow-y-auto pr-4">
+                <ScrollArea className="h-[calc(100vh-280px)] md:h-full overflow-y-auto pr-0 md:pr-4">
                      <Table className="hidden md:table relative overflow-visible">
                         <TableHeader className="sticky top-0 z-20 bg-card shadow-sm">
                             <TableRow className="bg-card">
@@ -150,7 +150,7 @@ function ExpensesList() {
                         </TableBody>
                     </Table>
 
-                    <div className="md:hidden space-y-2 p-1">
+                    <div className="md:hidden space-y-1.5 p-3">
                         {isLoading ? (
                            <div className="flex justify-center items-center h-48"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></div>
                         ) : sortedExpenses.length === 0 ? (
