@@ -233,7 +233,7 @@ function StockPageContent() {
                             </TableBody>
                         </Table>
                     </ScrollArea>
-                    <div className="md:hidden p-4">
+                    <div className="md:hidden">
                         {isLoading ? (
                             <div className="flex justify-center items-center h-48"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></div>
                         ) : groupedProducts.length === 0 ? (
@@ -241,50 +241,51 @@ function StockPageContent() {
                                 {searchTerm ? `هیچ کاڵایەک نەدۆزرایەوە بۆ "${searchTerm}"` : "هیچ کاڵایەک لە کۆگا نییە."}
                             </div>
                         ) : (
-                            <div className="space-y-4">
-                                {groupedProducts.map((product) => (
-                                        <Card key={`${product.productName}-${product.sizeModel}`} className="bg-card/80 w-full overflow-hidden">
-                                        <CardHeader className="p-4 pb-2">
-                                            <div className="flex justify-between items-start gap-2">
-                                                <div className="min-w-0">
-                                                    <CardTitle className="text-base truncate">{product.productName} {product.sizeModel && `(${product.sizeModel})`}</CardTitle>
-                                                    <CardDescription className="text-xs">{product.category}</CardDescription>
+                            <ScrollArea className="h-[calc(100vh-320px)] w-full px-4 pb-4">
+                                <div className="space-y-3">
+                                    {groupedProducts.map((product) => (
+                                            <Card key={`${product.productName}-${product.sizeModel}`} className="bg-card/80 w-full overflow-hidden border-accent/20">
+                                            <CardHeader className="p-3 pb-1">
+                                                <div className="flex justify-between items-start gap-2">
+                                                    <div className="min-w-0">
+                                                        <CardTitle className="text-sm truncate font-bold">{product.productName} {product.sizeModel && `(${product.sizeModel})`}</CardTitle>
+                                                        <CardDescription className="text-[10px] opacity-80">{product.category}</CardDescription>
+                                                    </div>
+                                                        <StockTransferDialog product={product} onTransferSuccess={onTransferSuccess}>
+                                                        <Button variant="ghost" size="sm" disabled={!product.locations.Warehouse && !product.locations['Shop Showroom']} className="h-7 w-7 p-0 shrink-0">
+                                                            <ArrowRightLeft className="h-3.5 w-3.5 text-blue-500" />
+                                                        </Button>
+                                                    </StockTransferDialog>
                                                 </div>
-                                                    <StockTransferDialog product={product} onTransferSuccess={onTransferSuccess}>
-                                                    <Button variant="ghost" size="icon" disabled={!product.locations.Warehouse && !product.locations['Shop Showroom']} className="h-8 w-8 shrink-0">
-                                                        <ArrowRightLeft className="h-4 w-4 text-blue-500" />
-                                                    </Button>
-                                                </StockTransferDialog>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent className="p-4 pt-0 space-y-2 text-sm">
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-muted-foreground">دابینکەر:</span>
-                                                <span className="font-medium truncate ml-2">{product.supplierName}</span>
-                                            </div>
-                                            <Separator className="opacity-50" />
-                                            <div className="grid grid-cols-2 gap-2 pt-1">
-                                                <div className="flex flex-col">
-                                                    <span className="text-[10px] text-muted-foreground mb-1">کۆگا</span>
-                                                    <ConfidentialBlur><Badge variant="secondary" className="w-full justify-center h-7">{product.locations.Warehouse?.currentQuantity || 0}</Badge></ConfidentialBlur>
+                                            </CardHeader>
+                                            <CardContent className="p-3 pt-0 space-y-1.5 text-xs">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-muted-foreground text-[10px]">دابینکەر:</span>
+                                                    <span className="font-medium truncate ml-2 text-[11px]">{product.supplierName}</span>
                                                 </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-[10px] text-muted-foreground mb-1">فرۆشگا</span>
-                                                    <ConfidentialBlur><Badge variant="secondary" className="w-full justify-center h-7">{product.locations['Shop Showroom']?.currentQuantity || 0}</Badge></ConfidentialBlur>
+                                                <div className="grid grid-cols-2 gap-2 pt-1">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[9px] text-muted-foreground mb-0.5">کۆگا</span>
+                                                        <ConfidentialBlur><Badge variant="secondary" className="w-full justify-center h-6 text-[11px] font-semibold">{product.locations.Warehouse?.currentQuantity || 0}</Badge></ConfidentialBlur>
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[9px] text-muted-foreground mb-0.5">فرۆشگا</span>
+                                                        <ConfidentialBlur><Badge variant="secondary" className="w-full justify-center h-6 text-[11px] font-semibold">{product.locations['Shop Showroom']?.currentQuantity || 0}</Badge></ConfidentialBlur>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className="flex justify-between items-center font-bold pt-2 border-t mt-2">
-                                                <span>کۆی گشتی:</span>
-                                                <ConfidentialBlur>
-                                                    <Badge variant={product.totalQuantity < 5 ? "destructive" : "default"} className={product.totalQuantity >= 5 ? "bg-primary h-7 px-3" : "h-7 px-3"}>
-                                                        {product.totalQuantity}
-                                                    </Badge>
-                                                </ConfidentialBlur>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                            </div>
+                                                <div className="flex justify-between items-center font-bold pt-1.5 border-t mt-1 border-accent/10">
+                                                    <span className="text-[11px]">کۆی گشتی:</span>
+                                                    <ConfidentialBlur>
+                                                        <Badge variant={product.totalQuantity < 5 ? "destructive" : "default"} className={product.totalQuantity >= 5 ? "bg-primary/90 h-6 px-2 text-[11px]" : "h-6 px-2 text-[11px]"}>
+                                                            {product.totalQuantity}
+                                                        </Badge>
+                                                    </ConfidentialBlur>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            </ScrollArea>
                         )}
                     </div>
                 </CardContent>
