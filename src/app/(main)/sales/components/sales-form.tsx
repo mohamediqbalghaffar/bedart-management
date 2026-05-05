@@ -92,32 +92,32 @@ function SalesFormItemRow({
     
     if (mode === 'card') {
         return (
-            <Card className="md:hidden" key={`${fieldId}-mobile`}>
-                <CardHeader>
+            <Card className="md:hidden border-accent/20" key={`${fieldId}-mobile`}>
+                <CardHeader className="p-3 pb-2 border-b">
                     <div className="flex justify-between items-center">
-                        <CardTitle>کاڵای #{index + 1}</CardTitle>
-                        <Button variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        <CardTitle className="text-sm font-bold">کاڵای #{index + 1}</CardTitle>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="p-3 space-y-3">
                     <FormField
                     control={form.control}
                     name={`items.${index}.product`}
                     render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>ناوی کاڵا</FormLabel>
+                        <FormItem className="space-y-1">
+                        <FormLabel className="text-xs">ناوی کاڵا</FormLabel>
                         <div className="flex gap-2">
                             <FormControl>
                                 <div className="flex flex-col gap-1 w-full">
-                                    <Input placeholder="ناوی کاڵا..." {...field} />
+                                    <Input placeholder="ناوی کاڵا..." className="h-9 text-sm" {...field} />
                                     {form.watch(`items.${index}.sizeModel`) && (
-                                        <span className="text-xs text-muted-foreground pr-2">({form.watch(`items.${index}.sizeModel`)})</span>
+                                        <span className="text-[11px] text-muted-foreground pr-1">({form.watch(`items.${index}.sizeModel`)})</span>
                                     )}
                                 </div>
                             </FormControl>
                             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                             <DialogTrigger asChild>
-                                <Button variant="outline" size="icon"><List className="h-4 w-4" /></Button>
+                                <Button variant="outline" size="sm" className="h-9 w-9 p-0"><List className="h-4 w-4" /></Button>
                             </DialogTrigger>
                             <DialogContent dir="rtl" className="sm:max-w-3xl">
                                 <DialogHeader>
@@ -138,14 +138,14 @@ function SalesFormItemRow({
                         </FormItem>
                     )}
                     />
-                    <div className="grid grid-cols-2 gap-4">
-                        <FormField control={form.control} name={`items.${index}.quantity`} render={({ field }) => (<FormItem><FormLabel>دانە</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name={`items.${index}.unitPrice`} render={({ field }) => (<FormItem><FormLabel>نرخی تاک</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <div className="grid grid-cols-2 gap-3">
+                        <FormField control={form.control} name={`items.${index}.quantity`} render={({ field }) => (<FormItem><FormLabel className="text-xs">دانە</FormLabel><FormControl><Input type="number" className="h-9 text-sm" {...field} /></FormControl><FormMessage className="text-[10px]" /></FormItem>)} />
+                        <FormField control={form.control} name={`items.${index}.unitPrice`} render={({ field }) => (<FormItem><FormLabel className="text-xs">نرخی تاک</FormLabel><FormControl><Input type="number" step="0.01" className="h-9 text-sm" {...field} /></FormControl><FormMessage className="text-[10px]" /></FormItem>)} />
                     </div>
                 </CardContent>
-                <CardFooter className="bg-muted/50 p-4 flex justify-between items-center">
-                    <span className="text-muted-foreground">نرخی کۆ:</span>
-                    <ConfidentialBlur><span className="font-bold">{currencyFormatter.format(Number(watchedItem?.quantity || 0) * Number(watchedItem?.unitPrice || 0))}</span></ConfidentialBlur>
+                <CardFooter className="bg-muted/30 p-2 px-3 flex justify-between items-center rounded-b-lg border-t">
+                    <span className="text-xs text-muted-foreground">نرخی کۆ:</span>
+                    <ConfidentialBlur><span className="font-bold text-sm text-primary">{currencyFormatter.format(Number(watchedItem?.quantity || 0) * Number(watchedItem?.unitPrice || 0))}</span></ConfidentialBlur>
                 </CardFooter>
             </Card>
         );
@@ -620,14 +620,14 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" dir="rtl">
         <Card>
-            <CardHeader className="flex flex-col md:flex-row justify-between items-start p-4 gap-4">
+            <CardHeader className="flex flex-col md:flex-row justify-between items-start p-3 sm:p-4 gap-3 sm:gap-4">
                  <FormField
                     control={form.control}
                     name="formNumber"
                     render={({ field }) => (
                         <FormItem className="flex items-center gap-2">
-                        <FormLabel className="font-bold text-lg mt-2">No.</FormLabel>
-                        <FormControl><Input className="w-24 font-bold text-lg" {...field} /></FormControl>
+                        <FormLabel className="font-bold text-base sm:text-lg mt-1">No.</FormLabel>
+                        <FormControl><Input className="w-20 sm:w-24 h-9 sm:h-10 font-bold text-base sm:text-lg" {...field} /></FormControl>
                         <FormMessage />
                         </FormItem>
                     )}
@@ -637,9 +637,9 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                     name="issueDate"
                     render={({ field }) => (
                         <FormItem className="flex items-center gap-2">
-                            <FormLabel className="mt-2">بەروار:</FormLabel>
+                            <FormLabel className="mt-1 text-sm sm:text-base">بەروار:</FormLabel>
                             <FormControl>
-                                <DatePicker value={field.value} onChange={field.onChange} className="w-[180px]" />
+                                <DatePicker value={field.value} onChange={field.onChange} className="w-[140px] sm:w-[180px] h-9 sm:h-10" />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -649,22 +649,22 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
         </Card>
 
         <Card>
-            <CardHeader><CardTitle>زانیاری کڕیار</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-                 <div className="flex flex-col md:flex-row items-start gap-4">
+            <CardHeader className="p-3 sm:p-6"><CardTitle className="text-base sm:text-xl">زانیاری کڕیار</CardTitle></CardHeader>
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0 space-y-3 sm:space-y-4">
+                 <div className="flex flex-col md:flex-row items-start gap-3 sm:gap-4">
                     <FormField
                     control={form.control}
                     name="customerName"
                     render={({ field }) => (
-                        <FormItem className="flex-1 w-full">
-                        <FormLabel>بەڕێز</FormLabel>
+                        <FormItem className="flex-1 w-full space-y-1">
+                        <FormLabel className="text-xs sm:text-sm">بەڕێز</FormLabel>
                             <div className="flex gap-2">
                                 <FormControl>
-                                    <Input {...field} />
+                                    <Input className="h-9 sm:h-10 text-sm sm:text-base" {...field} />
                                 </FormControl>
                                 <Dialog open={isCustomerDialogOpen} onOpenChange={setIsCustomerDialogOpen}>
                                     <DialogTrigger asChild>
-                                        <Button variant="outline" size="icon"><List className="h-4 w-4" /></Button>
+                                        <Button variant="outline" size="sm" className="h-9 sm:h-10 w-9 sm:w-10 p-0"><List className="h-4 w-4" /></Button>
                                     </DialogTrigger>
                                     <DialogContent dir="rtl" className="sm:max-w-3xl">
                                         <DialogHeader>
@@ -679,19 +679,19 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                                     </DialogContent>
                                 </Dialog>
                             </div>
-                        <FormMessage />
+                        <FormMessage className="text-[10px]" />
                         </FormItem>
                     )}
                     />
-                    <FormField control={form.control} name="customerPhoneNumber" render={({ field }) => ( <FormItem className="flex-1 w-full"> <FormLabel>ژ. مۆبایل</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                    <FormField control={form.control} name="customerPhoneNumber" render={({ field }) => ( <FormItem className="flex-1 w-full space-y-1"> <FormLabel className="text-xs sm:text-sm">ژ. مۆبایل</FormLabel> <FormControl><Input className="h-9 sm:h-10 text-sm sm:text-base" {...field} /></FormControl> <FormMessage className="text-[10px]" /> </FormItem> )} />
                 </div>
-                <FormField control={form.control} name="customerAddress" render={({ field }) => ( <FormItem> <FormLabel>ناونیشان</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                <FormField control={form.control} name="customerAddress" render={({ field }) => ( <FormItem className="space-y-1"> <FormLabel className="text-xs sm:text-sm">ناونیشان</FormLabel> <FormControl><Input className="h-9 sm:h-10 text-sm sm:text-base" {...field} /></FormControl> <FormMessage className="text-[10px]" /> </FormItem> )} />
             </CardContent>
         </Card>
         
         <Card>
-            <CardHeader><CardTitle>کاڵا فرۆشراوەکان</CardTitle></CardHeader>
-            <CardContent>
+            <CardHeader className="p-3 sm:p-6"><CardTitle className="text-base sm:text-xl">کاڵا فرۆشراوەکان</CardTitle></CardHeader>
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
                  {/* Desktop Table */}
                 <Table className="hidden md:table">
                     <TableHeader>
@@ -736,12 +736,12 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
             </CardContent>
         </Card>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <Card>
-                <CardHeader><CardTitle>دارایی</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                     <div className="space-y-2">
-                        <FormLabel>داشکاندن</FormLabel>
+                <CardHeader className="p-3 sm:p-6"><CardTitle className="text-base sm:text-xl">دارایی</CardTitle></CardHeader>
+                <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0 space-y-3 sm:space-y-4">
+                     <div className="space-y-1 sm:space-y-2">
+                        <FormLabel className="text-xs sm:text-sm">داشکاندن</FormLabel>
                         <div className="flex gap-4 items-center">
                             <FormField
                                 control={form.control}
@@ -775,9 +775,9 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormControl>
-                                            <Input type="number" step="0.01" {...field} disabled={!discountType} className="w-32" />
+                                            <Input type="number" step="0.01" {...field} disabled={!discountType} className="w-24 sm:w-32 h-9 sm:h-10 text-sm sm:text-base" />
                                         </FormControl>
-                                        <FormMessage />
+                                        <FormMessage className="text-[10px]" />
                                     </FormItem>
                                 )}
                             />
@@ -787,24 +787,24 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                         control={form.control}
                         name="deliveryCost"
                         render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>تێچووی گەیاندن</FormLabel>
+                            <FormItem className="space-y-1">
+                                <FormLabel className="text-xs sm:text-sm">تێچووی گەیاندن</FormLabel>
                                 <FormControl>
-                                    <Input type="number" step="0.01" {...field} className="w-32" />
+                                    <Input type="number" step="0.01" {...field} className="w-24 sm:w-32 h-9 sm:h-10 text-sm sm:text-base" />
                                 </FormControl>
-                                <FormMessage />
+                                <FormMessage className="text-[10px]" />
                             </FormItem>
                         )}
                     />
-                    <div className="grid grid-cols-2 gap-4 items-end">
+                     <div className="grid grid-cols-2 gap-3 sm:gap-4 items-end">
                     <FormField
                         control={form.control}
                         name="paymentType"
                         render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>جۆری پارەدان</FormLabel>
+                        <FormItem className="space-y-1">
+                            <FormLabel className="text-xs sm:text-sm">جۆری پارەدان</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value} dir="rtl">
-                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                            <FormControl><SelectTrigger className="h-9 sm:h-10 text-sm sm:text-base"><SelectValue /></SelectTrigger></FormControl>
                             <SelectContent>
                                 <SelectItem value="Direct Payment">پارەی ڕاستەوخۆ</SelectItem>
                                 <SelectItem value="After Delivery">دوای گەیاندن</SelectItem>
@@ -812,7 +812,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                                 <SelectItem value="Pre-order">داواکاری پێشوەختە</SelectItem>
                             </SelectContent>
                             </Select>
-                            <FormMessage />
+                            <FormMessage className="text-[10px]" />
                         </FormItem>
                         )}
                     />
@@ -820,17 +820,17 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                             control={form.control}
                             name="paymentStatus"
                             render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>دۆخی پارەدان</FormLabel>
+                            <FormItem className="space-y-1">
+                                <FormLabel className="text-xs sm:text-sm">دۆخی پارەدان</FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value} dir="rtl" disabled={paymentType !== 'Installments'}>
-                                <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
+                                <FormControl><SelectTrigger className="h-9 sm:h-10 text-sm sm:text-base"><SelectValue/></SelectTrigger></FormControl>
                                 <SelectContent>
                                     <SelectItem value="Fully Paid">هەمووی دراوە</SelectItem>
                                     <SelectItem value="Partially Paid">بەشێکی دراوە</SelectItem>
                                     <SelectItem value="Unpaid">نەدراوە</SelectItem>
                                 </SelectContent>
                                 </Select>
-                                <FormMessage />
+                                <FormMessage className="text-[10px]" />
                             </FormItem>
                             )}
                         />
@@ -838,36 +838,36 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                 </CardContent>
             </Card>
              <Card>
-                <CardHeader><CardTitle>پوختە</CardTitle></CardHeader>
-                <CardContent className="space-y-2 text-left">
-                    <div className="flex items-center justify-between gap-4 p-2 rounded-md">
-                        <span className="text-muted-foreground">کۆی کاڵاکان:</span>
-                        <ConfidentialBlur><span className="font-semibold">{currencyFormatter.format(subTotal)}</span></ConfidentialBlur>
+                <CardHeader className="p-3 sm:p-6"><CardTitle className="text-base sm:text-xl">پوختە</CardTitle></CardHeader>
+                <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0 space-y-1 sm:space-y-2 text-left">
+                    <div className="flex items-center justify-between gap-4 p-1.5 sm:p-2 rounded-md">
+                        <span className="text-xs sm:text-sm text-muted-foreground">کۆی کاڵاکان:</span>
+                        <ConfidentialBlur><span className="text-sm sm:text-base font-semibold">{currencyFormatter.format(subTotal)}</span></ConfidentialBlur>
                     </div>
-                     <div className="flex items-center justify-between gap-4 p-2 rounded-md">
-                        <span className="text-muted-foreground">داشکاندن:</span>
-                        <ConfidentialBlur><span className="font-semibold text-destructive">-{currencyFormatter.format(discountAmount)}</span></ConfidentialBlur>
+                     <div className="flex items-center justify-between gap-4 p-1.5 sm:p-2 rounded-md">
+                        <span className="text-xs sm:text-sm text-muted-foreground">داشکاندن:</span>
+                        <ConfidentialBlur><span className="text-sm sm:text-base font-semibold text-destructive">-{currencyFormatter.format(discountAmount)}</span></ConfidentialBlur>
                     </div>
-                    <div className="flex items-center justify-between gap-4 p-2 rounded-md">
-                        <span className="text-muted-foreground">تێچووی گەیاندن:</span>
-                        <ConfidentialBlur><span className="font-semibold">{currencyFormatter.format(Number(deliveryCost) || 0)}</span></ConfidentialBlur>
+                    <div className="flex items-center justify-between gap-4 p-1.5 sm:p-2 rounded-md">
+                        <span className="text-xs sm:text-sm text-muted-foreground">تێچووی گەیاندن:</span>
+                        <ConfidentialBlur><span className="text-sm sm:text-base font-semibold">{currencyFormatter.format(Number(deliveryCost) || 0)}</span></ConfidentialBlur>
                     </div>
-                    <div className="flex items-center justify-between gap-4 p-2 rounded-md bg-secondary/80 text-lg">
+                    <div className="flex items-center justify-between gap-4 p-1.5 sm:p-2 rounded-md bg-secondary/80 text-base sm:text-lg">
                         <span className="font-bold">کۆی گشتی:</span>
                         <ConfidentialBlur><span className="font-bold">{currencyFormatter.format(totalAmount)}</span></ConfidentialBlur>
                     </div>
                     {paymentType === 'Installments' && (
                         <>
-                            <div className="flex items-center justify-between gap-4 p-2 rounded-md">
-                                <span className="text-muted-foreground">کۆی دراوە:</span>
-                                <ConfidentialBlur><span className="font-semibold text-green-500">{currencyFormatter.format(totalPaid)}</span></ConfidentialBlur>
+                            <div className="flex items-center justify-between gap-4 p-1.5 sm:p-2 rounded-md">
+                                <span className="text-xs sm:text-sm text-muted-foreground">کۆی دراوە:</span>
+                                <ConfidentialBlur><span className="text-sm sm:text-base font-semibold text-green-500">{currencyFormatter.format(totalPaid)}</span></ConfidentialBlur>
                             </div>
-                            <div className="flex items-center justify-between gap-4 p-2 rounded-md bg-destructive/10 text-destructive text-lg">
+                            <div className="flex items-center justify-between gap-4 p-1.5 sm:p-2 rounded-md bg-destructive/10 text-destructive text-base sm:text-lg">
                                 <span className="font-bold">ماوە:</span>
                                 <ConfidentialBlur><span className="font-bold">{currencyFormatter.format(remainingBalance)}</span></ConfidentialBlur>
                             </div>
                              {overpayment > 0 && (
-                                <div className="flex items-center justify-between gap-4 p-2 rounded-md bg-green-500/10 text-green-500 text-lg">
+                                <div className="flex items-center justify-between gap-4 p-1.5 sm:p-2 rounded-md bg-green-500/10 text-green-500 text-base sm:text-lg">
                                     <span className="font-bold">بڕی زیادە:</span>
                                     <ConfidentialBlur><span className="font-bold">{currencyFormatter.format(overpayment)}</span></ConfidentialBlur>
                                 </div>
@@ -880,8 +880,8 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
         
         {paymentType === 'Installments' && (
              <Card>
-                <CardHeader><CardTitle>تۆماری قیستەکان</CardTitle></CardHeader>
-                <CardContent>
+                <CardHeader className="p-3 sm:p-6"><CardTitle className="text-base sm:text-xl">تۆماری قیستەکان</CardTitle></CardHeader>
+                <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
                     <Table>
                         <TableHeader><TableRow><TableHead className="w-1/4 text-center">بەروار</TableHead><TableHead className="text-center">بڕ</TableHead><TableHead className="text-center">شێواز</TableHead><TableHead className="text-center">تێبینی</TableHead><TableHead></TableHead></TableRow></TableHeader>
                         <TableBody>
