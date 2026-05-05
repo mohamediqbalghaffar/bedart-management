@@ -14,6 +14,12 @@ const notoKufiArabic = Noto_Kufi_Arabic({
 export const metadata: Metadata = {
   title: 'BedArt Group',
   description: 'سیستەمی بەڕێوەبردنی کار بۆ فرۆشگای دۆشەک و پێداویستیەکانی',
+  themeColor: '#2B78C5',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'BedArt Group',
+  },
 };
 
 export default async function RootLayout({ children, params }: { children: React.ReactNode, params: any }) {
