@@ -393,10 +393,10 @@ function PurchasesList() {
                     <Table className="hidden md:table">
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="text-right">دابینکەر</TableHead>
-                                <TableHead className="text-right">بەروار</TableHead>
-                                <TableHead className="text-right">کۆی گشتی</TableHead>
                                 <TableHead className="text-left">کردارەکان</TableHead>
+                                <TableHead className="text-right">کۆی گشتی</TableHead>
+                                <TableHead className="text-right">بەروار</TableHead>
+                                <TableHead className="text-right">دابینکەر</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -413,13 +413,6 @@ function PurchasesList() {
                             ) : (
                                 enrichedForms.map((form) => (
                                 <TableRow key={form.id}>
-                                    <TableCell className="font-medium text-right">{form.supplierName}</TableCell>
-                                    <TableCell className="text-right">{form.issueDate}</TableCell>
-                                    <TableCell className="text-right">
-                                        <Badge variant="secondary">
-                                          <ConfidentialBlur>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(form.totalAmount || 0)}</ConfidentialBlur>
-                                        </Badge>
-                                    </TableCell>
                                     <TableCell className="text-left">
                                         <div className="flex items-center justify-start gap-2">
                                             <AlertDialog>
@@ -469,6 +462,13 @@ function PurchasesList() {
                                             </Dialog>
                                         </div>
                                     </TableCell>
+                                    <TableCell className="text-right">
+                                        <Badge variant="secondary">
+                                          <ConfidentialBlur>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(form.totalAmount || 0)}</ConfidentialBlur>
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right">{form.issueDate}</TableCell>
+                                    <TableCell className="font-medium text-right">{form.supplierName}</TableCell>
                                 </TableRow>
                             )))}
                         </TableBody>

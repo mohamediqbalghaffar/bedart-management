@@ -91,20 +91,20 @@ export function PurchaseDetails({ formId }: { formId: string }) {
                         <Table className="hidden md:table">
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="text-right">کاڵا</TableHead>
-                                    <TableHead className="text-right">دانە</TableHead>
-                                    <TableHead className="text-right">نرخی تاک (USD)</TableHead>
                                     <TableHead className="text-left">نرخی کۆ (USD)</TableHead>
+                                    <TableHead className="text-right">نرخی تاک (USD)</TableHead>
+                                    <TableHead className="text-right">دانە</TableHead>
+                                    <TableHead className="text-right">کاڵا</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {products && products.length > 0 ? (
                                     products.map((item, index) => (
                                         <TableRow key={index}>
-                                            <TableCell className="text-right">{item.productName}</TableCell>
-                                            <TableCell className="text-right"><ConfidentialBlur>{item.quantity}</ConfidentialBlur></TableCell>
-                                            <TableCell className="text-right"><ConfidentialBlur>{currencyFormatter.format(item.unitPrice)}</ConfidentialBlur></TableCell>
                                             <TableCell className="text-left font-semibold"><ConfidentialBlur>{currencyFormatter.format(item.quantity * item.unitPrice)}</ConfidentialBlur></TableCell>
+                                            <TableCell className="text-right"><ConfidentialBlur>{currencyFormatter.format(item.unitPrice)}</ConfidentialBlur></TableCell>
+                                            <TableCell className="text-right"><ConfidentialBlur>{item.quantity}</ConfidentialBlur></TableCell>
+                                            <TableCell className="text-right">{item.productName}</TableCell>
                                         </TableRow>
                                     ))
                                 ) : (
