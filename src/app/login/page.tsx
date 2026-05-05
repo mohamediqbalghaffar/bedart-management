@@ -22,9 +22,17 @@ export default function LoginPage({ params, searchParams }: { params: Promise<an
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, isLoading: isAuthLoading } = useAuth();
   const { toast } = useToast();
   const firestore = useFirestore();
+
+  if (isAuthLoading) {
+    return (
+        <div className="flex min-h-screen items-center justify-center bg-background p-4" dir="rtl">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        </div>
+    );
+  }
 
   const usersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
