@@ -5,7 +5,7 @@
     font-family: var(--font-noto-kufi-arabic), 'Noto Kufi Arabic', 'Segoe UI', Tahoma, Arial, sans-serif;
     padding: 12mm 15mm; /* Professional margins */
     width: 210mm; /* Standard A4 width */
-    height: 297mm; /* Standard A4 height */
+    min-height: 297mm; /* Use min-height so html2canvas never clips content */
     margin: 0 auto;
     box-sizing: border-box;
     display: flex;
@@ -270,7 +270,8 @@
         box-shadow: none !important;
         margin: 0 !important;
         width: 210mm !important;
-        height: 297mm !important;
+        min-height: 297mm !important;
+        height: 297mm !important; /* Exact A4 height only when actually printing */
         padding: 12mm 15mm !important;
         background: white !important;
     }

@@ -178,42 +178,35 @@ function ReceiptPreview({ formId }: { formId: string }) {
     const [printData, setPrintData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isDownloading, setIsDownloading] = useState(false);
+    const [canShare, setCanShare] = useState(false);
     const { toast } = useToast();
     const receiptRef = useRef<HTMLDivElement>(null);
+    const captureRef = useRef<HTMLDivElement>(null); // hidden full-size for html2canvas
+
+    useEffect(() => {
+        setCanShare(typeof navigator !== 'undefined' && !!navigator.share);
+    }, []);
 
     useEffect(() => {
         const fetchPrintData = async () => {
             if (!firestore || !formId) return;
             setIsLoading(true);
-
             try {
                 const formRef = doc(firestore, 'selling_forms', formId);
                 const productsRef = collection(firestore, `selling_forms/${formId}/selling_form_products`);
                 const paymentsRef = collection(firestore, `selling_forms/${formId}/payments`);
                 const companyInfoRef = doc(firestore, 'app_settings', 'companyInfo');
-
                 const [formSnap, productsSnap, paymentsSnap, companyInfoSnap] = await Promise.all([
-                    getDoc(formRef),
-                    getDocs(productsRef),
-                    getDocs(paymentsRef),
-                    getDoc(companyInfoRef),
+                    getDoc(formRef), getDocs(productsRef), getDocs(paymentsRef), getDoc(companyInfoRef),
                 ]);
-
                 if (!formSnap.exists()) {
                     toast({ variant: 'destructive', title: 'هەڵە', description: 'پسوولە نەدۆزرایەوە.' });
                     setIsLoading(false);
                     return;
                 }
-
                 const rawData = formSnap.data();
-                const standardizedData = {
-                    ...rawData,
-                    formNumber: String(rawData.formNumber || '0'),
-                    customerPhoneNumber: rawData.customerPhoneNumber || rawData.customerPhone || ""
-                };
-
                 setPrintData({
-                    formData: standardizedData,
+                    formData: { ...rawData, formNumber: String(rawData.formNumber || '0'), customerPhoneNumber: rawData.customerPhoneNumber || rawData.customerPhone || "" },
                     products: productsSnap.docs.map(d => d.data()),
                     payments: paymentsSnap.docs.map(d => d.data()),
                     companyInfo: companyInfoSnap.exists() ? companyInfoSnap.data() : null,
@@ -225,34 +218,50 @@ function ReceiptPreview({ formId }: { formId: string }) {
                 setIsLoading(false);
             }
         };
-
         fetchPrintData();
     }, [formId, firestore, toast]);
 
     const handleDownloadAsJPEG = async () => {
-        if (!receiptRef.current) {
+        // Capture from hidden full-size ref — NOT the scaled visible preview
+        const targetEl = captureRef.current;
+        if (!targetEl) {
             toast({ variant: 'destructive', title: 'هەڵە', description: 'نەتوانرا وێنەی پسوولە دروستبکرێت.' });
             return;
         }
         setIsDownloading(true);
         toast({ title: '...ئامادەکردنی وێنە' });
         try {
-            const canvas = await html2canvas(receiptRef.current, {
+            const canvas = await html2canvas(targetEl, {
                 scale: 3,
                 useCORS: true,
                 backgroundColor: '#ffffff',
                 logging: false,
-                onclone: (clonedDoc) => {
-                    const el = clonedDoc.getElementById('printable-receipt-content');
-                    if (el) {
-                        el.style.transform = 'none';
-                        el.style.margin = '0';
-                    }
-                }
+                width: targetEl.offsetWidth,
+                height: targetEl.scrollHeight,
             });
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+            const fileName = `receipt-${printData.formData.formNumber}.jpeg`;
+
+            // Try Web Share API first (iOS Safari, Android Chrome)
+            if (navigator.share) {
+                try {
+                    const blob = await (await fetch(dataUrl)).blob();
+                    const file = new File([blob], fileName, { type: 'image/jpeg' });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({ files: [file], title: `پسوولەی فرۆشتن - ${printData.formData.customerName}` });
+                        toast({ title: 'سەرکەوتوو بوو', className: 'bg-accent text-accent-foreground' });
+                        return;
+                    }
+                } catch (shareErr: any) {
+                    if (shareErr.name === 'AbortError') return; // user cancelled
+                    // fall through to download
+                }
+            }
+
+            // Fallback: browser download
             const link = document.createElement('a');
-            link.href = canvas.toDataURL('image/jpeg', 0.95);
-            link.download = `receipt-${printData.formData.formNumber}.jpeg`;
+            link.href = dataUrl;
+            link.download = fileName;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -265,37 +274,46 @@ function ReceiptPreview({ formId }: { formId: string }) {
         }
     };
 
-    if (isLoading) {
-        return <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-    }
+    if (isLoading) return <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    if (!printData) return <div className="text-center p-8 text-muted-foreground">داتا بۆ ئەم پسوولەیە نەدۆزرایەوە.</div>;
 
-    if (!printData) {
-        return <div className="text-center p-8 text-muted-foreground">داتا بۆ ئەم پسوولەیە نەدۆزرایەوە.</div>;
-    }
+    const fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
     return (
         <div className="flex flex-col h-full overflow-hidden">
-            <div className="flex-1 bg-slate-900/50 p-2 sm:p-8 overflow-auto rounded-lg flex justify-center items-start">
-                <div className="shadow-2xl origin-top scale-[0.35] sm:scale-[0.5] md:scale-[0.75] lg:scale-[0.9] xl:scale-100 transition-transform">
-                    <PrintableReceipt
-                        ref={receiptRef}
-                        formData={printData.formData}
-                        products={printData.products}
-                        payments={printData.payments}
-                        companyInfo={printData.companyInfo}
-                    />
+            {/* Hidden full-size receipt for html2canvas — no CSS scaling */}
+            <div style={{ position: 'fixed', left: '-9999px', top: 0, zIndex: -1, opacity: 0, pointerEvents: 'none' }}>
+                <PrintableReceipt ref={captureRef} formData={printData.formData} products={printData.products} payments={printData.payments} companyInfo={printData.companyInfo} />
+            </div>
+
+            {/* Mobile: summary card — tiny scaled receipt is unreadable on mobile */}
+            <div className="flex-1 md:hidden flex flex-col items-center justify-center gap-4 p-4 bg-slate-900/20 rounded-lg">
+                <FileDown className="h-14 w-14 text-primary opacity-60" />
+                <p className="text-sm text-muted-foreground text-center">پسوولەکە دابەزێنە یان هاوبەش بکە</p>
+                <div className="w-full max-w-xs bg-card border rounded-lg p-4 space-y-2 text-sm" dir="rtl">
+                    <div className="flex justify-between"><span className="text-muted-foreground">کڕیار:</span><span className="font-bold">{printData.formData.customerName}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">بەروار:</span><span>{printData.formData.issueDate}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">کۆی گشتی:</span><span className="font-bold font-mono">{fmt.format(printData.formData.totalPrice || 0)}</span></div>
                 </div>
             </div>
+
+            {/* Desktop: scaled visual preview */}
+            <div className="hidden md:flex flex-1 bg-slate-900/50 p-8 overflow-auto rounded-lg justify-center items-start">
+                <div className="shadow-2xl origin-top scale-[0.5] md:scale-[0.75] lg:scale-[0.9] xl:scale-100 transition-transform">
+                    <PrintableReceipt ref={receiptRef} formData={printData.formData} products={printData.products} payments={printData.payments} companyInfo={printData.companyInfo} />
+                </div>
+            </div>
+
             <DialogFooter className="pt-4 flex flex-col sm:flex-row gap-3">
-                {/* RTL fix: use ml-2 so icon (right) gets space from text (left) */}
-                <Button onClick={handleDownloadAsJPEG} disabled={isDownloading} className="w-full sm:w-auto h-12 text-base font-bold shadow-lg" size="lg">
+                <Button onClick={handleDownloadAsJPEG} disabled={isDownloading} className="w-full h-12 text-base font-bold shadow-lg" size="lg">
                     {isDownloading ? <Loader2 className="ml-2 h-5 w-5 animate-spin" /> : <FileDown className="ml-2 h-5 w-5" />}
-                    دابەزاندنی پسوولە (JPEG A4)
+                    {canShare ? 'هاوبەشکردن / دابەزاندنی پسوولە' : 'دابەزاندنی پسوولە (JPEG A4)'}
                 </Button>
             </DialogFooter>
         </div>
     );
 }
+
 
 // ── SalesList ──────────────────────────────────────────────────────────────────
 function SalesList() {
@@ -471,8 +489,19 @@ function SalesList() {
 
     const handleDirectPrint = async (formId: string) => {
         if (!firestore) return;
-        toast({ title: '...ئامادەکردنی پسوولە' });
 
+        // window.print() is broken on iOS and unreliable on Android.
+        // On mobile, open the preview/share dialog instead.
+        const isMobile = typeof navigator !== 'undefined' &&
+            (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+             ('ontouchstart' in window && navigator.maxTouchPoints > 1));
+
+        if (isMobile) {
+            setTimeout(() => setPreviewFormId(formId), 100);
+            return;
+        }
+
+        toast({ title: '...ئامادەکردنی پسوولە' });
         try {
             const formRef = doc(firestore, 'selling_forms', formId);
             const productsRef = collection(firestore, `selling_forms/${formId}/selling_form_products`);
@@ -493,7 +522,6 @@ function SalesList() {
                     formNumber: String(rawData.formNumber || '0'),
                     customerPhoneNumber: rawData.customerPhoneNumber || rawData.customerPhone || ""
                 };
-                // Setting printData triggers the useEffect which calls window.print()
                 setPrintData({
                     formData: standardizedData,
                     products: productsSnap.docs.map(d => d.data()),
@@ -508,6 +536,7 @@ function SalesList() {
             setIsPrinting(false);
         }
     };
+
 
     // ── Currency formatter ──
     const fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
@@ -810,7 +839,7 @@ function SalesList() {
                                                     <FileSpreadsheet className="h-4 w-4" />
                                                 </Button>
                                             </DropdownMenuTrigger>
-                                            <DropdownMenuContent dir="rtl">
+                                            <DropdownMenuContent>
                                                 <DropdownMenuItem onSelect={() => setTimeout(() => setPreviewFormId(sale.id), 150)}>بینینی پسوولە</DropdownMenuItem>
                                                 <DropdownMenuItem onSelect={() => setTimeout(() => handleDirectPrint(sale.id), 150)}>چاپکردنی پسوولە</DropdownMenuItem>
                                             </DropdownMenuContent>
