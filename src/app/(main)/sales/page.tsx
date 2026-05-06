@@ -286,25 +286,23 @@ function ReceiptPreview({ formId }: { formId: string }) {
                 <PrintableReceipt ref={captureRef} formData={printData.formData} products={printData.products} payments={printData.payments} companyInfo={printData.companyInfo} />
             </div>
 
-            {/* Mobile: summary card — tiny scaled receipt is unreadable on mobile */}
-            <div className="flex-1 md:hidden flex flex-col items-center justify-center gap-4 p-4 bg-slate-900/20 rounded-lg">
-                <FileDown className="h-14 w-14 text-primary opacity-60" />
-                <p className="text-sm text-muted-foreground text-center">پسوولەکە دابەزێنە یان هاوبەش بکە</p>
-                <div className="w-full max-w-xs bg-card border rounded-lg p-4 space-y-2 text-sm" dir="rtl">
-                    <div className="flex justify-between"><span className="text-muted-foreground">کڕیار:</span><span className="font-bold">{printData.formData.customerName}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">بەروار:</span><span>{printData.formData.issueDate}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">کۆی گشتی:</span><span className="font-bold font-mono">{fmt.format(printData.formData.totalPrice || 0)}</span></div>
-                </div>
-            </div>
-
-            {/* Desktop: scaled visual preview */}
-            <div className="hidden md:flex flex-1 bg-slate-900/50 p-8 overflow-auto rounded-lg justify-center items-start">
-                <div className="shadow-2xl origin-top scale-[0.5] md:scale-[0.75] lg:scale-[0.9] xl:scale-100 transition-transform">
+            {/* Unified receipt preview — scrollable scaled preview on ALL screen sizes */}
+            <div className="flex-1 bg-slate-900/50 rounded-lg overflow-auto flex justify-center items-start p-3 sm:p-6">
+                <div
+                    style={{
+                        transform: 'scale(0.42)',
+                        transformOrigin: 'top center',
+                        width: '210mm',
+                        // Compensate for scaling so the parent scrolls correctly
+                        marginBottom: 'calc((210mm * 0.42) - 210mm)',
+                    }}
+                    className="shadow-2xl md:scale-[0.65] lg:scale-[0.80] xl:scale-[0.95]"
+                >
                     <PrintableReceipt ref={receiptRef} formData={printData.formData} products={printData.products} payments={printData.payments} companyInfo={printData.companyInfo} />
                 </div>
             </div>
 
-            <DialogFooter className="pt-4 flex flex-col sm:flex-row gap-3">
+            <DialogFooter className="pt-3 flex flex-col gap-2">
                 <Button onClick={handleDownloadAsJPEG} disabled={isDownloading} className="w-full h-12 text-base font-bold shadow-lg" size="lg">
                     {isDownloading ? <Loader2 className="ml-2 h-5 w-5 animate-spin" /> : <FileDown className="ml-2 h-5 w-5" />}
                     {canShare ? 'هاوبەشکردن / دابەزاندنی پسوولە' : 'دابەزاندنی پسوولە (JPEG A4)'}

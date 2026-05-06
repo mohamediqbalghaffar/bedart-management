@@ -3,16 +3,16 @@
     background-color: white;
     color: black;
     font-family: var(--font-noto-kufi-arabic), 'Noto Kufi Arabic', 'Segoe UI', Tahoma, Arial, sans-serif;
-    padding: 12mm 15mm; /* Professional margins */
-    width: 210mm; /* Standard A4 width */
-    min-height: 297mm; /* Use min-height so html2canvas never clips content */
+    padding: 12mm 15mm;
+    width: 210mm;
+    min-height: 297mm;
     margin: 0 auto;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     position: relative;
     overflow: hidden;
-    line-height: 1.2;
+    line-height: 1.3;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     font-variant-ligatures: common-ligatures;
@@ -25,8 +25,8 @@
     justify-content: space-between;
     align-items: center;
     padding-bottom: 12px;
-    border-bottom: 2px solid #1e293b;
-    margin-bottom: 8px;
+    border-bottom: 2.5px solid #1e293b;
+    margin-bottom: 10px;
     direction: rtl;
 }
 
@@ -50,26 +50,10 @@
     text-transform: uppercase;
 }
 
-.header-left .form-number-box {
-    margin-top: 8px;
-    display: inline-block;
-    background: #f1f5f9;
-    padding: 2px 10px;
-    border-radius: 4px;
-    border: 1px solid #e2e8f0;
-}
-
-.header-left .form-number {
-    font-size: 1.1rem;
-    color: #1e293b;
-    font-weight: 900;
-    margin: 0;
-}
-
 .header-left .product-categories {
     font-size: 0.8rem;
     color: #475569;
-    margin-top: 4px;
+    margin-top: 6px;
     font-weight: 500;
 }
 
@@ -96,14 +80,37 @@
     padding-top: 4px;
 }
 
+/* --- Receipt Body --- */
+.receipt-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+/* --- Form Number Badge --- */
+.form-number-badge {
+    position: absolute;
+    top: -2px;
+    left: 0;
+    background: #1e293b;
+    color: white;
+    font-weight: 900;
+    font-size: 0.95rem;
+    padding: 4px 14px;
+    border-radius: 0 0 8px 8px;
+    letter-spacing: 0.5px;
+    z-index: 2;
+}
+
 /* --- Customer Information --- */
 .customer-info {
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     display: grid;
     grid-template-columns: 1.5fr 1fr;
-    gap: 12px 30px;
+    gap: 10px 30px;
     background: #f8fafc;
-    padding: 15px;
+    padding: 14px 16px;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
 }
@@ -111,11 +118,18 @@
 .info-line {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .info-line.full-width {
     grid-column: 1 / -1;
+}
+
+.info-icon {
+    font-size: 0.85rem;
+    width: 18px;
+    text-align: center;
+    flex-shrink: 0;
 }
 
 .info-label {
@@ -123,14 +137,14 @@
     white-space: nowrap;
     font-size: 0.85rem;
     color: #475569;
-    min-width: 60px;
+    min-width: 55px;
 }
 
 .info-value {
     flex-grow: 1;
     border-bottom: 1.5px solid #cbd5e1;
     text-align: right;
-    padding: 0 4px;
+    padding: 0 4px 2px;
     font-size: 0.95rem;
     font-weight: 600;
     color: #0f172a;
@@ -142,13 +156,13 @@
     width: 100%;
     border-collapse: collapse;
     font-size: 0.95rem;
-    margin-top: 5px;
+    margin-top: 8px;
 }
 
 .new-line-items-table th,
 .new-line-items-table td {
     border: 1px solid #cbd5e1;
-    padding: 6px 8px;
+    padding: 8px 10px;
 }
 
 .new-line-items-table th {
@@ -159,67 +173,97 @@
     font-size: 0.85rem;
 }
 
-.new-line-items-table .item-col { width: 55%; text-align: right; }
-.new-line-items-table .qty-col { width: 8%; }
-.new-line-items-table .price-col { width: 17%; }
+.new-line-items-table .item-col { width: 50%; text-align: right; }
+.new-line-items-table .qty-col { width: 10%; }
+.new-line-items-table .price-col { width: 20%; }
 .new-line-items-table .total-col { width: 20%; }
 
 .new-line-items-table td {
     letter-spacing: 0px !important;
 }
 
+.new-line-items-table .item-cell {
+    font-weight: 700;
+    text-align: right;
+}
+
 .new-line-items-table tbody tr:nth-child(even) {
     background-color: #f8fafc;
 }
 
-.new-line-items-table .empty-row td {
-    height: 32px;
-    border-color: #f1f5f9;
+/* --- Spacer pushes footer to bottom --- */
+.receipt-spacer {
+    flex: 1;
+    min-height: 20px;
 }
 
 /* --- Footer & Totals --- */
 .new-receipt-footer {
-    margin-top: 15px;
+    margin-top: auto;
     padding-top: 15px;
-    border-top: 2px solid #1e293b;
+    border-top: 2.5px solid #1e293b;
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
 }
 
+.signature-area {
+    display: flex;
+    align-items: flex-end;
+}
+
 .signature {
-    margin-top: 5px;
     text-align: center;
 }
 
 .signature p {
     display: inline-block;
-    border-top: 1px solid #1e293b;
+    border-top: 1.5px solid #1e293b;
     padding: 4px 50px;
     font-weight: 700;
     font-size: 0.9rem;
     color: #1e293b;
+    margin: 0;
 }
 
 .totals-summary {
-    min-width: 240px;
+    min-width: 260px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 5px;
 }
 
 .summary-line {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     color: #475569;
-    padding: 0 4px;
+    padding: 2px 6px;
 }
 
 .summary-line.discount {
     color: #ef4444;
-    font-weight: 600;
+    font-weight: 700;
+}
+
+.summary-line.paid {
+    color: #16a34a;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-top: 4px;
+}
+
+.summary-line.remaining {
+    color: #dc2626;
+    font-weight: 800;
+    font-size: 1rem;
+}
+
+.summary-line.overpaid {
+    color: #16a34a;
+    font-weight: 800;
+    font-size: 1rem;
 }
 
 .total-line {
@@ -271,7 +315,7 @@
         margin: 0 !important;
         width: 210mm !important;
         min-height: 297mm !important;
-        height: 297mm !important; /* Exact A4 height only when actually printing */
+        height: 297mm !important;
         padding: 12mm 15mm !important;
         background: white !important;
     }
