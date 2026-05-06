@@ -108,7 +108,7 @@ function UploadSalesFormButton({ onSave }: { onSave: () => void }) {
                     const newItems = result.map(item => ({
                         product: item.product,
                         quantity: item.quantity,
-                        unitPrice: item.unitPrice,
+                        unitPrice: item.sellingPrice || item.unitPrice || 0,
                         category: item.category,
                     }));
 
@@ -317,7 +317,7 @@ function ReceiptPreview({ formId }: { formId: string }) {
 // ── DownloadTemplateButton ───────────────────────────────────────────────────
 function DownloadTemplateButton() {
     const handleDownload = () => {
-        const headers = [['ناو', 'نرخ دوای داشکاندن', 'دانە']];
+        const headers = [['ناو', 'نرخی فرۆشتن', 'دانە']];
         const ws = XLSX.utils.aoa_to_sheet(headers);
         
         // Set column widths
