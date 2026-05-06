@@ -163,50 +163,88 @@ export function ProductSelectorDialog({ onProductSelect, filterByStock = true }:
                 </SelectContent>
             </Select>
         </div>
-      <ScrollArea className="h-[450px]" dir="rtl">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-right">ناوی کاڵا</TableHead>
-              <TableHead className="text-right">نرخی فرۆشتن</TableHead>
-              <TableHead className="text-right">دانە</TableHead>
-              <TableHead className="text-right">پۆل</TableHead>
-              <TableHead className="text-left"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
+      <ScrollArea className="h-[60vh] md:h-[450px]" dir="rtl">
+        {/* Desktop View */}
+        <div className="hidden md:block">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
-                  <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-                </TableCell>
+                <TableHead className="text-right">ناوی کاڵا</TableHead>
+                <TableHead className="text-right">نرخی فرۆشتن</TableHead>
+                <TableHead className="text-right">دانە</TableHead>
+                <TableHead className="text-right">پۆل</TableHead>
+                <TableHead className="text-left"></TableHead>
               </TableRow>
-            ) : enrichedProducts.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                  هیچ کاڵایەک نەدۆزرایەوە.
-                </TableCell>
-              </TableRow>
-            ) : (
-              enrichedProducts.map(product => (
-                <TableRow key={product.id}>
-                  <TableCell className="text-right font-medium">
-                    {product.productName}
-                    {product.sizeModel && <span className="ml-2 text-sm text-muted-foreground">({product.sizeModel})</span>}
-                  </TableCell>
-                  <TableCell className="text-right font-semibold text-primary">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.sellingPrice || 0)}</TableCell>
-                  <TableCell className="text-right">{product.currentQuantity}</TableCell>
-                  <TableCell className="text-right">{categoryTranslations[product.category] || product.category}</TableCell>
-                  <TableCell className="text-left">
-                    <Button variant="ghost" size="sm" onClick={() => handleSelect(product)}>
-                      هەڵبژاردن
-                    </Button>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center">
+                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : enrichedProducts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    هیچ کاڵایەک نەدۆزرایەوە.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                enrichedProducts.map(product => (
+                  <TableRow key={product.id}>
+                    <TableCell className="text-right font-medium">
+                      {product.productName}
+                      {product.sizeModel && <span className="ml-2 text-sm text-muted-foreground">({product.sizeModel})</span>}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold text-primary">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.sellingPrice || 0)}</TableCell>
+                    <TableCell className="text-right">{product.currentQuantity}</TableCell>
+                    <TableCell className="text-right">{categoryTranslations[product.category] || product.category}</TableCell>
+                    <TableCell className="text-left">
+                      <Button variant="ghost" size="sm" onClick={() => handleSelect(product)}>
+                        هەڵبژاردن
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Mobile View */}
+        <div className="space-y-4 md:hidden py-2 px-1">
+          {isLoading ? (
+            <div className="flex justify-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : enrichedProducts.length === 0 ? (
+            <div className="text-center text-muted-foreground py-8">
+              هیچ کاڵایەک نەدۆزرایەوە.
+            </div>
+          ) : (
+            enrichedProducts.map(product => (
+              <div key={product.id} className="bg-card border rounded-lg p-4 shadow-sm flex flex-col gap-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="font-bold text-base text-right">
+                      {product.productName}
+                      {product.sizeModel && <span className="ml-1 text-xs text-muted-foreground">({product.sizeModel})</span>}
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1 text-right">
+                      {categoryTranslations[product.category] || product.category} • {product.currentQuantity} دانە
+                    </div>
+                  </div>
+                  <Button size="sm" onClick={() => handleSelect(product)}>
+                    هەڵبژاردن
+                  </Button>
+                </div>
+                <div className="text-sm font-bold text-primary text-right border-t pt-2 mt-1">
+                  {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.sellingPrice || 0)}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </ScrollArea>
     </div>
   );
