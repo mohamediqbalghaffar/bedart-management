@@ -880,41 +880,111 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
         
         {paymentType === 'Installments' && (
              <Card>
-                <CardHeader className="p-3 sm:p-6"><CardTitle className="text-base sm:text-xl">تۆماری قیستەکان</CardTitle></CardHeader>
+                <CardHeader className="p-3 sm:p-6 flex flex-row items-center justify-between">
+                    <CardTitle className="text-base sm:text-xl">تۆماری قیستەکان</CardTitle>
+                </CardHeader>
                 <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
-                    <Table>
-                        <TableHeader><TableRow><TableHead className="w-1/4 text-center">بەروار</TableHead><TableHead className="text-center">بڕ</TableHead><TableHead className="text-center">شێواز</TableHead><TableHead className="text-center">تێبینی</TableHead><TableHead></TableHead></TableRow></TableHeader>
-                        <TableBody>
-                            {paymentFields.map((field, index) => (
-                            <TableRow key={field.id}>
-                                <TableCell><FormField control={form.control} name={`payments.${index}.date`} render={({ field }) => ( <FormItem><FormControl><Input placeholder="YYYY-MM-DD" {...field} /></FormControl><FormMessage/></FormItem>)}/></TableCell>
-                                <TableCell><FormField control={form.control} name={`payments.${index}.amount`} render={({ field }) => ( <FormItem><FormControl><Input type="number" step="0.01" inputMode="decimal" {...field} /></FormControl><FormMessage/></FormItem>)}/></TableCell>
-                                <TableCell>
-                                    <FormField
-                                    control={form.control}
-                                    name={`payments.${index}.method`}
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <Select onValueChange={field.onChange} value={field.value} dir="rtl">
-                                                <FormControl>
-                                                    <SelectTrigger><SelectValue/></SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                <SelectItem value="Cash">کاش</SelectItem>
-                                                <SelectItem value="Transfer">حەواڵە</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        <FormMessage/>
-                                        </FormItem>
-                                    )}
-                                    />
-                                </TableCell>
-                                <TableCell><FormField control={form.control} name={`payments.${index}.note`} render={({ field }) => ( <FormItem><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem>)}/></TableCell>
-                                <TableCell><Button variant="ghost" size="icon" onClick={() => removePayment(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
-                            </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                    {/* Desktop View */}
+                    <div className="hidden md:block">
+                        <Table>
+                            <TableHeader><TableRow><TableHead className="w-[180px] text-right">بەروار</TableHead><TableHead className="text-right">بڕ</TableHead><TableHead className="w-[120px] text-right">شێواز</TableHead><TableHead className="text-right">تێبینی</TableHead><TableHead></TableHead></TableRow></TableHeader>
+                            <TableBody>
+                                {paymentFields.map((field, index) => (
+                                <TableRow key={field.id}>
+                                    <TableCell className="align-top">
+                                        <FormField control={form.control} name={`payments.${index}.date`} render={({ field }) => ( <FormItem><FormControl><DatePicker value={field.value} onChange={field.onChange} className="w-full" /></FormControl><FormMessage/></FormItem>)}/>
+                                    </TableCell>
+                                    <TableCell className="align-top">
+                                        <FormField control={form.control} name={`payments.${index}.amount`} render={({ field }) => ( <FormItem><FormControl><Input type="number" step="0.01" inputMode="decimal" {...field} /></FormControl><FormMessage/></FormItem>)}/>
+                                    </TableCell>
+                                    <TableCell className="align-top">
+                                        <FormField
+                                        control={form.control}
+                                        name={`payments.${index}.method`}
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <Select onValueChange={field.onChange} value={field.value} dir="rtl">
+                                                    <FormControl>
+                                                        <SelectTrigger><SelectValue/></SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                    <SelectItem value="Cash">کاش</SelectItem>
+                                                    <SelectItem value="Transfer">حەواڵە</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            <FormMessage/>
+                                            </FormItem>
+                                        )}
+                                        />
+                                    </TableCell>
+                                    <TableCell className="align-top">
+                                        <FormField control={form.control} name={`payments.${index}.note`} render={({ field }) => ( <FormItem><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem>)}/>
+                                    </TableCell>
+                                    <TableCell className="align-top text-left">
+                                        <Button variant="ghost" size="icon" onClick={() => removePayment(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                    </TableCell>
+                                </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+
+                    {/* Mobile View */}
+                    <div className="space-y-4 md:hidden">
+                        {paymentFields.map((field, index) => (
+                            <Card key={field.id} className="border-accent/20">
+                                <CardHeader className="p-3 pb-2 border-b">
+                                    <div className="flex justify-between items-center">
+                                        <CardTitle className="text-sm font-bold">قیستی #{index + 1}</CardTitle>
+                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => removePayment(index)}>
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="p-3 space-y-3">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <FormField control={form.control} name={`payments.${index}.date`} render={({ field }) => ( 
+                                            <FormItem className="space-y-1">
+                                                <FormLabel className="text-xs">بەروار</FormLabel>
+                                                <FormControl><DatePicker value={field.value} onChange={field.onChange} className="w-full h-9 text-sm" /></FormControl>
+                                                <FormMessage className="text-[10px]"/>
+                                            </FormItem>
+                                        )}/>
+                                        <FormField control={form.control} name={`payments.${index}.amount`} render={({ field }) => ( 
+                                            <FormItem className="space-y-1">
+                                                <FormLabel className="text-xs">بڕ</FormLabel>
+                                                <FormControl><Input type="number" step="0.01" inputMode="decimal" className="h-9 text-sm" {...field} /></FormControl>
+                                                <FormMessage className="text-[10px]"/>
+                                            </FormItem>
+                                        )}/>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <FormField control={form.control} name={`payments.${index}.method`} render={({ field }) => (
+                                            <FormItem className="space-y-1">
+                                                <FormLabel className="text-xs">شێواز</FormLabel>
+                                                <Select onValueChange={field.onChange} value={field.value} dir="rtl">
+                                                    <FormControl><SelectTrigger className="h-9 text-sm"><SelectValue/></SelectTrigger></FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="Cash">کاش</SelectItem>
+                                                        <SelectItem value="Transfer">حەواڵە</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage className="text-[10px]"/>
+                                            </FormItem>
+                                        )}/>
+                                        <FormField control={form.control} name={`payments.${index}.note`} render={({ field }) => ( 
+                                            <FormItem className="space-y-1">
+                                                <FormLabel className="text-xs">تێبینی</FormLabel>
+                                                <FormControl><Input className="h-9 text-sm" {...field} /></FormControl>
+                                                <FormMessage className="text-[10px]"/>
+                                            </FormItem>
+                                        )}/>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+
                     <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => appendPayment({ date: format(new Date(), 'yyyy-MM-dd'), amount: 0, method: 'Cash', note:'' })}>
                         <PlusCircle className="mr-2 h-4 w-4" /> زیادکردنی قیست
                     </Button>
