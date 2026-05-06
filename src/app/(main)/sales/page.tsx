@@ -24,6 +24,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import html2canvas from 'html2canvas';
 import { analyzePurchaseExcel } from '@/ai/flows/analyze-purchase-excel';
 import { cn } from '@/lib/utils';
+import * as XLSX from 'xlsx';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const PAGE_SIZE = 20;
@@ -142,7 +143,7 @@ function UploadSalesFormButton({ onSave }: { onSave: () => void }) {
                 ref={fileInputRef}
                 onChange={handleFileChange}
                 className="hidden"
-                accept="image/jpeg, image/png, application/pdf"
+                accept="image/jpeg, image/png, application/pdf, .xlsx, .xls, .csv"
             />
             <Button onClick={triggerUpload} disabled={isParsing} variant="outline">
                 {isParsing ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <FileUp />}
@@ -309,6 +310,33 @@ function ReceiptPreview({ formId }: { formId: string }) {
                 </Button>
             </DialogFooter>
         </div>
+    );
+}
+
+
+// ── DownloadTemplateButton ───────────────────────────────────────────────────
+function DownloadTemplateButton() {
+    const handleDownload = () => {
+        const headers = [['ناو', 'نرخ دوای داشکاندن', 'دانە']];
+        const ws = XLSX.utils.aoa_to_sheet(headers);
+        
+        // Set column widths
+        ws['!cols'] = [{ wch: 35 }, { wch: 20 }, { wch: 15 }];
+        
+        // Set RTL
+        if (!ws['!views']) ws['!views'] = [];
+        ws['!views'].push({ rightToLeft: true });
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Sales Template");
+        XLSX.writeFile(wb, "BedArt_Sales_Template.xlsx");
+    };
+
+    return (
+        <Button onClick={handleDownload} variant="outline" className="border-dashed hover:bg-primary/5 transition-colors">
+            <FileDown className="ml-2 h-4 w-4" />
+            داگرتنی نموونەی فۆڕم
+        </Button>
     );
 }
 
@@ -544,10 +572,11 @@ function SalesList() {
             <PageHeader title="بەڕێوەبردنی فرۆشتن" description="تۆماری فۆڕمەکانی فرۆشتن لێرە ببینە و زیاد بکە.">
                 <div className="flex items-center gap-2">
                     <Button onClick={() => setIsCreateDialogOpen(true)}>
-                        <PlusCircle />
+                        <PlusCircle className="ml-2 h-4 w-4" />
                         دروستکردنی فۆڕمی فرۆشتن
                     </Button>
                     <UploadSalesFormButton onSave={handleFormSave} />
+                    <DownloadTemplateButton />
                 </div>
             </PageHeader>
 
