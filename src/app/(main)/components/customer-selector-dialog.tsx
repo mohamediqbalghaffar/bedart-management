@@ -85,72 +85,136 @@ export function CustomerSelectorDialog({ onCustomerSelect }: CustomerSelectorDia
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
-      <ScrollArea className="h-[450px]" dir="rtl">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-right">ناوی کڕیار</TableHead>
-              <TableHead className="text-right">ژمارەی تەلەفۆن</TableHead>
-              <TableHead className="text-right">ناونیشان</TableHead>
-              <TableHead className="text-center">کردارەکان</TableHead>
-              <TableHead className="text-left"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
+      <ScrollArea className="h-[60vh] md:h-[450px]" dir="rtl">
+        {/* Desktop View */}
+        <div className="hidden md:block">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
-                  <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-                </TableCell>
+                <TableHead className="text-right">ناوی کڕیار</TableHead>
+                <TableHead className="text-right">ژمارەی تەلەفۆن</TableHead>
+                <TableHead className="text-right">ناونیشان</TableHead>
+                <TableHead className="text-center">کردارەکان</TableHead>
+                <TableHead className="text-left"></TableHead>
               </TableRow>
-            ) : filteredCustomers.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                  هیچ کڕیارێک نەدۆزرایەوە.
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredCustomers.map(customer => (
-                <TableRow key={customer.id}>
-                  <TableCell className="text-right font-medium">{customer.customerName}</TableCell>
-                  <TableCell className="text-right">{customer.customerPhoneNumber || 'نەزانراو'}</TableCell>
-                  <TableCell className="text-right">{customer.customerAddress || 'نەزانراو'}</TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex justify-center gap-2">
-                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingCustomer(customer); }}>
-                            <Edit className="h-4 w-4 text-blue-500" />
-                        </Button>
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent dir="rtl">
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>دڵنیایت لە سڕینەوەی ئەم کڕیارە؟</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        ئەم کردارە پاشگەزبوونەوەی نییە و هەموو زانیارییەکانی ئەم کڕیارە دەسڕێتەوە.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel onClick={(e) => e.stopPropagation()}>پاشگەزبوونەوە</AlertDialogCancel>
-                                    <AlertDialogAction onClick={(e) => { e.stopPropagation(); handleDelete(customer.id); }} className="bg-destructive hover:bg-destructive/90">بەڵێ، بسڕەوە</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-left">
-                    <Button variant="ghost" size="sm" onClick={() => handleSelect(customer)}>
-                      هەڵبژاردن
-                    </Button>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center">
+                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : filteredCustomers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    هیچ کڕیارێک نەدۆزرایەوە.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredCustomers.map(customer => (
+                  <TableRow key={customer.id}>
+                    <TableCell className="text-right font-medium">{customer.customerName}</TableCell>
+                    <TableCell className="text-right">{customer.customerPhoneNumber || 'نەزانراو'}</TableCell>
+                    <TableCell className="text-right">{customer.customerAddress || 'نەزانراو'}</TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex justify-center gap-2">
+                          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingCustomer(customer); }}>
+                              <Edit className="h-4 w-4 text-blue-500" />
+                          </Button>
+                          <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
+                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent dir="rtl">
+                                  <AlertDialogHeader>
+                                      <AlertDialogTitle>دڵنیایت لە سڕینەوەی ئەم کڕیارە؟</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                          ئەم کردارە پاشگەزبوونەوەی نییە و هەموو زانیارییەکانی ئەم کڕیارە دەسڕێتەوە.
+                                      </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                      <AlertDialogCancel onClick={(e) => e.stopPropagation()}>پاشگەزبوونەوە</AlertDialogCancel>
+                                      <AlertDialogAction onClick={(e) => { e.stopPropagation(); handleDelete(customer.id); }} className="bg-destructive hover:bg-destructive/90">بەڵێ، بسڕەوە</AlertDialogAction>
+                                  </AlertDialogFooter>
+                              </AlertDialogContent>
+                          </AlertDialog>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-left">
+                      <Button variant="ghost" size="sm" onClick={() => handleSelect(customer)}>
+                        هەڵبژاردن
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Mobile View */}
+        <div className="space-y-4 md:hidden py-2 px-1">
+          {isLoading ? (
+            <div className="flex justify-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : filteredCustomers.length === 0 ? (
+            <div className="text-center text-muted-foreground py-8">
+              هیچ کڕیارێک نەدۆزرایەوە.
+            </div>
+          ) : (
+            filteredCustomers.map(customer => (
+              <div key={customer.id} className="bg-card border rounded-lg p-4 shadow-sm flex flex-col gap-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="font-bold text-base text-right">{customer.customerName}</div>
+                    <div className="text-sm text-muted-foreground mt-1 text-right">
+                      {customer.customerPhoneNumber || 'نەزانراو'}
+                    </div>
+                  </div>
+                  <Button size="sm" onClick={() => handleSelect(customer)}>
+                    هەڵبژاردن
+                  </Button>
+                </div>
+                
+                {customer.customerAddress && (
+                  <div className="text-sm text-right mt-1">
+                    <span className="text-muted-foreground ml-1">ناونیشان:</span>
+                    {customer.customerAddress}
+                  </div>
+                )}
+                
+                <div className="flex justify-end gap-2 pt-3 border-t mt-1">
+                  <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setEditingCustomer(customer); }}>
+                    <Edit className="h-4 w-4 ml-1 text-blue-500" /> دەستکاری
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10">
+                        <Trash2 className="h-4 w-4 ml-1" /> سڕینەوە
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent dir="rtl">
+                       <AlertDialogHeader>
+                           <AlertDialogTitle>دڵنیایت لە سڕینەوەی ئەم کڕیارە؟</AlertDialogTitle>
+                           <AlertDialogDescription>
+                               ئەم کردارە پاشگەزبوونەوەی نییە و هەموو زانیارییەکانی ئەم کڕیارە دەسڕێتەوە.
+                           </AlertDialogDescription>
+                       </AlertDialogHeader>
+                       <AlertDialogFooter>
+                           <AlertDialogCancel onClick={(e) => e.stopPropagation()}>پاشگەزبوونەوە</AlertDialogCancel>
+                           <AlertDialogAction onClick={(e) => { e.stopPropagation(); handleDelete(customer.id); }} className="bg-destructive hover:bg-destructive/90">بەڵێ، بسڕەوە</AlertDialogAction>
+                       </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </ScrollArea>
 
       <Dialog open={!!editingCustomer} onOpenChange={(open) => !open && setEditingCustomer(null)}>
