@@ -32,7 +32,7 @@ type Expense = {
 const expenseSchema = z.object({
   name: z.string().min(1, { message: "پێویستە." }),
   note: z.string().optional(),
-  amount: z.coerce.number().min(0.01, "پێویستە."),
+  amount: z.coerce.number().min(0.01, "پێویستە.").max(1000000000, "بڕەکە زۆرە"),
   currency: z.enum(['USD', 'IQD']),
   category: z.enum(['Daily', 'Salary', 'Rent', 'Electricity', 'Transport', 'Other']),
   date: z.string().refine((val) => /^\d{4}-\d{2}-\d{2}$/.test(val), { message: "فۆرماتی هەڵە." }),

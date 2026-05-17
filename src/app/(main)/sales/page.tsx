@@ -126,6 +126,10 @@ function UploadSalesFormButton({ onSave }: { onSave: () => void }) {
                     if (fileInputRef.current) fileInputRef.current.value = "";
                 }
             };
+            reader.onerror = () => {
+                toast({ variant: 'destructive', title: "هەڵە لە خوێندنەوەی فایل" });
+                setIsParsing(false);
+            };
             reader.readAsDataURL(file);
         } catch (error) {
             console.error("File processing error:", error);
@@ -278,7 +282,8 @@ function ReceiptPreview({ formId }: { formId: string }) {
     if (isLoading) return <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
     if (!printData) return <div className="text-center p-8 text-muted-foreground">داتا بۆ ئەم پسوولەیە نەدۆزرایەوە.</div>;
 
-    const fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+    // A-01 & L-03: Cache formatter with ar-IQ
+    const fmt = useMemo(() => new Intl.NumberFormat('ar-IQ', { style: 'currency', currency: 'USD' }), []);
 
     return (
         <div className="flex flex-col h-full overflow-hidden">
@@ -578,7 +583,7 @@ function SalesList() {
 
 
     // ── Currency formatter ──
-    const fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
+    const fmt = useMemo(() => new Intl.NumberFormat('ar-IQ', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }), []);
 
     return (
         <div className={isPrinting ? "no-print" : ""}>
@@ -968,30 +973,32 @@ function SalesList() {
                                 <ChevronRight className="h-4 w-4" />
                             </Button>
 
-                            {/* Page number pills */}
-                            {Array.from({ length: totalPages }, (_, i) => i + 1)
-                                .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
-                                .reduce<(number | 'ellipsis')[]>((acc, p, idx, arr) => {
-                                    if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('ellipsis');
-                                    acc.push(p);
-                                    return acc;
-                                }, [])
-                                .map((p, idx) =>
-                                    p === 'ellipsis' ? (
-                                        <span key={`e-${idx}`} className="text-muted-foreground text-sm px-1">…</span>
-                                    ) : (
-                                        <Button
-                                            key={p}
-                                            variant={currentPage === p ? 'default' : 'outline'}
-                                            size="sm"
-                                            onClick={() => setCurrentPage(p as number)}
-                                            className="h-8 w-8 p-0 text-xs"
-                                        >
-                                            {p}
-                                        </Button>
+                            {/* M-08: Hide page number pills on mobile screens */}
+                            <div className="hidden sm:flex items-center gap-1">
+                                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                    .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                                    .reduce<(number | 'ellipsis')[]>((acc, p, idx, arr) => {
+                                        if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('ellipsis');
+                                        acc.push(p);
+                                        return acc;
+                                    }, [])
+                                    .map((p, idx) =>
+                                        p === 'ellipsis' ? (
+                                            <span key={`e-${idx}`} className="text-muted-foreground text-sm px-1">…</span>
+                                        ) : (
+                                            <Button
+                                                key={p}
+                                                variant={currentPage === p ? 'default' : 'outline'}
+                                                size="sm"
+                                                onClick={() => setCurrentPage(p as number)}
+                                                className="h-8 w-8 p-0 text-xs"
+                                            >
+                                                {p}
+                                            </Button>
+                                        )
                                     )
-                                )
-                            }
+                                }
+                            </div>
 
                             <Button
                                 variant="outline"

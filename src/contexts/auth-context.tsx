@@ -93,6 +93,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   useEffect(() => {
     if (!isLoading) {
+      // S-03: TODO — Migrate from plaintext local auth to standard Firebase Auth.
+      // The current implementation is a temporary pre-release solution.
       if (!user && pathname !== '/login') {
         router.push('/login');
       } else if (user && pathname === '/login') {

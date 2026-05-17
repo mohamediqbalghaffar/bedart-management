@@ -45,6 +45,11 @@ type GroupedProduct = {
 const productCategories = ["Mattress", "Bed", "Pillow", "Cover"];
 const categoryTranslations: Record<string, string> = { Mattress: "دۆشەک", Bed: "تەخت", Pillow: "سەرین", Cover: "بەرگ" };
 
+// A-01 & L-03: Cached formatters with ar-IQ locale
+const formatUsd = new Intl.NumberFormat('ar-IQ', { style: 'currency', currency: 'USD' });
+const formatUsdCompact = new Intl.NumberFormat('ar-IQ', { style: 'currency', currency: 'USD', notation: 'compact', compactDisplay: 'short' });
+const getCurrencyFormatter = (currency: string) => new Intl.NumberFormat('ar-IQ', { style: 'currency', currency });
+
 const useDashboardData = (dateRange: { from: string, to: string }) => {
     const firestore = useFirestore();
     const [isProcessing, setIsProcessing] = useState(true);
@@ -102,6 +107,12 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
                 const totalExpensesOperational = totalUSD + (totalIQD / iqdToUsdRate);
                 // Purchase COGS — kept separate for transparency
                 const totalPurchaseCost = buyingFormsData.reduce((acc, form) => acc + (form.totalAmount || 0), 0);
+                
+                // D-04: TODO — Fix N+1 Query Problem
+                // Currently, this fetches EVERY subcollection for EVERY selling/buying form.
+                // For production scalability, we MUST denormalize these totals into
+                // a 'daily_aggregates' collection, or store 'totalProducts' and 'totalRevenue'
+                // directly on the parent form document during the creation transaction.
                 const salesProductsPromises = salesData.map(s => getDocs(collection(firestore, `selling_forms/${s.id}/selling_form_products`)));
                 const buyingFormsProductsPromises = buyingFormsData.map(b => getDocs(collection(firestore, `buying_forms/${b.id}/buying_form_products`)));
                 
@@ -227,7 +238,6 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
 function SalesDetailDialog({ data }: { data: any }) {
     const { sales, perProduct, totalQuantity, totalRevenue, allSalesProducts } = data;
     const [categoryFilter, setCategoryFilter] = useState<string | 'all'>('all');
-    const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
     
     const filteredData = useMemo(() => {
         if (!sales) return { sales: [], perProduct: [], totalQuantity: 0, totalRevenue: 0 };
@@ -339,7 +349,7 @@ function ExpensesDetailDialog({ expenses }: { expenses: WithId<Expense>[] | null
         <div className="max-h-[60vh] overflow-y-auto">
             <Table className="hidden md:table"><TableHeader><TableRow><TableHead className="text-right">خەرجی</TableHead><TableHead className="text-right">بەروار</TableHead><TableHead className="text-right">بڕ</TableHead></TableRow></TableHeader>
                 <TableBody>
-                    {expenses?.map(expense => ( <TableRow key={expense.id}><TableCell>{expense.name}</TableCell><TableCell>{formatDate(parseISO(expense.date), 'dd/MM/yyyy')}</TableCell><TableCell><ConfidentialBlur>{new Intl.NumberFormat('en-US', { style: 'currency', currency: expense.currency || 'USD' }).format(expense.amount)}</ConfidentialBlur></TableCell></TableRow> ))}
+                    {expenses?.map(expense => ( <TableRow key={expense.id}><TableCell>{expense.name}</TableCell><TableCell>{formatDate(parseISO(expense.date), 'dd/MM/yyyy')}</TableCell><TableCell><ConfidentialBlur>{getCurrencyFormatter(expense.currency || 'USD').format(expense.amount)}</ConfidentialBlur></TableCell></TableRow> ))}
                 </TableBody>
             </Table>
             <div className="space-y-4 md:hidden">
@@ -347,7 +357,7 @@ function ExpensesDetailDialog({ expenses }: { expenses: WithId<Expense>[] | null
                     <Card key={expense.id}>
                         <CardHeader><CardTitle>{expense.name}</CardTitle><CardDescription>{formatDate(parseISO(expense.date), 'dd/MM/yyyy')}</CardDescription></CardHeader>
                         <CardContent>
-                            <div className="flex justify-between"><span>بڕ:</span><ConfidentialBlur><Badge variant="destructive">{new Intl.NumberFormat('en-US', { style: 'currency', currency: expense.currency || 'USD' }).format(expense.amount)}</Badge></ConfidentialBlur></div>
+                            <div className="flex justify-between"><span>بڕ:</span><ConfidentialBlur><Badge variant="destructive">{getCurrencyFormatter(expense.currency || 'USD').format(expense.amount)}</Badge></ConfidentialBlur></div>
                         </CardContent>
                     </Card>
                 ))}
@@ -357,7 +367,6 @@ function ExpensesDetailDialog({ expenses }: { expenses: WithId<Expense>[] | null
 }
 
 function CombinedExpensesDetailDialog({ expenses, purchases }: { expenses: WithId<Expense>[] | null, purchases: any[] | null }) {
-    const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
     return (
         <Tabs defaultValue="general" className="w-full" dir="rtl">
             <TabsList className="grid w-full grid-cols-2">
@@ -382,7 +391,7 @@ function CombinedExpensesDetailDialog({ expenses, purchases }: { expenses: WithI
                                 <TableRow key={purchase.id}>
                                     <TableCell>{purchase.supplierName}</TableCell>
                                     <TableCell>{formatDate(parseISO(purchase.issueDate), 'dd/MM/yyyy')}</TableCell>
-                                    <TableCell><ConfidentialBlur>{currencyFormatter.format(purchase.totalAmount || 0)}</ConfidentialBlur></TableCell>
+                                    <TableCell><ConfidentialBlur>{formatUsd.format(purchase.totalAmount || 0)}</ConfidentialBlur></TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -392,7 +401,7 @@ function CombinedExpensesDetailDialog({ expenses, purchases }: { expenses: WithI
                              <Card key={purchase.id}>
                                 <CardHeader><CardTitle>{purchase.supplierName}</CardTitle><CardDescription>{formatDate(parseISO(purchase.issueDate), 'dd/MM/yyyy')}</CardDescription></CardHeader>
                                 <CardContent>
-                                    <div className="flex justify-between"><span>کۆی گشتی:</span><ConfidentialBlur><Badge>{currencyFormatter.format(purchase.totalAmount || 0)}</Badge></ConfidentialBlur></div>
+                                    <div className="flex justify-between"><span>کۆی گشتی:</span><ConfidentialBlur><Badge>{formatUsd.format(purchase.totalAmount || 0)}</Badge></ConfidentialBlur></div>
                                 </CardContent>
                             </Card>
                         ))}
@@ -406,7 +415,6 @@ function CombinedExpensesDetailDialog({ expenses, purchases }: { expenses: WithI
 
 function PurchasesDetailDialog({ data }: { data: any }) {
     const { purchases, perProduct, totalQuantity, totalCost } = data;
-    const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
     return (
         <div className="max-h-[80vh] overflow-y-auto p-1">
              <Accordion type="multiple" defaultValue={['item-1']} className="w-full space-y-2">
@@ -420,7 +428,7 @@ function PurchasesDetailDialog({ data }: { data: any }) {
                             </div>
                             <div>
                                 <p className="text-sm text-muted-foreground">کۆی نرخی کاڵا کڕاوەکان</p>
-                                <ConfidentialBlur><p className="text-2xl font-bold">{currencyFormatter.format(totalCost)}</p></ConfidentialBlur>
+                                <ConfidentialBlur><p className="text-2xl font-bold">{formatUsd.format(totalCost)}</p></ConfidentialBlur>
                             </div>
                         </div>
                     </AccordionContent>
@@ -459,7 +467,7 @@ function PurchasesDetailDialog({ data }: { data: any }) {
                                 <Card key={purchase.id}>
                                     <CardHeader><CardTitle>{purchase.supplierName}</CardTitle><CardDescription>{formatDate(parseISO(purchase.issueDate), 'dd/MM/yyyy')}</CardDescription></CardHeader>
                                     <CardContent>
-                                        <div className="flex justify-between"><span>کۆی گشتی:</span><ConfidentialBlur><Badge>{currencyFormatter.format(purchase.totalAmount || 0)}</Badge></ConfidentialBlur></div>
+                                        <div className="flex justify-between"><span>کۆی گشتی:</span><ConfidentialBlur><Badge>{formatUsd.format(purchase.totalAmount || 0)}</Badge></ConfidentialBlur></div>
                                     </CardContent>
                                 </Card>
                             ))}
@@ -500,12 +508,12 @@ function LowStockDetailDialog({ products }: { products: GroupedProduct[] }) {
 
 function DashboardStats({ stats, dialogData }: { stats: any, dialogData: any }) {
     // Standard 2-decimal accounting format: $1,541,458.16
-    const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const currencyFormatterDetailed = new Intl.NumberFormat('ar-IQ', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     return (
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 w-full">
             {/* ── Total Sales ── */}
-            <Dialog><DialogTrigger asChild><div className="cursor-pointer w-full"><StatCard title="کۆی فرۆش" value={<ConfidentialBlur>{currencyFormatter.format(stats.totalRevenue)}</ConfidentialBlur>} icon={ShoppingCart} description="کۆی گشتی فرۆشتن لە ماوەی دیاریکراودا." /></div></DialogTrigger>
+            <Dialog><DialogTrigger asChild><div className="cursor-pointer w-full"><StatCard title="کۆی فرۆش" value={<ConfidentialBlur>{formatUsd.format(stats.totalRevenue)}</ConfidentialBlur>} icon={ShoppingCart} description="کۆی گشتی فرۆشتن لە ماوەی دیاریکراودا." /></div></DialogTrigger>
                 <DialogContent className="sm:max-w-4xl" dir="rtl"><DialogHeader><DialogTitle>وردەکاریی فرۆشتن</DialogTitle><DialogDescription>پوختەی فرۆشتنەکان لە ماوەی دیاریکراودا.</DialogDescription></DialogHeader><SalesDetailDialog data={dialogData.sales} /></DialogContent>
             </Dialog>
 
@@ -575,7 +583,7 @@ function RecentActivityChart({ data }: { data: any[] }) {
         ];
     }, [data, viewMode]);
 
-    const currencyFormatter = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', compactDisplay: 'short' }).format(value);
+    // M-07: Use compact formatter
 
     return (
         <Card className="bg-gradient-to-br from-blue-900/50 via-purple-900/50 to-indigo-900/50 text-white border-blue-800/50 w-full overflow-hidden">
@@ -599,8 +607,8 @@ function RecentActivityChart({ data }: { data: any[] }) {
                     <AreaChart accessibilityLayer data={data}>
                         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)" />
                         <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => formatDate(parseISO(value), 'MMM d')} tick={{ fill: 'rgba(255, 255, 255, 0.7)', fontSize: 10 }}/>
-                        <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={currencyFormatter} tick={{ fill: 'rgba(255, 255, 255, 0.7)', fontSize: 10 }}/>
-                        <ChartTooltip cursor={true} content={<ChartTooltipContent labelFormatter={(label) => formatDate(parseISO(label), 'eeee, d MMMM yyyy')} indicator="dot" labelClassName="text-white" className="bg-card/80 backdrop-blur-sm text-white border-border/50" formatter={(value, name, item) => ( <div className="flex items-center gap-2"><div style={{ backgroundColor: item.color }} className="w-2.5 h-2.5 rounded-full" /><div className="flex justify-between w-full"><span className="text-muted-foreground">{chartConfig[name as keyof typeof chartConfig].label}: </span><span className="font-bold ml-2">{currencyFormatter(value as number)}</span></div></div> )}/>}/>
+                        <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(val) => formatUsdCompact.format(val)} tick={{ fill: 'rgba(255, 255, 255, 0.7)', fontSize: 10 }}/>
+                        <ChartTooltip cursor={true} content={<ChartTooltipContent labelFormatter={(label) => formatDate(parseISO(label), 'eeee, d MMMM yyyy')} indicator="dot" labelClassName="text-white" className="bg-card/80 backdrop-blur-sm text-white border-border/50" formatter={(value, name, item) => ( <div className="flex items-center gap-2"><div style={{ backgroundColor: item.color }} className="w-2.5 h-2.5 rounded-full" /><div className="flex justify-between w-full"><span className="text-muted-foreground">{chartConfig[name as keyof typeof chartConfig].label}: </span><span className="font-bold ml-2">{formatUsd.format(value as number)}</span></div></div> )}/>}/>
                         <defs><linearGradient id="fillSales" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-sales)" stopOpacity={0.8} /><stop offset="95%" stopColor="var(--color-sales)" stopOpacity={0.1} /></linearGradient><linearGradient id="fillExpenses" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-expenses)" stopOpacity={0.8} /><stop offset="95%" stopColor="var(--color-expenses)" stopOpacity={0.1} /></linearGradient><linearGradient id="fillNetProfit" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--color-netProfit)" stopOpacity={0.8} /><stop offset="95%" stopColor="var(--color-netProfit)" stopOpacity={0.1} /></linearGradient></defs>
                         {activeSubjects.sales && <Area dataKey="sales" type="natural" fill="url(#fillSales)" stroke="var(--color-sales)" stackId="a" isAnimationActive animationDuration={700} animationEasing="ease-out" />}
                         {activeSubjects.expenses && <Area dataKey="expenses" type="natural" fill="url(#fillExpenses)" stroke="var(--color-expenses)" stackId="c" isAnimationActive animationDuration={900} animationEasing="ease-out" />}
@@ -610,7 +618,7 @@ function RecentActivityChart({ data }: { data: any[] }) {
                 ) : (
                  <ChartContainer config={chartConfig} className="h-80 w-full min-w-0">
                     <BarChart accessibilityLayer data={totalData.filter(d => activeSubjects[d.name.includes('فرۆش') ? 'sales' : d.name.includes('خەرجی') ? 'expenses' : 'netProfit'])}>
-                         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)" /><XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={(value) => value} tick={{ fill: 'rgba(255, 255, 255, 0.7)', fontSize: 10 }} /><YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={currencyFormatter} tick={{ fill: 'rgba(255, 255, 255, 0.7)', fontSize: 10 }}/><ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" labelClassName="text-white" className="bg-card/80 backdrop-blur-sm text-white border-border/50" />} /><Bar dataKey="value" radius={8} isAnimationActive animationDuration={800} animationEasing="ease-out" />
+                         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)" /><XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={(value) => value} tick={{ fill: 'rgba(255, 255, 255, 0.7)', fontSize: 10 }} /><YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(val) => formatUsdCompact.format(val)} tick={{ fill: 'rgba(255, 255, 255, 0.7)', fontSize: 10 }}/><ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" labelClassName="text-white" className="bg-card/80 backdrop-blur-sm text-white border-border/50" />} /><Bar dataKey="value" radius={8} isAnimationActive animationDuration={800} animationEasing="ease-out" />
                     </BarChart>
                 </ChartContainer>
                 )}

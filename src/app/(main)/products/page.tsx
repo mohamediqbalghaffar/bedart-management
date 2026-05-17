@@ -397,17 +397,28 @@ export default function ProductsPage({ params, searchParams }: { params: Promise
         const { update: updateToast } = toast({ title: '...نوێکردنەوەی پۆلەکان', description: `${ids.length} پێناسە نوێ دەکرێنەوە.` });
         
         try {
-            const batch = writeBatch(firestore);
+            let batch = writeBatch(firestore);
+            let opCount = 0;
+
+            const checkAndCommit = async () => {
+                if (opCount >= 450) {
+                    await batch.commit();
+                    batch = writeBatch(firestore);
+                    opCount = 0;
+                }
+            };
             
             const definitionsToUpdate = products?.filter(p => ids.includes(p.id)) || [];
             if (definitionsToUpdate.length === 0) throw new Error("No products found to update.");
 
             const productNamesToUpdate = [...new Set(definitionsToUpdate.map(p => p.productName))];
 
-            definitionsToUpdate.forEach(def => {
+            for (const def of definitionsToUpdate) {
                 const defRef = doc(firestore, 'product_definitions', def.id);
                 batch.update(defRef, { category: newCategory });
-            });
+                opCount++;
+                await checkAndCommit();
+            }
 
             const CHUNK_SIZE = 30;
             for (let i = 0; i < productNamesToUpdate.length; i += CHUNK_SIZE) {
@@ -415,13 +426,15 @@ export default function ProductsPage({ params, searchParams }: { params: Promise
                 if (chunk.length > 0) {
                     const stockQuery = query(collection(firestore, 'products'), where('productName', 'in', chunk));
                     const stockSnap = await getDocs(stockQuery);
-                    stockSnap.forEach(stockDoc => {
+                    for (const stockDoc of stockSnap.docs) {
                         batch.update(stockDoc.ref, { category: newCategory });
-                    });
+                        opCount++;
+                        await checkAndCommit();
+                    }
                 }
             }
 
-            await batch.commit();
+            if (opCount > 0) await batch.commit();
             updateToast({ title: 'سەرکەوتوو بوو', description: 'پۆلەکان بە سەرکەوتوویی نوێکرانەوە.', className: 'bg-accent text-accent-foreground' });
             handleSave();
         } catch (error) {
@@ -436,14 +449,21 @@ export default function ProductsPage({ params, searchParams }: { params: Promise
         const { update: updateToast } = toast({ title: '...سڕینەوەی پێناسەکان', description: `${ids.length} پێناسە دەسڕدرێنەوە.` });
         
         try {
-            const batch = writeBatch(firestore);
+            let batch = writeBatch(firestore);
+            let opCount = 0;
             
-            ids.forEach(id => {
+            for (const id of ids) {
                 const defRef = doc(firestore, 'product_definitions', id);
                 batch.delete(defRef);
-            });
+                opCount++;
+                if (opCount >= 450) {
+                    await batch.commit();
+                    batch = writeBatch(firestore);
+                    opCount = 0;
+                }
+            }
 
-            await batch.commit();
+            if (opCount > 0) await batch.commit();
             updateToast({ title: 'سەرکەوتوو بوو', description: 'پێناسەکان بە سەرکەوتوویی سڕانەوە.', className: 'bg-accent text-accent-foreground' });
             handleSave();
         } catch (error) {
