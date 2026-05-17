@@ -45,6 +45,13 @@ type Supplier = {
     supplierName: string;
 };
 
+const categoryTranslations: Record<string, string> = {
+  Mattress: "دۆشەک",
+  Bed: "تەخت",
+  Pillow: "سەرین",
+  Cover: "بەرگ",
+};
+
 
 function StockPageContent() {
     const firestore = useFirestore();
@@ -53,6 +60,7 @@ function StockPageContent() {
     const [searchTerm, setSearchTerm] = useState(initialSearch);
     const { toast } = useToast();
     const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const [showDepleted, setShowDepleted] = useState(false);
 
     const productsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -81,7 +89,7 @@ function StockPageContent() {
         const productMap = new Map<string, GroupedProduct>();
 
         products
-            .filter(p => p.currentQuantity > 0)
+            .filter(p => showDepleted ? true : p.currentQuantity > 0)
             .forEach(p => {
                 const key = `${p.productName}-${p.sizeModel || ''}`;
                 if (!productMap.has(key)) {
@@ -160,10 +168,20 @@ function StockPageContent() {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <Button variant="outline" onClick={exportToExcel} className="w-full sm:w-auto">
-                            <FileDown className="ml-2 h-4 w-4" />
-                            هەناردەکردنی ڕاپۆرت
-                        </Button>
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <Button variant="outline" onClick={exportToExcel} className="flex-1 sm:flex-initial">
+                                <FileDown className="mr-2 h-4 w-4" />
+                                هەناردەکردنی ڕاپۆرت
+                            </Button>
+                            <Button
+                                variant={showDepleted ? "secondary" : "outline"}
+                                size="sm"
+                                onClick={() => setShowDepleted(prev => !prev)}
+                                className="flex-1 sm:flex-initial"
+                            >
+                                {showDepleted ? "بینینی هەموو" : "تەواوبووەکانیش"}
+                            </Button>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent className="p-0 sm:p-6">
@@ -225,7 +243,7 @@ function StockPageContent() {
                                             </TableCell>
                                             <TableCell className="text-center"><ConfidentialBlur>{product.locations['Shop Showroom']?.currentQuantity || 0}</ConfidentialBlur></TableCell>
                                             <TableCell className="text-center"><ConfidentialBlur>{product.locations.Warehouse?.currentQuantity || 0}</ConfidentialBlur></TableCell>
-                                            <TableCell className="text-right">{product.category}</TableCell>
+                                            <TableCell className="text-right">{categoryTranslations[product.category as keyof typeof categoryTranslations] || product.category}</TableCell>
                                             <TableCell className="font-medium text-right">{product.productName} {product.sizeModel && `(${product.sizeModel})`}</TableCell>
                                         </TableRow>
                                     ))
@@ -248,8 +266,8 @@ function StockPageContent() {
                                             <CardHeader className="p-3 pb-1">
                                                 <div className="flex justify-between items-start gap-2">
                                                     <div className="min-w-0">
-                                                        <CardTitle className="text-sm truncate font-bold">{product.productName} {product.sizeModel && `(${product.sizeModel})`}</CardTitle>
-                                                        <CardDescription className="text-[10px] opacity-80">{product.category}</CardDescription>
+                                                        <CardTitle className="text-sm break-words line-clamp-2 font-bold" title={`${product.productName}${product.sizeModel ? ` (${product.sizeModel})` : ''}`}>{product.productName} {product.sizeModel && `(${product.sizeModel})`}</CardTitle>
+                                                        <CardDescription className="text-[10px] opacity-80">{categoryTranslations[product.category as keyof typeof categoryTranslations] || product.category}</CardDescription>
                                                     </div>
                                                         <StockTransferDialog product={product} onTransferSuccess={onTransferSuccess}>
                                                         <Button variant="ghost" size="sm" disabled={!product.locations.Warehouse && !product.locations['Shop Showroom']} className="h-7 w-7 p-0 shrink-0">

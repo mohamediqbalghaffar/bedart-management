@@ -59,7 +59,7 @@ function PurchaseFormDialog({ formId, onSave, trigger, initialItems }: { formId:
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>{trigger}</DialogTrigger>
-            <DialogContent className="sm:max-w-7xl" dir="rtl">
+            <DialogContent className="sm:max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden" dir="rtl">
                 <DialogHeader>
                     <DialogTitle>{formId ? 'دەستکاریکردنی پسوولەی کڕین' : 'دروستکردنی پسوولەی کڕین'}</DialogTitle>
                     <DialogDescription>
@@ -262,25 +262,40 @@ function ImportActions({ onSave }: { onSave: () => void }) {
             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".xlsx, .xls"/>
              <div className="flex items-center gap-2">
                 <PurchaseFormDialog formId={null} onSave={onSave} trigger={
-                    <Button><PlusCircle /> پسوولەی کڕینی نوێ</Button>
+                    <Button><PlusCircle />پسوولەی کڕینی نوێ</Button>
                 }/>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" disabled={isProcessing}>
-                            {isProcessing ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <FileUp className="ml-2 h-4 w-4" />}
-                            هاوردەکردنی پسوولە
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                        <DropdownMenuItem onSelect={() => triggerUpload('ai')}>هاوردەکردنی زیرەک (AI)</DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => triggerUpload('standard')}>هاوردەکردنی ستاندارد</DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-                <Button onClick={downloadTemplate} variant="outline"><FileDown className="ml-2 h-4 w-4" />دابەزاندنی نموونە</Button>
+                {/* M-03: Secondary actions in dropdown on mobile */}
+                <div className="hidden md:flex items-center gap-2">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" disabled={isProcessing}>
+                                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileUp className="mr-2 h-4 w-4" />}
+                                هاوردەکردنی پسوولە
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuItem onSelect={() => triggerUpload('ai')}>هاوردەکردنی زیرەک (AI)</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => triggerUpload('standard')}>هاوردەکردنی ستاندارد</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button onClick={downloadTemplate} variant="outline"><FileDown className="mr-2 h-4 w-4" />دابەزاندنی نموونە</Button>
+                </div>
+                <div className="md:hidden">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="icon"><FileUp className="h-4 w-4" /></Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onSelect={() => triggerUpload('ai')}>هاوردەکردنی زیرەک (AI)</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => triggerUpload('standard')}>هاوردەکردنی ستاندارد</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={downloadTemplate}>دابەزاندنی نموونە</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
              </div>
 
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent className="sm:max-w-7xl" dir="rtl">
+                <DialogContent className="sm:max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden" dir="rtl">
                     <DialogHeader>
                         <DialogTitle>دروستکردنی پسوولەی کڕین لە فایل</DialogTitle>
                         <DialogDescription>وردبینی زانیارییەکان بکە و دابینکەر هەڵبژێرە، پاشان پاشەکەوتی بکە.</DialogDescription>
@@ -321,7 +336,7 @@ function PurchasesList() {
         const supplierMap = new Map(suppliers.map(s => [s.id, s.supplierName]));
         return buyingForms.map(form => ({
             ...form,
-            supplierName: supplierMap.get(form.supplierId) || 'Unknown Supplier',
+            supplierName: supplierMap.get(form.supplierId) || 'دابینکەری نەزانراو',
             totalAmount: form.totalAmount || 0,
         }));
     }, [buyingForms, suppliers]);
@@ -331,15 +346,15 @@ function PurchasesList() {
         if (!firestore) return;
 
         try {
+            // D-10: Fetch subcollection IDs OUTSIDE the transaction
+            const productsPurchasedRef = collection(firestore, `buying_forms/${formId}/buying_form_products`);
+            const productsPurchasedSnapshot = await getDocs(productsPurchasedRef);
+            const purchasedItems = productsPurchasedSnapshot.docs.map(d => ({ ref: d.ref, ...(d.data() as BuyingFormProduct) }));
+
             await runTransaction(firestore, async (transaction) => {
-                const productsPurchasedRef = collection(firestore, `buying_forms/${formId}/buying_form_products`);
-                const productsPurchasedSnapshot = await getDocs(productsPurchasedRef);
-                
-                const productRefsToUpdate: { ref: any; newQuantity: number }[] = [];
-                
+                // D-10: Use transaction.get for each product (transaction-safe reads)
                 const productSnapshots = await Promise.all(
-                    productsPurchasedSnapshot.docs.map(productDoc => {
-                        const item = productDoc.data() as BuyingFormProduct;
+                    purchasedItems.map(item => {
                         const productRef = doc(firestore, 'products', item.productId);
                         return transaction.get(productRef).then(snap => ({ snap, item }));
                     })
@@ -356,8 +371,9 @@ function PurchasesList() {
                     transaction.update(ref, { currentQuantity: newQuantity });
                 });
                 
-                productsPurchasedSnapshot.docs.forEach(docToDelete => {
-                    transaction.delete(docToDelete.ref);
+                // Delete subcollection docs
+                purchasedItems.forEach(item => {
+                    transaction.delete(item.ref);
                 });
 
                 const formRef = doc(firestore, 'buying_forms', formId);

@@ -20,6 +20,7 @@ import { ProductCategory } from '@/lib/types';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 export type ProductDefinition = {
     productName: string;
@@ -393,7 +394,7 @@ export default function ProductsPage({ params, searchParams }: { params: Promise
     const handleBulkUpdateCategory = async (ids: string[], newCategory: ProductCategory) => {
         if (!firestore || ids.length === 0) return;
 
-        const { update: updateToast } = toast({ title: '...نوێکردنەوەی پۆلەکان', description: `Updating ${ids.length} products.` });
+        const { update: updateToast } = toast({ title: '...نوێکردنەوەی پۆلەکان', description: `${ids.length} پێناسە نوێ دەکرێنەوە.` });
         
         try {
             const batch = writeBatch(firestore);
@@ -432,7 +433,7 @@ export default function ProductsPage({ params, searchParams }: { params: Promise
     const handleBulkDelete = async (ids: string[]) => {
         if (!firestore || ids.length === 0) return;
 
-        const { update: updateToast } = toast({ title: '...سڕینەوەی پێناسەکان', description: `Deleting ${ids.length} product definitions.` });
+        const { update: updateToast } = toast({ title: '...سڕینەوەی پێناسەکان', description: `${ids.length} پێناسە دەسڕدرێنەوە.` });
         
         try {
             const batch = writeBatch(firestore);
@@ -456,8 +457,29 @@ export default function ProductsPage({ params, searchParams }: { params: Promise
             <PageHeader title="بەڕێوەبردنی ناوی کاڵاکان" description="پێناسەی کاڵا سەرەکییەکانت لێرە ببینە و زیاد بکە.">
                 <div className="flex items-center gap-2">
                     <AddProductDialog onProductAdded={handleSave} />
-                    <DownloadTemplateButton />
-                    <UploadItemsButton onUploadSuccess={handleSave} existingProducts={products} />
+                    {/* M-02: Secondary actions hidden on mobile */}
+                    <div className="hidden md:flex items-center gap-2">
+                        <DownloadTemplateButton />
+                        <UploadItemsButton onUploadSuccess={handleSave} existingProducts={products} />
+                    </div>
+                    <div className="md:hidden">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="icon"><FileUp className="h-4 w-4" /></Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onSelect={() => {
+                                    const ws = XLSX.utils.json_to_sheet([{ productName: "دۆشەکی نموونە", sellingPrice: 0 }]);
+                                    const wb = XLSX.utils.book_new();
+                                    XLSX.utils.book_append_sheet(wb, ws, "Products");
+                                    XLSX.writeFile(wb, "Product_Import_Template.xlsx");
+                                }}>دابەزاندنی نموونە</DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => {
+                                    /* Upload handled by UploadItemsButton - user needs to use desktop for bulk upload */
+                                }}>بارکردنی کاڵا</DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
                 </div>
             </PageHeader>
             <ProductDefinitionsList 

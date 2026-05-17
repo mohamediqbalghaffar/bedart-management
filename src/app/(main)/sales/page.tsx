@@ -479,27 +479,40 @@ function SalesList() {
     const handleDelete = async (formId: string) => {
         if (!firestore) return;
         try {
+            // D-01: Fetch subcollection IDs outside the transaction
             const productsSoldRef = collection(firestore, `selling_forms/${formId}/selling_form_products`);
             const productsSoldSnapshot = await getDocs(productsSoldRef);
-            const productsSold = productsSoldSnapshot.docs.map(d => d.data() as SellingFormProduct);
-
-            for (const item of productsSold) {
-                const productRef = doc(firestore, 'products', item.productId);
-                await runTransaction(firestore, async (transaction) => {
-                    const productDoc = await transaction.get(productRef);
-                    if (productDoc.exists()) {
-                        const currentQuantity = productDoc.data().currentQuantity || 0;
-                        const newQuantity = Number(currentQuantity) + Number(item.quantity);
-                        transaction.update(productRef, { currentQuantity: newQuantity });
-                    }
-                });
-            }
+            const productsSold = productsSoldSnapshot.docs.map(d => ({ ref: d.ref, ...d.data() as SellingFormProduct }));
 
             const paymentsRef = collection(firestore, `selling_forms/${formId}/payments`);
             const paymentsSnapshot = await getDocs(paymentsRef);
-            await Promise.all(productsSoldSnapshot.docs.map(d => deleteDoc(d.ref)));
-            await Promise.all(paymentsSnapshot.docs.map(p => deleteDoc(p.ref)));
-            await deleteDoc(doc(firestore, 'selling_forms', formId));
+
+            // D-01: Single atomic transaction for ALL stock restorations + deletions
+            await runTransaction(firestore, async (transaction) => {
+                // Read all product docs first (all reads before writes)
+                const productSnapshots = await Promise.all(
+                    productsSold.map(item => {
+                        const productRef = doc(firestore, 'products', item.productId);
+                        return transaction.get(productRef).then(snap => ({ snap, item }));
+                    })
+                );
+
+                // Now write: restore stock quantities
+                for (const { snap, item } of productSnapshots) {
+                    if (snap.exists()) {
+                        const currentQuantity = snap.data().currentQuantity || 0;
+                        const newQuantity = Number(currentQuantity) + Number(item.quantity);
+                        transaction.update(snap.ref, { currentQuantity: newQuantity });
+                    }
+                }
+
+                // Delete subcollection docs
+                productsSold.forEach(item => transaction.delete(item.ref));
+                paymentsSnapshot.docs.forEach(p => transaction.delete(p.ref));
+
+                // Delete the form itself
+                transaction.delete(doc(firestore, 'selling_forms', formId));
+            });
 
             toast({
                 title: "سەرکەوتوو بوو",
@@ -572,11 +585,36 @@ function SalesList() {
             <PageHeader title="بەڕێوەبردنی فرۆشتن" description="تۆماری فۆڕمەکانی فرۆشتن لێرە ببینە و زیاد بکە.">
                 <div className="flex items-center gap-2">
                     <Button onClick={() => setIsCreateDialogOpen(true)}>
-                        <PlusCircle className="ml-2 h-4 w-4" />
+                        <PlusCircle className="mr-2 h-4 w-4" />
                         دروستکردنی فۆڕمی فرۆشتن
                     </Button>
-                    <UploadSalesFormButton onSave={handleFormSave} />
-                    <DownloadTemplateButton />
+                    {/* M-01: Secondary actions in dropdown on mobile */}
+                    <div className="hidden md:flex items-center gap-2">
+                        <UploadSalesFormButton onSave={handleFormSave} />
+                        <DownloadTemplateButton />
+                    </div>
+                    <div className="md:hidden">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="icon"><FileUp className="h-4 w-4" /></Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onSelect={() => { /* trigger upload via ref */ }}>
+                                    هاوردەکردنی پسوولە
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => {
+                                    const headers = [['ناو', 'نرخی فرۆشتن', 'دانە']];
+                                    const ws = XLSX.utils.aoa_to_sheet(headers);
+                                    ws['!cols'] = [{ wch: 35 }, { wch: 20 }, { wch: 15 }];
+                                    const wb = XLSX.utils.book_new();
+                                    XLSX.utils.book_append_sheet(wb, ws, 'Sales Template');
+                                    XLSX.writeFile(wb, 'BedArt_Sales_Template.xlsx');
+                                }}>
+                                    داگرتنی نموونەی فۆڕم
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
                 </div>
             </PageHeader>
 
@@ -732,7 +770,7 @@ function SalesList() {
                                             <TableCell className="font-medium text-center">{sale.formNumber}</TableCell>
                                             <TableCell className="text-center">{sale.customerName}</TableCell>
                                             <TableCell className="text-center">{sale.issueDate}</TableCell>
-                                            <TableCell className="text-center font-mono text-sm">{fmt.format(sale.totalPrice || 0)}</TableCell>
+                                            <TableCell className="text-center font-mono text-sm"><span dir="ltr" className="inline-block">{fmt.format(sale.totalPrice || 0)}</span></TableCell>
                                             <TableCell className="text-center">
                                                 <Badge
                                                     variant={sale.paymentStatus === 'Fully Paid' ? 'default' : sale.paymentStatus === 'Unpaid' ? 'destructive' : 'secondary'}
@@ -855,7 +893,7 @@ function SalesList() {
                                             <span>#{sale.formNumber}</span>
                                             <span>{sale.issueDate}</span>
                                         </div>
-                                        <div className="font-bold font-mono text-foreground text-xs">{fmt.format(sale.totalPrice || 0)}</div>
+                                        <div className="font-bold font-mono text-foreground text-xs" dir="ltr">{fmt.format(sale.totalPrice || 0)}</div>
                                     </div>
                                     
                                     <div className="flex justify-end gap-1 pt-1 border-t border-muted/30">

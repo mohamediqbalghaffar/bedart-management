@@ -89,6 +89,8 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
             try {
                 const totalRevenue = salesData.reduce((acc, sale) => acc + sale.totalPrice, 0);
 
+                // D-03: TODO — move this rate to Firestore 'app_settings/exchange_rates' document
+                // and read it dynamically. Currently hardcoded; IQD/USD fluctuates daily.
                 const iqdToUsdRate = 1500;
                 const { totalUSD, totalIQD } = expensesData.reduce((acc, expense) => {
                     if (expense.currency === 'IQD') acc.totalIQD += expense.amount;
@@ -621,8 +623,9 @@ function RecentActivityChart({ data }: { data: any[] }) {
 export default function DashboardPage({ params, searchParams }: { params: Promise<any>, searchParams: Promise<any> }) {
     use(params);
     use(searchParams);
-    const [dateRange, setDateRange] = useState<{ from: Date, to: Date }>({ 
-        from: new Date('2018-01-01'), 
+    const [dateRange, setDateRange] = useState<{ from: Date, to: Date }>({
+        // L-08: Default to last 30 days instead of 2018 to prevent 2800-day chart
+        from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
         to: new Date() 
     });
 
@@ -640,8 +643,9 @@ export default function DashboardPage({ params, searchParams }: { params: Promis
     return (
         <div className="flex flex-col gap-6 md:gap-8 p-4 md:p-8 w-full max-w-full overflow-x-hidden" dir="rtl">
             <PageHeader title="داشبۆردی سەرەکی" description="پوختەی کارەکانت لێرە ببینە.">
-                 <div className="flex flex-wrap items-center gap-3 w-full">
-                    <div className="flex items-center gap-2 flex-1 min-w-[140px]">
+                 {/* M-06: Stack vertically on mobile */}
+                 <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
                         <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">لە:</span>
                         <DatePicker
                             value={dateRange.from ? formatDate(dateRange.from, 'yyyy-MM-dd') : ""}
@@ -651,10 +655,10 @@ export default function DashboardPage({ params, searchParams }: { params: Promis
                                     if (isValid(parsed)) setDateRange(prev => ({...prev, from: parsed }));
                                 }
                             }}
-                            className="flex-1 bg-white/10 text-white border-white/20"
+                            className="flex-1 min-w-0 bg-white/10 text-white border-white/20"
                         />
                     </div>
-                    <div className="flex items-center gap-2 flex-1 min-w-[140px]">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
                         <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">بۆ:</span>
                         <DatePicker
                             value={dateRange.to ? formatDate(dateRange.to, 'yyyy-MM-dd') : ""}
@@ -664,9 +668,17 @@ export default function DashboardPage({ params, searchParams }: { params: Promis
                                     if (isValid(parsed)) setDateRange(prev => ({...prev, to: parsed }));
                                 }
                             }}
-                            className="flex-1 bg-white/10 text-white border-white/20"
+                            className="flex-1 min-w-0 bg-white/10 text-white border-white/20"
                         />
                     </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 text-xs"
+                        onClick={() => setDateRange({ from: new Date('2018-01-01'), to: new Date() })}
+                    >
+                        هەموو ماوەکان
+                    </Button>
                 </div>
             </PageHeader>
             

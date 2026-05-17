@@ -51,6 +51,8 @@ function ExpensesList() {
     const firestore = useFirestore();
     const [refreshKey, setRefreshKey] = useState(0);
     const [sortConfig, setSortConfig] = useState<{ key: keyof Expense; direction: 'ascending' | 'descending' } | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const PAGE_SIZE = 20;
 
     const expensesQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -94,8 +96,14 @@ function ExpensesList() {
     };
 
     const getSortIcon = (key: keyof Expense) => (
-        <ArrowUpDown className={`mr-2 h-4 w-4 inline-block ${sortConfig?.key === key ? 'text-primary' : 'text-muted-foreground'}`} />
+        <ArrowUpDown className={`ml-2 h-4 w-4 inline-block ${sortConfig?.key === key ? 'text-primary' : 'text-muted-foreground'}`} />
     );
+
+    const totalPages = Math.max(1, Math.ceil(sortedExpenses.length / PAGE_SIZE));
+    const paginatedExpenses = useMemo(() => {
+        const start = (currentPage - 1) * PAGE_SIZE;
+        return sortedExpenses.slice(start, start + PAGE_SIZE);
+    }, [sortedExpenses, currentPage]);
 
     return (
         <Card className="flex flex-col h-full border-none shadow-none bg-transparent md:bg-card md:border md:shadow-sm">
@@ -138,12 +146,12 @@ function ExpensesList() {
                                         <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                                     </TableCell>
                                 </TableRow>
-                            ) : sortedExpenses.length === 0 ? (
+                            ) : paginatedExpenses.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">هیچ خەرجییەک تۆمار نەکراوە.</TableCell>
                                 </TableRow>
                             ) : (
-                                sortedExpenses.map((expense) => (
+                                paginatedExpenses.map((expense) => (
                                     <EditableExpenseRow key={expense.id} expense={expense} onExpenseUpdated={handleExpenseChange} mode="table" />
                                 ))
                             )}
@@ -153,14 +161,28 @@ function ExpensesList() {
                     <div className="md:hidden space-y-1.5 p-3">
                         {isLoading ? (
                            <div className="flex justify-center items-center h-48"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></div>
-                        ) : sortedExpenses.length === 0 ? (
+                        ) : paginatedExpenses.length === 0 ? (
                             <div className="py-8 text-center text-muted-foreground">هیچ خەرجییەک تۆمار نەکراوە.</div>
                         ) : (
-                             sortedExpenses.map((expense) => (
+                             paginatedExpenses.map((expense) => (
                                 <EditableExpenseRow key={expense.id} expense={expense} onExpenseUpdated={handleExpenseChange} mode="card" />
                             ))
                         )}
                     </div>
+
+                    {/* M-10: Pagination */}
+                    {sortedExpenses.length > PAGE_SIZE && (
+                        <div className="flex items-center justify-between border-t pt-3 px-3 pb-2">
+                            <p className="text-xs text-muted-foreground">
+                                {sortedExpenses.length} تۆمار — پەڕەی {currentPage} لە {totalPages}
+                            </p>
+                            <div className="flex items-center gap-1">
+                                <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>&rarr;</Button>
+                                <span className="text-xs px-2">{currentPage} / {totalPages}</span>
+                                <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>&larr;</Button>
+                            </div>
+                        </div>
+                    )}
                 </ScrollArea>
             </CardContent>
         </Card>

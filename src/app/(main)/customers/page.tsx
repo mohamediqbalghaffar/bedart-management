@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { PlusCircle, Loader2, Phone, MapPin, Edit, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { AddCustomerForm } from "./components/add-customer-form";
-import { useFirestore, useCollection, useMemoFirebase, collection, deleteDoc, doc } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, collection, deleteDoc, doc, getDocs, query, where } from '@/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -56,10 +56,27 @@ function CustomersList() {
 
     const { data: customers, isLoading } = useCollection<WithId<Customer>>(customersQuery);
 
-    async function handleDelete(customerId: string) {
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    async function handleDelete(customerId: string, customerName: string) {
         if (!firestore) return;
+        setIsDeleting(true);
 
         try {
+            // D-05: Check referential integrity — block if customer has sales
+            const salesRef = collection(firestore, 'selling_forms');
+            const salesQuery = query(salesRef, where('customerName', '==', customerName));
+            const salesSnapshot = await getDocs(salesQuery);
+
+            if (!salesSnapshot.empty) {
+                toast({
+                    variant: "destructive",
+                    title: "ناتوانرێت بسڕدرێتەوە",
+                    description: "ئەم کڕیارە لە فۆڕمی فرۆشتندا بەکارهاتووە و ناتوانرێت بسڕدرێتەوە.",
+                });
+                return;
+            }
+
             await deleteDoc(doc(firestore, "customers", customerId));
             toast({
                 title: "سەرکەوتوو بوو!",
@@ -73,6 +90,8 @@ function CustomersList() {
                 title: "هەڵەیەک ڕوویدا",
                 description: "سڕینەوەی کڕیار سەرکەوتوو نەبوو.",
             });
+        } finally {
+            setIsDeleting(false);
         }
     }
 
@@ -130,7 +149,7 @@ function CustomersList() {
                                                             </AlertDialogHeader>
                                                             <AlertDialogFooter>
                                                                 <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={() => handleDelete(customer.id)} className="bg-destructive hover:bg-destructive/90">بەڵێ، بسڕەوە</AlertDialogAction>
+                                                                <AlertDialogAction onClick={() => handleDelete(customer.id, customer.customerName)} className="bg-destructive hover:bg-destructive/90" disabled={isDeleting}>{isDeleting ? "دەسڕدرێتەوە..." : "بەڵێ، بسڕەوە"}</AlertDialogAction>
                                                             </AlertDialogFooter>
                                                         </AlertDialogContent>
                                                     </AlertDialog>
@@ -171,7 +190,7 @@ function CustomersList() {
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>
                                                             <AlertDialogCancel>نەخێر</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => handleDelete(customer.id)} className="bg-destructive">بەڵێ</AlertDialogAction>
+                                                            <AlertDialogAction onClick={() => handleDelete(customer.id, customer.customerName)} className="bg-destructive" disabled={isDeleting}>{isDeleting ? "دەسڕدرێتەوە..." : "بەڵێ"}</AlertDialogAction>
                                                         </AlertDialogFooter>
                                                     </AlertDialogContent>
                                                 </AlertDialog>

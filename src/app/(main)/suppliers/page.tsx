@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle, Loader2, Phone, Pencil, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { SupplierForm } from "./components/supplier-form";
-import { useFirestore, useCollection, useMemoFirebase, collection, deleteDoc, doc } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, collection, deleteDoc, doc, getDocs, query, where } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -82,6 +82,21 @@ function DeleteSupplierDialog({ supplierId, supplierName }: { supplierId: string
         if (!firestore) return;
         setIsDeleting(true);
         try {
+            // D-06: Check referential integrity — block if supplier has purchases
+            const purchasesRef = collection(firestore, 'buying_forms');
+            const purchasesQuery = query(purchasesRef, where('supplierId', '==', supplierId));
+            const purchasesSnapshot = await getDocs(purchasesQuery);
+
+            if (!purchasesSnapshot.empty) {
+                toast({
+                    variant: "destructive",
+                    title: "ناتوانرێت بسڕدرێتەوە",
+                    description: "ئەم دابینکەرە لە پسوولەی کڕیندا بەکارهاتووە و ناتوانرێت بسڕدرێتەوە.",
+                });
+                setIsDeleting(false);
+                return;
+            }
+
             await deleteDoc(doc(firestore, "suppliers", supplierId));
             toast({
                 title: "سەرکەوتوو بوو",

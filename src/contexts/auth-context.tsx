@@ -40,48 +40,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const firestore = useFirestore();
 
+  // S-02: Admin bootstrap removed — seed admin via Firebase Console or server-side script.
+  // Never store credentials in client code.
+
+
+  // S-04: Re-validate stored session against Firestore to prevent role tampering
   useEffect(() => {
-    // This effect runs once to bootstrap the first admin user if the users collection is empty.
-    const bootstrapAdmin = async () => {
-      if (!firestore) return;
+    const validateSession = async () => {
       try {
-        const usersRef = collection(firestore, 'users');
-        const q = query(usersRef, limit(1));
-        const snapshot = await getDocs(q);
-        if (snapshot.empty) {
-          console.log("No users found. Bootstrapping default admin user.");
-          const adminId = 'default-admin'; // Use a predictable ID
-          const adminRef = doc(firestore, 'users', adminId);
-          await setDoc(adminRef, {
-            id: adminId,
-            name: 'admin',
-            role: 'Admin',
-            code: 'Rawezh1818',
-            status: 'offline'
-          });
-          console.log("Default admin user created successfully.");
+        const storedUser = localStorage.getItem('authUser');
+        if (storedUser) {
+          const parsed = JSON.parse(storedUser) as AuthUser;
+          // Re-fetch from Firestore to validate role hasn't been tampered
+          if (firestore && parsed.id) {
+            try {
+              const userDocRef = doc(firestore, 'users', parsed.id);
+              const snap = await getDocs(query(collection(firestore, 'users'), where('name', '==', parsed.name), limit(1)));
+              if (!snap.empty) {
+                const freshData = snap.docs[0].data() as User;
+                const validatedUser: AuthUser = {
+                  id: snap.docs[0].id,
+                  name: freshData.name,
+                  role: freshData.role,
+                  photoURL: freshData.photoURL,
+                  allowedPages: freshData.allowedPages || [],
+                };
+                setUser(validatedUser);
+                localStorage.setItem('authUser', JSON.stringify(validatedUser));
+              } else {
+                // User no longer exists in Firestore
+                localStorage.removeItem('authUser');
+                setUser(null);
+              }
+            } catch (fetchError) {
+              // Firestore unavailable — fall back to cached session
+              console.warn('Could not validate session against Firestore, using cached:', fetchError);
+              setUser(parsed);
+            }
+          } else {
+            // Firestore not ready yet, use cached
+            setUser(parsed);
+          }
         }
       } catch (error) {
-          console.error("Failed to bootstrap admin user:", error);
+        console.error("Could not access localStorage:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
-
-    bootstrapAdmin();
+    validateSession();
   }, [firestore]);
-
-
-  useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem('authUser');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-      }
-    } catch (error) {
-      console.error("Could not access localStorage:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
   
   useEffect(() => {
     if (!isLoading) {

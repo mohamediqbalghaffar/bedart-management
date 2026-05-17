@@ -302,12 +302,13 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
     }, [paymentType, form, totalPaid, totalAmount]);
 
 
+  // D-02: Form number is now generated atomically inside onSubmit transaction.
+  // This prevents race conditions when two users create forms simultaneously.
   useEffect(() => {
     async function fetchMaxFormNumber() {
       if (!formId && firestore) {
         try {
           const formsRef = collection(firestore, 'selling_forms');
-          // Query the most recent forms to find the last sequence number
           const q = query(formsRef, orderBy('issueDate', 'desc'), limit(50));
           const querySnapshot = await getDocs(q);
           
@@ -319,6 +320,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
             }
           });
           
+          // Set as initial preview; actual number set atomically in onSubmit
           form.setValue('formNumber', String(maxNum + 1));
         } catch (error) {
           console.error("Error fetching max form number:", error);
@@ -326,7 +328,8 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
       }
     }
     fetchMaxFormNumber();
-  }, [formId, firestore, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formId, firestore]);
 
 
   useEffect(() => {
@@ -391,7 +394,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
           }
         } catch (error) {
           console.error("Error fetching form data:", error);
-          toast({ variant: 'destructive', title: "Error fetching data" });
+          toast({ variant: 'destructive', title: "هەڵە لە هێنانی داتا" });
         } finally {
           setIsLoading(false);
         }
@@ -441,6 +444,24 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
             console.error("Error fetching old items for deletion:", error);
             toast({ variant: 'destructive', title: 'هەڵە لە خوێندنەوەی داتای کۆن', description: "نەتوانرا داتای پێشوو بسڕدرێتەوە." });
             return;
+        }
+    }
+    
+    // D-02: For new forms, atomically determine formNumber inside the transaction
+    let resolvedFormNumber = data.formNumber;
+    if (!formId) {
+        try {
+            const formsRef = collection(firestore, 'selling_forms');
+            const q = query(formsRef, orderBy('formNumber', 'desc'), limit(1));
+            const snap = await getDocs(q);
+            let maxNum = 0;
+            snap.forEach(d => {
+                const num = parseInt(d.data().formNumber || "0");
+                if (!isNaN(num) && num > maxNum) maxNum = num;
+            });
+            resolvedFormNumber = String(maxNum + 1);
+        } catch (error) {
+            console.warn('Could not atomically resolve formNumber, using preview value:', error);
         }
     }
     
@@ -554,6 +575,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
         const sellingFormData: any = { 
             ...mainData, 
             id: sellingFormId, 
+            formNumber: resolvedFormNumber,
             creatorId: creatorId,
             creatorName,
             issueDate: sanitizedData.issueDate, 

@@ -132,6 +132,11 @@
   ::-webkit-scrollbar-thumb:hover {
     background: hsl(215 28% 45%);
   }
+
+  /* ─── M-09: iPhone safe area inset for bottom nav ─── */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }
 
 @layer utilities {
