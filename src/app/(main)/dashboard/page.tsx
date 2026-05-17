@@ -292,7 +292,7 @@ function SalesDetailDialog({ data }: { data: any }) {
                             </div>
                             <div>
                                 <p className="text-sm text-muted-foreground">کۆی داهاتی کاڵا فرۆشراوەکان</p>
-                                <ConfidentialBlur><p className="text-2xl font-bold">{currencyFormatter.format(filteredData.totalRevenue)}</p></ConfidentialBlur>
+                                <ConfidentialBlur><p className="text-2xl font-bold">{formatUsd.format(filteredData.totalRevenue)}</p></ConfidentialBlur>
                             </div>
                         </div>
                     </AccordionContent>
@@ -303,7 +303,7 @@ function SalesDetailDialog({ data }: { data: any }) {
                         <Table className="hidden md:table">
                             <TableHeader><TableRow><TableHead className="text-right">ناوی کاڵا</TableHead><TableHead className="text-right">کۆی دانە</TableHead><TableHead className="text-right">کۆی داهات</TableHead></TableRow></TableHeader>
                             <TableBody>
-                                {filteredData.perProduct.map((item: any) => ( <TableRow key={item.productName}><TableCell>{item.productName}</TableCell><TableCell><ConfidentialBlur>{item.totalQuantity}</ConfidentialBlur></TableCell><TableCell><ConfidentialBlur>{currencyFormatter.format(item.totalRevenue)}</ConfidentialBlur></TableCell></TableRow> ))}
+                                {filteredData.perProduct.map((item: any) => ( <TableRow key={item.productName}><TableCell>{item.productName}</TableCell><TableCell><ConfidentialBlur>{item.totalQuantity}</ConfidentialBlur></TableCell><TableCell><ConfidentialBlur>{formatUsd.format(item.totalRevenue)}</ConfidentialBlur></TableCell></TableRow> ))}
                             </TableBody>
                         </Table>
                         <div className="space-y-4 md:hidden">
@@ -312,7 +312,7 @@ function SalesDetailDialog({ data }: { data: any }) {
                                     <CardHeader><CardTitle>{item.productName}</CardTitle></CardHeader>
                                     <CardContent className="space-y-2">
                                         <div className="flex justify-between"><span>کۆی دانە:</span><ConfidentialBlur><Badge variant="secondary">{item.totalQuantity}</Badge></ConfidentialBlur></div>
-                                        <div className="flex justify-between"><span>کۆی داهات:</span><ConfidentialBlur><Badge>{currencyFormatter.format(item.totalRevenue)}</Badge></ConfidentialBlur></div>
+                                        <div className="flex justify-between"><span>کۆی داهات:</span><ConfidentialBlur><Badge>{formatUsd.format(item.totalRevenue)}</Badge></ConfidentialBlur></div>
                                     </CardContent>
                                 </Card>
                             ))}
@@ -324,7 +324,7 @@ function SalesDetailDialog({ data }: { data: any }) {
                     <AccordionContent className="px-6 pb-6">
                         <Table className="hidden md:table"><TableHeader><TableRow><TableHead className="text-right">کڕیار</TableHead><TableHead className="text-right">بەروار</TableHead><TableHead className="text-right">کۆی گشتی</TableHead></TableRow></TableHeader>
                             <TableBody>
-                                {filteredData.sales?.map((sale: any) => ( <TableRow key={sale.id}><TableCell>{sale.customerName}</TableCell><TableCell>{formatDate(parseISO(sale.issueDate), 'dd/MM/yyyy')}</TableCell><TableCell><ConfidentialBlur>{currencyFormatter.format(sale.totalPrice)}</ConfidentialBlur></TableCell></TableRow> ))}
+                                {filteredData.sales?.map((sale: any) => ( <TableRow key={sale.id}><TableCell>{sale.customerName}</TableCell><TableCell>{formatDate(parseISO(sale.issueDate), 'dd/MM/yyyy')}</TableCell><TableCell><ConfidentialBlur>{formatUsd.format(sale.totalPrice)}</ConfidentialBlur></TableCell></TableRow> ))}
                             </TableBody>
                         </Table>
                         <div className="space-y-4 md:hidden">
@@ -332,7 +332,7 @@ function SalesDetailDialog({ data }: { data: any }) {
                                 <Card key={sale.id}>
                                     <CardHeader><CardTitle>{sale.customerName}</CardTitle><CardDescription>{formatDate(parseISO(sale.issueDate), 'dd/MM/yyyy')}</CardDescription></CardHeader>
                                     <CardContent>
-                                        <div className="flex justify-between"><span>کۆی گشتی:</span><ConfidentialBlur><Badge>{currencyFormatter.format(sale.totalPrice)}</Badge></ConfidentialBlur></div>
+                                        <div className="flex justify-between"><span>کۆی گشتی:</span><ConfidentialBlur><Badge>{formatUsd.format(sale.totalPrice)}</Badge></ConfidentialBlur></div>
                                     </CardContent>
                                 </Card>
                             ))}
@@ -438,7 +438,7 @@ function PurchasesDetailDialog({ data }: { data: any }) {
                     <AccordionContent className="px-6 pb-6">
                         <Table className="hidden md:table"><TableHeader><TableRow><TableHead className="text-right">ناوی کاڵا</TableHead><TableHead className="text-right">کۆی دانە</TableHead><TableHead className="text-right">کۆی نرخ</TableHead></TableRow></TableHeader>
                             <TableBody>
-                                {perProduct.map((item: any) => ( <TableRow key={item.productName}><TableCell>{item.productName}</TableCell><TableCell><ConfidentialBlur>{item.totalQuantity}</ConfidentialBlur></TableCell><TableCell><ConfidentialBlur>{currencyFormatter.format(item.totalCost)}</ConfidentialBlur></TableCell></TableRow> ))}
+                                {perProduct.map((item: any) => ( <TableRow key={item.productName}><TableCell>{item.productName}</TableCell><TableCell><ConfidentialBlur>{item.totalQuantity}</ConfidentialBlur></TableCell><TableCell><ConfidentialBlur>{formatUsd.format(item.totalCost)}</ConfidentialBlur></TableCell></TableRow> ))}
                             </TableBody>
                         </Table>
                         <div className="space-y-4 md:hidden">
@@ -447,7 +447,7 @@ function PurchasesDetailDialog({ data }: { data: any }) {
                                     <CardHeader><CardTitle>{item.productName}</CardTitle></CardHeader>
                                     <CardContent className="space-y-2">
                                         <div className="flex justify-between"><span>کۆی دانە:</span><ConfidentialBlur><Badge variant="secondary">{item.totalQuantity}</Badge></ConfidentialBlur></div>
-                                        <div className="flex justify-between"><span>کۆی نرخ:</span><ConfidentialBlur><Badge>{currencyFormatter.format(item.totalCost)}</Badge></ConfidentialBlur></div>
+                                        <div className="flex justify-between"><span>کۆی نرخ:</span><ConfidentialBlur><Badge>{formatUsd.format(item.totalCost)}</Badge></ConfidentialBlur></div>
                                     </CardContent>
                                 </Card>
                             ))}
@@ -459,7 +459,7 @@ function PurchasesDetailDialog({ data }: { data: any }) {
                     <AccordionContent className="px-6 pb-6">
                         <Table className="hidden md:table"><TableHeader><TableRow><TableHead className="text-right">دابینکەر</TableHead><TableHead className="text-right">بەروار</TableHead><TableHead className="text-right">کۆی گشتی پسوولە</TableHead></TableRow></TableHeader>
                             <TableBody>
-                                {purchases?.map((purchase: any) => ( <TableRow key={purchase.id}><TableCell>{purchase.supplierName}</TableCell><TableCell>{formatDate(parseISO(purchase.issueDate), 'dd/MM/yyyy')}</TableCell><TableCell><ConfidentialBlur>{currencyFormatter.format(purchase.totalAmount || 0)}</ConfidentialBlur></TableCell></TableRow> ))}
+                                {purchases?.map((purchase: any) => ( <TableRow key={purchase.id}><TableCell>{purchase.supplierName}</TableCell><TableCell>{formatDate(parseISO(purchase.issueDate), 'dd/MM/yyyy')}</TableCell><TableCell><ConfidentialBlur>{formatUsd.format(purchase.totalAmount || 0)}</ConfidentialBlur></TableCell></TableRow> ))}
                             </TableBody>
                         </Table>
                         <div className="space-y-4 md:hidden">
