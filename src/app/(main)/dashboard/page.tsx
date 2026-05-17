@@ -523,7 +523,7 @@ function DashboardStats({ stats, dialogData }: { stats: any, dialogData: any }) 
                     <div className="cursor-pointer w-full">
                         <StatCard
                             title="کۆی خەرجی"
-                            value={<ConfidentialBlur>{currencyFormatter.format(stats.totalExpensesAll)}</ConfidentialBlur>}
+                            value={<ConfidentialBlur>{currencyFormatterDetailed.format(stats.totalExpensesAll)}</ConfidentialBlur>}
                             icon={DollarSign}
                             description="کۆی گشتی خەرجی و کڕینەکان بە دۆلار."
                         />
@@ -552,7 +552,7 @@ function DashboardStats({ stats, dialogData }: { stats: any, dialogData: any }) 
             <div className="sm:col-span-2 lg:col-span-4">
                 <StatCard
                     title="قازانجی پوخت"
-                    value={<ConfidentialBlur>{currencyFormatter.format(stats.netProfit)}</ConfidentialBlur>}
+                    value={<ConfidentialBlur>{currencyFormatterDetailed.format(stats.netProfit)}</ConfidentialBlur>}
                     icon={stats.netProfit >= 0 ? TrendingUp : TrendingDown}
                     description="قازانج = کۆی فرۆش − تێچووی کاڵای فرۆشراو − خەرجییەکان"
                     isNegative={stats.netProfit < 0}
