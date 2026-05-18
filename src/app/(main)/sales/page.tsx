@@ -10,7 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { SalesForm } from "./components/sales-form";
-import { useFirestore, useCollection, useMemoFirebase, collection, deleteDoc, doc, getDocs, runTransaction, getDoc } from '@/firebase';
+import { DatePicker } from "@/components/ui/date-picker";
+import { useFirestore, useCollection, useMemoFirebase, collection, deleteDoc, doc, getDocs, runTransaction, getDoc, collectionGroup } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -355,6 +356,9 @@ function SalesList() {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<SaleStatus | 'all'>('all');
     const [typeFilter, setTypeFilter] = useState<PaymentType | 'all'>('all');
+    const [fromDate, setFromDate] = useState<string>('');
+    const [toDate, setToDate] = useState<string>('');
+    const [productSearch, setProductSearch] = useState<string>('');
     const [currentPage, setCurrentPage] = useState(1);
 
     const [editingFormId, setEditingFormId] = useState<string | null>(null);
@@ -372,10 +376,26 @@ function SalesList() {
 
     const { data: sales, isLoading: isLoadingSales } = useCollection<SellingFormType>(sellingFormsQuery);
 
+    const formProductsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return collectionGroup(firestore, 'selling_form_products');
+    }, [firestore]);
+
+    const { data: formProducts } = useCollection<any>(formProductsQuery);
+
     // ── Filter + sort ──
     const sortedSales = useMemo(() => {
         if (!sales) return [];
         let sortableItems = [...sales];
+
+        let matchingFormIds = new Set<string>();
+        if (productSearch && formProducts) {
+            formProducts.forEach(fp => {
+                if ((fp.productName || fp.product || '').toLowerCase().includes(productSearch.toLowerCase())) {
+                    matchingFormIds.add(fp.sellingFormId);
+                }
+            });
+        }
 
         sortableItems = sortableItems.filter(sale => {
             const searchMatch = searchTerm
@@ -384,7 +404,11 @@ function SalesList() {
                 : true;
             const statusMatch = statusFilter !== 'all' ? sale.paymentStatus === statusFilter : true;
             const typeMatch = typeFilter !== 'all' ? sale.paymentType === typeFilter : true;
-            return searchMatch && statusMatch && typeMatch;
+            const fromDateMatch = fromDate ? sale.issueDate >= fromDate : true;
+            const toDateMatch = toDate ? sale.issueDate <= toDate : true;
+            const productMatch = productSearch ? matchingFormIds.has(sale.id) : true;
+            
+            return searchMatch && statusMatch && typeMatch && fromDateMatch && toDateMatch && productMatch;
         });
 
         if (sortConfig !== null) {
@@ -419,7 +443,7 @@ function SalesList() {
     // ── Reset to page 1 whenever filters or search change ──
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, statusFilter, typeFilter, sortConfig]);
+    }, [searchTerm, statusFilter, typeFilter, fromDate, toDate, productSearch, sortConfig]);
 
     // ── Pagination ──
     const totalPages = Math.max(1, Math.ceil(sortedSales.length / PAGE_SIZE));
@@ -586,7 +610,7 @@ function SalesList() {
     const fmt = useMemo(() => new Intl.NumberFormat('ar-IQ', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }), []);
 
     return (
-        <div className={isPrinting ? "no-print" : ""}>
+        <div className={cn("h-full flex flex-col min-h-0 gap-4", isPrinting ? "no-print" : "")}>
             <PageHeader title="بەڕێوەبردنی فرۆشتن" description="تۆماری فۆڕمەکانی فرۆشتن لێرە ببینە و زیاد بکە.">
                 <div className="flex items-center gap-2">
                     <Button onClick={() => setIsCreateDialogOpen(true)}>
@@ -679,11 +703,11 @@ function SalesList() {
 
             {/* ── Main table card ── */}
             <Card className="flex-1 flex flex-col overflow-hidden min-h-0">
-                <CardHeader className="flex-shrink-0">
+                <CardHeader className="flex-shrink-0 space-y-4">
                     <CardTitle>لیستی فرۆشتنەکان</CardTitle>
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-4">
-                        {/* Search */}
-                        <div className="relative w-full max-w-sm">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                        {/* Search general */}
+                        <div className="relative w-full md:max-w-sm">
                             <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 placeholder="گەڕان بەپێی ناوی کڕیار یان ژمارەی فۆڕم..."
@@ -692,20 +716,39 @@ function SalesList() {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        {/* Filters */}
+                        {/* Status/Type Filters */}
                         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
                             <Select dir="rtl" value={statusFilter} onValueChange={(value) => setStatusFilter(value as any)}>
-                                <SelectTrigger className="w-full md:w-[180px]"><SelectValue /></SelectTrigger>
+                                <SelectTrigger className="w-full sm:w-[150px]"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     {paymentStatusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                             <Select dir="rtl" value={typeFilter} onValueChange={(value) => setTypeFilter(value as any)}>
-                                <SelectTrigger className="w-full md:w-[180px]"><SelectValue /></SelectTrigger>
+                                <SelectTrigger className="w-full sm:w-[150px]"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     {paymentTypeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
                                 </SelectContent>
                             </Select>
+                        </div>
+                    </div>
+                    {/* Advanced Filters */}
+                    <div className="flex flex-col md:flex-row items-center gap-3 bg-muted/30 p-3 rounded-lg border">
+                        <div className="flex items-center gap-2 w-full md:w-auto">
+                            <span className="text-xs font-medium whitespace-nowrap">لە بەرواری:</span>
+                            <DatePicker value={fromDate} onChange={setFromDate} className="w-full md:w-[140px]" placeholder="لە..." />
+                        </div>
+                        <div className="flex items-center gap-2 w-full md:w-auto">
+                            <span className="text-xs font-medium whitespace-nowrap">تا بەرواری:</span>
+                            <DatePicker value={toDate} onChange={setToDate} className="w-full md:w-[140px]" placeholder="تا..." />
+                        </div>
+                        <div className="w-full md:w-auto md:flex-1">
+                            <Input
+                                placeholder="گەڕان بەپێی ناوی کاڵا..."
+                                value={productSearch}
+                                onChange={(e) => setProductSearch(e.target.value)}
+                                className="w-full"
+                            />
                         </div>
                     </div>
                 </CardHeader>
