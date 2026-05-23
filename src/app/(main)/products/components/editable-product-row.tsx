@@ -24,6 +24,7 @@ import { useAuth } from '@/contexts/auth-context';
 const productSchema = z.object({
   productName: z.string().min(1, { message: "ناوی کاڵا پێویستە." }),
   category: z.enum(['Mattress', 'Bed', 'Pillow', 'Cover']),
+  maxDiscountPercent: z.coerce.number().min(0, "ناتوانێت کەمتر بێت لە 0").max(100, "ناتوانێت زیاتر بێت لە 100").optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -54,6 +55,7 @@ export function EditableProductRow({ product, onProductUpdated, isSelected, onSe
         defaultValues: {
             productName: product.productName,
             category: product.category,
+            maxDiscountPercent: product.maxDiscountPercent ?? 10,
         },
     });
 
@@ -83,6 +85,10 @@ export function EditableProductRow({ product, onProductUpdated, isSelected, onSe
             }
 
             await batch.commit();
+
+            if (data.maxDiscountPercent !== undefined) {
+                setDiscountValue(data.maxDiscountPercent);
+            }
 
             toast({ title: "سەرکەوتوو بوو", description: "پێناسەی کاڵا نوێکرایەوە.", className: "bg-accent text-accent-foreground" });
             setIsEditing(false);
@@ -146,6 +152,15 @@ export function EditableProductRow({ product, onProductUpdated, isSelected, onSe
                                         <FormMessage />
                                     </FormItem>
                                 )}/>
+                                {isAdminOrManager && (
+                                    <FormField control={form.control} name="maxDiscountPercent" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>حدی داشکاندن %</FormLabel>
+                                            <FormControl><Input type="number" min={0} max={100} {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}/>
+                                )}
                             </CardContent>
                             <CardFooter className="flex justify-end gap-2">
                                  <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)}><X className="h-4 w-4 mr-2 text-muted-foreground"/>پاشگەزبوونەوە</Button>
@@ -180,7 +195,13 @@ export function EditableProductRow({ product, onProductUpdated, isSelected, onSe
                         )}/>
                     </TableCell>
                     <TableCell className="text-center">
-                        <span className="text-sm">{discountValue}%</span>
+                        {isAdminOrManager ? (
+                            <FormField control={form.control} name="maxDiscountPercent" render={({ field }) => (
+                                <FormItem><FormControl><Input type="number" min={0} max={100} {...field} className="text-center w-20 mx-auto" /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                        ) : (
+                            <span className="text-sm">{discountValue}%</span>
+                        )}
                     </TableCell>
                     <TableCell className="text-left">
                         <div className="flex gap-2">
