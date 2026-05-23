@@ -61,18 +61,26 @@ function PrintButton({ formData, products, payments }: { formData: any, products
     const firestore = useFirestore();
     const [companyInfo, setCompanyInfo] = useState<any>(null);
     const [showPrintable, setShowPrintable] = useState(false);
+    const [isPreparing, setIsPreparing] = useState(false);
+
+    const isMobile = typeof navigator !== 'undefined' &&
+        (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+         ('ontouchstart' in window && navigator.maxTouchPoints > 1));
 
     useEffect(() => {
-        if (showPrintable) {
-            setTimeout(() => {
+        if (showPrintable && !isMobile) {
+            const timer = setTimeout(() => {
                 window.print();
                 setShowPrintable(false);
-            }, 100); 
+                setIsPreparing(false);
+            }, 300);
+            return () => clearTimeout(timer);
         }
-    }, [showPrintable]);
+    }, [showPrintable, isMobile]);
 
     const handlePrint = async () => {
         if (!firestore) return;
+        setIsPreparing(true);
         try {
             const infoRef = doc(firestore, 'app_settings', 'companyInfo');
             const docSnap = await getDoc(infoRef);
@@ -81,12 +89,21 @@ function PrintButton({ formData, products, payments }: { formData: any, products
             }
         } finally {
             setShowPrintable(true);
+            if (isMobile) {
+                // On mobile, just show the printable area — user can screenshot or use browser's share
+                setTimeout(() => {
+                    setIsPreparing(false);
+                }, 500);
+            }
         }
     };
     
     return (
         <>
-            <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />چاپکردن</Button>
+            <Button onClick={handlePrint} disabled={isPreparing} size="sm">
+                {isPreparing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
+                {isMobile ? 'بینینی پسوولە' : 'چاپکردن'}
+            </Button>
             {showPrintable && (
                 <div id="printable-area">
                     <PrintableReceipt formData={formData} products={products} payments={payments} companyInfo={companyInfo} />

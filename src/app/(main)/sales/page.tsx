@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { PlusCircle, Loader2, FileSpreadsheet, Trash2, Edit, ArrowUpDown, Search, FileDown, FileUp, ChevronRight, ChevronLeft } from "lucide-react";
+import { PlusCircle, Loader2, FileSpreadsheet, Trash2, Edit, ArrowUpDown, Search, FileDown, FileUp, ChevronRight, ChevronLeft, Printer, Share2, Eye } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -227,44 +227,34 @@ function ReceiptPreview({ formId }: { formId: string }) {
         fetchPrintData();
     }, [formId, firestore, toast]);
 
-    const handleDownloadAsJPEG = async () => {
-        // Capture from hidden full-size ref — NOT the scaled visible preview
+    const generateImageBlob = async (): Promise<{ dataUrl: string; blob: Blob; fileName: string } | null> => {
         const targetEl = captureRef.current;
         if (!targetEl) {
             toast({ variant: 'destructive', title: 'هەڵە', description: 'نەتوانرا وێنەی پسوولە دروستبکرێت.' });
-            return;
+            return null;
         }
+        const canvas = await html2canvas(targetEl, {
+            scale: 3,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            logging: false,
+            width: targetEl.offsetWidth,
+            height: targetEl.scrollHeight,
+        });
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+        const blob = await (await fetch(dataUrl)).blob();
+        const fileName = `receipt-${printData?.formData?.formNumber || '0'}.jpeg`;
+        return { dataUrl, blob, fileName };
+    };
+
+    const handleDownloadAsJPEG = async () => {
         setIsDownloading(true);
         toast({ title: '...ئامادەکردنی وێنە' });
         try {
-            const canvas = await html2canvas(targetEl, {
-                scale: 3,
-                useCORS: true,
-                backgroundColor: '#ffffff',
-                logging: false,
-                width: targetEl.offsetWidth,
-                height: targetEl.scrollHeight,
-            });
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
-            const fileName = `receipt-${printData.formData.formNumber}.jpeg`;
+            const result = await generateImageBlob();
+            if (!result) return;
+            const { dataUrl, fileName } = result;
 
-            // Try Web Share API first (iOS Safari, Android Chrome)
-            if (navigator.share) {
-                try {
-                    const blob = await (await fetch(dataUrl)).blob();
-                    const file = new File([blob], fileName, { type: 'image/jpeg' });
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({ files: [file], title: `پسوولەی فرۆشتن - ${printData.formData.customerName}` });
-                        toast({ title: 'سەرکەوتوو بوو', className: 'bg-accent text-accent-foreground' });
-                        return;
-                    }
-                } catch (shareErr: any) {
-                    if (shareErr.name === 'AbortError') return; // user cancelled
-                    // fall through to download
-                }
-            }
-
-            // Fallback: browser download
             const link = document.createElement('a');
             link.href = dataUrl;
             link.download = fileName;
@@ -280,41 +270,98 @@ function ReceiptPreview({ formId }: { formId: string }) {
         }
     };
 
-    if (isLoading) return <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-    if (!printData) return <div className="text-center p-8 text-muted-foreground">داتا بۆ ئەم پسوولەیە نەدۆزرایەوە.</div>;
+    const handleShareReceipt = async () => {
+        setIsDownloading(true);
+        toast({ title: '...ئامادەکردنی هاوبەشکردن' });
+        try {
+            const result = await generateImageBlob();
+            if (!result) return;
+            const { dataUrl, blob, fileName } = result;
 
-    // A-01 & L-03: Cache formatter with ar-IQ
-    const fmt = useMemo(() => new Intl.NumberFormat('ar-IQ', { style: 'currency', currency: 'USD' }), []);
+            if (navigator.share) {
+                const file = new File([blob], fileName, { type: 'image/jpeg' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: `پسوولەی فرۆشتن - ${printData?.formData?.customerName}` });
+                    toast({ title: 'سەرکەوتوو بوو', className: 'bg-accent text-accent-foreground' });
+                    return;
+                }
+            }
+            // Fallback to download if share not supported
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            toast({ title: 'سەرکەوتوو بوو', description: 'پسوولەکە وەک وێنە دابەزێنرا.', className: 'bg-accent text-accent-foreground' });
+        } catch (error: any) {
+            if (error.name === 'AbortError') return;
+            console.error('Error sharing:', error);
+            toast({ variant: 'destructive', title: 'هەڵەیەک ڕوویدا', description: 'هاوبەشکردن سەرکەوتوو نەبوو.' });
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
+    if (isLoading) return (
+        <div className="flex flex-col justify-center items-center h-48 gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground animate-pulse">ئامادەکردنی پسوولە...</p>
+        </div>
+    );
+    if (!printData) return (
+        <div className="flex flex-col items-center justify-center p-8 gap-3 text-muted-foreground">
+            <FileSpreadsheet className="h-12 w-12 opacity-30" />
+            <p>داتا بۆ ئەم پسوولەیە نەدۆزرایەوە.</p>
+        </div>
+    );
 
     return (
-        <div className="flex flex-col h-full overflow-hidden">
+        <div className="flex flex-col h-full overflow-hidden gap-3">
             {/* Hidden full-size receipt for html2canvas — no CSS scaling */}
             <div style={{ position: 'fixed', left: '-9999px', top: 0, zIndex: -1, opacity: 0, pointerEvents: 'none' }}>
                 <PrintableReceipt ref={captureRef} formData={printData.formData} products={printData.products} payments={printData.payments} companyInfo={printData.companyInfo} />
             </div>
 
-            {/* Unified receipt preview — scrollable scaled preview on ALL screen sizes */}
-            <div className="flex-1 bg-slate-900/50 rounded-lg overflow-auto flex justify-center items-start p-3 sm:p-6">
+            {/* Receipt preview — scrollable scaled preview */}
+            <div className="flex-1 bg-muted/30 border border-border/50 rounded-xl overflow-auto flex justify-center items-start p-3 sm:p-6">
                 <div
                     style={{
                         transform: 'scale(0.42)',
                         transformOrigin: 'top center',
                         width: '210mm',
-                        // Compensate for scaling so the parent scrolls correctly
                         marginBottom: 'calc((210mm * 0.42) - 210mm)',
                     }}
-                    className="shadow-2xl md:scale-[0.65] lg:scale-[0.80] xl:scale-[0.95]"
+                    className="shadow-2xl rounded-sm md:scale-[0.65] lg:scale-[0.80] xl:scale-[0.95]"
                 >
                     <PrintableReceipt ref={receiptRef} formData={printData.formData} products={printData.products} payments={printData.payments} companyInfo={printData.companyInfo} />
                 </div>
             </div>
 
-            <DialogFooter className="pt-3 flex flex-col gap-2">
-                <Button onClick={handleDownloadAsJPEG} disabled={isDownloading} className="w-full h-12 text-base font-bold shadow-lg" size="lg">
+            {/* Action buttons */}
+            <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                <Button 
+                    onClick={handleDownloadAsJPEG} 
+                    disabled={isDownloading} 
+                    className="flex-1 h-12 text-sm font-bold shadow-md" 
+                    size="lg"
+                >
                     {isDownloading ? <Loader2 className="ml-2 h-5 w-5 animate-spin" /> : <FileDown className="ml-2 h-5 w-5" />}
-                    {canShare ? 'هاوبەشکردن / دابەزاندنی پسوولە' : 'دابەزاندنی پسوولە (JPEG A4)'}
+                    دابەزاندنی پسوولە (JPEG)
                 </Button>
-            </DialogFooter>
+                {canShare && (
+                    <Button 
+                        onClick={handleShareReceipt} 
+                        disabled={isDownloading} 
+                        variant="secondary"
+                        className="flex-1 h-12 text-sm font-bold shadow-md" 
+                        size="lg"
+                    >
+                        {isDownloading ? <Loader2 className="ml-2 h-5 w-5 animate-spin" /> : <Share2 className="ml-2 h-5 w-5" />}
+                        هاوبەشکردنی پسوولە
+                    </Button>
+                )}
+            </div>
         </div>
     );
 }
@@ -679,9 +726,15 @@ function SalesList() {
 
             {/* ── Receipt preview dialog ── */}
             <Dialog open={!!previewFormId} onOpenChange={(open) => !open && setPreviewFormId(null)}>
-                <DialogContent className="max-w-[95vw] sm:max-w-5xl h-[90vh] flex flex-col p-4" dir="rtl">
-                    <DialogHeader>
-                        <DialogTitle>پێشبینینی پسوولە</DialogTitle>
+                <DialogContent className="max-w-[95vw] sm:max-w-5xl h-[90vh] flex flex-col p-3 sm:p-5" dir="rtl">
+                    <DialogHeader className="flex-shrink-0 pb-2 border-b border-border/50">
+                        <DialogTitle className="flex items-center gap-2 text-base">
+                            <FileSpreadsheet className="h-5 w-5 text-primary" />
+                            پێشبینینی پسوولە
+                        </DialogTitle>
+                        <DialogDescription className="text-xs text-muted-foreground">
+                            پسوولەکە لێرە ببینە و دایبەزێنە یان هاوبەشی بکە.
+                        </DialogDescription>
                     </DialogHeader>
                     {previewFormId && <ReceiptPreview formId={previewFormId} />}
                 </DialogContent>
@@ -949,18 +1002,15 @@ function SalesList() {
                                     </div>
                                     
                                     <div className="flex justify-end gap-0.5 pt-1 mt-1 border-t border-muted/30">
-                                        {/* Receipt dropdown */}
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-muted transition-colors">
-                                                    <FileSpreadsheet className="h-3.5 w-3.5" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent>
-                                                <DropdownMenuItem onSelect={() => setTimeout(() => setPreviewFormId(sale.id), 150)}>بینینی پسوولە</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => setTimeout(() => handleDirectPrint(sale.id), 150)}>چاپکردنی پسوولە</DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                        {/* Receipt preview — single button, no dropdown on mobile */}
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7 hover:bg-primary/10 hover:text-primary transition-colors"
+                                            onClick={() => setPreviewFormId(sale.id)}
+                                        >
+                                            <Eye className="h-3.5 w-3.5" />
+                                        </Button>
 
                                         {/* Edit */}
                                         <Button

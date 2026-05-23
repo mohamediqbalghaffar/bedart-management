@@ -24,9 +24,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-bottom: 12px;
-    border-bottom: 2.5px solid #1e293b;
-    margin-bottom: 10px;
+    padding-bottom: 16px;
+    border-bottom: 3px solid #0f172a;
+    margin-bottom: 20px;
     direction: rtl;
 }
 
@@ -105,14 +105,15 @@
 
 /* --- Customer Information --- */
 .customer-info {
-    margin-bottom: 10px;
+    margin-bottom: 20px;
     display: grid;
-    grid-template-columns: 1.5fr 1fr;
-    gap: 10px 30px;
-    background: #f8fafc;
-    padding: 14px 16px;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 24px;
+    background: #fff;
+    padding: 16px 20px;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
 .info-line {
@@ -156,21 +157,25 @@
     width: 100%;
     border-collapse: collapse;
     font-size: 0.95rem;
-    margin-top: 8px;
+    margin-top: 10px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
 }
 
 .new-line-items-table th,
 .new-line-items-table td {
-    border: 1px solid #cbd5e1;
-    padding: 8px 10px;
+    padding: 12px 14px;
+    border-bottom: 1px solid #e2e8f0;
 }
 
 .new-line-items-table th {
-    background-color: #1e293b;
-    color: white;
-    font-weight: 700;
+    background-color: #f8fafc;
+    color: #0f172a;
+    font-weight: 800;
     text-align: center;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
+    border-bottom: 2px solid #cbd5e1;
 }
 
 .new-line-items-table .item-col { width: 50%; text-align: right; }
@@ -274,16 +279,16 @@
     font-size: 1.4rem;
     font-weight: 900;
     color: #0f172a;
-    background: #f1f5f9;
-    padding: 10px 15px;
-    border-radius: 6px;
-    border: 2px solid #1e293b;
-    margin-top: 4px;
+    background: transparent;
+    padding: 12px 0;
+    border-top: 2px solid #0f172a;
+    border-bottom: 2px solid #0f172a;
+    margin-top: 8px;
 }
 
 .total-line span:first-child {
-    font-size: 1rem;
-    color: #475569;
+    font-size: 1.1rem;
+    color: #1e293b;
 }
 
 /* --- Print Settings --- */
