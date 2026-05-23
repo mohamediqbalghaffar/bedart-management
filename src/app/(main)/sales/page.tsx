@@ -703,52 +703,56 @@ function SalesList() {
 
             {/* ── Main table card ── */}
             <Card className="flex-1 flex flex-col overflow-hidden min-h-0">
-                <CardHeader className="flex-shrink-0 space-y-4">
-                    <CardTitle>لیستی فرۆشتنەکان</CardTitle>
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                        {/* Search general */}
-                        <div className="relative w-full md:max-w-sm">
-                            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="گەڕان بەپێی ناوی کڕیار یان ژمارەی فۆڕم..."
-                                className="pr-10"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
+                <CardHeader className="flex-shrink-0 space-y-3 p-4 pb-2 md:p-6 md:pb-4">
+                    <CardTitle className="text-lg md:text-xl">لیستی فرۆشتنەکان</CardTitle>
+                    <div className="flex flex-col space-y-2 md:space-y-4">
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-4">
+                            {/* Search general */}
+                            <div className="relative w-full md:max-w-sm">
+                                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="گەڕان بەپێی ناوی کڕیار یان ژمارەی فۆڕم..."
+                                    className="pr-10 h-9"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                            {/* Status/Type Filters */}
+                            <div className="grid grid-cols-2 md:flex md:flex-row gap-2 w-full md:w-auto">
+                                <Select dir="rtl" value={statusFilter} onValueChange={(value) => setStatusFilter(value as any)}>
+                                    <SelectTrigger className="w-full md:w-[150px] h-9"><SelectValue placeholder="دۆخ" /></SelectTrigger>
+                                    <SelectContent>
+                                        {paymentStatusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                                <Select dir="rtl" value={typeFilter} onValueChange={(value) => setTypeFilter(value as any)}>
+                                    <SelectTrigger className="w-full md:w-[150px] h-9"><SelectValue placeholder="جۆر" /></SelectTrigger>
+                                    <SelectContent>
+                                        {paymentTypeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
-                        {/* Status/Type Filters */}
-                        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-                            <Select dir="rtl" value={statusFilter} onValueChange={(value) => setStatusFilter(value as any)}>
-                                <SelectTrigger className="w-full sm:w-[150px]"><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    {paymentStatusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                            <Select dir="rtl" value={typeFilter} onValueChange={(value) => setTypeFilter(value as any)}>
-                                <SelectTrigger className="w-full sm:w-[150px]"><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    {paymentTypeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                    {/* Advanced Filters */}
-                    <div className="flex flex-col md:flex-row items-center gap-3 bg-muted/30 p-3 rounded-lg border">
-                        <div className="flex items-center gap-2 w-full md:w-auto">
-                            <span className="text-xs font-medium whitespace-nowrap">لە بەرواری:</span>
-                            <DatePicker value={fromDate} onChange={setFromDate} className="w-full md:w-[140px]" placeholder="لە..." />
-                        </div>
-                        <div className="flex items-center gap-2 w-full md:w-auto">
-                            <span className="text-xs font-medium whitespace-nowrap">تا بەرواری:</span>
-                            <DatePicker value={toDate} onChange={setToDate} className="w-full md:w-[140px]" placeholder="تا..." />
-                        </div>
-                        <div className="w-full md:w-auto md:flex-1">
-                            <Input
-                                placeholder="گەڕان بەپێی ناوی کاڵا..."
-                                value={productSearch}
-                                onChange={(e) => setProductSearch(e.target.value)}
-                                className="w-full"
-                            />
+                        {/* Advanced Filters */}
+                        <div className="flex flex-col md:flex-row items-center gap-2 bg-muted/20 p-2 md:p-3 rounded-lg border">
+                            <div className="grid grid-cols-2 gap-2 w-full md:w-auto">
+                                <div className="flex flex-col gap-1 w-full">
+                                    <span className="text-[10px] text-muted-foreground px-1 hidden md:inline">لە بەرواری:</span>
+                                    <DatePicker value={fromDate} onChange={setFromDate} className="w-full md:w-[140px] h-8 text-xs" placeholder="لە بەرواری..." />
+                                </div>
+                                <div className="flex flex-col gap-1 w-full">
+                                    <span className="text-[10px] text-muted-foreground px-1 hidden md:inline">تا بەرواری:</span>
+                                    <DatePicker value={toDate} onChange={setToDate} className="w-full md:w-[140px] h-8 text-xs" placeholder="تا بەرواری..." />
+                                </div>
+                            </div>
+                            <div className="w-full md:flex-1 mt-1 md:mt-0">
+                                <Input
+                                    placeholder="گەڕان بەپێی ناوی کاڵا..."
+                                    value={productSearch}
+                                    onChange={(e) => setProductSearch(e.target.value)}
+                                    className="w-full h-8 text-xs"
+                                />
+                            </div>
                         </div>
                     </div>
                 </CardHeader>
@@ -913,30 +917,30 @@ function SalesList() {
                     </TooltipProvider>
 
                     {/* ── Mobile cards ── */}
-                    <div className="md:hidden space-y-2 p-2">
+                    <div className="md:hidden space-y-2 px-2 pb-2">
                         {isLoadingSales ? (
                             [...Array(5)].map((_, i) => (
-                                <div key={i} className="animate-pulse h-24 bg-muted rounded-lg" />
+                                <div key={i} className="animate-pulse h-20 bg-muted rounded-lg" />
                             ))
                         ) : !paginatedSales || paginatedSales.length === 0 ? (
-                            <div className="py-16 text-center text-muted-foreground">
-                                <FileSpreadsheet className="h-12 w-12 opacity-30 mx-auto mb-3" />
-                                <p className="text-base font-medium">هیچ فرۆشێک نەدۆزرایەوە.</p>
+                            <div className="py-10 text-center text-muted-foreground">
+                                <FileSpreadsheet className="h-10 w-10 opacity-30 mx-auto mb-2" />
+                                <p className="text-sm font-medium">هیچ فرۆشێک نەدۆزرایەوە.</p>
                             </div>
                         ) : (
                             paginatedSales.map((sale) => (
-                                <div key={sale.id} className="bg-card border rounded-lg p-3 space-y-2 shadow-sm transition-shadow hover:shadow-md">
-                                    <div className="flex justify-between items-center gap-2">
+                                <div key={sale.id} className="bg-card border rounded-lg p-2 space-y-1.5 shadow-sm transition-shadow hover:shadow-md">
+                                    <div className="flex justify-between items-center gap-2 px-1 pt-1">
                                         <div className="font-bold text-sm truncate flex-1 text-right">{sale.customerName}</div>
                                         <Badge
                                             variant={sale.paymentStatus === 'Fully Paid' ? 'default' : sale.paymentStatus === 'Unpaid' ? 'destructive' : 'secondary'}
-                                            className={cn("text-[10px] px-1.5 h-5 flex-shrink-0", sale.paymentStatus === 'Fully Paid' ? 'bg-green-600 text-white' : '')}
+                                            className={cn("text-[10px] px-1.5 h-4 flex-shrink-0 leading-none items-center", sale.paymentStatus === 'Fully Paid' ? 'bg-green-600 text-white' : '')}
                                         >
                                             {paymentStatusOptions.find(o => o.value === sale.paymentStatus)?.label || sale.paymentStatus}
                                         </Badge>
                                     </div>
                                     
-                                    <div className="flex justify-between items-center text-[11px] text-muted-foreground">
+                                    <div className="flex justify-between items-center text-[11px] text-muted-foreground px-1">
                                         <div className="flex gap-2">
                                             <span>#{sale.formNumber}</span>
                                             <span>{sale.issueDate}</span>
@@ -944,12 +948,12 @@ function SalesList() {
                                         <div className="font-bold font-mono text-foreground text-xs" dir="ltr">{fmt.format(sale.totalPrice || 0)}</div>
                                     </div>
                                     
-                                    <div className="flex justify-end gap-1 pt-1 border-t border-muted/30">
+                                    <div className="flex justify-end gap-0.5 pt-1 mt-1 border-t border-muted/30">
                                         {/* Receipt dropdown */}
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted transition-colors">
-                                                    <FileSpreadsheet className="h-4 w-4" />
+                                                <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-muted transition-colors">
+                                                    <FileSpreadsheet className="h-3.5 w-3.5" />
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent>
@@ -962,10 +966,10 @@ function SalesList() {
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="h-8 w-8 hover:bg-blue-500/10 hover:text-blue-400 transition-colors"
+                                            className="h-7 w-7 hover:bg-blue-500/10 hover:text-blue-400 transition-colors"
                                             onClick={() => setEditingFormId(sale.id)}
                                         >
-                                            <Edit className="h-4 w-4 text-blue-500" />
+                                            <Edit className="h-3.5 w-3.5 text-blue-500" />
                                         </Button>
 
                                         {/* Delete */}
@@ -974,9 +978,9 @@ function SalesList() {
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="h-8 w-8 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+                                                    className="h-7 w-7 hover:bg-red-500/10 hover:text-red-400 transition-colors"
                                                 >
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
                                                 </Button>
                                             </AlertDialogTrigger>
                                             <AlertDialogContent dir="rtl">
