@@ -15,6 +15,7 @@ type ProductDefinition = {
   productName: string;
   category: ProductCategory;
   sellingPrice?: number;
+  maxDiscountPercent?: number;
 };
 
 type ProductStock = {
@@ -34,10 +35,11 @@ type EnrichedProduct = {
     sellingPrice?: number;
     currentQuantity: number;
     purchasePrice?: number;
+    maxDiscountPercent?: number;
 }
 
 type ProductSelectorDialogProps = {
-  onProductSelect: (product: { name: string; sizeModel?: string; price: number, purchasePrice?: number, category: ProductCategory, productId?: string }) => void;
+  onProductSelect: (product: { name: string; sizeModel?: string; price: number, purchasePrice?: number, category: ProductCategory, productId?: string, maxDiscountPercent?: number }) => void;
   filterByStock?: boolean;
 };
 
@@ -83,6 +85,7 @@ export function ProductSelectorDialog({ onProductSelect, filterByStock = true }:
                 category: def.category,
                 sellingPrice: def.sellingPrice,
                 currentQuantity: 0,
+                maxDiscountPercent: def.maxDiscountPercent ?? 10,
             });
         });
     }
@@ -105,6 +108,7 @@ export function ProductSelectorDialog({ onProductSelect, filterByStock = true }:
                     sellingPrice: s.sellingPrice,
                     purchasePrice: s.unitPrice,
                     currentQuantity: s.currentQuantity,
+                    maxDiscountPercent: 10,
                 });
             }
         });
@@ -140,6 +144,7 @@ export function ProductSelectorDialog({ onProductSelect, filterByStock = true }:
       purchasePrice: product.purchasePrice || 0,
       category: product.category,
       productId: product.id,
+      maxDiscountPercent: product.maxDiscountPercent ?? 10,
     });
   };
 

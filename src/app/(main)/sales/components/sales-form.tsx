@@ -50,6 +50,8 @@ const salesFormSchema = z.object({
     purchasePrice: z.coerce.number().optional().default(0),
     sizeModel: z.string().optional(),
     category: z.string().min(1, "پۆل پێویستە."),
+    discountPercent: z.coerce.number().optional().default(0),
+    maxDiscountPercent: z.coerce.number().optional().default(10),
   })).min(1, { message: "لانیکەم یەک کاڵا پێویستە." }),
   deliveryCost: z.coerce.number().optional().default(0),
   discountType: z.enum(["percentage", "cash"]).optional(),
@@ -78,17 +80,25 @@ function SalesFormItemRow({
     index,
     remove,
     fieldId,
-    mode = 'table'
+    mode = 'table',
+    userRole
 }: {
     form: UseFormReturn<SalesFormValues>;
     index: number;
     remove: (index: number) => void;
     fieldId: string;
     mode?: 'table' | 'card';
+    userRole?: string;
 }) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const watchedItem = form.watch(`items.${index}`);
     const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+    const isAdminOrManager = userRole === 'Admin' || userRole === 'Data Manager';
+    const maxDiscount = Number(watchedItem?.maxDiscountPercent ?? 10);
+    const itemDiscountPercent = Number(watchedItem?.discountPercent || 0);
+    const rawLineTotal = Number(watchedItem?.quantity || 0) * Number(watchedItem?.unitPrice || 0);
+    const itemDiscountAmount = rawLineTotal * (itemDiscountPercent / 100);
+    const lineTotal = rawLineTotal - itemDiscountAmount;
     
     if (mode === 'card') {
         return (
@@ -129,6 +139,7 @@ function SalesFormItemRow({
                                     form.setValue(`items.${index}.unitPrice`, price);
                                     form.setValue(`items.${index}.purchasePrice`, purchasePrice || 0);
                                     form.setValue(`items.${index}.category`, category);
+                                    form.setValue(`items.${index}.maxDiscountPercent`, maxDiscountPercent ?? 10);
                                     setDialogOpen(false);
                                 }} />
                             </DialogContent>
@@ -138,14 +149,15 @@ function SalesFormItemRow({
                         </FormItem>
                     )}
                     />
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-3 gap-3">
                         <FormField control={form.control} name={`items.${index}.quantity`} render={({ field }) => (<FormItem><FormLabel className="text-xs">دانە</FormLabel><FormControl><Input type="number" className="h-9 text-sm" {...field} /></FormControl><FormMessage className="text-[10px]" /></FormItem>)} />
                         <FormField control={form.control} name={`items.${index}.unitPrice`} render={({ field }) => (<FormItem><FormLabel className="text-xs">نرخی تاک</FormLabel><FormControl><Input type="number" step="0.01" className="h-9 text-sm" {...field} /></FormControl><FormMessage className="text-[10px]" /></FormItem>)} />
+                        <FormField control={form.control} name={`items.${index}.discountPercent`} render={({ field }) => (<FormItem><FormLabel className="text-xs">داشکاندن %</FormLabel><FormControl><Input type="number" min={0} max={isAdminOrManager ? 100 : maxDiscount} step="1" className="h-9 text-sm" {...field} onChange={(e) => { const val = Number(e.target.value); field.onChange(isAdminOrManager ? val : Math.min(val, maxDiscount)); }} /></FormControl>{!isAdminOrManager && <span className="text-[9px] text-muted-foreground">حد: {maxDiscount}%</span>}<FormMessage className="text-[10px]" /></FormItem>)} />
                     </div>
                 </CardContent>
                 <CardFooter className="bg-muted/30 p-2 px-3 flex justify-between items-center rounded-b-lg border-t">
                     <span className="text-xs text-muted-foreground">نرخی کۆ:</span>
-                    <ConfidentialBlur><span className="font-bold text-sm text-primary">{currencyFormatter.format(Number(watchedItem?.quantity || 0) * Number(watchedItem?.unitPrice || 0))}</span></ConfidentialBlur>
+                    <ConfidentialBlur><span className="font-bold text-sm text-primary">{currencyFormatter.format(lineTotal)}{itemDiscountPercent > 0 && <span className="text-[10px] text-destructive mr-1">(-{itemDiscountPercent}%)</span>}</span></ConfidentialBlur>
                 </CardFooter>
             </Card>
         );
@@ -182,6 +194,7 @@ function SalesFormItemRow({
                                   form.setValue(`items.${index}.unitPrice`, price);
                                   form.setValue(`items.${index}.purchasePrice`, purchasePrice || 0);
                                   form.setValue(`items.${index}.category`, category);
+                                  form.setValue(`items.${index}.maxDiscountPercent`, maxDiscountPercent ?? 10);
                                   setDialogOpen(false);
                               }} />
                           </DialogContent>
@@ -198,8 +211,24 @@ function SalesFormItemRow({
             <TableCell className="align-top">
                 <FormField control={form.control} name={`items.${index}.unitPrice`} render={({ field }) => (<FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
             </TableCell>
+            <TableCell className="align-top">
+                <FormField control={form.control} name={`items.${index}.discountPercent`} render={({ field }) => (
+                    <FormItem>
+                        <FormControl>
+                            <div className="flex flex-col items-center gap-0.5">
+                                <Input type="number" min={0} max={isAdminOrManager ? 100 : maxDiscount} step="1" className="w-20" {...field} onChange={(e) => { const val = Number(e.target.value); field.onChange(isAdminOrManager ? val : Math.min(val, maxDiscount)); }} />
+                                {!isAdminOrManager && <span className="text-[10px] text-muted-foreground">حد: {maxDiscount}%</span>}
+                            </div>
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+            </TableCell>
              <TableCell className="align-top pt-5 font-semibold text-left">
-                <ConfidentialBlur>{currencyFormatter.format(Number(watchedItem?.quantity || 0) * Number(watchedItem?.unitPrice || 0))}</ConfidentialBlur>
+                <ConfidentialBlur>
+                    <div>{currencyFormatter.format(lineTotal)}</div>
+                    {itemDiscountPercent > 0 && <div className="text-[10px] text-destructive font-normal">-{itemDiscountPercent}%</div>}
+                </ConfidentialBlur>
             </TableCell>
             <TableCell className="align-top">
                 <Button variant="ghost" size="icon" onClick={() => remove(index)}>
@@ -226,7 +255,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
       customerPhoneNumber: "",
       customerAddress: "",
       issueDate: format(new Date(), "yyyy-MM-dd"),
-      items: initialItems || [{ product: "", quantity: 1, unitPrice: 0, purchasePrice: 0, sizeModel: "", category: 'Mattress' }],
+      items: initialItems || [{ product: "", quantity: 1, unitPrice: 0, purchasePrice: 0, sizeModel: "", category: 'Mattress', discountPercent: 0, maxDiscountPercent: 10 }],
       deliveryCost: 0,
       discountValue: 0,
       paymentStatus: "Fully Paid",
@@ -261,7 +290,12 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
   const watchedPayments = form.watch('payments');
   const discountValue = form.watch('discountValue');
 
-  const subTotal = watchedItems.reduce((acc, item) => acc + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0);
+  const subTotalBeforeProductDiscount = watchedItems.reduce((acc, item) => acc + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0);
+  const totalProductDiscount = watchedItems.reduce((acc, item) => {
+    const raw = Number(item.quantity || 0) * Number(item.unitPrice || 0);
+    return acc + (raw * (Number(item.discountPercent || 0) / 100));
+  }, 0);
+  const subTotal = subTotalBeforeProductDiscount - totalProductDiscount;
 
   const discountAmount = React.useMemo(() => {
     const dVal = Number(discountValue || 0);
@@ -382,6 +416,8 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                   purchasePrice: Number(item.purchasePrice) || 0,
                   sizeModel: item.sizeModel || "",
                   category: item.category || "Mattress",
+                  discountPercent: Number(item.discountPercent) || 0,
+                  maxDiscountPercent: Number(item.maxDiscountPercent) || 10,
               })),
               payments: payments.map(p => ({
                 date: normalizeDate(p.date),
@@ -557,7 +593,12 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
         const { items, payments, ...mainData } = sanitizedData;
 
         // Recalculate totals inside the transaction for consistency
-        const subTotal = items.reduce((acc, item) => acc + (Number(item.quantity) * Number(item.unitPrice)), 0);
+        const rawSubTotal = items.reduce((acc, item) => acc + (Number(item.quantity) * Number(item.unitPrice)), 0);
+        const productDiscountTotal = items.reduce((acc, item) => {
+            const raw = Number(item.quantity) * Number(item.unitPrice);
+            return acc + (raw * (Number(item.discountPercent || 0) / 100));
+        }, 0);
+        const subTotal = rawSubTotal - productDiscountTotal;
         const dVal = Number(mainData.discountValue || 0);
         const discountAmount = (() => {
             if (!mainData.discountType || dVal === 0) return 0;
@@ -593,7 +634,9 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
 
         items.forEach(item => {
           const productSubCollectionRef = doc(collection(firestore, `selling_forms/${sellingFormId}/selling_form_products`));
-          const lineTotal = Number(item.quantity) * Number(item.unitPrice);
+          const rawLineTotal = Number(item.quantity) * Number(item.unitPrice);
+          const itemDiscountAmount = rawLineTotal * (Number(item.discountPercent || 0) / 100);
+          const lineTotal = rawLineTotal - itemDiscountAmount;
           transaction.set(productSubCollectionRef, {
             id: productSubCollectionRef.id,
             sellingFormId: sellingFormId,
@@ -604,6 +647,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
             unitPrice: Number(item.unitPrice),
             purchasePrice: Number(item.purchasePrice || 0),
             lineTotal: Number(lineTotal),
+            discountPercent: Number(item.discountPercent || 0),
             category: item.category,
           });
         });
@@ -721,6 +765,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                             <TableHead className="w-[30%] text-right">کاڵا</TableHead>
                             <TableHead className="text-center">دانە</TableHead>
                             <TableHead className="text-center">نرخی تاک</TableHead>
+                            <TableHead className="text-center">داشکاندن %</TableHead>
                             <TableHead className="text-left">نرخی کۆ</TableHead>
                             <TableHead></TableHead>
                         </TableRow>
@@ -734,6 +779,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                                 index={index}
                                 remove={() => fields.length > 1 && remove(index)}
                                 mode="table"
+                                userRole={user?.role}
                             />
                         ))}
                     </TableBody>
@@ -748,10 +794,11 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                             index={index}
                             remove={() => fields.length > 1 && remove(index)}
                             mode="card"
+                            userRole={user?.role}
                         />
                     ))}
                  </div>
-                <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ product: "", quantity: 1, unitPrice: 0, purchasePrice: 0, sizeModel: "", category: 'Mattress' })}>
+                <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ product: "", quantity: 1, unitPrice: 0, purchasePrice: 0, sizeModel: "", category: 'Mattress', discountPercent: 0, maxDiscountPercent: 10 })}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     زیادکردنی کاڵا
                 </Button>
@@ -863,11 +910,21 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                 <CardHeader className="p-3 sm:p-6"><CardTitle className="text-base sm:text-xl">پوختە</CardTitle></CardHeader>
                 <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0 space-y-1 sm:space-y-2 text-left">
                     <div className="flex items-center justify-between gap-4 p-1.5 sm:p-2 rounded-md">
-                        <span className="text-xs sm:text-sm text-muted-foreground">کۆی کاڵاکان:</span>
+                        <span className="text-xs sm:text-sm text-muted-foreground">کۆی کاڵاکان (پێش داشکاندن):</span>
+                        <ConfidentialBlur><span className="text-sm sm:text-base font-semibold">{currencyFormatter.format(subTotalBeforeProductDiscount)}</span></ConfidentialBlur>
+                    </div>
+                    {totalProductDiscount > 0 && (
+                        <div className="flex items-center justify-between gap-4 p-1.5 sm:p-2 rounded-md">
+                            <span className="text-xs sm:text-sm text-muted-foreground">داشکاندنی کاڵاکان:</span>
+                            <ConfidentialBlur><span className="text-sm sm:text-base font-semibold text-destructive">-{currencyFormatter.format(totalProductDiscount)}</span></ConfidentialBlur>
+                        </div>
+                    )}
+                    <div className="flex items-center justify-between gap-4 p-1.5 sm:p-2 rounded-md">
+                        <span className="text-xs sm:text-sm text-muted-foreground">کۆی دوای داشکاندنی کاڵا:</span>
                         <ConfidentialBlur><span className="text-sm sm:text-base font-semibold">{currencyFormatter.format(subTotal)}</span></ConfidentialBlur>
                     </div>
                      <div className="flex items-center justify-between gap-4 p-1.5 sm:p-2 rounded-md">
-                        <span className="text-xs sm:text-sm text-muted-foreground">داشکاندن:</span>
+                        <span className="text-xs sm:text-sm text-muted-foreground">داشکاندنی گشتی:</span>
                         <ConfidentialBlur><span className="text-sm sm:text-base font-semibold text-destructive">-{currencyFormatter.format(discountAmount)}</span></ConfidentialBlur>
                     </div>
                     <div className="flex items-center justify-between gap-4 p-1.5 sm:p-2 rounded-md">

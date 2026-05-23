@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PlusCircle, Loader2, FileDown, FileUp, Search, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { useFirestore, useCollection, useMemoFirebase, collection, writeBatch, doc, getDocs, query, where } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, collection, writeBatch, doc, getDocs, query, where, updateDoc } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AddProductForm } from './components/add-product-form';
@@ -21,11 +21,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/contexts/auth-context';
 
 export type ProductDefinition = {
     productName: string;
     category: 'Mattress' | 'Bed' | 'Pillow' | 'Cover';
     sellingPrice?: number;
+    maxDiscountPercent?: number;
 };
 
 const productCategories: ProductCategory[] = ["Mattress", "Bed", "Pillow", "Cover"];
@@ -54,12 +56,12 @@ function DownloadTemplateButton() {
     const handleDownload = () => {
         try {
             const worksheet = XLSX.utils.json_to_sheet([
-                { productName: "دۆشەکی نموونە", sellingPrice: 0 },
-                { productName: "تەختی نموونە", sellingPrice: 0 },
+                { productName: "دۆشەکی نموونە", sellingPrice: 0, maxDiscountPercent: 0 },
+                { productName: "تەختی نموونە", sellingPrice: 0, maxDiscountPercent: 0 },
             ]);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
-            worksheet['!cols'] = [ { wch: 25 }, { wch: 15 } ];
+            worksheet['!cols'] = [ { wch: 25 }, { wch: 15 }, { wch: 20 } ];
             XLSX.writeFile(workbook, "Product_Import_Template.xlsx");
             toast({ title: " سەرکەوتوو بوو", description: "فایلی نموونە بە سەرکەوتوویی دابەزێنرا.", className: "bg-accent text-accent-foreground"});
         } catch (error) {
@@ -99,6 +101,7 @@ function UploadItemsButton({ onUploadSuccess, existingProducts }: { onUploadSucc
                     const productsFromSheet = jsonData.map(row => ({
                         productName: String(row.productName || row['ناوی کاڵا'] || ''),
                         sellingPrice: Number(row.sellingPrice) || Number(row['نرخی فرۆشتن']) || 0,
+                        maxDiscountPercent: Number(row.maxDiscountPercent) || Number(row['حدی داشکاندن']) || 0,
                     })).filter(p => p.productName);
 
                     if (productsFromSheet.length === 0) {
@@ -112,6 +115,7 @@ function UploadItemsButton({ onUploadSuccess, existingProducts }: { onUploadSucc
                         .map(p => ({
                             productName: p.productName,
                             sellingPrice: p.sellingPrice,
+                            maxDiscountPercent: p.maxDiscountPercent,
                             category: 'Mattress',
                         }))
                         .filter(p => p.productName && !existingProductNames.has(p.productName.toLowerCase())) as ProductDefinition[];
@@ -173,8 +177,8 @@ function UploadItemsButton({ onUploadSuccess, existingProducts }: { onUploadSucc
                     <div className="max-h-96 overflow-auto">
                         <div className="hidden md:block">
                             <Table>
-                                <TableHeader><TableRow><TableHead>ناوی کاڵا</TableHead><TableHead>پۆل</TableHead><TableHead>نرخی فرۆشتن</TableHead></TableRow></TableHeader>
-                                <TableBody>{newProducts.map((p, i) => ( <TableRow key={i}><TableCell>{p.productName}</TableCell><TableCell>{categoryTranslations[p.category]}</TableCell><TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(p.sellingPrice || 0)}</TableCell></TableRow>))}</TableBody>
+                                <TableHeader><TableRow><TableHead>ناوی کاڵا</TableHead><TableHead>پۆل</TableHead><TableHead>نرخی فرۆشتن</TableHead><TableHead>حدی داشکاندن %</TableHead></TableRow></TableHeader>
+                                <TableBody>{newProducts.map((p, i) => ( <TableRow key={i}><TableCell>{p.productName}</TableCell><TableCell>{categoryTranslations[p.category]}</TableCell><TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(p.sellingPrice || 0)}</TableCell><TableCell>{p.maxDiscountPercent || 0}%</TableCell></TableRow>))}</TableBody>
                             </Table>
                         </div>
                         <div className="space-y-4 md:hidden">
@@ -184,6 +188,7 @@ function UploadItemsButton({ onUploadSuccess, existingProducts }: { onUploadSucc
                                     <CardContent>
                                         <div className="flex justify-between"><span>پۆل:</span><span>{categoryTranslations[p.category]}</span></div>
                                         <div className="flex justify-between"><span>نرخی فرۆشتن:</span><span>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(p.sellingPrice || 0)}</span></div>
+                                        <div className="flex justify-between"><span>حدی داشکاندن:</span><span>{p.maxDiscountPercent || 0}%</span></div>
                                     </CardContent>
                                 </Card>
                             ))}
@@ -321,9 +326,10 @@ function ProductDefinitionsList({
                     <Table className="hidden md:table" dir="rtl">
                         <TableHeader className="sticky top-0 bg-card z-10">
                             <TableRow>
-                                <TableHead className="text-right w-[50%]">ناوی کاڵا</TableHead>
-                                <TableHead className="text-right w-[30%]">پۆل</TableHead>
-                                <TableHead className="text-left w-[20%]">کردارەکان</TableHead>
+                                <TableHead className="text-right w-[40%]">ناوی کاڵا</TableHead>
+                                <TableHead className="text-right w-[20%]">پۆل</TableHead>
+                                <TableHead className="text-center w-[15%]">حدی داشکاندن %</TableHead>
+                                <TableHead className="text-left w-[15%]">کردارەکان</TableHead>
                                 <TableHead className="w-[50px] text-center">
                                      <Checkbox
                                         checked={filteredProducts.length > 0 && selectedProducts.size === filteredProducts.length}
@@ -335,9 +341,9 @@ function ProductDefinitionsList({
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
-                                <TableRow><TableCell colSpan={4} className="h-24 text-center"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></TableCell></TableRow>
+                                <TableRow><TableCell colSpan={5} className="h-24 text-center"><Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /></TableCell></TableRow>
                             ) : !filteredProducts || filteredProducts.length === 0 ? (
-                                <TableRow><TableCell colSpan={4} className="py-8 text-center text-muted-foreground">هیچ پێناسەیەکی کاڵا تۆمار نەکراوە.</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={5} className="py-8 text-center text-muted-foreground">هیچ پێناسەیەکی کاڵا تۆمار نەکراوە.</TableCell></TableRow>
                             ) : (
                                 filteredProducts.map((product) => 
                                 <EditableProductRow 

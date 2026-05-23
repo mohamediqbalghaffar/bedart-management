@@ -85,7 +85,8 @@
         "id": { "type": "string", "description": "Unique identifier for the ProductDefinition." },
         "productName": { "type": "string", "description": "The master name of the product." },
         "category": { "type": "string", "description": "The category of the product.", "enum": ["Mattress", "Bed", "Pillow", "Cover"] },
-        "sellingPrice": { "type": "number", "description": "The default selling price for the product." }
+        "sellingPrice": { "type": "number", "description": "The default selling price for the product." },
+        "maxDiscountPercent": { "type": "number", "description": "The maximum allowed discount percentage for this product." }
       },
       "required": ["id", "productName", "category"]
     },
@@ -158,7 +159,8 @@
         "productId": { "type": "string", "description": "Reference to Product. (Relationship: Product N:N SellingForm)" },
         "quantity": { "type": "number", "description": "Quantity of the product sold." },
         "unitPrice": { "type": "number", "description": "Price of a single unit of the product." },
-        "lineTotal": { "type": "number", "description": "Total price for the line item (Quantity * Unit Price)." }
+        "lineTotal": { "type": "number", "description": "Total price for the line item (Quantity * Unit Price)." },
+        "discountPercent": { "type": "number", "description": "The specific discount percentage applied to this line item." }
       },
       "required": ["id", "sellingFormId", "productId", "quantity", "unitPrice", "lineTotal"]
     },

@@ -18,6 +18,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from "
 import { ProductDefinition } from '../page';
 import { ProductCategory } from '@/lib/types';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useAuth } from '@/contexts/auth-context';
 
 
 const productSchema = z.object({
@@ -41,6 +42,12 @@ export function EditableProductRow({ product, onProductUpdated, isSelected, onSe
     const [isEditing, setIsEditing] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    
+    const { user } = useAuth();
+    const isAdminOrManager = user?.role === 'Admin' || user?.role === 'Data Manager';
+    const [editingDiscount, setEditingDiscount] = useState(false);
+    const [discountValue, setDiscountValue] = useState(product.maxDiscountPercent ?? 10);
+    const [isSavingDiscount, setIsSavingDiscount] = useState(false);
 
     const form = useForm<ProductFormValues>({
         resolver: zodResolver(productSchema),
@@ -103,6 +110,24 @@ export function EditableProductRow({ product, onProductUpdated, isSelected, onSe
         }
     };
     
+    const handleSaveDiscount = async (newValue: number) => {
+        if (!firestore) return;
+        setIsSavingDiscount(true);
+        try {
+            const clampedValue = Math.min(100, Math.max(0, newValue));
+            await updateDoc(doc(firestore, 'product_definitions', product.id), { maxDiscountPercent: clampedValue });
+            setDiscountValue(clampedValue);
+            toast({ title: 'سەرکەوتوو بوو', description: `حدی داشکاندن بۆ ${clampedValue}% گۆڕدرا.`, className: 'bg-accent text-accent-foreground' });
+            setEditingDiscount(false);
+            onProductUpdated();
+        } catch (error) {
+            console.error('Error updating discount limit:', error);
+            toast({ variant: 'destructive', title: 'هەڵەیەک ڕوویدا', description: 'گۆڕینی حدی داشکاندن سەرکەوتوو نەبوو.' });
+        } finally {
+            setIsSavingDiscount(false);
+        }
+    };
+    
     if (isEditing) {
         if (mode === 'card') {
             return (
@@ -154,6 +179,9 @@ export function EditableProductRow({ product, onProductUpdated, isSelected, onSe
                             </FormItem>
                         )}/>
                     </TableCell>
+                    <TableCell className="text-center">
+                        <span className="text-sm">{discountValue}%</span>
+                    </TableCell>
                     <TableCell className="text-left">
                         <div className="flex gap-2">
                             <Button size="icon" variant="ghost" onClick={form.handleSubmit(handleSave)} disabled={isSaving}>
@@ -178,6 +206,7 @@ export function EditableProductRow({ product, onProductUpdated, isSelected, onSe
                         <div className="space-y-1">
                             <CardTitle>{product.productName}</CardTitle>
                             <CardDescription>{categoryTranslations[product.category] || product.category}</CardDescription>
+                            <span className="text-xs text-muted-foreground">حدی داشکاندن: {discountValue}%</span>
                         </div>
                         <Checkbox
                             checked={isSelected}
@@ -209,6 +238,39 @@ export function EditableProductRow({ product, onProductUpdated, isSelected, onSe
         <TableRow key={product.id} className="hidden md:table-row">
             <TableCell className="font-medium text-right">{product.productName}</TableCell>
             <TableCell className="text-right">{categoryTranslations[product.category] || product.category}</TableCell>
+            <TableCell className="text-center">
+                {isAdminOrManager ? (
+                    editingDiscount ? (
+                        <div className="flex items-center justify-center gap-1">
+                            <Input
+                                type="number"
+                                min={0}
+                                max={100}
+                                value={discountValue}
+                                onChange={(e) => setDiscountValue(Number(e.target.value))}
+                                className="w-16 h-7 text-center text-sm"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleSaveDiscount(discountValue);
+                                    if (e.key === 'Escape') setEditingDiscount(false);
+                                }}
+                                autoFocus
+                            />
+                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleSaveDiscount(discountValue)} disabled={isSavingDiscount}>
+                                {isSavingDiscount ? <Loader2 className="h-3 w-3 animate-spin"/> : <Save className="h-3 w-3 text-primary"/>}
+                            </Button>
+                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => { setEditingDiscount(false); setDiscountValue(product.maxDiscountPercent ?? 10); }}>
+                                <X className="h-3 w-3 text-muted-foreground"/>
+                            </Button>
+                        </div>
+                    ) : (
+                        <Button variant="ghost" size="sm" className="h-7 text-sm font-medium" onClick={() => setEditingDiscount(true)}>
+                            {discountValue}%
+                        </Button>
+                    )
+                ) : (
+                    <span className="text-sm">{discountValue}%</span>
+                )}
+            </TableCell>
             <TableCell className="text-left">
                 <div className="flex gap-2">
                     <Button size="icon" variant="ghost" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4 text-blue-500"/></Button>
