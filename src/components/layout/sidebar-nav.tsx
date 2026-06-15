@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BedDouble, Home, ShoppingCart, Package, Users, Building, DollarSign, Settings, Archive, LogOut, PackageSearch } from 'lucide-react';
+import { BedDouble, Home, ShoppingCart, Package, Users, Building, DollarSign, Settings, Archive, LogOut, PackageSearch, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '../ui/separator';
 import { useAuth } from '@/contexts/auth-context';
@@ -20,6 +20,7 @@ const allNavLinks = [
   { href: '/dashboard', label: 'داشبۆرد', icon: Home, roles: ['admin', 'data manager', 'salesman', 'program previewer'] },
 ];
 
+const tutorialLink = { href: '/tutorial', label: 'ڕێبەری بەکارهێنان', icon: HelpCircle, roles: ['admin', 'data manager', 'salesman', 'program previewer'] };
 const settingsLink = { href: '/settings', label: 'ڕێکخستنەکان', icon: Settings, roles: ['admin', 'data manager'] };
 
 
@@ -69,6 +70,18 @@ export function SidebarNav() {
         </div>
         <div className="mt-auto p-4 space-y-4">
             <Separator />
+            {user && (
+                 <Link
+                    href={tutorialLink.href}
+                    className={cn(
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+                    { 'bg-muted text-primary': pathname.startsWith(tutorialLink.href) }
+                    )}
+                >
+                    <tutorialLink.icon className="h-4 w-4" />
+                    {tutorialLink.label}
+                </Link>
+            )}
             {user && settingsLink.roles.includes(user.role.toLowerCase()) && (
                  <Link
                     href={settingsLink.href}

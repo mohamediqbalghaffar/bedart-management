@@ -15,7 +15,8 @@ import {
   Archive, 
   PackageSearch, 
   MoreHorizontal,
-  Settings
+  Settings,
+  HelpCircle
 } from 'lucide-react';
 import { 
   Sheet, 
@@ -37,6 +38,7 @@ const allNavLinks = [
   { href: '/dashboard', label: 'داشبۆرد', icon: Home, roles: ['admin', 'data manager', 'salesman', 'program previewer'] },
 ];
 
+const tutorialLink = { href: '/tutorial', label: 'ڕێبەری بەکارهێنان', icon: HelpCircle, roles: ['admin', 'data manager', 'salesman', 'program previewer'] };
 const settingsLink = { href: '/settings', label: 'ڕێکخستن', icon: Settings, roles: ['admin', 'data manager'] };
 
 export function BottomNav() {
@@ -60,9 +62,13 @@ export function BottomNav() {
   const visibleLinks = filteredLinks.length > 5 ? filteredLinks.slice(0, 4) : filteredLinks;
   const moreLinks = filteredLinks.length > 5 ? filteredLinks.slice(4) : [];
   
-  // Add settings to more links if role allows
+  // Add settings and tutorial to more links
   const canSeeSettings = settingsLink.roles.includes(userRole);
-  const finalMoreLinks = canSeeSettings ? [...moreLinks, settingsLink] : moreLinks;
+  const finalMoreLinks = [
+    ...moreLinks,
+    tutorialLink,
+    ...(canSeeSettings ? [settingsLink] : [])
+  ];
 
   const NavItem = ({ link }: { link: typeof allNavLinks[0] }) => {
     const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));

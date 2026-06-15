@@ -20,7 +20,9 @@ export default function MainLayout({ children, params }: { children: React.React
         router.push('/login');
       } else if (user.role === 'Salesman' || user.role === 'Program Previewer') {
         const allowedPages = user.allowedPages || [];
-        if (allowedPages.length === 0) {
+        if (pathname.startsWith('/tutorial')) {
+            // Always allow tutorial pages
+        } else if (allowedPages.length === 0) {
             router.push('/login');
         } else if (!allowedPages.some(p => pathname.startsWith(p))) {
             router.push(allowedPages[0]);
