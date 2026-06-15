@@ -654,7 +654,7 @@ function SalesList() {
 
 
     // ── Currency formatter ──
-    const fmt = useMemo(() => new Intl.NumberFormat('ar-IQ', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }), []);
+    const fmt = useMemo(() => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }), []);
 
     return (
         <div className={cn("h-full flex flex-col min-h-0 gap-4", isPrinting ? "no-print" : "")}>

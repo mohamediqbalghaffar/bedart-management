@@ -45,10 +45,10 @@ type GroupedProduct = {
 const productCategories = ["Mattress", "Bed", "Pillow", "Cover"];
 const categoryTranslations: Record<string, string> = { Mattress: "دۆشەک", Bed: "تەخت", Pillow: "سەرین", Cover: "بەرگ" };
 
-// A-01 & L-03: Cached formatters with ar-IQ locale
-const formatUsd = new Intl.NumberFormat('ar-IQ', { style: 'currency', currency: 'USD' });
-const formatUsdCompact = new Intl.NumberFormat('ar-IQ', { style: 'currency', currency: 'USD', notation: 'compact', compactDisplay: 'short' });
-const getCurrencyFormatter = (currency: string) => new Intl.NumberFormat('ar-IQ', { style: 'currency', currency });
+// A-01 & L-03: Cached formatters with en-US locale
+const formatUsd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+const formatUsdCompact = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', compactDisplay: 'short' });
+const getCurrencyFormatter = (currency: string) => new Intl.NumberFormat('en-US', { style: 'currency', currency });
 
 const useDashboardData = (dateRange: { from: string, to: string }) => {
     const firestore = useFirestore();
@@ -508,7 +508,7 @@ function LowStockDetailDialog({ products }: { products: GroupedProduct[] }) {
 
 function DashboardStats({ stats, dialogData }: { stats: any, dialogData: any }) {
     // Standard 2-decimal accounting format: $1,541,458.16
-    const currencyFormatterDetailed = new Intl.NumberFormat('ar-IQ', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const currencyFormatterDetailed = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     return (
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 w-full">
