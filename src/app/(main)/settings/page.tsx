@@ -573,7 +573,7 @@ function StockReconciliation() {
                     
                     // Enhancement: If the target document already exists, sum the quantities
                     const targetSnap = await getDoc(newRef);
-                    let finalData = { ...data, id: correctId };
+                    let finalData: any = { ...data, id: correctId };
                     
                     if (targetSnap.exists()) {
                         const targetData = targetSnap.data();

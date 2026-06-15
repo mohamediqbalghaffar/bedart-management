@@ -4,11 +4,11 @@ import React, { useState, useEffect, useMemo, use } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { useFirestore, collection, getDocs, query, where, useCollection, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Loader2, DollarSign, ShoppingCart, Archive, Package, LineChart, TrendingUp, TrendingDown, CalendarIcon } from 'lucide-react';
+import { Loader2, DollarSign, ShoppingCart, Archive, Package, LineChart as LineChartIcon, TrendingUp, TrendingDown, CalendarIcon, Percent, BarChart3, GitCompareArrows } from 'lucide-react';
 import { StatCard } from '@/components/shared/stat-card';
 import { format as formatDate, subDays, parseISO, isValid, startOfDay, endOfDay, differenceInDays } from 'date-fns';
 import { ckb } from 'date-fns/locale/ckb';
-import { AreaChart, Area, CartesianGrid, ResponsiveContainer, XAxis, YAxis, BarChart, Bar } from 'recharts';
+import { AreaChart, Area, CartesianGrid, ResponsiveContainer, XAxis, YAxis, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, ComposedChart, ReferenceLine, Legend, Tooltip } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -56,6 +56,10 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
     const [processingError, setProcessingError] = useState<Error | null>(null);
 
     const [stats, setStats] = useState({ totalRevenue: 0, totalExpensesAll: 0, netProfit: 0, buyingFormsCount: 0, lowStockCount: 0 });
+    const [profitMarginData, setProfitMarginData] = useState<any[]>([]);
+    const [costBreakdownData, setCostBreakdownData] = useState<any[]>([]);
+    const [cumulativeData, setCumulativeData] = useState<any[]>([]);
+    const [kpiSummary, setKpiSummary] = useState({ revenueGrowth: 0, costGrowth: 0, netCashFlow: 0 });
     const [chartData, setChartData] = useState<any[]>([]);
     const [dialogData, setDialogData] = useState<any>({
         sales: { sales: [], perProduct: [], totalQuantity: 0, totalRevenue: 0, allSalesProducts: [] },
@@ -179,6 +183,68 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
                 const finalChartData = Array.from(dateMap.entries()).map(([date, data]) => ({ date, ...data }));
                 if (!cancelled) setChartData(finalChartData);
 
+                // ── Profit Margin Trend Data ──
+                // Group by month and compute margin %
+                const monthlyMap = new Map<string, { sales: number; expenses: number }>();
+                finalChartData.forEach(d => {
+                    const monthKey = d.date.substring(0, 7); // yyyy-MM
+                    if (!monthlyMap.has(monthKey)) monthlyMap.set(monthKey, { sales: 0, expenses: 0 });
+                    const m = monthlyMap.get(monthKey)!;
+                    m.sales += d.sales;
+                    m.expenses += d.expenses;
+                });
+                const profitMargin = Array.from(monthlyMap.entries()).map(([month, d]) => ({
+                    month,
+                    marginPercent: d.sales > 0 ? Math.round(((d.sales - d.expenses) / d.sales) * 100) : 0,
+                    sales: d.sales,
+                    profit: d.sales - d.expenses,
+                }));
+                if (!cancelled) setProfitMarginData(profitMargin);
+
+                // ── Cost Breakdown by Category ──
+                const categoryMap = new Map<string, number>();
+                expensesData.forEach(expense => {
+                    const cat = expense.category || 'هەمەچەشن';
+                    let amountInUSD = expense.amount;
+                    if (expense.currency === 'IQD') amountInUSD = expense.amount / iqdToUsdRate;
+                    categoryMap.set(cat, (categoryMap.get(cat) || 0) + amountInUSD);
+                });
+                // Add purchase cost as a category
+                if (totalPurchaseCost > 0) categoryMap.set('کڕینی کاڵا', (categoryMap.get('کڕینی کاڵا') || 0) + totalPurchaseCost);
+                const costBreakdown = Array.from(categoryMap.entries())
+                    .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
+                    .sort((a, b) => b.value - a.value);
+                if (!cancelled) setCostBreakdownData(costBreakdown);
+
+                // ── Cumulative Sales vs Cost ──
+                let cumSales = 0;
+                let cumExpenses = 0;
+                const cumData = finalChartData.map(d => {
+                    cumSales += d.sales;
+                    cumExpenses += d.expenses;
+                    return {
+                        date: d.date,
+                        cumulativeSales: cumSales,
+                        cumulativeExpenses: cumExpenses,
+                        netCashFlow: cumSales - cumExpenses,
+                    };
+                });
+                if (!cancelled) setCumulativeData(cumData);
+
+                // ── KPI Summary ──
+                // Calculate growth rates (first half vs second half)
+                const midPoint = Math.floor(finalChartData.length / 2);
+                const firstHalf = finalChartData.slice(0, midPoint);
+                const secondHalf = finalChartData.slice(midPoint);
+                const firstRevenue = firstHalf.reduce((s, d) => s + d.sales, 0);
+                const secondRevenue = secondHalf.reduce((s, d) => s + d.sales, 0);
+                const firstCost = firstHalf.reduce((s, d) => s + d.expenses, 0);
+                const secondCost = secondHalf.reduce((s, d) => s + d.expenses, 0);
+                const revenueGrowth = firstRevenue > 0 ? Math.round(((secondRevenue - firstRevenue) / firstRevenue) * 100) : 0;
+                const costGrowth = firstCost > 0 ? Math.round(((secondCost - firstCost) / firstCost) * 100) : 0;
+                const netCashFlow = totalRevenue - totalExpensesAll;
+                if (!cancelled) setKpiSummary({ revenueGrowth, costGrowth, netCashFlow });
+
 
                 const salesDialogSummary = allSalesProducts.reduce((acc, p) => {
                     acc.totalQuantity += p.quantity;
@@ -232,7 +298,7 @@ const useDashboardData = (dateRange: { from: string, to: string }) => {
         return () => { cancelled = true; };
     }, [dateRange, firestore, salesData, expensesData, buyingFormsData, productsData, suppliersData, isLoadingCollections, collectionError]);
 
-    return { isLoading: isLoadingCollections || isProcessing, error: collectionError || processingError, stats, chartData, dialogData };
+    return { isLoading: isLoadingCollections || isProcessing, error: collectionError || processingError, stats, chartData, dialogData, profitMarginData, costBreakdownData, cumulativeData, kpiSummary };
 };
 
 function SalesDetailDialog({ data }: { data: any }) {
@@ -562,7 +628,13 @@ function DashboardStats({ stats, dialogData }: { stats: any, dialogData: any }) 
     );
 }
 
-const chartConfig = { sales: { label: "فرۆش", color: "hsl(var(--chart-2))", icon: TrendingUp }, expenses: { label: "خەرجی", color: "hsl(var(--chart-5))", icon: TrendingDown }, netProfit: { label: "قازانجی پوخت", color: "hsl(var(--chart-1))", icon: LineChart } } satisfies ChartConfig;
+const chartConfig = { sales: { label: "فرۆش", color: "hsl(var(--chart-2))", icon: TrendingUp }, expenses: { label: "خەرجی", color: "hsl(var(--chart-5))", icon: TrendingDown }, netProfit: { label: "قازانجی پوخت", color: "hsl(var(--chart-1))", icon: LineChartIcon } } satisfies ChartConfig;
+
+const COST_COLORS = [
+    'hsl(210, 80%, 60%)', 'hsl(340, 75%, 55%)', 'hsl(45, 90%, 55%)', 'hsl(160, 70%, 45%)',
+    'hsl(280, 65%, 55%)', 'hsl(20, 85%, 55%)', 'hsl(190, 75%, 50%)', 'hsl(0, 70%, 55%)',
+    'hsl(120, 60%, 45%)', 'hsl(260, 55%, 60%)', 'hsl(30, 80%, 50%)', 'hsl(180, 65%, 40%)',
+];
 
 function RecentActivityChart({ data }: { data: any[] }) {
     const [activeSubjects, setActiveSubjects] = useState({ sales: true, expenses: true, netProfit: true });
@@ -628,6 +700,249 @@ function RecentActivityChart({ data }: { data: any[] }) {
     );
 }
 
+// ── Section 1: Profit Margin Trend ──
+function ProfitMarginTrendChart({ data }: { data: any[] }) {
+    const avgMargin = useMemo(() => {
+        if (!data.length) return 0;
+        return Math.round(data.reduce((s, d) => s + d.marginPercent, 0) / data.length);
+    }, [data]);
+
+    return (
+        <Card className="bg-gradient-to-br from-emerald-900/40 via-teal-900/40 to-cyan-900/40 text-white border-emerald-800/50 w-full overflow-hidden">
+            <CardHeader>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <div>
+                        <CardTitle className="text-white flex items-center gap-2">
+                            <Percent className="h-5 w-5 text-emerald-400" />
+                            شیکاری ڕێژەی قازانج
+                        </CardTitle>
+                        <CardDescription className="text-white/80">ڕێژەی قازانج بە مانگانە - تەماشای ئاراستەی بازرگانی بکە.</CardDescription>
+                    </div>
+                    <div className="bg-white/10 rounded-lg px-4 py-2 text-center">
+                        <p className="text-xs text-white/70">تێکڕای ڕێژەی قازانج</p>
+                        <ConfidentialBlur><p className={`text-2xl font-bold ${avgMargin >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{avgMargin}%</p></ConfidentialBlur>
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent className="px-2 sm:px-6">
+                <ConfidentialBlur className='w-full block min-w-0'>
+                {data.length > 0 ? (
+                <ResponsiveContainer width="100%" height={320}>
+                    <ComposedChart data={data}>
+                        <defs>
+                            <linearGradient id="marginGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                                <stop offset="95%" stopColor="#10b981" stopOpacity={0.05} />
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255,255,255,0.15)" />
+                        <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 10 }} />
+                        <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(v) => `${v}%`} tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 10 }} />
+                        <ReferenceLine y={0} stroke="rgba(255,255,255,0.3)" strokeDasharray="3 3" />
+                        <Tooltip
+                            contentStyle={{ backgroundColor: 'rgba(15,23,42,0.9)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: 'white' }}
+                            formatter={(value: number, name: string) => [
+                                name === 'marginPercent' ? `${value}%` : formatUsd.format(value),
+                                name === 'marginPercent' ? 'ڕێژەی قازانج' : name === 'sales' ? 'فرۆش' : 'قازانج'
+                            ]}
+                            labelFormatter={(label) => `مانگی: ${label}`}
+                        />
+                        <Area dataKey="marginPercent" type="monotone" fill="url(#marginGrad)" stroke="#10b981" strokeWidth={2.5} dot={false} isAnimationActive animationDuration={800} />
+                        <Line dataKey="marginPercent" type="monotone" stroke="#10b981" strokeWidth={2.5} dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }} activeDot={{ r: 6, fill: '#34d399' }} isAnimationActive animationDuration={800} />
+                    </ComposedChart>
+                </ResponsiveContainer>
+                ) : (
+                    <div className="h-80 flex items-center justify-center text-white/50">داتا بەردەست نییە</div>
+                )}
+                </ConfidentialBlur>
+            </CardContent>
+        </Card>
+    );
+}
+
+// ── Section 2: Cost Breakdown by Category ──
+function CostBreakdownChart({ data }: { data: any[] }) {
+    const totalCost = useMemo(() => data.reduce((s, d) => s + d.value, 0), [data]);
+
+    const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+        if (percent < 0.05) return null; // Skip labels for tiny slices
+        const RADIAN = Math.PI / 180;
+        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+        const x = cx + radius * Math.cos(-midAngle * RADIAN);
+        const y = cy + radius * Math.sin(-midAngle * RADIAN);
+        return <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={600}>{`${(percent * 100).toFixed(0)}%`}</text>;
+    };
+
+    return (
+        <Card className="bg-gradient-to-br from-rose-900/40 via-pink-900/40 to-fuchsia-900/40 text-white border-rose-800/50 w-full overflow-hidden">
+            <CardHeader>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <div>
+                        <CardTitle className="text-white flex items-center gap-2">
+                            <BarChart3 className="h-5 w-5 text-rose-400" />
+                            دابەشبوونی خەرجییەکان بە پۆل
+                        </CardTitle>
+                        <CardDescription className="text-white/80">بینینی ڕێژەی هەر پۆلێک لە خەرجییەکان.</CardDescription>
+                    </div>
+                    <div className="bg-white/10 rounded-lg px-4 py-2 text-center">
+                        <p className="text-xs text-white/70">کۆی خەرجی</p>
+                        <ConfidentialBlur><p className="text-2xl font-bold text-rose-400">{formatUsd.format(totalCost)}</p></ConfidentialBlur>
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent className="px-2 sm:px-6">
+                <ConfidentialBlur className='w-full block min-w-0'>
+                {data.length > 0 ? (
+                <div className="flex flex-col lg:flex-row items-center gap-6">
+                    <ResponsiveContainer width="100%" height={320}>
+                        <PieChart>
+                            <Pie
+                                data={data}
+                                dataKey="value"
+                                nameKey="name"
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={60}
+                                outerRadius={120}
+                                paddingAngle={3}
+                                labelLine={false}
+                                label={renderCustomLabel}
+                                isAnimationActive
+                                animationDuration={800}
+                                animationBegin={0}
+                            >
+                                {data.map((_, index) => (
+                                    <Cell key={`cell-${index}`} fill={COST_COLORS[index % COST_COLORS.length]} stroke="rgba(0,0,0,0.2)" strokeWidth={1} />
+                                ))}
+                            </Pie>
+                            <Tooltip
+                                contentStyle={{ backgroundColor: 'rgba(15,23,42,0.9)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: 'white' }}
+                                formatter={(value: number) => [formatUsd.format(value), 'بڕ']}
+                            />
+                        </PieChart>
+                    </ResponsiveContainer>
+                    <div className="w-full lg:w-auto min-w-[200px] space-y-2 max-h-[320px] overflow-y-auto">
+                        {data.map((item, index) => (
+                            <div key={item.name} className="flex items-center gap-3 bg-white/5 rounded-lg px-3 py-2 hover:bg-white/10 transition-colors">
+                                <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: COST_COLORS[index % COST_COLORS.length] }} />
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate">{item.name}</p>
+                                    <p className="text-xs text-white/60">{formatUsd.format(item.value)} · {totalCost > 0 ? Math.round((item.value / totalCost) * 100) : 0}%</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                ) : (
+                    <div className="h-80 flex items-center justify-center text-white/50">داتا بەردەست نییە</div>
+                )}
+                </ConfidentialBlur>
+            </CardContent>
+        </Card>
+    );
+}
+
+// ── Section 3: Sales vs Cost Ratio Comparison ──
+function SalesCostRatioChart({ data, kpi }: { data: any[], kpi: { revenueGrowth: number, costGrowth: number, netCashFlow: number } }) {
+    // Find break-even point index
+    const breakEvenIndex = useMemo(() => {
+        for (let i = 1; i < data.length; i++) {
+            const prev = data[i - 1];
+            const curr = data[i];
+            if ((prev.netCashFlow <= 0 && curr.netCashFlow > 0) || (prev.netCashFlow >= 0 && curr.netCashFlow < 0)) {
+                return i;
+            }
+        }
+        return -1;
+    }, [data]);
+
+    return (
+        <Card className="bg-gradient-to-br from-amber-900/40 via-orange-900/40 to-yellow-900/40 text-white border-amber-800/50 w-full overflow-hidden">
+            <CardHeader>
+                <div>
+                    <CardTitle className="text-white flex items-center gap-2">
+                        <GitCompareArrows className="h-5 w-5 text-amber-400" />
+                        بەراوردی فرۆشتن و خەرجی
+                    </CardTitle>
+                    <CardDescription className="text-white/80">بەراوردی کۆکراوەی فرۆشتن و خەرجی لەگەڵ خاڵی سەربەخۆبوون.</CardDescription>
+                </div>
+                {/* KPI Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+                    <div className="bg-white/10 rounded-lg px-4 py-3 text-center">
+                        <p className="text-xs text-white/70">ڕێژەی گەشەی داهات</p>
+                        <ConfidentialBlur>
+                            <p className={`text-xl font-bold ${kpi.revenueGrowth >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                {kpi.revenueGrowth >= 0 ? '+' : ''}{kpi.revenueGrowth}%
+                            </p>
+                        </ConfidentialBlur>
+                    </div>
+                    <div className="bg-white/10 rounded-lg px-4 py-3 text-center">
+                        <p className="text-xs text-white/70">ڕێژەی گەشەی خەرجی</p>
+                        <ConfidentialBlur>
+                            <p className={`text-xl font-bold ${kpi.costGrowth <= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                {kpi.costGrowth >= 0 ? '+' : ''}{kpi.costGrowth}%
+                            </p>
+                        </ConfidentialBlur>
+                    </div>
+                    <div className="bg-white/10 rounded-lg px-4 py-3 text-center">
+                        <p className="text-xs text-white/70">دراوی پوخت</p>
+                        <ConfidentialBlur>
+                            <p className={`text-xl font-bold ${kpi.netCashFlow >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                {formatUsdCompact.format(kpi.netCashFlow)}
+                            </p>
+                        </ConfidentialBlur>
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent className="px-2 sm:px-6">
+                <ConfidentialBlur className='w-full block min-w-0'>
+                {data.length > 0 ? (
+                <ResponsiveContainer width="100%" height={320}>
+                    <AreaChart data={data}>
+                        <defs>
+                            <linearGradient id="cumSalesGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#22c55e" stopOpacity={0.5} />
+                                <stop offset="95%" stopColor="#22c55e" stopOpacity={0.05} />
+                            </linearGradient>
+                            <linearGradient id="cumExpGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#ef4444" stopOpacity={0.5} />
+                                <stop offset="95%" stopColor="#ef4444" stopOpacity={0.05} />
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255,255,255,0.15)" />
+                        <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => formatDate(parseISO(value), 'MMM d')} tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 10 }} />
+                        <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(val) => formatUsdCompact.format(val)} tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 10 }} />
+                        <Tooltip
+                            contentStyle={{ backgroundColor: 'rgba(15,23,42,0.9)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: 'white' }}
+                            formatter={(value: number, name: string) => [
+                                formatUsd.format(value),
+                                name === 'cumulativeSales' ? 'کۆی فرۆش' : name === 'cumulativeExpenses' ? 'کۆی خەرجی' : 'دراوی پوخت'
+                            ]}
+                            labelFormatter={(label) => formatDate(parseISO(label), 'dd/MM/yyyy')}
+                        />
+                        <Area dataKey="cumulativeSales" type="monotone" fill="url(#cumSalesGrad)" stroke="#22c55e" strokeWidth={2.5} dot={false} isAnimationActive animationDuration={800} />
+                        <Area dataKey="cumulativeExpenses" type="monotone" fill="url(#cumExpGrad)" stroke="#ef4444" strokeWidth={2.5} dot={false} isAnimationActive animationDuration={1000} />
+                        <Line dataKey="netCashFlow" type="monotone" stroke="#f59e0b" strokeWidth={2} strokeDasharray="5 5" dot={false} isAnimationActive animationDuration={1200} />
+                        <ReferenceLine y={0} stroke="rgba(255,255,255,0.3)" strokeDasharray="3 3" />
+                        {breakEvenIndex > 0 && data[breakEvenIndex] && (
+                            <ReferenceLine x={data[breakEvenIndex].date} stroke="#f59e0b" strokeDasharray="5 5" label={{ value: 'خاڵی سەربەخۆبوون', position: 'top', fill: '#f59e0b', fontSize: 11 }} />
+                        )}
+                    </AreaChart>
+                </ResponsiveContainer>
+                ) : (
+                    <div className="h-80 flex items-center justify-center text-white/50">داتا بەردەست نییە</div>
+                )}
+                </ConfidentialBlur>
+                <div className="flex flex-wrap items-center justify-center gap-4 mt-4 text-xs">
+                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-green-500" /><span>کۆی فرۆش</span></div>
+                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-red-500" /><span>کۆی خەرجی</span></div>
+                    <div className="flex items-center gap-2"><div className="w-8 h-0.5 border-t-2 border-dashed border-amber-500" /><span>دراوی پوخت</span></div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 export default function DashboardPage({ params, searchParams }: { params: Promise<any>, searchParams: Promise<any> }) {
     use(params);
     use(searchParams);
@@ -642,7 +957,7 @@ export default function DashboardPage({ params, searchParams }: { params: Promis
         to: formatDate(dateRange.to, 'yyyy-MM-dd'),
     }), [dateRange]);
 
-    const { isLoading, error, stats, chartData, dialogData } = useDashboardData(formattedDateRange);
+    const { isLoading, error, stats, chartData, dialogData, profitMarginData, costBreakdownData, cumulativeData, kpiSummary } = useDashboardData(formattedDateRange);
 
     if (error) {
         return <div className="text-destructive text-center p-8">هەڵەیەک ڕوویدا لە کاتی هێنانی داتاکان: {error.message}</div>
@@ -701,6 +1016,11 @@ export default function DashboardPage({ params, searchParams }: { params: Promis
                 <div className="flex flex-col gap-6 md:gap-8 w-full">
                     <DashboardStats stats={stats} dialogData={dialogData} />
                     <RecentActivityChart data={chartData} />
+                    <ProfitMarginTrendChart data={profitMarginData} />
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 md:gap-8 w-full">
+                        <CostBreakdownChart data={costBreakdownData} />
+                        <SalesCostRatioChart data={cumulativeData} kpi={kpiSummary} />
+                    </div>
                 </div>
             )}
         </div>

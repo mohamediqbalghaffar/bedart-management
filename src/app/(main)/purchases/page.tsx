@@ -352,6 +352,7 @@ function PurchasesList() {
             const purchasedItems = productsPurchasedSnapshot.docs.map(d => ({ ref: d.ref, ...(d.data() as BuyingFormProduct) }));
 
             await runTransaction(firestore, async (transaction) => {
+                const productRefsToUpdate: { ref: any; newQuantity: number }[] = [];
                 // D-10: Use transaction.get for each product (transaction-safe reads)
                 const productSnapshots = await Promise.all(
                     purchasedItems.map(item => {
@@ -362,7 +363,7 @@ function PurchasesList() {
 
                 for (const { snap, item } of productSnapshots) {
                      if (snap.exists()) {
-                        const newQuantity = (snap.data().currentQuantity || 0) - item.quantity;
+                        const newQuantity = (snap.data()!.currentQuantity || 0) - item.quantity;
                         productRefsToUpdate.push({ ref: snap.ref, newQuantity: newQuantity < 0 ? 0 : newQuantity });
                     }
                 }

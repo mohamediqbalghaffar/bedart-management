@@ -133,7 +133,7 @@ function SalesFormItemRow({
                                 <DialogHeader>
                                     <DialogTitle>لیستی کاڵاکان</DialogTitle>
                                 </DialogHeader>
-                                <ProductSelectorDialog onProductSelect={({name, sizeModel, price, purchasePrice, category}) => {
+                                <ProductSelectorDialog onProductSelect={({name, sizeModel, price, purchasePrice, category, maxDiscountPercent}) => {
                                     form.setValue(`items.${index}.product`, name);
                                     form.setValue(`items.${index}.sizeModel`, sizeModel || "");
                                     form.setValue(`items.${index}.unitPrice`, price);
@@ -188,7 +188,7 @@ function SalesFormItemRow({
                               <DialogHeader>
                                   <DialogTitle>لیستی کاڵاکان</DialogTitle>
                               </DialogHeader>
-                              <ProductSelectorDialog onProductSelect={({name, sizeModel, price, purchasePrice, category}) => {
+                              <ProductSelectorDialog onProductSelect={({name, sizeModel, price, purchasePrice, category, maxDiscountPercent}) => {
                                   form.setValue(`items.${index}.product`, name);
                                   form.setValue(`items.${index}.sizeModel`, sizeModel || "");
                                   form.setValue(`items.${index}.unitPrice`, price);
@@ -387,7 +387,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                 ...d.data(),
                 date: d.data().paymentDate,
                 amount: d.data().amountPaid
-            }));
+            })) as any[];
 
             const normalizeDate = (dateVal: any) => {
               if (!dateVal) return format(new Date(), "yyyy-MM-dd");
