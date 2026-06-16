@@ -816,7 +816,8 @@ function CostBreakdownChart({ data }: { data: any[] }) {
                                 ))}
                             </Pie>
                             <Tooltip
-                                contentStyle={{ backgroundColor: 'rgba(15,23,42,0.9)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: 'white' }}
+                                contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', border: '1px solid rgba(0, 0, 0, 0.1)', borderRadius: '8px', color: '#0f172a' }}
+                                itemStyle={{ color: '#0f172a' }}
                                 formatter={(value: number) => [formatUsd.format(value), 'بڕ']}
                             />
                         </PieChart>
