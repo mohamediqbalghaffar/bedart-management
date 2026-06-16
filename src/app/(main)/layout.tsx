@@ -40,7 +40,7 @@ export default function MainLayout({ children, params }: { children: React.React
   }
 
   return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr] overflow-hidden">
+    <div className="grid h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr] overflow-hidden">
       <SidebarNav />
       <div className="flex flex-col min-w-0 overflow-x-hidden">
         <Header />
