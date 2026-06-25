@@ -54,6 +54,9 @@ const salesFormSchema = z.object({
     maxDiscountPercent: z.coerce.number().optional().default(10),
   })).min(1, { message: "لانیکەم یەک کاڵا پێویستە." }),
   deliveryCost: z.coerce.number().optional().default(0),
+  deliveryCostCurrency: z.enum(["USD", "IQD"]).optional().default("USD"),
+  deliveryCostPayer: z.enum(["customer", "us", "both"]).optional().default("customer"),
+  deliveryCostCustomerShare: z.coerce.number().optional().default(0),
   discountType: z.enum(["percentage", "cash"]).optional(),
   discountValue: z.coerce.number().optional().default(0),
   paymentStatus: z.enum(["Unpaid", "Partially Paid", "Fully Paid"]),
@@ -257,6 +260,9 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
       issueDate: format(new Date(), "yyyy-MM-dd"),
       items: initialItems || [{ product: "", quantity: 1, unitPrice: 0, purchasePrice: 0, sizeModel: "", category: 'Mattress', discountPercent: 0, maxDiscountPercent: 10 }],
       deliveryCost: 0,
+      deliveryCostCurrency: "USD",
+      deliveryCostPayer: "customer",
+      deliveryCostCustomerShare: 0,
       discountValue: 0,
       paymentStatus: "Fully Paid",
       paymentType: "Direct Payment",
@@ -287,6 +293,9 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
   const discountType = form.watch('discountType');
   const watchedItems = form.watch('items');
   const deliveryCost = form.watch('deliveryCost');
+  const deliveryCostCurrency = form.watch('deliveryCostCurrency');
+  const deliveryCostPayer = form.watch('deliveryCostPayer');
+  const deliveryCostCustomerShare = form.watch('deliveryCostCustomerShare');
   const watchedPayments = form.watch('payments');
   const discountValue = form.watch('discountValue');
 
@@ -298,13 +307,9 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
   const subTotal = subTotalBeforeProductDiscount - totalProductDiscount;
 
   const discountAmount = React.useMemo(() => {
-    const dVal = Number(discountValue || 0);
-    if (!discountType || dVal <= 0) return 0;
-    if (discountType === 'percentage') {
-      return (subTotal * dVal) / 100;
-    }
-    return dVal;
-  }, [subTotal, discountType, discountValue]);
+    if (discountType === 'percentage') return subTotal * ((Number(discountValue) || 0) / 100);
+    return Number(discountValue) || 0;
+  }, [discountType, discountValue, subTotal]);
 
   const totalAfterDiscount = subTotal - discountAmount;
   const totalAmount = totalAfterDiscount + Number(deliveryCost || 0);
@@ -607,7 +612,12 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
             }
             return dVal;
         })();
-        const finalTotalAmount = subTotal - discountAmount + Number(mainData.deliveryCost || 0);
+        const effectiveDeliveryInsideTransaction = mainData.deliveryCostCurrency === 'IQD' ? 0 
+            : mainData.deliveryCostPayer === 'us' ? 0 
+            : mainData.deliveryCostPayer === 'both' ? Number(mainData.deliveryCostCustomerShare || 0) 
+            : Number(mainData.deliveryCost || 0);
+
+        const finalTotalAmount = subTotal - discountAmount + effectiveDeliveryInsideTransaction;
         const finalTotalPaid = payments?.reduce((acc, p) => acc + Number(p.amount || 0), 0) || 0;
         const finalRemainingBalance = Math.max(0, finalTotalAmount - finalTotalPaid);
         const creatorName = user?.name || "System";
@@ -623,7 +633,10 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
             totalPrice: Number(finalTotalAmount), 
             remainingBalance: Number(finalRemainingBalance),
             discountValue: Number(dVal),
-            deliveryCost: Number(mainData.deliveryCost || 0)
+            deliveryCost: Number(mainData.deliveryCost || 0),
+            deliveryCostCurrency: mainData.deliveryCostCurrency,
+            deliveryCostPayer: mainData.deliveryCostPayer,
+            deliveryCostCustomerShare: Number(mainData.deliveryCostCustomerShare || 0)
         };
         
         if (!sellingFormData.discountType) delete sellingFormData.discountType;
@@ -852,19 +865,76 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                             />
                         </div>
                     </div>
-                     <FormField
-                        control={form.control}
-                        name="deliveryCost"
-                        render={({ field }) => (
-                            <FormItem className="space-y-1">
-                                <FormLabel className="text-xs sm:text-sm">تێچووی گەیاندن</FormLabel>
-                                <FormControl>
-                                    <Input type="number" step="0.01" {...field} className="w-24 sm:w-32 h-9 sm:h-10 text-sm sm:text-base" />
-                                </FormControl>
-                                <FormMessage className="text-[10px]" />
-                            </FormItem>
+                    <div className="space-y-3 p-3 bg-muted/10 rounded-md border">
+                        <div className="flex justify-between items-center">
+                            <FormLabel className="text-sm font-semibold">تێچووی گەیاندن</FormLabel>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <FormField
+                                control={form.control}
+                                name="deliveryCost"
+                                render={({ field }) => (
+                                    <FormItem className="space-y-1">
+                                        <FormLabel className="text-xs">بڕی تێچوو</FormLabel>
+                                        <FormControl>
+                                            <Input type="number" step="0.01" className="h-9 text-sm text-left" dir="ltr" {...field} />
+                                        </FormControl>
+                                        <FormMessage className="text-[10px]" />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="deliveryCostCurrency"
+                                render={({ field }) => (
+                                    <FormItem className="space-y-1">
+                                        <FormLabel className="text-xs">دراو</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value} dir="rtl">
+                                            <FormControl><SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="USD">دۆلار ($)</SelectItem>
+                                                <SelectItem value="IQD">دینار (IQD)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        
+                        <FormField
+                            control={form.control}
+                            name="deliveryCostPayer"
+                            render={({ field }) => (
+                                <FormItem className="space-y-2">
+                                    <FormLabel className="text-xs">لەلایەن کێوە دەدرێت؟</FormLabel>
+                                    <FormControl>
+                                        <RadioGroup onValueChange={field.onChange} value={field.value} className="flex flex-col gap-2">
+                                            <div className="flex items-center gap-2 space-x-reverse"><RadioGroupItem value="customer" id="payer-customer" /><label htmlFor="payer-customer" className="text-xs cursor-pointer">هەمووی لەلایەن کڕیارەوە دراوە</label></div>
+                                            <div className="flex items-center gap-2 space-x-reverse"><RadioGroupItem value="us" id="payer-us" /><label htmlFor="payer-us" className="text-xs cursor-pointer">هەمووی لەلایەن ئێمەوە دراوە</label></div>
+                                            <div className="flex items-center gap-2 space-x-reverse"><RadioGroupItem value="both" id="payer-both" /><label htmlFor="payer-both" className="text-xs cursor-pointer">لە هەردوو لاوە دراوە</label></div>
+                                        </RadioGroup>
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
+
+                        {deliveryCostPayer === 'both' && (
+                            <FormField
+                                control={form.control}
+                                name="deliveryCostCustomerShare"
+                                render={({ field }) => (
+                                    <FormItem className="space-y-1 pt-2">
+                                        <FormLabel className="text-xs text-primary">بەشی کڕیار لەم تێچووە</FormLabel>
+                                        <FormControl>
+                                            <Input type="number" step="0.01" className="h-9 text-sm text-left border-primary/50" dir="ltr" {...field} />
+                                        </FormControl>
+                                        <FormMessage className="text-[10px]" />
+                                    </FormItem>
+                                )}
+                            />
                         )}
-                    />
+                    </div>
                      <div className="grid grid-cols-2 gap-3 sm:gap-4 items-end">
                     <FormField
                         control={form.control}
@@ -927,9 +997,22 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                         <span className="text-xs sm:text-sm text-muted-foreground">داشکاندنی گشتی:</span>
                         <ConfidentialBlur><span className="text-sm sm:text-base font-semibold text-destructive">-{currencyFormatter.format(discountAmount)}</span></ConfidentialBlur>
                     </div>
-                    <div className="flex items-center justify-between gap-4 p-1.5 sm:p-2 rounded-md">
-                        <span className="text-xs sm:text-sm text-muted-foreground">تێچووی گەیاندن:</span>
-                        <ConfidentialBlur><span className="text-sm sm:text-base font-semibold">{currencyFormatter.format(Number(deliveryCost) || 0)}</span></ConfidentialBlur>
+                    <div className="flex flex-col gap-1 p-1.5 sm:p-2 rounded-md">
+                        <div className="flex items-center justify-between gap-4">
+                            <span className="text-xs sm:text-sm text-muted-foreground">تێچووی گەیاندن:</span>
+                            <ConfidentialBlur>
+                                <span className="text-sm sm:text-base font-semibold">
+                                    {deliveryCostCurrency === 'IQD' 
+                                        ? new Intl.NumberFormat('en-US').format(Number(deliveryCost) || 0) + ' IQD'
+                                        : currencyFormatter.format(Number(deliveryCost) || 0)}
+                                </span>
+                            </ConfidentialBlur>
+                        </div>
+                        {deliveryCostPayer !== 'customer' && (
+                            <span className="text-[10px] text-muted-foreground mt-1">
+                                {deliveryCostPayer === 'us' ? '(هەمووی لەلایەن ئێمەوە دراوە)' : `(لە هەردوو لاوە دراوە - بەشی کڕیار: ${deliveryCostCurrency === 'IQD' ? new Intl.NumberFormat('en-US').format(Number(deliveryCostCustomerShare) || 0) + ' IQD' : currencyFormatter.format(Number(deliveryCostCustomerShare) || 0)})`}
+                            </span>
+                        )}
                     </div>
                     <div className="flex items-center justify-between gap-4 p-1.5 sm:p-2 rounded-md bg-secondary/80 text-base sm:text-lg">
                         <span className="font-bold">کۆی گشتی:</span>
