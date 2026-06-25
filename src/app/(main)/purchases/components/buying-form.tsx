@@ -504,6 +504,23 @@ export function BuyingForm({ onSave, formId, initialItems }: BuyingFormProps) {
                 };
                 transaction.set(productSubCollectionRef, productData);
             });
+
+            // Phase 5: Auto-record new product names in product_definitions
+            const existingProductNames = new Set(productDefinitions?.map(p => p.productName.toLowerCase().trim()) || []);
+            
+            items.forEach(item => {
+                const normalizedName = item.product.toLowerCase().trim();
+                if (!existingProductNames.has(normalizedName)) {
+                    const newDefRef = doc(collection(firestore, 'product_definitions'));
+                    transaction.set(newDefRef, {
+                        id: newDefRef.id,
+                        productName: item.product.trim(),
+                        category: item.category,
+                        sellingPrice: item.sellingPrice || 0,
+                    });
+                    existingProductNames.add(normalizedName);
+                }
+            });
         });
 
         toast({
