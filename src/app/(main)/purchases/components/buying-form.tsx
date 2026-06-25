@@ -597,18 +597,19 @@ export function BuyingForm({ onSave, formId, initialItems }: BuyingFormProps) {
         
         <div className="relative border-t pt-6">
             {/* Desktop Table */}
-            <Table className="hidden md:table">
-                <TableHeader>
-                    <TableRow className="bg-primary/90 hover:bg-primary">
-                        <TableHead className="w-2/5 text-primary-foreground text-center">کاڵا</TableHead>
-                        <TableHead className="w-[15%] text-primary-foreground text-center">پۆل</TableHead>
-                        <TableHead className="text-primary-foreground text-center">دانە</TableHead>
-                        <TableHead className="text-primary-foreground text-center">نرخی کڕین (USD)</TableHead>
-                        <TableHead className="text-primary-foreground text-center">نرخی فرۆشتن (USD)</TableHead>
-                        <TableHead className="text-primary-foreground text-center">نرخی کۆ (USD)</TableHead>
-                        <TableHead></TableHead>
-                    </TableRow>
-                </TableHeader>
+            <div className="hidden md:block overflow-x-auto pb-4">
+                <Table className="min-w-[800px]">
+                    <TableHeader>
+                        <TableRow className="bg-primary/90 hover:bg-primary">
+                            <TableHead className="w-[30%] min-w-[200px] text-primary-foreground text-center">کاڵا</TableHead>
+                            <TableHead className="w-[15%] min-w-[120px] text-primary-foreground text-center">پۆل</TableHead>
+                            <TableHead className="w-[10%] min-w-[80px] text-primary-foreground text-center">دانە</TableHead>
+                            <TableHead className="w-[15%] min-w-[120px] text-primary-foreground text-center">نرخی کڕین (USD)</TableHead>
+                            <TableHead className="w-[15%] min-w-[120px] text-primary-foreground text-center">نرخی فرۆشتن (USD)</TableHead>
+                            <TableHead className="w-[15%] min-w-[120px] text-primary-foreground text-center">نرخی کۆ (USD)</TableHead>
+                            <TableHead className="w-12"></TableHead>
+                        </TableRow>
+                    </TableHeader>
                 <TableBody>
                      {fields.map((field, index) => (
                         <BuyingFormItemRow
@@ -623,6 +624,7 @@ export function BuyingForm({ onSave, formId, initialItems }: BuyingFormProps) {
                     ))}
                 </TableBody>
             </Table>
+            </div>
             {/* Mobile Cards */}
              <div className="space-y-4 md:hidden">
                 {fields.map((field, index) => (
@@ -645,30 +647,30 @@ export function BuyingForm({ onSave, formId, initialItems }: BuyingFormProps) {
             </div>
         </div>
 
-        <div className="flex justify-center md:justify-end items-start gap-4 pt-6 border-t">
-            <div className="space-y-2 text-left w-full md:w-auto md:min-w-[280px]">
-                <div className="flex items-center justify-between gap-4 p-1.5 sm:p-2 rounded-md">
-                    <span className="text-xs sm:text-sm text-muted-foreground">:کۆی کاڵاکان</span>
-                    <ConfidentialBlur><span className="text-sm sm:text-base font-semibold">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(subTotal)}</span></ConfidentialBlur>
+        <div className="flex justify-start pt-6 mt-6 border-t">
+            <div className="space-y-3 w-full sm:w-[350px]">
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                    <span className="text-sm font-medium text-muted-foreground">کۆی کاڵاکان:</span>
+                    <ConfidentialBlur><span className="text-base font-semibold">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(subTotal)}</span></ConfidentialBlur>
                 </div>
-                 <div className="flex items-center justify-between gap-4 p-1.5 sm:p-2 rounded-md">
+                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                     <FormField
                         control={form.control}
                         name="customsFee"
                         render={({ field }) => (
                             <FormItem className="flex items-center justify-between w-full space-y-0 gap-4">
-                                <FormLabel className="text-xs sm:text-sm text-muted-foreground">:گومرگ (USD)</FormLabel>
+                                <FormLabel className="text-sm font-medium text-muted-foreground whitespace-nowrap">گومرگ (USD):</FormLabel>
                                 <FormControl>
-                                    <Input type="number" step="0.01" {...field} className="w-24 sm:w-32 h-9 sm:h-10 text-sm sm:text-base" />
+                                    <Input type="number" step="0.01" {...field} className="w-32 h-10 text-base font-semibold text-left" dir="ltr" />
                                 </FormControl>
                                 <FormMessage className="text-[10px]" />
                             </FormItem>
                         )}
                     />
                 </div>
-                 <div className="flex items-center justify-between gap-4 p-1.5 sm:p-2 rounded-md bg-secondary/80">
-                    <span className="text-sm sm:text-base font-bold">:کۆی گشتی (USD)</span>
-                    <ConfidentialBlur><span className="font-bold text-base sm:text-lg">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalAmount)}</span></ConfidentialBlur>
+                 <div className="flex items-center justify-between p-4 bg-primary/10 rounded-lg border border-primary/20">
+                    <span className="text-base font-bold text-primary">کۆی گشتی (USD):</span>
+                    <ConfidentialBlur><span className="text-lg font-bold text-primary">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalAmount)}</span></ConfidentialBlur>
                 </div>
             </div>
         </div>

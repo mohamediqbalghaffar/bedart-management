@@ -1,0 +1,2585 @@
+[
+  {
+    "name": "دۆشەکی تێسلا سێراپی ١٨٠*٢",
+    "remaining": 13,
+    "category": "Mattress",
+    "unitPrice": 212,
+    "id": "دۆشەکی-تێسلا-سێراپی-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئالێگرا ١٦٠*٢",
+    "remaining": 5,
+    "category": "Mattress",
+    "unitPrice": 239,
+    "id": "دۆشەکی-ئالێگرا-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی ئۆپتیمەم ١*٢",
+    "remaining": 4,
+    "category": "Bed",
+    "unitPrice": 206,
+    "id": "سێتی-ئۆپتیمەم-١-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی کلاودس ١٨٠*٢",
+    "remaining": 7,
+    "category": "Mattress",
+    "unitPrice": 293,
+    "id": "دۆشەکی-کلاودس-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی سێرمۆ ریگولەیت ١٢٠*٢",
+    "remaining": 30,
+    "category": "Mattress",
+    "unitPrice": 151,
+    "id": "دۆشەکی-سێرمۆ-ریگولەیت-١٢٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی کلاودس ١٦٠*٢",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 267,
+    "id": "دۆشەکی-کلاودس-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی سویس کوین ١٦٠*٢",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 208,
+    "id": "دۆشەکی-سویس-کوین-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئالێگرا ١٨٠*٢",
+    "remaining": 25,
+    "category": "Mattress",
+    "unitPrice": 261,
+    "id": "دۆشەکی-ئالێگرا-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی کوول تەچ ١٨٠*٢",
+    "remaining": 10,
+    "category": "Mattress",
+    "unitPrice": 264,
+    "id": "دۆشەکی-کوول-تەچ-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی ئۆپتیمەم ١٢٠*٢",
+    "remaining": 4,
+    "category": "Bed",
+    "unitPrice": 230,
+    "id": "سێتی-ئۆپتیمەم-١٢٠-٢-warehouse"
+  },
+  {
+    "name": "تۆپەری لیڤی ٩٠*١٩٠",
+    "remaining": 27,
+    "category": "Mattress",
+    "unitPrice": 62,
+    "id": "تۆپەری-لیڤی-٩٠-١٩٠-warehouse"
+  },
+  {
+    "name": "دۆشەکی جۆی ١*٢",
+    "remaining": 3,
+    "category": "Mattress",
+    "unitPrice": 111,
+    "id": "دۆشەکی-جۆی-١-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی بامبوو لیف ١٨٠*٢",
+    "remaining": 27,
+    "category": "Mattress",
+    "unitPrice": 282,
+    "id": "دۆشەکی-بامبوو-لیف-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی کووڵ تەچ ١٦٠*٢",
+    "remaining": 3,
+    "category": "Mattress",
+    "unitPrice": 241,
+    "id": "دۆشەکی-کووڵ-تەچ-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی فلێکس فیت ١٢٠*٢",
+    "remaining": 12,
+    "category": "Mattress",
+    "unitPrice": 130,
+    "id": "دۆشەکی-فلێکس-فیت-١٢٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی سویس کوین ١٨٠*٢",
+    "remaining": 13,
+    "category": "Mattress",
+    "unitPrice": 227,
+    "id": "دۆشەکی-سویس-کوین-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی هێرمس ١٨٠*٢",
+    "remaining": 21,
+    "category": "Mattress",
+    "unitPrice": 260,
+    "id": "دۆشەکی-هێرمس-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی سێرمۆ ٩٠*١٩٠",
+    "remaining": 13,
+    "category": "Mattress",
+    "unitPrice": 119,
+    "id": "دۆشەکی-سێرمۆ-٩٠-١٩٠-warehouse"
+  },
+  {
+    "name": "دۆشەکی سێرمۆ ریگولەیت ١٨٠*٢",
+    "remaining": 43,
+    "category": "Mattress",
+    "unitPrice": 214,
+    "id": "دۆشەکی-سێرمۆ-ریگولەیت-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی لینین ئۆرگانیک ١٨٠*٢",
+    "remaining": 11,
+    "category": "Mattress",
+    "unitPrice": 203,
+    "id": "دۆشەکی-لینین-ئۆرگانیک-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئینفنیتی ئارمیس ١٦٠*٢",
+    "remaining": 7,
+    "category": "Mattress",
+    "unitPrice": 0,
+    "id": "دۆشەکی-ئینفنیتی-ئارمیس-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی فلێکس فیت ٩٠*١٩٠",
+    "remaining": 14,
+    "category": "Mattress",
+    "unitPrice": 106,
+    "id": "دۆشەکی-فلێکس-فیت-٩٠-١٩٠-warehouse"
+  },
+  {
+    "name": "دۆشەکی فلێکس فیت ١٨٠*٢",
+    "remaining": 14,
+    "category": "Mattress",
+    "unitPrice": 179,
+    "id": "دۆشەکی-فلێکس-فیت-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی سێرمۆ ڕیگولەیت ١٥٠*٢",
+    "remaining": 4,
+    "category": "Mattress",
+    "unitPrice": 185,
+    "id": "دۆشەکی-سێرمۆ-ڕیگولەیت-١٥٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ماکس سلیپ ١*٢",
+    "remaining": 3,
+    "category": "Mattress",
+    "unitPrice": 111,
+    "id": "دۆشەکی-ماکس-سلیپ-١-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی کلاودس ٢*٢",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 317,
+    "id": "دۆشەکی-کلاودس-٢-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی فلێکس فیت ١٦٠*٢",
+    "remaining": 4,
+    "category": "Mattress",
+    "unitPrice": 164,
+    "id": "دۆشەکی-فلێکس-فیت-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی کلاودس ١٨٠*٢",
+    "remaining": 2,
+    "category": "Bed",
+    "unitPrice": 480,
+    "id": "سێتی-کلاودس-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی کڵاود180*2",
+    "remaining": 38,
+    "category": "Mattress",
+    "unitPrice": 450,
+    "id": "دۆشەکی-کڵاود180-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی پاڕادایس180*2",
+    "remaining": 19,
+    "category": "Mattress",
+    "unitPrice": 435,
+    "id": "دۆشەکی-پاڕادایس180-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی تۆپ کوالێتی180*2",
+    "remaining": 23,
+    "category": "Mattress",
+    "unitPrice": 500,
+    "id": "دۆشەکی-تۆپ-کوالێتی180-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی دریم ماستەر١٢٠*٢",
+    "remaining": 20,
+    "category": "Mattress",
+    "unitPrice": 136,
+    "id": "دۆشەکی-دریم-ماستەر١٢٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی دریم ماستەر١٦٠*٢",
+    "remaining": 21,
+    "category": "Mattress",
+    "unitPrice": 150,
+    "id": "دۆشەکی-دریم-ماستەر١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی دریم ماستەر ٩٠*٢",
+    "remaining": 11,
+    "category": "Mattress",
+    "unitPrice": 100,
+    "id": "دۆشەکی-دریم-ماستەر-٩٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی دریم ماستەر٢*٢",
+    "remaining": 10,
+    "category": "Mattress",
+    "unitPrice": 212,
+    "id": "دۆشەکی-دریم-ماستەر٢-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی کوینلاند١٨٠*٢",
+    "remaining": 30,
+    "category": "Mattress",
+    "unitPrice": 170,
+    "id": "دۆشەکی-کوینلاند١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئایۆنیک ئینێرجی ٢*٢",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 430,
+    "id": "دۆشەکی-ئایۆنیک-ئینێرجی-٢-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی بێتا140*2",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 325,
+    "id": "دۆشەکی-بێتا140-2-warehouse"
+  },
+  {
+    "name": "پێتی ماتمازێل2*2",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 95,
+    "id": "پێتی-ماتمازێل2-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی بێست 180*2",
+    "remaining": 7,
+    "category": "Mattress",
+    "unitPrice": 650,
+    "id": "دۆشەکی-بێست-180-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی بێتا120*2",
+    "remaining": 5,
+    "category": "Mattress",
+    "unitPrice": 275,
+    "id": "دۆشەکی-بێتا120-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی ڕۆیاڵ160*2",
+    "remaining": 5,
+    "category": "Mattress",
+    "unitPrice": 375,
+    "id": "دۆشەکی-ڕۆیاڵ160-2-warehouse"
+  },
+  {
+    "name": "سێتی ئیفۆر 1*2",
+    "remaining": 5,
+    "category": "Bed",
+    "unitPrice": 194,
+    "id": "سێتی-ئیفۆر-1-2-warehouse"
+  },
+  {
+    "name": "سێتی میلۆدی 180*2",
+    "remaining": 7,
+    "category": "Bed",
+    "unitPrice": 407,
+    "id": "سێتی-میلۆدی-180-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی ڤیسکۆ ئەنەتۆمی 180*2",
+    "remaining": 3,
+    "category": "Mattress",
+    "unitPrice": 830,
+    "id": "دۆشەکی-ڤیسکۆ-ئەنەتۆمی-180-2-warehouse"
+  },
+  {
+    "name": "سێتی لۆفت 140*2",
+    "remaining": 2,
+    "category": "Bed",
+    "unitPrice": 255,
+    "id": "سێتی-لۆفت-140-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی ڤیسکۆ ئەنەتۆمی 2*2",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 850,
+    "id": "دۆشەکی-ڤیسکۆ-ئەنەتۆمی-2-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئەلیگرۆ180*2",
+    "remaining": 27,
+    "category": "Mattress",
+    "unitPrice": 700,
+    "id": "دۆشەکی-ئەلیگرۆ180-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی ڕۆیاڵ180*2",
+    "remaining": 12,
+    "category": "Mattress",
+    "unitPrice": 400,
+    "id": "دۆشەکی-ڕۆیاڵ180-2-warehouse"
+  },
+  {
+    "name": "سێتی سەفیر سادە 180*2",
+    "remaining": 3,
+    "category": "Bed",
+    "unitPrice": 375,
+    "id": "سێتی-سەفیر-سادە-180-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئاڕتیمس180*2",
+    "remaining": 8,
+    "category": "Mattress",
+    "unitPrice": 700,
+    "id": "دۆشەکی-ئاڕتیمس180-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی ڕۆیاڵ120*2",
+    "remaining": 12,
+    "category": "Mattress",
+    "unitPrice": 280,
+    "id": "دۆشەکی-ڕۆیاڵ120-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی گراند دیلوکس١٨٠*٢",
+    "remaining": 25,
+    "category": "Mattress",
+    "unitPrice": 300,
+    "id": "دۆشەکی-گراند-دیلوکس١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی بێتریس120*2",
+    "remaining": 5,
+    "category": "Mattress",
+    "unitPrice": 285,
+    "id": "دۆشەکی-بێتریس120-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئارڤین دیلوکس١٨٠*٢",
+    "remaining": 9,
+    "category": "Mattress",
+    "unitPrice": 350,
+    "id": "دۆشەکی-ئارڤین-دیلوکس١٨٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی دریم ماستەر١*٢",
+    "remaining": 6,
+    "category": "Bed",
+    "unitPrice": 200,
+    "id": "سێتی-دریم-ماستەر١-٢-warehouse"
+  },
+  {
+    "name": "سێتی گراند دیلوکس١٦٠*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 300,
+    "id": "سێتی-گراند-دیلوکس١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی دریم ماستەر١٨٠*٢",
+    "remaining": 48,
+    "category": "Mattress",
+    "unitPrice": 160,
+    "id": "دۆشەکی-دریم-ماستەر١٨٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی دریم ماستەر١٨٠*٢",
+    "remaining": 16,
+    "category": "Bed",
+    "unitPrice": 300,
+    "id": "سێتی-دریم-ماستەر١٨٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی دریم ماستەر١٢٠*٢",
+    "remaining": 5,
+    "category": "Bed",
+    "unitPrice": 200,
+    "id": "سێتی-دریم-ماستەر١٢٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی گراندیلوکس١٨٠*٢",
+    "remaining": 9,
+    "category": "Bed",
+    "unitPrice": 300,
+    "id": "سێتی-گراندیلوکس١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی کۆمفی سلیپ١٦٠*٢",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 302,
+    "id": "دۆشەکی-کۆمفی-سلیپ١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئینفینیتی١٦٠*٢",
+    "remaining": 6,
+    "category": "Mattress",
+    "unitPrice": 310,
+    "id": "دۆشەکی-ئینفینیتی١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی گۆلد کۆمفۆرت١٦٠*٢",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 290,
+    "id": "دۆشەکی-گۆلد-کۆمفۆرت١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئارڤین دیلوکس١٦٠*٢",
+    "remaining": 3,
+    "category": "Mattress",
+    "unitPrice": 300,
+    "id": "دۆشەکی-ئارڤین-دیلوکس١٦٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی کۆمفی سلیپ١٨٠*٢",
+    "remaining": 2,
+    "category": "Bed",
+    "unitPrice": 300,
+    "id": "سێتی-کۆمفی-سلیپ١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی دریم ماستەر ١*٢",
+    "remaining": 19,
+    "category": "Mattress",
+    "unitPrice": 90,
+    "id": "دۆشەکی-دریم-ماستەر-١-٢-warehouse"
+  },
+  {
+    "name": "سێتی ئینفینیتی١٨٠*٢",
+    "remaining": 5,
+    "category": "Bed",
+    "unitPrice": 0,
+    "id": "سێتی-ئینفینیتی١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ستایل١٨٠*٢",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 220,
+    "id": "دۆشەکی-ستایل١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی تۆپ کوالێتی160*2",
+    "remaining": 7,
+    "category": "Mattress",
+    "unitPrice": 440,
+    "id": "دۆشەکی-تۆپ-کوالێتی160-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئەلیگرۆ160*2",
+    "remaining": 8,
+    "category": "Mattress",
+    "unitPrice": 550,
+    "id": "دۆشەکی-ئەلیگرۆ160-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی گۆلد کۆمفۆرت١٨٠*٢",
+    "remaining": 13,
+    "category": "Mattress",
+    "unitPrice": 300,
+    "id": "دۆشەکی-گۆلد-کۆمفۆرت١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی کۆمفی سلیپ١٨٠*٢",
+    "remaining": 13,
+    "category": "Mattress",
+    "unitPrice": 310,
+    "id": "دۆشەکی-کۆمفی-سلیپ١٨٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی ئارڤین دیلوکس١٨٠*٢",
+    "remaining": 2,
+    "category": "Bed",
+    "unitPrice": 300,
+    "id": "سێتی-ئارڤین-دیلوکس١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی گراند دیلوکس٢*٢",
+    "remaining": 13,
+    "category": "Mattress",
+    "unitPrice": 300,
+    "id": "دۆشەکی-گراند-دیلوکس٢-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئینفینیتی١٨٠*٢",
+    "remaining": 10,
+    "category": "Mattress",
+    "unitPrice": 290,
+    "id": "دۆشەکی-ئینفینیتی١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی گراند دیلوکس١٦٠*٢",
+    "remaining": 4,
+    "category": "Mattress",
+    "unitPrice": 280,
+    "id": "دۆشەکی-گراند-دیلوکس١٦٠-٢-warehouse"
+  },
+  {
+    "name": "پێتی ماتمازێل 90*190",
+    "remaining": 40,
+    "category": "Mattress",
+    "unitPrice": 60,
+    "id": "پێتی-ماتمازێل-90-190-warehouse"
+  },
+  {
+    "name": "سێتی لارا 160*2",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 0,
+    "id": "سێتی-لارا-160-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی بێتا180*2",
+    "remaining": 12,
+    "category": "Mattress",
+    "unitPrice": 400,
+    "id": "دۆشەکی-بێتا180-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی ڕۆیاڵ1*2",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 110,
+    "id": "دۆشەکی-ڕۆیاڵ1-2-warehouse"
+  },
+  {
+    "name": "سێتی سەفیر 180*2",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 320,
+    "id": "سێتی-سەفیر-180-2-warehouse"
+  },
+  {
+    "name": "پوف ئینێرجی 140",
+    "remaining": 4,
+    "category": "Bed",
+    "unitPrice": 57,
+    "id": "پوف-ئینێرجی-140-warehouse"
+  },
+  {
+    "name": "سێتی چێستەر 180*2",
+    "remaining": 2,
+    "category": "Bed",
+    "unitPrice": 382,
+    "id": "سێتی-چێستەر-180-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی میمۆزا1*2",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 130,
+    "id": "دۆشەکی-میمۆزا1-2-warehouse"
+  },
+  {
+    "name": "پوف ئینێرجی 90",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 43,
+    "id": "پوف-ئینێرجی-90-warehouse"
+  },
+  {
+    "name": "سێتی ئاڕتیمس 160*2",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 0,
+    "id": "سێتی-ئاڕتیمس-160-2-warehouse"
+  },
+  {
+    "name": "پوف سیڤیلا",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 58,
+    "id": "پوف-سیڤیلا-warehouse"
+  },
+  {
+    "name": "سێتی سورف 160*2",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 375,
+    "id": "سێتی-سورف-160-2-warehouse"
+  },
+  {
+    "name": "سێتی ئەلیگرۆ 160*2",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 0,
+    "id": "سێتی-ئەلیگرۆ-160-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی کڵاود160*2",
+    "remaining": 9,
+    "category": "Mattress",
+    "unitPrice": 475,
+    "id": "دۆشەکی-کڵاود160-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی برییز 160*2",
+    "remaining": 4,
+    "category": "Mattress",
+    "unitPrice": 630,
+    "id": "دۆشەکی-برییز-160-2-warehouse"
+  },
+  {
+    "name": "سێتی بڕاون 160*2",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 0,
+    "id": "سێتی-بڕاون-160-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی بێتا160*2",
+    "remaining": 8,
+    "category": "Mattress",
+    "unitPrice": 375,
+    "id": "دۆشەکی-بێتا160-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی ستاره 90*190",
+    "remaining": 7,
+    "category": "Mattress",
+    "unitPrice": 185,
+    "id": "دۆشەکی-ستاره-90-190-warehouse"
+  },
+  {
+    "name": "دۆشەکی پاڕادایس160*2",
+    "remaining": 10,
+    "category": "Mattress",
+    "unitPrice": 375,
+    "id": "دۆشەکی-پاڕادایس160-2-warehouse"
+  },
+  {
+    "name": "کۆمیدی ئاڕتیمس",
+    "remaining": 2,
+    "category": "Bed",
+    "unitPrice": 125,
+    "id": "کۆمیدی-ئاڕتیمس-warehouse"
+  },
+  {
+    "name": "دۆشەکی ماتمازێل 160*2",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 500,
+    "id": "دۆشەکی-ماتمازێل-160-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی ستایل160*2",
+    "remaining": 3,
+    "category": "Mattress",
+    "unitPrice": 545,
+    "id": "دۆشەکی-ستایل160-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی بێست160*2",
+    "remaining": 5,
+    "category": "Mattress",
+    "unitPrice": 590,
+    "id": "دۆشەکی-بێست160-2-warehouse"
+  },
+  {
+    "name": "سێتی رۆس180*2",
+    "remaining": 5,
+    "category": "Bed",
+    "unitPrice": 362,
+    "id": "سێتی-رۆس180-2-warehouse"
+  },
+  {
+    "name": "پوف چێستەر 90",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 50,
+    "id": "پوف-چێستەر-90-warehouse"
+  },
+  {
+    "name": "دۆشەکی دایمۆند 160*2",
+    "remaining": 7,
+    "category": "Mattress",
+    "unitPrice": 650,
+    "id": "دۆشەکی-دایمۆند-160-2-warehouse"
+  },
+  {
+    "name": "پوف ئەلیگرۆ",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 58,
+    "id": "پوف-ئەلیگرۆ-warehouse"
+  },
+  {
+    "name": "پوف ئاڕتیمس",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 58,
+    "id": "پوف-ئاڕتیمس-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئاڕتیمس160*2",
+    "remaining": 3,
+    "category": "Mattress",
+    "unitPrice": 630,
+    "id": "دۆشەکی-ئاڕتیمس160-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی ستاره1*2",
+    "remaining": 9,
+    "category": "Mattress",
+    "unitPrice": 195,
+    "id": "دۆشەکی-ستاره1-2-warehouse"
+  },
+  {
+    "name": "سێتی دایمۆند 160*2",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 390,
+    "id": "سێتی-دایمۆند-160-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی سیڤیلا کۆن 160*2",
+    "remaining": 4,
+    "category": "Mattress",
+    "unitPrice": 600,
+    "id": "دۆشەکی-سیڤیلا-کۆن-160-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی ستاره90*2",
+    "remaining": 5,
+    "category": "Mattress",
+    "unitPrice": 190,
+    "id": "دۆشەکی-ستاره90-2-warehouse"
+  },
+  {
+    "name": "سێتی نینۆڤا 180*2",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 0,
+    "id": "سێتی-نینۆڤا-180-2-warehouse"
+  },
+  {
+    "name": "سێتی داستی 1*2",
+    "remaining": 3,
+    "category": "Bed",
+    "unitPrice": 186,
+    "id": "سێتی-داستی-1-2-warehouse"
+  },
+  {
+    "name": "سێتی ژادە 160*2",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 0,
+    "id": "سێتی-ژادە-160-2-warehouse"
+  },
+  {
+    "name": "پوف چێستەر 140",
+    "remaining": 2,
+    "category": "Bed",
+    "unitPrice": 72,
+    "id": "پوف-چێستەر-140-warehouse"
+  },
+  {
+    "name": "سێتی دریم ماستەر١٦٠*٢",
+    "remaining": 5,
+    "category": "Bed",
+    "unitPrice": 230,
+    "id": "سێتی-دریم-ماستەر١٦٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی کوینلاند١٨٠*٢",
+    "remaining": 16,
+    "category": "Bed",
+    "unitPrice": 250,
+    "id": "سێتی-کوینلاند١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی دریم ماستەر٩٠*١٩٠",
+    "remaining": 27,
+    "category": "Mattress",
+    "unitPrice": 70,
+    "id": "دۆشەکی-دریم-ماستەر٩٠-١٩٠-warehouse"
+  },
+  {
+    "name": "دۆشەکی کوینلاند١٦٠*٢",
+    "remaining": 16,
+    "category": "Mattress",
+    "unitPrice": 180,
+    "id": "دۆشەکی-کوینلاند١٦٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی کوینلاند١٦٠*٢",
+    "remaining": 7,
+    "category": "Bed",
+    "unitPrice": 260,
+    "id": "سێتی-کوینلاند١٦٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی چێستەر 120 *2",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 328,
+    "id": "سێتی-چێستەر-120--2-warehouse"
+  },
+  {
+    "name": "دۆشەکی بێتا150*2",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 350,
+    "id": "دۆشەکی-بێتا150-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی بێێرا١٨٠*٢",
+    "remaining": 4,
+    "category": "Mattress",
+    "unitPrice": 193,
+    "id": "دۆشەکی-بێێرا١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی دایمۆند120*2",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 445,
+    "id": "دۆشەکی-دایمۆند120-2-warehouse"
+  },
+  {
+    "name": "سێتی دیلوکس١٨٠*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 401,
+    "id": "سێتی-دیلوکس١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی پاڕادایس ١٤٠*٢",
+    "remaining": 6,
+    "category": "Mattress",
+    "unitPrice": 231,
+    "id": "دۆشەکی-پاڕادایس-١٤٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی بێتا1*2",
+    "remaining": 9,
+    "category": "Mattress",
+    "unitPrice": 235,
+    "id": "دۆشەکی-بێتا1-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی بێست2*2",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 700,
+    "id": "دۆشەکی-بێست2-2-warehouse"
+  },
+  {
+    "name": "سێتی ڕۆس1*2",
+    "remaining": 4,
+    "category": "Bed",
+    "unitPrice": 202,
+    "id": "سێتی-ڕۆس1-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی برییز ١٢٠*٢",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 240,
+    "id": "دۆشەکی-برییز-١٢٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی ئیفۆر 180*2",
+    "remaining": 3,
+    "category": "Bed",
+    "unitPrice": 352,
+    "id": "سێتی-ئیفۆر-180-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی برییز180*2",
+    "remaining": 8,
+    "category": "Mattress",
+    "unitPrice": 700,
+    "id": "دۆشەکی-برییز180-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی دایمۆند2*2",
+    "remaining": 3,
+    "category": "Mattress",
+    "unitPrice": 725,
+    "id": "دۆشەکی-دایمۆند2-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی دایمۆند180*2",
+    "remaining": 7,
+    "category": "Mattress",
+    "unitPrice": 700,
+    "id": "دۆشەکی-دایمۆند180-2-warehouse"
+  },
+  {
+    "name": "کۆمیدی سیڤیلا",
+    "remaining": 3,
+    "category": "Bed",
+    "unitPrice": 130,
+    "id": "کۆمیدی-سیڤیلا-warehouse"
+  },
+  {
+    "name": "سێتی سیڤیلا 180*2",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 400,
+    "id": "سێتی-سیڤیلا-180-2-warehouse"
+  },
+  {
+    "name": "سێتی سورف 180*2",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 415,
+    "id": "سێتی-سورف-180-2-warehouse"
+  },
+  {
+    "name": "سێتی سەفیر سادە 2*2",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 350,
+    "id": "سێتی-سەفیر-سادە-2-2-warehouse"
+  },
+  {
+    "name": "سێتی پلازا 180*2",
+    "remaining": 5,
+    "category": "Bed",
+    "unitPrice": 280,
+    "id": "سێتی-پلازا-180-2-warehouse"
+  },
+  {
+    "name": "سێتی ستایل180*2",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 472,
+    "id": "سێتی-ستایل180-2-warehouse"
+  },
+  {
+    "name": "سێتی چێستەر سادە 180*2",
+    "remaining": 2,
+    "category": "Bed",
+    "unitPrice": 360,
+    "id": "سێتی-چێستەر-سادە-180-2-warehouse"
+  },
+  {
+    "name": "کۆمیدی دایمۆند",
+    "remaining": 7,
+    "category": "Bed",
+    "unitPrice": 130,
+    "id": "کۆمیدی-دایمۆند-warehouse"
+  },
+  {
+    "name": "دۆشەکی پاڕادایس120*2",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 275,
+    "id": "دۆشەکی-پاڕادایس120-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی بێتا90*2",
+    "remaining": 5,
+    "category": "Mattress",
+    "unitPrice": 215,
+    "id": "دۆشەکی-بێتا90-2-warehouse"
+  },
+  {
+    "name": "سێتی دایمۆند 180*2",
+    "remaining": 2,
+    "category": "Bed",
+    "unitPrice": 270,
+    "id": "سێتی-دایمۆند-180-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی بێتا2*2",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 400,
+    "id": "دۆشەکی-بێتا2-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئەلیگرۆ١٤٠*2",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 309,
+    "id": "دۆشەکی-ئەلیگرۆ١٤٠-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئەلیگرۆ2*2",
+    "remaining": 3,
+    "category": "Mattress",
+    "unitPrice": 725,
+    "id": "دۆشەکی-ئەلیگرۆ2-2-warehouse"
+  },
+  {
+    "name": "سێتی پلاتین 2*2",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 300,
+    "id": "سێتی-پلاتین-2-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی لومینا ١٨٠*٢",
+    "remaining": 4,
+    "category": "Mattress",
+    "unitPrice": 165,
+    "id": "دۆشەکی-لومینا-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئەلۆڤێرا ١٨٠*٢",
+    "remaining": 3,
+    "category": "Mattress",
+    "unitPrice": 190,
+    "id": "دۆشەکی-ئەلۆڤێرا-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ڤیسکۆی بێد ئاند سلیپ ١٨٠*٢",
+    "remaining": 3,
+    "category": "Mattress",
+    "unitPrice": 165,
+    "id": "دۆشەکی-ڤیسکۆی-بێد-ئاند-سلیپ-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "پشتی 60*43*11",
+    "remaining": 55,
+    "category": "Pillow",
+    "unitPrice": 21,
+    "id": "پشتی-60-43-11-warehouse"
+  },
+  {
+    "name": "پشتی دوقەد",
+    "remaining": 15,
+    "category": "Pillow",
+    "unitPrice": 23,
+    "id": "پشتی-دوقەد-warehouse"
+  },
+  {
+    "name": "پشتی 60*40*16",
+    "remaining": 50,
+    "category": "Pillow",
+    "unitPrice": 22,
+    "id": "پشتی-60-40-16-warehouse"
+  },
+  {
+    "name": "بەرگ بامبوو١٦٠*٢",
+    "remaining": 44,
+    "category": "Cover",
+    "unitPrice": 25,
+    "id": "بەرگ-بامبوو١٦٠-٢-warehouse"
+  },
+  {
+    "name": "پشتی 70*42*15",
+    "remaining": 68,
+    "category": "Pillow",
+    "unitPrice": 22,
+    "id": "پشتی-70-42-15-warehouse"
+  },
+  {
+    "name": "بەرگ بامبۆ ٢*٢",
+    "remaining": 18,
+    "category": "Cover",
+    "unitPrice": 25,
+    "id": "بەرگ-بامبۆ-٢-٢-warehouse"
+  },
+  {
+    "name": "بەرگ بامبۆ 180*2",
+    "remaining": 56,
+    "category": "Cover",
+    "unitPrice": 27,
+    "id": "بەرگ-بامبۆ-180-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی دریم ماستەر١٤٠*٢",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 150,
+    "id": "دۆشەکی-دریم-ماستەر١٤٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ماتمازێل180*2",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 650,
+    "id": "دۆشەکی-ماتمازێل180-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی گراند دیلوکس١٤٠*٢",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 305,
+    "id": "دۆشەکی-گراند-دیلوکس١٤٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی دریم ماستەر ١٥٠*٢",
+    "remaining": 3,
+    "category": "Mattress",
+    "unitPrice": 190,
+    "id": "دۆشەکی-دریم-ماستەر-١٥٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئەمستەردام ١٨٠*٢",
+    "remaining": 19,
+    "category": "Mattress",
+    "unitPrice": 209,
+    "id": "دۆشەکی-ئەمستەردام-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی هێرمس ٢*٢",
+    "remaining": 9,
+    "category": "Mattress",
+    "unitPrice": 255,
+    "id": "دۆشەکی-هێرمس-٢-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئۆپتیمەم ٩٠*٢",
+    "remaining": 3,
+    "category": "Mattress",
+    "unitPrice": 98,
+    "id": "دۆشەکی-ئۆپتیمەم-٩٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی بامبوو لیف ١٦٠*٢",
+    "remaining": 11,
+    "category": "Mattress",
+    "unitPrice": 240,
+    "id": "دۆشەکی-بامبوو-لیف-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئینفنیتی ئارمیس ١٢٠*٢",
+    "remaining": 13,
+    "category": "Mattress",
+    "unitPrice": 109,
+    "id": "دۆشەکی-ئینفنیتی-ئارمیس-١٢٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی سێرمۆ ریگولەیت ١٦٠*٢",
+    "remaining": 17,
+    "category": "Mattress",
+    "unitPrice": 194,
+    "id": "دۆشەکی-سێرمۆ-ریگولەیت-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی هارمۆنی ١٨٠*٢",
+    "remaining": 5,
+    "category": "Mattress",
+    "unitPrice": 204,
+    "id": "دۆشەکی-هارمۆنی-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئۆپتیمەم ٩٠*١٩٠",
+    "remaining": 3,
+    "category": "Mattress",
+    "unitPrice": 91,
+    "id": "دۆشەکی-ئۆپتیمەم-٩٠-١٩٠-warehouse"
+  },
+  {
+    "name": "دۆشەکی کاسادە ١٨٠*٢",
+    "remaining": 6,
+    "category": "Mattress",
+    "unitPrice": 285,
+    "id": "دۆشەکی-کاسادە-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئارتێ ١*٢",
+    "remaining": 10,
+    "category": "Mattress",
+    "unitPrice": 87,
+    "id": "دۆشەکی-ئارتێ-١-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئارتێ ١٢٠*٢",
+    "remaining": 15,
+    "category": "Mattress",
+    "unitPrice": 88,
+    "id": "دۆشەکی-ئارتێ-١٢٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ڤیسکۆ نۆڤا پڵەس ١٦٠*٢",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 233,
+    "id": "دۆشەکی-ڤیسکۆ-نۆڤا-پڵەس-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ڤیسکۆ نۆڤا پڵەس ١٨٠*٢",
+    "remaining": 6,
+    "category": "Mattress",
+    "unitPrice": 260,
+    "id": "دۆشەکی-ڤیسکۆ-نۆڤا-پڵەس-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ساموا ١٢٠*٢",
+    "remaining": 4,
+    "category": "Mattress",
+    "unitPrice": 137,
+    "id": "دۆشەکی-ساموا-١٢٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئارتێ ٩٠*١٩٠",
+    "remaining": 10,
+    "category": "Mattress",
+    "unitPrice": 82,
+    "id": "دۆشەکی-ئارتێ-٩٠-١٩٠-warehouse"
+  },
+  {
+    "name": "دۆشەکی کاسادە ١٦٠*٢",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 255,
+    "id": "دۆشەکی-کاسادە-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی باڕۆک ١٨٠*٢",
+    "remaining": 6,
+    "category": "Mattress",
+    "unitPrice": 125,
+    "id": "دۆشەکی-باڕۆک-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئەمستەردام ١٦٠*٢",
+    "remaining": 6,
+    "category": "Mattress",
+    "unitPrice": 143,
+    "id": "دۆشەکی-ئەمستەردام-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی دریم ١٨٠*٢",
+    "remaining": 11,
+    "category": "Mattress",
+    "unitPrice": 122,
+    "id": "دۆشەکی-دریم-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی دریم ٩٠*٢",
+    "remaining": 10,
+    "category": "Mattress",
+    "unitPrice": 71,
+    "id": "دۆشەکی-دریم-٩٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی چارۆن ١٨٠*٢",
+    "remaining": 6,
+    "category": "Mattress",
+    "unitPrice": 260,
+    "id": "دۆشەکی-چارۆن-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی سێرمۆ ڕیگولەیت ٢*٢",
+    "remaining": 13,
+    "category": "Mattress",
+    "unitPrice": 191,
+    "id": "دۆشەکی-سێرمۆ-ڕیگولەیت-٢-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی کینگ ١٨٠*٢",
+    "remaining": 18,
+    "category": "Mattress",
+    "unitPrice": 240,
+    "id": "دۆشەکی-کینگ-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "بەرگ ڤیسکۆ L ١٦٠*٢",
+    "remaining": 30,
+    "category": "Cover",
+    "unitPrice": 15.5,
+    "id": "بەرگ-ڤیسکۆ-l-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "پشتی دانیشتنی ناو سەیارە/ژێر",
+    "remaining": 10,
+    "category": "Pillow",
+    "unitPrice": 9,
+    "id": "پشتی-دانیشتنی-ناو-سەیارە-ژێر-warehouse"
+  },
+  {
+    "name": "بەرگ ڤیسکۆ ١٨٠*٢",
+    "remaining": 100,
+    "category": "Cover",
+    "unitPrice": 16,
+    "id": "بەرگ-ڤیسکۆ-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "پشتی ڤیسکۆ L ٦٠*٤٠*١٥",
+    "remaining": 20,
+    "category": "Pillow",
+    "unitPrice": 21,
+    "id": "پشتی-ڤیسکۆ-l-٦٠-٤٠-١٥-warehouse"
+  },
+  {
+    "name": "بەرگ ڤیسکۆ ١*٢",
+    "remaining": 55,
+    "category": "Cover",
+    "unitPrice": 11,
+    "id": "بەرگ-ڤیسکۆ-١-٢-warehouse"
+  },
+  {
+    "name": "پشتی ڤیسکۆ L ٥٤*٤٠*١٢",
+    "remaining": 25,
+    "category": "Pillow",
+    "unitPrice": 17,
+    "id": "پشتی-ڤیسکۆ-l-٥٤-٤٠-١٢-warehouse"
+  },
+  {
+    "name": "پشتی ڤیسکۆ L ٦٠ * ٤٠ * ١٢",
+    "remaining": 175,
+    "category": "Pillow",
+    "unitPrice": 37,
+    "id": "پشتی-ڤیسکۆ-l-٦٠---٤٠---١٢-warehouse"
+  },
+  {
+    "name": "بەرگ ڤیسکۆ ١٢٠*٢",
+    "remaining": 45,
+    "category": "Cover",
+    "unitPrice": 12,
+    "id": "بەرگ-ڤیسکۆ-١٢٠-٢-warehouse"
+  },
+  {
+    "name": "پشتی ڤیسکۆ L بەرگی لۆکە سێرێنیتی تەچ ٦٥*٤٣*١٢",
+    "remaining": 20,
+    "category": "Pillow",
+    "unitPrice": 18,
+    "id": "پشتی-ڤیسکۆ-l-بەرگی-لۆکە-سێرێنیتی-تەچ-٦٥-٤٣-١٢-warehouse"
+  },
+  {
+    "name": "پشتی دانیشتنی ناو سەیارە/پشت",
+    "remaining": 5,
+    "category": "Pillow",
+    "unitPrice": 9,
+    "id": "پشتی-دانیشتنی-ناو-سەیارە-پشت-warehouse"
+  },
+  {
+    "name": "پشتی ڤیسکۆ L ٧٠ * ٤٢ * ١٥",
+    "remaining": 125,
+    "category": "Pillow",
+    "unitPrice": 37,
+    "id": "پشتی-ڤیسکۆ-l-٧٠---٤٢---١٥-warehouse"
+  },
+  {
+    "name": "پشتی ڤیسکۆ L ٦٠ *٤٠ * ١٣",
+    "remaining": 104,
+    "category": "Pillow",
+    "unitPrice": 37,
+    "id": "پشتی-ڤیسکۆ-l-٦٠--٤٠---١٣-warehouse"
+  },
+  {
+    "name": "بەرگ ڤیسکۆ L پشتی ...٧٠*٥٠",
+    "remaining": 29,
+    "category": "Cover",
+    "unitPrice": 4,
+    "id": "بەرگ-ڤیسکۆ-l-پشتی----٧٠-٥٠-warehouse"
+  },
+  {
+    "name": "بەرگ ڤیسکۆ L ٢*٢",
+    "remaining": 30,
+    "category": "Cover",
+    "unitPrice": 16.5,
+    "id": "بەرگ-ڤیسکۆ-l-٢-٢-warehouse"
+  },
+  {
+    "name": "پشتی ڤیسکۆ L ٥٨*٤٦*١١.٥",
+    "remaining": 20,
+    "category": "Pillow",
+    "unitPrice": 17,
+    "id": "پشتی-ڤیسکۆ-l-٥٨-٤٦-١١-٥-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئینفنیتی ئارمیس ١٨٠*٢",
+    "remaining": 11,
+    "category": "Mattress",
+    "unitPrice": 144.4,
+    "id": "دۆشەکی-ئینفنیتی-ئارمیس-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی بامبوو لیف ٢*٢",
+    "remaining": 5,
+    "category": "Mattress",
+    "unitPrice": 263.15,
+    "id": "دۆشەکی-بامبوو-لیف-٢-٢-warehouse"
+  },
+  {
+    "name": "پێتی ماتمازێل180*2",
+    "remaining": 22,
+    "category": "Mattress",
+    "unitPrice": 85,
+    "id": "پێتی-ماتمازێل180-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی ڕیلاکسی پێددار ١٨٠*٢",
+    "remaining": 4,
+    "category": "Mattress",
+    "unitPrice": 420,
+    "id": "دۆشەکی-ڕیلاکسی-پێددار-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی پانژور ١٨٠*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 320,
+    "id": "سێتی-پانژور-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی لەیدی١ *٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 250,
+    "id": "سێتی-لەیدی١--٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی لەیدی ١*٢",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 100,
+    "id": "دۆشەکی-لەیدی-١-٢-warehouse"
+  },
+  {
+    "name": "سێتی لوکس١٢٠*٢",
+    "remaining": 7,
+    "category": "Bed",
+    "unitPrice": 220,
+    "id": "سێتی-لوکس١٢٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی هەپی گرەی ١٨٠*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 350,
+    "id": "سێتی-هەپی-گرەی-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی لینا ٩٠*١٩٠",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 98,
+    "id": "دۆشەکی-لینا-٩٠-١٩٠-warehouse"
+  },
+  {
+    "name": "سێتی پانژور ١٦٠*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 240,
+    "id": "سێتی-پانژور-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "پێتی ماتمازێل 160*2",
+    "remaining": 16,
+    "category": "Mattress",
+    "unitPrice": 80,
+    "id": "پێتی-ماتمازێل-160-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی کوینلاند ١٥٠*٢",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 180,
+    "id": "دۆشەکی-کوینلاند-١٥٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی ساڵدا ١٨٠*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 430,
+    "id": "سێتی-ساڵدا-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی لوکس١٢٠*٢",
+    "remaining": 8,
+    "category": "Mattress",
+    "unitPrice": 150,
+    "id": "دۆشەکی-لوکس١٢٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ڕیلاکسی پێددار ١٦٠*٢",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 390,
+    "id": "دۆشەکی-ڕیلاکسی-پێددار-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ماتمازێل ١٨٠*٢",
+    "remaining": 5,
+    "category": "Mattress",
+    "unitPrice": 294,
+    "id": "دۆشەکی-ماتمازێل-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "پشتی ڤیسکۆ L ٥٤ * ٤٠ * ١١",
+    "remaining": 30,
+    "category": "Pillow",
+    "unitPrice": 37,
+    "id": "پشتی-ڤیسکۆ-l-٥٤---٤٠---١١-warehouse"
+  },
+  {
+    "name": "پشتی ڤیسکۆ L ٦٠ * ٣٨ * ١٠",
+    "remaining": 30,
+    "category": "Pillow",
+    "unitPrice": 37,
+    "id": "پشتی-ڤیسکۆ-l-٦٠---٣٨---١٠-warehouse"
+  },
+  {
+    "name": "پشتی ڤیسکۆ L ٢٥ * ٢٠ * ١٥",
+    "remaining": 24,
+    "category": "Pillow",
+    "unitPrice": 17,
+    "id": "پشتی-ڤیسکۆ-l-٢٥---٢٠---١٥-warehouse"
+  },
+  {
+    "name": "پشتی ڤیسکۆ L ٥٠ * ٣٢ * ٦",
+    "remaining": 50,
+    "category": "Pillow",
+    "unitPrice": 24,
+    "id": "پشتی-ڤیسکۆ-l-٥٠---٣٢---٦-warehouse"
+  },
+  {
+    "name": "پستی ڤیسکۆ L ٥٦ * ٤٦ * ١١",
+    "remaining": 30,
+    "category": "Pillow",
+    "unitPrice": 30,
+    "id": "پستی-ڤیسکۆ-l-٥٦---٤٦---١١-warehouse"
+  },
+  {
+    "name": "پشتی ڤیسکۆ L ٣٠ * ٢٨ * ١٢",
+    "remaining": 25,
+    "category": "Pillow",
+    "unitPrice": 17,
+    "id": "پشتی-ڤیسکۆ-l-٣٠---٢٨---١٢-warehouse"
+  },
+  {
+    "name": "پشتی ڤیسکۆ L ٥٠ * ٣٠ *١٠",
+    "remaining": 50,
+    "category": "Pillow",
+    "unitPrice": 27,
+    "id": "پشتی-ڤیسکۆ-l-٥٠---٣٠--١٠-warehouse"
+  },
+  {
+    "name": "سێتی چێستەرسادە 2*2",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 390,
+    "id": "سێتی-چێستەرسادە-2-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی فرێش١٤٠*٢",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 200,
+    "id": "دۆشەکی-فرێش١٤٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی دریم ماستەر٩٠*١٩٠",
+    "remaining": 4,
+    "category": "Bed",
+    "unitPrice": 140,
+    "id": "سێتی-دریم-ماستەر٩٠-١٩٠-warehouse"
+  },
+  {
+    "name": "دۆشەکی پاڕادایس2*2",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 475,
+    "id": "دۆشەکی-پاڕادایس2-2-warehouse"
+  },
+  {
+    "name": "سێتی لارا سادە 180*2",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 340,
+    "id": "سێتی-لارا-سادە-180-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی فرێش١٨٠*٢",
+    "remaining": 7,
+    "category": "Mattress",
+    "unitPrice": 190,
+    "id": "دۆشەکی-فرێش١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی فرێش١٦٠*٢",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 220,
+    "id": "دۆشەکی-فرێش١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی فرێش١*٢",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 100,
+    "id": "دۆشەکی-فرێش١-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی گرۆسۆ١٨٠*٢",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 230,
+    "id": "دۆشەکی-گرۆسۆ١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی مارا١٨٠*٢",
+    "remaining": 3,
+    "category": "Mattress",
+    "unitPrice": 210,
+    "id": "دۆشەکی-مارا١٨٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی مارا١٦٠*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 295,
+    "id": "سێتی-مارا١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی مارا١٦٠*٢",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 200,
+    "id": "دۆشەکی-مارا١٦٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی مارا١٨٠*٢",
+    "remaining": 2,
+    "category": "Bed",
+    "unitPrice": 295,
+    "id": "سێتی-مارا١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی فرێش١٥٠*٢",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 200,
+    "id": "دۆشەکی-فرێش١٥٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی فرێش١٢٠*٢",
+    "remaining": 11,
+    "category": "Mattress",
+    "unitPrice": 110,
+    "id": "دۆشەکی-فرێش١٢٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی فۆکۆس 2*2",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 600,
+    "id": "سێتی-فۆکۆس-2-2-warehouse"
+  },
+  {
+    "name": "سێتی میلۆدی 160*2",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 300,
+    "id": "سێتی-میلۆدی-160-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی بێتریس١٨٠*٢",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 240,
+    "id": "دۆشەکی-بێتریس١٨٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی گراسۆ ١٨٠*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 0,
+    "id": "سێتی-گراسۆ-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی کاربۆن ١٨٠*٢",
+    "remaining": 5,
+    "category": "Mattress",
+    "unitPrice": 267,
+    "id": "دۆشەکی-کاربۆن-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی ئالێگرا ١٨٠*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 265,
+    "id": "سێتی-ئالێگرا-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی راڤیۆلی ١٨٠*٢",
+    "remaining": 2,
+    "category": "Bed",
+    "unitPrice": 304.5,
+    "id": "سێتی-راڤیۆلی-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی نیۆن ١٨٠*٢",
+    "remaining": 2,
+    "category": "Bed",
+    "unitPrice": 255.2,
+    "id": "سێتی-نیۆن-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی ڕۆیاڵ ١٨٠*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 635,
+    "id": "سێتی-ڕۆیاڵ-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی نیۆن ١٨٠*٢",
+    "remaining": 3,
+    "category": "Mattress",
+    "unitPrice": 181,
+    "id": "دۆشەکی-نیۆن-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی کاربۆن ١٦٠*٢",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 245,
+    "id": "دۆشەکی-کاربۆن-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی تۆکیۆ ١٨٠*٢",
+    "remaining": 2,
+    "category": "Bed",
+    "unitPrice": 265,
+    "id": "سێتی-تۆکیۆ-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی کینگ ١٦٠*٢",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 250,
+    "id": "دۆشەکی-کینگ-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی یۆرک ١٦٠*٢",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 166.6,
+    "id": "دۆشەکی-یۆرک-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی فوکێت ١٨٠*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 470,
+    "id": "سێتی-فوکێت-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی کاربۆن ١٨٠*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 332.5,
+    "id": "سێتی-کاربۆن-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی ماریسا ١٨٠*٢",
+    "remaining": 2,
+    "category": "Bed",
+    "unitPrice": 348,
+    "id": "سێتی-ماریسا-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی یۆرک ١٢٠*٢",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 131.75,
+    "id": "دۆشەکی-یۆرک-١٢٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی سپەیس ١٨٠*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 410.75,
+    "id": "سێتی-سپەیس-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "پشتی ڤیسکۆ ٥٤*٤٠*١١",
+    "remaining": 25,
+    "category": "Pillow",
+    "unitPrice": 18,
+    "id": "پشتی-ڤیسکۆ-٥٤-٤٠-١١-warehouse"
+  },
+  {
+    "name": "پشتی ڤیسکۆ ٦٠*٤٠*١٣",
+    "remaining": 50,
+    "category": "Pillow",
+    "unitPrice": 19,
+    "id": "پشتی-ڤیسکۆ-٦٠-٤٠-١٣-warehouse"
+  },
+  {
+    "name": "پشتی ڤیسکۆ ٦٠*٤٠*١٢",
+    "remaining": 50,
+    "category": "Pillow",
+    "unitPrice": 19,
+    "id": "پشتی-ڤیسکۆ-٦٠-٤٠-١٢-warehouse"
+  },
+  {
+    "name": "پشتی ڤیسکۆ ٢٥*٢٠*١٠",
+    "remaining": 25,
+    "category": "Pillow",
+    "unitPrice": 8,
+    "id": "پشتی-ڤیسکۆ-٢٥-٢٠-١٠-warehouse"
+  },
+  {
+    "name": "پشتی ڤیسکۆ ٧٠*٤٢*١٥",
+    "remaining": 50,
+    "category": "Pillow",
+    "unitPrice": 19,
+    "id": "پشتی-ڤیسکۆ-٧٠-٤٢-١٥-warehouse"
+  },
+  {
+    "name": "دۆشەکی بێتا90*190",
+    "remaining": 3,
+    "category": "Mattress",
+    "unitPrice": 215,
+    "id": "دۆشەکی-بێتا90-190-warehouse"
+  },
+  {
+    "name": "دۆشەکی مندالان 60*120",
+    "remaining": 12,
+    "category": "Mattress",
+    "unitPrice": 75,
+    "id": "دۆشەکی-مندالان-60-120-warehouse"
+  },
+  {
+    "name": "دۆشەکی ستایل 180*2",
+    "remaining": 3,
+    "category": "Mattress",
+    "unitPrice": 575,
+    "id": "دۆشەکی-ستایل-180-2-warehouse"
+  },
+  {
+    "name": "سێتی ڕۆیال120*2",
+    "remaining": 2,
+    "category": "Bed",
+    "unitPrice": 230,
+    "id": "سێتی-ڕۆیال120-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی ڤیۆلێت 180*2",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 650,
+    "id": "دۆشەکی-ڤیۆلێت-180-2-warehouse"
+  },
+  {
+    "name": "سێتی ڕۆس 2*2",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 368,
+    "id": "سێتی-ڕۆس-2-2-warehouse"
+  },
+  {
+    "name": "لێفە 155*215",
+    "remaining": 25,
+    "category": "Bed",
+    "unitPrice": 17,
+    "id": "لێفە-155-215-warehouse"
+  },
+  {
+    "name": "لێفە 220*240",
+    "remaining": 30,
+    "category": "Cover",
+    "unitPrice": 25,
+    "id": "لێفە-220-240-warehouse"
+  },
+  {
+    "name": "سێتی ڕۆیال1*2",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 158,
+    "id": "سێتی-ڕۆیال1-2-warehouse"
+  },
+  {
+    "name": "سێتی لۆفت 1*2",
+    "remaining": 3,
+    "category": "Bed",
+    "unitPrice": 168,
+    "id": "سێتی-لۆفت-1-2-warehouse"
+  },
+  {
+    "name": "سێتی پلازا 120*2",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 240,
+    "id": "سێتی-پلازا-120-2-warehouse"
+  },
+  {
+    "name": "سێتی ڤیۆلێت 180*2",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 450,
+    "id": "سێتی-ڤیۆلێت-180-2-warehouse"
+  },
+  {
+    "name": "سێتی فۆکۆس 180*2",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 550,
+    "id": "سێتی-فۆکۆس-180-2-warehouse"
+  },
+  {
+    "name": "سێتی جۆکەر 90*190",
+    "remaining": 3,
+    "category": "Mattress",
+    "unitPrice": 275,
+    "id": "سێتی-جۆکەر-90-190-warehouse"
+  },
+  {
+    "name": "پشتی منداڵ 45*30*8",
+    "remaining": 22,
+    "category": "Pillow",
+    "unitPrice": 8,
+    "id": "پشتی-منداڵ-45-30-8-warehouse"
+  },
+  {
+    "name": "بەرگ بامبۆ 90*2",
+    "remaining": 9,
+    "category": "Cover",
+    "unitPrice": 14,
+    "id": "بەرگ-بامبۆ-90-2-warehouse"
+  },
+  {
+    "name": "پشتی 46*30*10",
+    "remaining": 7,
+    "category": "Pillow",
+    "unitPrice": 11,
+    "id": "پشتی-46-30-10-warehouse"
+  },
+  {
+    "name": "پشتی 54*40*11",
+    "remaining": 12,
+    "category": "Pillow",
+    "unitPrice": 14,
+    "id": "پشتی-54-40-11-warehouse"
+  },
+  {
+    "name": "پشتی 60*40*10",
+    "remaining": 28,
+    "category": "Pillow",
+    "unitPrice": 14,
+    "id": "پشتی-60-40-10-warehouse"
+  },
+  {
+    "name": "پشتی 50*30*10",
+    "remaining": 8,
+    "category": "Pillow",
+    "unitPrice": 12,
+    "id": "پشتی-50-30-10-warehouse"
+  },
+  {
+    "name": "پشتی 60*30*10",
+    "remaining": 13,
+    "category": "Pillow",
+    "unitPrice": 14,
+    "id": "پشتی-60-30-10-warehouse"
+  },
+  {
+    "name": "بەرگ سادە 1*2",
+    "remaining": 19,
+    "category": "Cover",
+    "unitPrice": 10,
+    "id": "بەرگ-سادە-1-2-warehouse"
+  },
+  {
+    "name": "بەرگ بامبۆ 120*2",
+    "remaining": 17,
+    "category": "Cover",
+    "unitPrice": 15,
+    "id": "بەرگ-بامبۆ-120-2-warehouse"
+  },
+  {
+    "name": "بەرگی پشتی بامبۆ",
+    "remaining": 23,
+    "category": "Cover",
+    "unitPrice": 2,
+    "id": "بەرگی-پشتی-بامبۆ-warehouse"
+  },
+  {
+    "name": "پشتی قاچ25*20*15",
+    "remaining": 14,
+    "category": "Pillow",
+    "unitPrice": 8,
+    "id": "پشتی-قاچ25-20-15-warehouse"
+  },
+  {
+    "name": "بەرگ سادە 90*2",
+    "remaining": 10,
+    "category": "Cover",
+    "unitPrice": 10,
+    "id": "بەرگ-سادە-90-2-warehouse"
+  },
+  {
+    "name": "پشتی 56*48*11.5",
+    "remaining": 10,
+    "category": "Pillow",
+    "unitPrice": 15,
+    "id": "پشتی-56-48-11-5-warehouse"
+  },
+  {
+    "name": "پشتی 67*33*12",
+    "remaining": 7,
+    "category": "Pillow",
+    "unitPrice": 19,
+    "id": "پشتی-67-33-12-warehouse"
+  },
+  {
+    "name": "بەرگی پشتی جێڵ سارد",
+    "remaining": 8,
+    "category": "Cover",
+    "unitPrice": 8,
+    "id": "بەرگی-پشتی-جێڵ-سارد-warehouse"
+  },
+  {
+    "name": "دۆشەکی سیڤیلا کۆن180*2",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 700,
+    "id": "دۆشەکی-سیڤیلا-کۆن180-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئینفنیتی ئارمیس ٩٠*٢",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 91,
+    "id": "دۆشەکی-ئینفنیتی-ئارمیس-٩٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ساموا ٩٠*٢",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 134,
+    "id": "دۆشەکی-ساموا-٩٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی ئەلیزا ٢*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 363,
+    "id": "سێتی-ئەلیزا-٢-٢-warehouse"
+  },
+  {
+    "name": "سێتی ئەلیزا ١*٢",
+    "remaining": 2,
+    "category": "Bed",
+    "unitPrice": 226,
+    "id": "سێتی-ئەلیزا-١-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی سێرمۆ ١*٢",
+    "remaining": 12,
+    "category": "Mattress",
+    "unitPrice": 133,
+    "id": "دۆشەکی-سێرمۆ-١-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی سێرمۆ کەلەر ١٨٠*٢",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 259,
+    "id": "دۆشەکی-سێرمۆ-کەلەر-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئینفنیتی ئارمیس ٩٠*١٩٠",
+    "remaining": 5,
+    "category": "Mattress",
+    "unitPrice": 88,
+    "id": "دۆشەکی-ئینفنیتی-ئارمیس-٩٠-١٩٠-warehouse"
+  },
+  {
+    "name": "سێتی سێرمۆ کەلەر ٢*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 424,
+    "id": "سێتی-سێرمۆ-کەلەر-٢-٢-warehouse"
+  },
+  {
+    "name": "سێتی ئەلیزا ١٢٠*٢",
+    "remaining": 2,
+    "category": "Bed",
+    "unitPrice": 245,
+    "id": "سێتی-ئەلیزا-١٢٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی بۆهیم ١٦٠*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 317,
+    "id": "سێتی-بۆهیم-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی فلێکس فیت ٩٠*٢",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 115,
+    "id": "دۆشەکی-فلێکس-فیت-٩٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی سیرینا ١٦٠*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 312,
+    "id": "سێتی-سیرینا-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی باڕۆک پڵەس ٢*٢",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 207,
+    "id": "دۆشەکی-باڕۆک-پڵەس-٢-٢-warehouse"
+  },
+  {
+    "name": "سێتی بۆهیم ١٨٠*٢",
+    "remaining": 2,
+    "category": "Bed",
+    "unitPrice": 342,
+    "id": "سێتی-بۆهیم-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی سێرمۆ ٩٠*٢",
+    "remaining": 3,
+    "category": "Mattress",
+    "unitPrice": 133,
+    "id": "دۆشەکی-سێرمۆ-٩٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی تێسلا سێراپی ١٦٠*٢",
+    "remaining": 5,
+    "category": "Mattress",
+    "unitPrice": 195,
+    "id": "دۆشەکی-تێسلا-سێراپی-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی کلاودس ١٦٠*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 553,
+    "id": "سێتی-کلاودس-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی لینین ئۆرگانیک ١٨٠*٢",
+    "remaining": 2,
+    "category": "Bed",
+    "unitPrice": 383,
+    "id": "سێتی-لینین-ئۆرگانیک-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی بۆهیم ٢*٢",
+    "remaining": 2,
+    "category": "Bed",
+    "unitPrice": 359,
+    "id": "سێتی-بۆهیم-٢-٢-warehouse"
+  },
+  {
+    "name": "سێتی ئالێگرا ماستەر ١٦٠*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 326,
+    "id": "سێتی-ئالێگرا-ماستەر-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی فلێکس فیت ١*٢",
+    "remaining": 9,
+    "category": "Mattress",
+    "unitPrice": 115,
+    "id": "دۆشەکی-فلێکس-فیت-١-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی تێسلا سێراپی ٢*٢",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 207,
+    "id": "دۆشەکی-تێسلا-سێراپی-٢-٢-warehouse"
+  },
+  {
+    "name": "سێتی ویناڕت ١٨٠*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 297,
+    "id": "سێتی-ویناڕت-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی ئالێگرا ماستەر ١٨٠*٢",
+    "remaining": 2,
+    "category": "Bed",
+    "unitPrice": 344,
+    "id": "سێتی-ئالێگرا-ماستەر-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی کاسادە ٢*٢",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 269,
+    "id": "دۆشەکی-کاسادە-٢-٢-warehouse"
+  },
+  {
+    "name": "سێتی کووڵ تەچ ١٨٠*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 356,
+    "id": "سێتی-کووڵ-تەچ-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی بۆهیم ١٨٠*٢",
+    "remaining": 3,
+    "category": "Mattress",
+    "unitPrice": 240,
+    "id": "دۆشەکی-بۆهیم-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی سویس کوین ١٨٠*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 385,
+    "id": "سێتی-سویس-کوین-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی ویناڕت ١٦٠*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 280,
+    "id": "سێتی-ویناڕت-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ویناڕت ١٦٠*٢",
+    "remaining": 5,
+    "category": "Mattress",
+    "unitPrice": 133.2,
+    "id": "دۆشەکی-ویناڕت-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی سیرێنا ١٦٠*٢",
+    "remaining": 3,
+    "category": "Mattress",
+    "unitPrice": 146.7,
+    "id": "دۆشەکی-سیرێنا-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی کرافت ١٦٠*٢",
+    "remaining": 3,
+    "category": "Mattress",
+    "unitPrice": 198,
+    "id": "دۆشەکی-کرافت-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی نیو تۆسکانا ڤیسکۆ ١٨٠*٢",
+    "remaining": 7,
+    "category": "Mattress",
+    "unitPrice": 132,
+    "id": "دۆشەکی-نیو-تۆسکانا-ڤیسکۆ-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی گرافایت پڵەس ١٦٠*٢",
+    "remaining": 5,
+    "category": "Mattress",
+    "unitPrice": 231,
+    "id": "دۆشەکی-گرافایت-پڵەس-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی کرافت ١٨٠*٢",
+    "remaining": 5,
+    "category": "Mattress",
+    "unitPrice": 221,
+    "id": "دۆشەکی-کرافت-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی کاربۆن پڵەس ١٨٠*٢",
+    "remaining": 7,
+    "category": "Mattress",
+    "unitPrice": 208,
+    "id": "دۆشەکی-کاربۆن-پڵەس-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی گرافایت پڵەس ١٨٠*٢",
+    "remaining": 7,
+    "category": "Mattress",
+    "unitPrice": 255,
+    "id": "دۆشەکی-گرافایت-پڵەس-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی سۆفتەج ١٨٠ * ٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 229.6,
+    "id": "سێتی-سۆفتەج-١٨٠---٢-warehouse"
+  },
+  {
+    "name": "سێتی سۆفتەج ١٦٠ * ٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 216.8,
+    "id": "سێتی-سۆفتەج-١٦٠---٢-warehouse"
+  },
+  {
+    "name": "سێتی ئەمستردام ١٨٠ *٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 152.8,
+    "id": "سێتی-ئەمستردام-١٨٠--٢-warehouse"
+  },
+  {
+    "name": "سێتی کاسادە ١٨٠* ٢",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 550,
+    "id": "سێتی-کاسادە-١٨٠--٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی دریم ١٦٠*٢",
+    "remaining": 3,
+    "category": "Mattress",
+    "unitPrice": 120,
+    "id": "دۆشەکی-دریم-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی ستارلایت ١٨٠*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 252,
+    "id": "سێتی-ستارلایت-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی ئەلیزا ١٦٠ * ٢",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 475,
+    "id": "سێتی-ئەلیزا-١٦٠---٢-warehouse"
+  },
+  {
+    "name": "سێتی باڕۆک ١٨٠ * ٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 253.6,
+    "id": "سێتی-باڕۆک-١٨٠---٢-warehouse"
+  },
+  {
+    "name": "سێتی ڕۆکۆ ١٦٠ * ٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 206.4,
+    "id": "سێتی-ڕۆکۆ-١٦٠---٢-warehouse"
+  },
+  {
+    "name": "کۆمەدی ڕۆیاڵ",
+    "remaining": 2,
+    "category": "Bed",
+    "unitPrice": 104.5,
+    "id": "کۆمەدی-ڕۆیاڵ-warehouse"
+  },
+  {
+    "name": "سێتی باڕۆک ١٦٠ * ٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 245.6,
+    "id": "سێتی-باڕۆک-١٦٠---٢-warehouse"
+  },
+  {
+    "name": "سێتی هایبێرد ١٨٠ * ٢",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 500,
+    "id": "سێتی-هایبێرد-١٨٠---٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی کووڵ تەچ ١٢٠*٢",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 189,
+    "id": "دۆشەکی-کووڵ-تەچ-١٢٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی هێرمس ١٦٠*٢",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 240,
+    "id": "دۆشەکی-هێرمس-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی کووڵ تەچ ١*٢",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 166,
+    "id": "دۆشەکی-کووڵ-تەچ-١-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی سویس کوین ٢*٢",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 244,
+    "id": "دۆشەکی-سویس-کوین-٢-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی لینین ئۆرگانیک ١٦٠*٢",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 188,
+    "id": "دۆشەکی-لینین-ئۆرگانیک-١٦٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی کووڵ تەچ ٢*٢",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 288,
+    "id": "دۆشەکی-کووڵ-تەچ-٢-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی گراندیلوکس ١*٢",
+    "remaining": 3,
+    "category": "Mattress",
+    "unitPrice": 70,
+    "id": "دۆشەکی-گراندیلوکس-١-٢-warehouse"
+  },
+  {
+    "name": "سێتی گراندیلوکس ١*٢",
+    "remaining": 3,
+    "category": "Bed",
+    "unitPrice": 80,
+    "id": "سێتی-گراندیلوکس-١-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ویناڕت ١٨٠*٢",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 0,
+    "id": "دۆشەکی-ویناڕت-١٨٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی رۆس١٤٠*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 210,
+    "id": "سێتی-رۆس١٤٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی فرێش١٨٠*٢",
+    "remaining": 2,
+    "category": "Bed",
+    "unitPrice": 250,
+    "id": "سێتی-فرێش١٨٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی لوکس٩٠*١٩٠",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 120,
+    "id": "سێتی-لوکس٩٠-١٩٠-warehouse"
+  },
+  {
+    "name": "دۆشەکی پاپاتیا١٨٠*٢",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 200,
+    "id": "دۆشەکی-پاپاتیا١٨٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی فرێش٩٠*١٩٠",
+    "remaining": 2,
+    "category": "Bed",
+    "unitPrice": 130,
+    "id": "سێتی-فرێش٩٠-١٩٠-warehouse"
+  },
+  {
+    "name": "دۆشەکی پالمیە١٨٠*٢",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 200,
+    "id": "دۆشەکی-پالمیە١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئیکۆ٩٠*١٩٠",
+    "remaining": 5,
+    "category": "Mattress",
+    "unitPrice": 90,
+    "id": "دۆشەکی-ئیکۆ٩٠-١٩٠-warehouse"
+  },
+  {
+    "name": "سێتی پلازا١*٢",
+    "remaining": 5,
+    "category": "Bed",
+    "unitPrice": 90,
+    "id": "سێتی-پلازا١-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی تۆپ کوالێتی2*2",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 550,
+    "id": "دۆشەکی-تۆپ-کوالێتی2-2-warehouse"
+  },
+  {
+    "name": "دۆشەکی بێگۆنیا١٨٠*٢",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 200,
+    "id": "دۆشەکی-بێگۆنیا١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی لوکس٩٠*١٩٠",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 118,
+    "id": "دۆشەکی-لوکس٩٠-١٩٠-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئۆسکار١٨٠*٢",
+    "remaining": 1,
+    "category": "Mattress",
+    "unitPrice": 211,
+    "id": "دۆشەکی-ئۆسکار١٨٠-٢-warehouse"
+  },
+  {
+    "name": "سێتی فرێش١٢٠*٢",
+    "remaining": 1,
+    "category": "Bed",
+    "unitPrice": 135,
+    "id": "سێتی-فرێش١٢٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی فرێش٩٠*١٩٠",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 160,
+    "id": "دۆشەکی-فرێش٩٠-١٩٠-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئیکۆ١٨٠*٢",
+    "remaining": 5,
+    "category": "Mattress",
+    "unitPrice": 150,
+    "id": "دۆشەکی-ئیکۆ١٨٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی ئیکۆ١٢٠*٢",
+    "remaining": 5,
+    "category": "Mattress",
+    "unitPrice": 110,
+    "id": "دۆشەکی-ئیکۆ١٢٠-٢-warehouse"
+  },
+  {
+    "name": "دۆشەکی پاپاتیا٩٠*١٩٠",
+    "remaining": 2,
+    "category": "Mattress",
+    "unitPrice": 120,
+    "id": "دۆشەکی-پاپاتیا٩٠-١٩٠-warehouse"
+  },
+  {
+    "name": "دۆشەکی کڵاود 1*2",
+    "remaining": 5,
+    "category": "Mattress",
+    "unitPrice": 450,
+    "id": "دۆشەکی-کڵاود-1-2-warehouse"
+  }
+]

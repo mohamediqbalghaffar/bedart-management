@@ -66,7 +66,7 @@ function PurchaseFormDialog({ formId, onSave, trigger, initialItems }: { formId:
                         {formId ? 'زانیارییەکانی پسوولەکە نوێ بکەرەوە.' : 'زانیارییەکانی پسوولەیەکی نوێی کڕین بنووسە.'}
                     </DialogDescription>
                 </DialogHeader>
-                <div className="max-h-[80vh] overflow-y-auto p-2">
+                <div className="max-h-[80vh] overflow-y-auto p-2 sm:p-4">
                     <BuyingForm formId={formId} onSave={() => { onSave(); setOpen(false); }} initialItems={initialItems} />
                 </div>
             </DialogContent>
