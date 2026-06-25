@@ -4,13 +4,14 @@ import React, { useState, useMemo, useRef, use } from 'react';
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { PlusCircle, Loader2, Trash2, FileSpreadsheet, Edit, FileUp, FileDown } from "lucide-react";
+import { PlusCircle, Loader2, Trash2, FileSpreadsheet, Edit, FileUp, FileDown, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { BuyingForm } from "./components/buying-form";
 import { useFirestore, useCollection, useMemoFirebase, collection, runTransaction, doc, getDocs, deleteDoc } from '@/firebase';
 import { WithId } from '@/firebase/firestore/use-collection';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -313,6 +314,8 @@ function PurchasesList() {
     const firestore = useFirestore();
     const { toast } = useToast();
     const [refreshKey, setRefreshKey] = useState(0);
+    const [sortConfig, setSortConfig] = useState<{ key: 'issueDate' | 'supplierName' | 'totalAmount', direction: 'asc' | 'desc' } | null>({ key: 'issueDate', direction: 'desc' });
+    const [filterSupplier, setFilterSupplier] = useState<string>('all');
 
     const buyingFormsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -334,13 +337,46 @@ function PurchasesList() {
     const enrichedForms = useMemo(() => {
         if (!buyingForms || !suppliers) return [];
         const supplierMap = new Map(suppliers.map(s => [s.id, s.supplierName]));
-        return buyingForms.map(form => ({
+        
+        let filtered = buyingForms.map(form => ({
             ...form,
             supplierName: supplierMap.get(form.supplierId) || 'دابینکەری نەزانراو',
             totalAmount: form.totalAmount || 0,
         }));
-    }, [buyingForms, suppliers]);
 
+        if (filterSupplier !== 'all') {
+            filtered = filtered.filter(f => f.supplierId === filterSupplier);
+        }
+
+        if (sortConfig) {
+            filtered.sort((a, b) => {
+                let aVal = a[sortConfig.key];
+                let bVal = b[sortConfig.key];
+                
+                if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+                if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+        
+        return filtered;
+    }, [buyingForms, suppliers, filterSupplier, sortConfig]);
+
+    const handleSort = (key: 'issueDate' | 'supplierName' | 'totalAmount') => {
+        setSortConfig(current => {
+            if (current && current.key === key) {
+                return { key, direction: current.direction === 'asc' ? 'desc' : 'asc' };
+            }
+            return { key, direction: 'desc' };
+        });
+    };
+
+    const getSortIcon = (key: string) => {
+        if (sortConfig?.key === key) {
+            return sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4 ml-1" /> : <ArrowDown className="h-4 w-4 ml-1" />;
+        }
+        return <ArrowUpDown className="h-4 w-4 ml-1 opacity-50" />;
+    };
 
     const handleDelete = async (formId: string) => {
         if (!firestore) return;
@@ -402,18 +438,47 @@ function PurchasesList() {
 
     return (
          <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <CardTitle>لیستی کڕینەکان</CardTitle>
+                <div className="w-full sm:w-auto flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground whitespace-nowrap">دابینکەر:</span>
+                    <Select value={filterSupplier} onValueChange={setFilterSupplier} dir="rtl">
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="هەموو دابینکەرەکان" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">هەموو دابینکەرەکان</SelectItem>
+                            {suppliers?.map(s => (
+                                <SelectItem key={s.id} value={s.id}>{s.supplierName}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
             </CardHeader>
             <CardContent>
                 <ScrollArea className="h-[60vh]">
                     <Table className="hidden md:table">
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="text-left">کردارەکان</TableHead>
-                                <TableHead className="text-right">کۆی گشتی</TableHead>
-                                <TableHead className="text-right">بەروار</TableHead>
-                                <TableHead className="text-right">دابینکەر</TableHead>
+                                <TableHead className="text-left w-[120px]">کردارەکان</TableHead>
+                                <TableHead className="text-right">
+                                    <Button variant="ghost" onClick={() => handleSort('totalAmount')} className="flex items-center gap-1 hover:bg-transparent px-0 font-semibold text-muted-foreground">
+                                        کۆی گشتی
+                                        {getSortIcon('totalAmount')}
+                                    </Button>
+                                </TableHead>
+                                <TableHead className="text-right">
+                                    <Button variant="ghost" onClick={() => handleSort('issueDate')} className="flex items-center gap-1 hover:bg-transparent px-0 font-semibold text-muted-foreground">
+                                        بەروار
+                                        {getSortIcon('issueDate')}
+                                    </Button>
+                                </TableHead>
+                                <TableHead className="text-right">
+                                    <Button variant="ghost" onClick={() => handleSort('supplierName')} className="flex items-center gap-1 hover:bg-transparent px-0 font-semibold text-muted-foreground">
+                                        دابینکەر
+                                        {getSortIcon('supplierName')}
+                                    </Button>
+                                </TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
