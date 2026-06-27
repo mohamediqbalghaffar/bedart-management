@@ -165,7 +165,7 @@ function UploadSalesFormButton({ onSave }: { onSave: () => void }) {
                             </DialogDescription>
                         </div>
                     </DialogHeader>
-                    <div className="flex-1 overflow-hidden p-2 sm:p-4">
+                    <div className="flex-1 overflow-y-auto p-2 sm:p-4">
                         <SalesForm
                             formId={null}
                             onSave={() => { onSave(); setDialogOpen(false); }}
@@ -703,7 +703,7 @@ function SalesList() {
                             <DialogDescription className="text-sm">تەختی نوستن . دۆشەک . پشتی</DialogDescription>
                         </div>
                     </DialogHeader>
-                    <div className="flex-1 overflow-hidden p-2 sm:p-4">
+                    <div className="flex-1 overflow-y-auto p-2 sm:p-4">
                         <SalesForm formId={null} onSave={handleFormSave} />
                     </div>
                 </DialogContent>
@@ -718,7 +718,7 @@ function SalesList() {
                             <DialogDescription className="text-sm">دەستکاریکردنی فۆڕم</DialogDescription>
                         </div>
                     </DialogHeader>
-                    <div className="flex-1 overflow-hidden p-2 sm:p-4">
+                    <div className="flex-1 overflow-y-auto p-2 sm:p-4">
                         {editingFormId && <SalesForm formId={editingFormId} onSave={handleFormSave} />}
                     </div>
                 </DialogContent>

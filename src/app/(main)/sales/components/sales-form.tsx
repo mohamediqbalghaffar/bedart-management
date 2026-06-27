@@ -713,8 +713,8 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full space-y-2" dir="rtl">
-        <Card className="flex-shrink-0">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col space-y-4" dir="rtl">
+        <Card>
             <CardHeader className="flex flex-col md:flex-row justify-between items-start p-3 sm:p-4 gap-3 sm:gap-4">
                  <FormField
                     control={form.control}
@@ -743,7 +743,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
             </CardHeader>
         </Card>
 
-        <Card className="flex-shrink-0">
+        <Card>
             <CardHeader className="p-2 sm:p-4"><CardTitle className="text-base sm:text-xl">زانیاری کڕیار</CardTitle></CardHeader>
             <CardContent className="p-2 sm:p-4 pt-0 sm:pt-0 space-y-3 sm:space-y-4">
                  <div className="flex flex-col md:flex-row items-start gap-3 sm:gap-4">
@@ -784,9 +784,9 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
             </CardContent>
         </Card>
         
-        <Card className="flex-1 flex flex-col min-h-[100px] overflow-hidden">
-            <CardHeader className="flex-shrink-0 p-2 sm:p-4 pb-2 sm:pb-3"><CardTitle className="text-base sm:text-xl">کاڵا فرۆشراوەکان</CardTitle></CardHeader>
-            <CardContent className="flex-1 overflow-y-auto p-2 sm:p-4 pt-0 sm:pt-0">
+        <Card>
+            <CardHeader className="p-2 sm:p-4 pb-2 sm:pb-3"><CardTitle className="text-base sm:text-xl">کاڵا فرۆشراوەکان</CardTitle></CardHeader>
+            <CardContent className="p-2 sm:p-4 pt-0 sm:pt-0 max-h-[350px] overflow-y-auto">
                  {/* Desktop Table */}
                 <Table className="hidden md:table">
                     <TableHeader>
@@ -834,7 +834,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
             </CardContent>
         </Card>
         
-        <div className="flex-shrink-0 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <Card>
                 <CardHeader className="p-2 sm:p-4"><CardTitle className="text-base sm:text-xl">دارایی</CardTitle></CardHeader>
                 <CardContent className="p-2 sm:p-4 pt-0 sm:pt-0 space-y-3 sm:space-y-4">
@@ -1057,7 +1057,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
         </div>
         
         {paymentType === 'Installments' && (
-             <Card className="flex-shrink-0">
+             <Card>
                 <CardHeader className="p-3 sm:p-6 flex flex-row items-center justify-between">
                     <CardTitle className="text-base sm:text-xl">تۆماری قیستەکان</CardTitle>
                 </CardHeader>
@@ -1170,7 +1170,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
              </Card>
         )}
 
-        <div className="flex-shrink-0 flex justify-end pt-4 pb-2 border-t mt-auto">
+        <div className="flex justify-end pt-4 pb-2 border-t mt-4">
             <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "...پاشەکەوت دەکرێت" : (formId ? "نوێکردنەوەی فۆڕم" : "پاشەکەوتکردنی فۆڕم")}
             </Button>
