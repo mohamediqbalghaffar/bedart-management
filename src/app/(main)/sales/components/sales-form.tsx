@@ -560,6 +560,8 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
           });
         }
 
+        const finalItems: any[] = [];
+
         for (const item of sanitizedData.items) {
           const showroomId = makeProductId(item.product, item.sizeModel, 'Shop Showroom');
           const warehouseId = makeProductId(item.product, item.sizeModel, 'Warehouse');
@@ -573,21 +575,31 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
           const showroomStockAfterRestore = showroomCurrentStock + (stockChanges.get(showroomId)?.change || 0);
           const warehouseStockAfterRestore = warehouseCurrentStock + (stockChanges.get(warehouseId)?.change || 0);
           
-          let deductedFrom: string | null = null;
-          if (showroomStockAfterRestore >= Number(item.quantity)) {
-            deductedFrom = showroomId;
-          } else if (warehouseStockAfterRestore >= Number(item.quantity)) {
-            deductedFrom = warehouseId;
+          let remainingQty = Number(item.quantity);
+          const totalAvailable = showroomStockAfterRestore + warehouseStockAfterRestore;
+
+          if (totalAvailable < remainingQty) {
+              throw new Error(`بڕی بەشی ناکات بۆ کاڵای: "${item.product}". بڕی بەردەست: ${totalAvailable}`);
           }
 
-          if (!deductedFrom) {
-            throw new Error(`بڕی بەشی ناکات بۆ کاڵای: "${item.product}"`);
+          if (showroomStockAfterRestore > 0 && remainingQty > 0) {
+              const takeFromShowroom = Math.min(showroomStockAfterRestore, remainingQty);
+              const currentChange = stockChanges.get(showroomId)?.change || 0;
+              stockChanges.set(showroomId, { change: currentChange - takeFromShowroom, resolvedId: showroomId });
+              remainingQty -= takeFromShowroom;
+              finalItems.push({ ...item, quantity: takeFromShowroom, resolvedProductId: showroomId });
           }
-          
-          const currentChange = stockChanges.get(deductedFrom)?.change || 0;
-          stockChanges.set(deductedFrom, { change: currentChange - Number(item.quantity), resolvedId: deductedFrom });
-          (item as any).resolvedProductId = deductedFrom;
+
+          if (warehouseStockAfterRestore > 0 && remainingQty > 0) {
+              const takeFromWarehouse = Math.min(warehouseStockAfterRestore, remainingQty);
+              const currentChange = stockChanges.get(warehouseId)?.change || 0;
+              stockChanges.set(warehouseId, { change: currentChange - takeFromWarehouse, resolvedId: warehouseId });
+              remainingQty -= takeFromWarehouse;
+              finalItems.push({ ...item, quantity: takeFromWarehouse, resolvedProductId: warehouseId });
+          }
         }
+        
+        sanitizedData.items = finalItems;
 
         for (const [productId, { change }] of stockChanges.entries()) {
           const productRef = productRefsToRead.get(productId)!;
