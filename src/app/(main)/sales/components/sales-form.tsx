@@ -154,7 +154,7 @@ function SalesFormItemRow({
                     />
                     <div className="grid grid-cols-3 gap-3">
                         <FormField control={form.control} name={`items.${index}.quantity`} render={({ field }) => (<FormItem><FormLabel className="text-xs">دانە</FormLabel><FormControl><Input type="number" className="h-9 text-sm" {...field} /></FormControl><FormMessage className="text-[10px]" /></FormItem>)} />
-                        <FormField control={form.control} name={`items.${index}.unitPrice`} render={({ field }) => (<FormItem><FormLabel className="text-xs">نرخی تاک</FormLabel><FormControl><Input type="number" step="0.01" className="h-9 text-sm" {...field} /></FormControl><FormMessage className="text-[10px]" /></FormItem>)} />
+                        <FormField control={form.control} name={`items.${index}.unitPrice`} render={({ field }) => (<FormItem><FormLabel className="text-xs">نرخی تاک</FormLabel><FormControl><Input type="number" step="any" className="h-9 text-sm" {...field} /></FormControl><FormMessage className="text-[10px]" /></FormItem>)} />
                         <FormField control={form.control} name={`items.${index}.discountPercent`} render={({ field }) => (<FormItem><FormLabel className="text-xs">داشکاندن %</FormLabel><FormControl><Input type="number" min={0} max={isAdminOrManager ? 100 : maxDiscount} step="1" className="h-9 text-sm" {...field} onChange={(e) => { const val = Number(e.target.value); field.onChange(isAdminOrManager ? val : Math.min(val, maxDiscount)); }} /></FormControl>{!isAdminOrManager && <span className="text-[9px] text-muted-foreground">حد: {maxDiscount}%</span>}<FormMessage className="text-[10px]" /></FormItem>)} />
                     </div>
                 </CardContent>
@@ -212,7 +212,7 @@ function SalesFormItemRow({
                 <FormField control={form.control} name={`items.${index}.quantity`} render={({ field }) => (<FormItem><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
             </TableCell>
             <TableCell className="align-top">
-                <FormField control={form.control} name={`items.${index}.unitPrice`} render={({ field }) => (<FormItem><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name={`items.${index}.unitPrice`} render={({ field }) => (<FormItem><FormControl><Input type="number" step="any" {...field} /></FormControl><FormMessage /></FormItem>)} />
             </TableCell>
             <TableCell className="align-top">
                 <FormField control={form.control} name={`items.${index}.discountPercent`} render={({ field }) => (
@@ -861,7 +861,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormControl>
-                                            <Input type="number" step="0.01" {...field} disabled={!discountType} className="w-24 sm:w-32 h-9 sm:h-10 text-sm sm:text-base" />
+                                            <Input type="number" step="any" {...field} disabled={!discountType} className="w-24 sm:w-32 h-9 sm:h-10 text-sm sm:text-base" />
                                         </FormControl>
                                         <FormMessage className="text-[10px]" />
                                     </FormItem>
@@ -882,7 +882,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                                     <FormItem className="space-y-1">
                                         <FormLabel className="text-xs">بڕی تێچوو</FormLabel>
                                         <FormControl>
-                                            <Input type="number" step="0.01" className="h-9 text-sm text-left" dir="ltr" {...field} />
+                                            <Input type="number" step="any" className="h-9 text-sm text-left" dir="ltr" {...field} />
                                         </FormControl>
                                         <FormMessage className="text-[10px]" />
                                     </FormItem>
@@ -931,7 +931,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                                     <FormItem className="space-y-1 pt-2">
                                         <FormLabel className="text-xs text-primary">بەشی کڕیار لەم تێچووە</FormLabel>
                                         <FormControl>
-                                            <Input type="number" step="0.01" className="h-9 text-sm text-left border-primary/50" dir="ltr" {...field} />
+                                            <Input type="number" step="any" className="h-9 text-sm text-left border-primary/50" dir="ltr" {...field} />
                                         </FormControl>
                                         <FormMessage className="text-[10px]" />
                                     </FormItem>
@@ -1061,7 +1061,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                                         <FormField control={form.control} name={`payments.${index}.date`} render={({ field }) => ( <FormItem><FormControl><DatePicker value={field.value} onChange={field.onChange} className="w-full" /></FormControl><FormMessage/></FormItem>)}/>
                                     </TableCell>
                                     <TableCell className="align-top">
-                                        <FormField control={form.control} name={`payments.${index}.amount`} render={({ field }) => ( <FormItem><FormControl><Input type="number" step="0.01" inputMode="decimal" {...field} /></FormControl><FormMessage/></FormItem>)}/>
+                                        <FormField control={form.control} name={`payments.${index}.amount`} render={({ field }) => ( <FormItem><FormControl><Input type="number" step="any" inputMode="decimal" {...field} /></FormControl><FormMessage/></FormItem>)}/>
                                     </TableCell>
                                     <TableCell className="align-top">
                                         <FormField
@@ -1119,7 +1119,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                                         <FormField control={form.control} name={`payments.${index}.amount`} render={({ field }) => ( 
                                             <FormItem className="space-y-1">
                                                 <FormLabel className="text-xs">بڕ</FormLabel>
-                                                <FormControl><Input type="number" step="0.01" inputMode="decimal" className="h-9 text-sm" {...field} /></FormControl>
+                                                <FormControl><Input type="number" step="any" inputMode="decimal" className="h-9 text-sm" {...field} /></FormControl>
                                                 <FormMessage className="text-[10px]"/>
                                             </FormItem>
                                         )}/>
