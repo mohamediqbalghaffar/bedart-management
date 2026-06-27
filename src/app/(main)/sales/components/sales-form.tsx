@@ -713,7 +713,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 flex flex-col h-full overflow-y-auto lg:overflow-hidden" dir="rtl">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 flex flex-col h-full overflow-y-auto md:overflow-hidden" dir="rtl">
         <Card className="shrink-0">
             <CardHeader className="flex flex-col md:flex-row justify-between items-start p-3 sm:p-4 gap-3 sm:gap-4">
                  <FormField
@@ -784,9 +784,9 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
             </CardContent>
         </Card>
         
-        <Card className="flex flex-col lg:flex-1 min-h-0 shrink-0">
+        <Card className="flex flex-col md:flex-1 shrink-0 md:shrink min-h-[200px] md:min-h-0">
             <CardHeader className="p-3 sm:p-6 shrink-0"><CardTitle className="text-base sm:text-xl">کاڵا فرۆشراوەکان</CardTitle></CardHeader>
-            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0 flex-1 overflow-y-auto min-h-[200px]">
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0 flex-1 md:overflow-y-auto">
                  {/* Desktop Table */}
                 <Table className="hidden md:table">
                     <TableHeader>
