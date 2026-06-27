@@ -349,7 +349,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
       if (!formId && firestore) {
         try {
           const formsRef = collection(firestore, 'selling_forms');
-          const q = query(formsRef, orderBy('issueDate', 'desc'), limit(50));
+          const q = query(formsRef, orderBy('issueDate', 'desc'), limit(1));
           const querySnapshot = await getDocs(q);
           
           let maxNum = 0;
@@ -497,7 +497,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
         // Not manually changed from the system preview, so atomically give last + 1
         try {
             const formsRef = collection(firestore, 'selling_forms');
-            const q = query(formsRef, orderBy('issueDate', 'desc'), limit(50));
+            const q = query(formsRef, orderBy('issueDate', 'desc'), limit(1));
             const snap = await getDocs(q);
             let maxNum = 0;
             snap.forEach(d => {
