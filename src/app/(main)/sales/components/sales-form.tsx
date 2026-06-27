@@ -713,7 +713,7 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full space-y-4" dir="rtl">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full space-y-2" dir="rtl">
         <Card className="flex-shrink-0">
             <CardHeader className="flex flex-col md:flex-row justify-between items-start p-3 sm:p-4 gap-3 sm:gap-4">
                  <FormField
@@ -744,8 +744,8 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
         </Card>
 
         <Card className="flex-shrink-0">
-            <CardHeader className="p-3 sm:p-6"><CardTitle className="text-base sm:text-xl">زانیاری کڕیار</CardTitle></CardHeader>
-            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0 space-y-3 sm:space-y-4">
+            <CardHeader className="p-2 sm:p-4"><CardTitle className="text-base sm:text-xl">زانیاری کڕیار</CardTitle></CardHeader>
+            <CardContent className="p-2 sm:p-4 pt-0 sm:pt-0 space-y-3 sm:space-y-4">
                  <div className="flex flex-col md:flex-row items-start gap-3 sm:gap-4">
                     <FormField
                     control={form.control}
@@ -784,9 +784,9 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
             </CardContent>
         </Card>
         
-        <Card className="flex-1 flex flex-col min-h-[300px] overflow-hidden">
-            <CardHeader className="flex-shrink-0 p-3 sm:p-6 pb-2 sm:pb-4"><CardTitle className="text-base sm:text-xl">کاڵا فرۆشراوەکان</CardTitle></CardHeader>
-            <CardContent className="flex-1 overflow-y-auto p-3 sm:p-6 pt-0 sm:pt-0">
+        <Card className="flex-1 flex flex-col min-h-[100px] overflow-hidden">
+            <CardHeader className="flex-shrink-0 p-2 sm:p-4 pb-2 sm:pb-3"><CardTitle className="text-base sm:text-xl">کاڵا فرۆشراوەکان</CardTitle></CardHeader>
+            <CardContent className="flex-1 overflow-y-auto p-2 sm:p-4 pt-0 sm:pt-0">
                  {/* Desktop Table */}
                 <Table className="hidden md:table">
                     <TableHeader>
@@ -836,8 +836,8 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
         
         <div className="flex-shrink-0 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <Card>
-                <CardHeader className="p-3 sm:p-6"><CardTitle className="text-base sm:text-xl">دارایی</CardTitle></CardHeader>
-                <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0 space-y-3 sm:space-y-4">
+                <CardHeader className="p-2 sm:p-4"><CardTitle className="text-base sm:text-xl">دارایی</CardTitle></CardHeader>
+                <CardContent className="p-2 sm:p-4 pt-0 sm:pt-0 space-y-3 sm:space-y-4">
                      <div className="space-y-1 sm:space-y-2">
                         <FormLabel className="text-xs sm:text-sm">داشکاندن</FormLabel>
                         <div className="flex gap-4 items-center">
@@ -993,8 +993,8 @@ export function SalesForm({ formId, onSave, initialItems }: SalesFormProps) {
                 </CardContent>
             </Card>
              <Card>
-                <CardHeader className="p-3 sm:p-6"><CardTitle className="text-base sm:text-xl">پوختە</CardTitle></CardHeader>
-                <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0 space-y-1 sm:space-y-2 text-left">
+                <CardHeader className="p-2 sm:p-4"><CardTitle className="text-base sm:text-xl">پوختە</CardTitle></CardHeader>
+                <CardContent className="p-2 sm:p-4 pt-0 sm:pt-0 space-y-1 sm:space-y-2 text-left">
                     <div className="flex items-center justify-between gap-4 p-1.5 sm:p-2 rounded-md">
                         <span className="text-xs sm:text-sm text-muted-foreground">کۆی کاڵاکان (پێش داشکاندن):</span>
                         <ConfidentialBlur><span className="text-sm sm:text-base font-semibold">{currencyFormatter.format(subTotalBeforeProductDiscount)}</span></ConfidentialBlur>
