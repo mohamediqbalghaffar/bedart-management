@@ -156,8 +156,8 @@ function UploadSalesFormButton({ onSave }: { onSave: () => void }) {
             </Button>
 
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent className="sm:max-w-4xl" dir="rtl">
-                    <DialogHeader>
+                <DialogContent className="max-w-[95vw] sm:max-w-[90vw] h-[95vh] sm:h-[90vh] flex flex-col p-0 overflow-hidden" dir="rtl">
+                    <DialogHeader className="flex-shrink-0 border-b">
                         <div className="text-center p-4">
                             <DialogTitle className="text-2xl font-bold">BedArt Group</DialogTitle>
                             <DialogDescription className="text-sm">
@@ -165,7 +165,7 @@ function UploadSalesFormButton({ onSave }: { onSave: () => void }) {
                             </DialogDescription>
                         </div>
                     </DialogHeader>
-                    <div className="max-h-[80vh] overflow-y-auto p-2">
+                    <div className="flex-1 overflow-hidden p-2 sm:p-4">
                         <SalesForm
                             formId={null}
                             onSave={() => { onSave(); setDialogOpen(false); }}
@@ -696,14 +696,14 @@ function SalesList() {
 
             {/* ── Create dialog ── */}
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                <DialogContent className="max-w-[95vw] sm:max-w-5xl h-[95vh] flex flex-col p-2 sm:p-4" dir="rtl">
-                    <DialogHeader className="shrink-0">
-                        <div className="text-center p-2">
+                <DialogContent className="max-w-[95vw] sm:max-w-[90vw] h-[95vh] sm:h-[90vh] flex flex-col p-0 overflow-hidden" dir="rtl">
+                    <DialogHeader className="flex-shrink-0 border-b">
+                        <div className="text-center p-4">
                             <DialogTitle className="text-2xl font-bold">BedArt Group</DialogTitle>
                             <DialogDescription className="text-sm">تەختی نوستن . دۆشەک . پشتی</DialogDescription>
                         </div>
                     </DialogHeader>
-                    <div className="flex-1 overflow-hidden p-0 sm:p-2">
+                    <div className="flex-1 overflow-hidden p-2 sm:p-4">
                         <SalesForm formId={null} onSave={handleFormSave} />
                     </div>
                 </DialogContent>
@@ -711,14 +711,14 @@ function SalesList() {
 
             {/* ── Edit dialog ── */}
             <Dialog open={!!editingFormId} onOpenChange={(open) => !open && setEditingFormId(null)}>
-                <DialogContent className="max-w-[95vw] sm:max-w-5xl h-[95vh] flex flex-col p-2 sm:p-4" dir="rtl">
-                    <DialogHeader className="shrink-0">
-                        <div className="text-center p-2">
+                <DialogContent className="max-w-[95vw] sm:max-w-[90vw] h-[95vh] sm:h-[90vh] flex flex-col p-0 overflow-hidden" dir="rtl">
+                    <DialogHeader className="flex-shrink-0 border-b">
+                        <div className="text-center p-4">
                             <DialogTitle className="text-2xl font-bold">BedArt Group</DialogTitle>
                             <DialogDescription className="text-sm">دەستکاریکردنی فۆڕم</DialogDescription>
                         </div>
                     </DialogHeader>
-                    <div className="flex-1 overflow-hidden p-0 sm:p-2">
+                    <div className="flex-1 overflow-hidden p-2 sm:p-4">
                         {editingFormId && <SalesForm formId={editingFormId} onSave={handleFormSave} />}
                     </div>
                 </DialogContent>
